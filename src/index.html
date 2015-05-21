@@ -18,7 +18,13 @@
 
     </div>
     <div>
-        <span ng-repeat="thevar in steps">{{thevar.name}}</span>
+        <div class="alert" ng-class="jobTaskProgress[jobTaskIndex].complete ? 'alert-success' : 'alert-info'" ng-repeat="(jobTaskIndex, jobTask) in jobDetails track by $index">
+            <a href="#" ng-click="toggleTaskProgress(jobTaskIndex)">{{jobTitleMap[jobTask.task] ? jobTitleMap[jobTask.task] : jobTask.task}}</a>
+            <div ng-repeat="(propertyName, propertyValue) in jobTask" ng-if="propertyName != 'task'">
+                <span>{{jobTitleMap[propertyName] ? jobTitleMap[propertyName] : propertyName}}</span>
+                <input type="text" readonly="readonly" onclick="this.select();" value="{{propertyValue}}" ng-click="selectTask(jobTaskIndex)"/>
+            </div>
+        </div>
     </div>
 </body>
 </html>

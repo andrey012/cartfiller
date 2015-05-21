@@ -1,0 +1,9 @@
+<!DOCTYPE html>
+<html>
+    <head>
+
+    </head>
+    <body>
+        <a href="#" onclick="window.parent.postMessage('cartFillerMessage:' + JSON.stringify({cmd: 'jobDetails', details: [{task: 'clearCart'}, {task: 'addToCart', partno: '30793231', quantity: 2}, {task: 'addToCart', partno: '30748811', quantity: 3}], titleMap: {clearCart: 'Очистить корзину', addToCart: 'Добавить в корзину', partno: 'Каталожный номер', quantity: 'Количество'}}), '*');">submit</a>
+    </body>
+</html>

@@ -5,7 +5,7 @@
         var pattern = /\/boot\/framed.js$/;
         for (var i = scripts.length - 1; i >= 0; i--){
             src = scripts[i].getAttribute('src');
-            if (pattern.test(src)) return {cartFillerUrl: src.replace(pattern, '/'), chooseJobUrl: scripts[i].getAttribute('data-worker')};
+            if (pattern.test(src)) return {cartFillerUrl: src.replace(pattern, '/'), chooseJobUrl: scripts[i].getAttribute('data-choose-job')};
         }
         alert('could not find URL for bootloader');
     }
@@ -20,10 +20,10 @@
         chooseJobFrameSrc = cartFillerUrls.chooseJobUrl,
         windowWidth = window.innerWidth,
         windowHeight = window.innerHeight,
-        mainFrameWidthBig = windowWidth * 0.8 - 5,
-        mainFrameWidthSmall = windowWidth * 0.2 - 5,
-        workerFrameWidthBig = windowWidth * 0.8 - 5,
-        workerFrameWidthSmall = windowWidth * 0.2 - 5,
+        mainFrameWidthBig = windowWidth * 0.8 - 1,
+        mainFrameWidthSmall = windowWidth * 0.2 - 1,
+        workerFrameWidthBig = windowWidth * 0.8 - 1,
+        workerFrameWidthSmall = windowWidth * 0.2 - 1,
         framesHeight = windowHeight - 15,
         chooseJobFrameLeft = 0.05 * windowWidth,
         chooseJobFrameWidth = 0.9 * windowWidth,
@@ -57,6 +57,7 @@
     chooseJobFrame.style.left = chooseJobFrameLeft + 'px';
     chooseJobFrame.style.width = chooseJobFrameWidth + 'px';
     chooseJobFrame.style.position = 'fixed';
+    chooseJobFrame.style.background = 'white';
 
     var setSize = function(size){
         if (undefined === size) {
@@ -66,29 +67,39 @@
         if (size == 'big') {
             workerFrame.style.width = workerFrameWidthBig + 'px';
             mainFrame.style.width = mainFrameWidthSmall + 'px';
-            workerFrame.style.left = (mainFrameWidthSmall + 5) + 'px';
+            workerFrame.style.left = mainFrameWidthSmall + 'px';
         } else if (size == 'small') {
             workerFrame.style.width = workerFrameWidthSmall + 'px';
             mainFrame.style.width = mainFrameWidthBig + 'px';
-            workerFrame.style.left = (mainFrameWidthBig + 5) + 'px';
+            workerFrame.style.left = mainFrameWidthBig + 'px';
         }
-    }
+    };
+    var showHideChooseJobFrame = function(show){
+        chooseJobFrame.style.display = show ? 'block' : 'none';
+    };
 
     setSize(currentSize);
-
-    var bootstrapCartFiller = function(){
+    var postMessage = function(cmd, details){
+        if (undefined === details) {
+            details = {};
+        }
+        details.cmd = cmd;
         workerFrame.contentWindow.postMessage(
-            'cartFillerMessage:' + JSON.stringify({cmd: 'bootstrap', angular : workerFrameSrc.replace(/src\//, 'bower_components')}),
+            'cartFillerMessage:' + JSON.stringify(details),
             '*'
         );
 
-    }
+    };
+    var bootstrapCartFiller = function(){
+        postMessage('bootstrap', {angular : workerFrameSrc.replace(/src\//, 'bower_components')});
+
+    };
     mainFrame.onload = function(){
         mainFrameLoaded = true;
         if (workerFrameLoaded){
             bootstrapCartFiller();
         }
-    }
+    };
     window.addEventListener('message', function(event) {
         var pattern = /^cartFillerMessage:(.*)$/;
         var test = pattern.exec(event.data);
@@ -106,9 +117,12 @@
             } else if (message.cmd == 'toggleSize') {
                 setSize();
             } else if (message.cmd == 'chooseJob') {
-                chooseJobFrame.style.display = 'block';
+                showHideChooseJobFrame(true);
             } else if (message.cmd == 'chooseJobCancel') {
-                chooseJobFrame.style.display = 'none';
+                showHideChooseJobFrame(false);
+            } else if (message.cmd == 'jobDetails') {
+                showHideChooseJobFrame(false);
+                postMessage('jobDetails', message);
             }
         }
     }, false);
