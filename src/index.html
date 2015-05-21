@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>CartFiller</title>
+<link rel="stylesheet" href="../bower_components/bootstrap/dist/css/bootstrap.min.css"/>
+<script src="../bower_components/jquery/dist/jquery.js"></script>
+<script src="../bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
+<script data-main="scripts/main" src="../bower_components/requirejs/require.js"></script>
+</head>
+<body ng-controller="indexController">
+    <a href="#" class="btn btn-info btn-xs" ng-click="toggleSize()">&lt;-&gt;</a>
+    <div>
+        <span ng-repeat="thevar in steps">{{thevar.name}}</span>
+    </div>
+</body>
+</html>

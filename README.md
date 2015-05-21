@@ -1,0 +1,1 @@
+javascript:{var s=document.createElement('script'); s.setAttribute('src', 'http://localhost/cartfiller/src/boot/framed.js'); s.setAttribute('data-worker', 'http://localhost/cartfiller/src/demo/worker.js'); document.getElementsByTagName('head')[0].appendChild(s);}
