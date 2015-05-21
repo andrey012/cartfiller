@@ -1,20 +1,23 @@
 (function(document, window, undefined){
-    var getCartFillerUrl = function(){
+    var getCartFillerUrls = function(){
         var scripts = document.getElementsByTagName('script');
         var src;
         var pattern = /\/boot\/framed.js$/;
         for (var i = scripts.length - 1; i >= 0; i--){
             src = scripts[i].getAttribute('src');
-            if (pattern.test(src)) return src.replace(pattern, '/');
+            if (pattern.test(src)) return {cartFillerUrl: src.replace(pattern, '/'), chooseJobUrl: scripts[i].getAttribute('data-worker')};
         }
         alert('could not find URL for bootloader');
     }
     var body = document.getElementsByTagName('body')[0];
     while (body.children.length) body.removeChild(body.children[0]);
-    var mainFrameName = 'cartFillerMainFrame',
+    var cartFillerUrls = getCartFillerUrls(),
+        mainFrameName = 'cartFillerMainFrame',
         mainFrameSrc = window.location.href,
         workerFrameName = 'cartFillerWorkerFrame',
-        workerFrameSrc = getCartFillerUrl(),
+        workerFrameSrc = cartFillerUrls.cartFillerUrl,
+        chooseJobFrameName = 'cartFillerChooseJobFrame',
+        chooseJobFrameSrc = cartFillerUrls.chooseJobUrl,
         windowWidth = window.innerWidth,
         windowHeight = window.innerHeight,
         mainFrameWidthBig = windowWidth * 0.8 - 5,
@@ -22,6 +25,10 @@
         workerFrameWidthBig = windowWidth * 0.8 - 5,
         workerFrameWidthSmall = windowWidth * 0.2 - 5,
         framesHeight = windowHeight - 15,
+        chooseJobFrameLeft = 0.05 * windowWidth,
+        chooseJobFrameWidth = 0.9 * windowWidth,
+        chooseJobFrameTop = 0.05 * windowHeight,
+        chooseJobFrameHeight = 0.9 * windowHeight,
         mainFrameLoaded = false,
         workerFrameLoaded = false, 
         currentSize = 'big';
@@ -40,6 +47,16 @@
     workerFrame.style.height = framesHeight + 'px';
     workerFrame.style.position = 'fixed';
     workerFrame.style.top = '0px';
+
+    var chooseJobFrame = document.createElement('iframe');
+    chooseJobFrame.setAttribute('name', chooseJobFrameName);
+    chooseJobFrame.setAttribute('src', chooseJobFrameSrc);
+    chooseJobFrame.style.display = 'none';
+    chooseJobFrame.style.height = chooseJobFrameHeight + 'px';
+    chooseJobFrame.style.top = chooseJobFrameTop + 'px';
+    chooseJobFrame.style.left = chooseJobFrameLeft + 'px';
+    chooseJobFrame.style.width = chooseJobFrameWidth + 'px';
+    chooseJobFrame.style.position = 'fixed';
 
     var setSize = function(size){
         if (undefined === size) {
@@ -88,10 +105,14 @@
                 setSize('big');
             } else if (message.cmd == 'toggleSize') {
                 setSize();
+            } else if (message.cmd == 'chooseJob') {
+                chooseJobFrame.style.display = 'block';
+            } else if (message.cmd == 'chooseJobCancel') {
+                chooseJobFrame.style.display = 'none';
             }
         }
     }, false);
     body.appendChild(mainFrame);
     body.appendChild(workerFrame);
-
+    body.appendChild(chooseJobFrame);
 })(document, window);
