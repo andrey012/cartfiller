@@ -5,36 +5,45 @@
         if (test){
             var message = JSON.parse(test[1]);
             if (message.cmd == 'bootstrap') {
-                require([
-                    message.angular + '/angular/angular.min.js',
-                ], function(){
-                    require([
-                        message.angular + '/angular-route/angular-route.min.js', 
-                        message.angular + '/angular-resource/angular-resource.min.js'
-                    ], function(){
-                        require(['scripts/controller.js'], function(){
-                            angular.module('cartFillerApp').service('cfMessage', function($rootScope){
-                                var postMessageListeners = [];
-                                return {
-                                    send: function(cmd, details) {
-                                        if (undefined === details) {
-                                            details = {};
-                                        }
-                                        details.cmd = cmd; event.source.postMessage('cartFillerMessage:' + JSON.stringify(details), '*');
-                                    },
-                                    receive: function(cmd, details) {
-                                        angular.forEach(postMessageListeners, function(listener){
-                                            listener(cmd, details);
-                                        });
-                                    },
-                                    register: function(cb){
-                                        postMessageListeners.push(cb);
-                                    }
+                require.config({
+                    paths: {
+                        'angular': message.lib + '/angular/angular.min',
+                        'angular-route': message.lib + '/angular-route/angular-route.min',
+                        'angular-resource': message.lib + '/angular-resource/angular-resource.min',
+                        'jquery': message.lib + '/jquery/dist/jquery.min',
+                        'bootstraptw': message.lib + '/bootstrap/dist/js/bootstrap.min',
+                    },
+                    shim: {
+                        'angular' : {exports: 'angular', deps: ['jquery', 'bootstraptw']},
+                        'angular-route': ['angular'],
+                        'angular-resource': ['angular'],
+                        'bootstraptw': ['jquery'],
+                    },
+                    deps: ['bootstrap'],
+                });
+                define('cfMessageService', ['app'], function(app){
+                    app.service('cfMessage', function($rootScope){
+                        var postMessageListeners = [];
+                        return {
+                            send: function(cmd, details) {
+                                if (undefined === details) {
+                                    details = {};
                                 }
-                            });
-                            injector = angular.bootstrap(document, ["cartFillerApp"]);
-                        });
+                                details.cmd = cmd; event.source.postMessage('cartFillerMessage:' + JSON.stringify(details), '*');
+                            },
+                            receive: function(cmd, details) {
+                                angular.forEach(postMessageListeners, function(listener){
+                                    listener(cmd, details);
+                                });
+                            },
+                            register: function(cb){
+                                postMessageListeners.push(cb);
+                            }
+                        }
                     });
+                });
+                require(['bootstrap'], function(app){
+                    injector = app;
                 });
             } else {
                 if ("object" === typeof injector){

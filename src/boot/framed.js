@@ -91,7 +91,7 @@
 
     };
     var bootstrapCartFiller = function(){
-        postMessage('bootstrap', {angular : workerFrameSrc.replace(/src\//, 'bower_components')});
+        postMessage('bootstrap', {lib : workerFrameSrc.replace(/src\//, 'lib')});
 
     };
     mainFrame.onload = function(){
