@@ -2,7 +2,7 @@
     var getCartFillerUrls = function(){
         var scripts = document.getElementsByTagName('script');
         var src;
-        var pattern = /\/boot\/framed.js$/;
+        var pattern = /\/boot\/framed.js(\?\d+)?$/;
         for (var i = scripts.length - 1; i >= 0; i--){
             src = scripts[i].getAttribute('src');
             if (pattern.test(src)) return {cartFillerUrl: src.replace(pattern, '/'), chooseJobUrl: scripts[i].getAttribute('data-choose-job')};
@@ -31,11 +31,15 @@
         chooseJobFrameHeight = 0.9 * windowHeight,
         mainFrameLoaded = false,
         workerFrameLoaded = false, 
-        currentSize = 'big';
+        currentSize = 'big',
+        worker = false,
+        workerCurrentTaskIndex = false,
+        workerCurrentStepIndex = false,
+        workerOnLoadHandler = false;
 
     var mainFrame = document.createElement('iframe');
     mainFrame.setAttribute('name', mainFrameName);
-    mainFrame.setAttribute('src', mainFrameSrc);
+    ////mainFrame.setAttribute('src', mainFrameSrc);
     mainFrame.style.height = framesHeight + 'px';
     mainFrame.style.position = 'fixed';
     mainFrame.style.left = '0px';
@@ -43,14 +47,14 @@
 
     var workerFrame = document.createElement('iframe');
     workerFrame.setAttribute('name', workerFrameName);
-    workerFrame.setAttribute('src', workerFrameSrc);
+    ////workerFrame.setAttribute('src', workerFrameSrc);
     workerFrame.style.height = framesHeight + 'px';
     workerFrame.style.position = 'fixed';
     workerFrame.style.top = '0px';
 
     var chooseJobFrame = document.createElement('iframe');
     chooseJobFrame.setAttribute('name', chooseJobFrameName);
-    chooseJobFrame.setAttribute('src', chooseJobFrameSrc);
+    ////chooseJobFrame.setAttribute('src', chooseJobFrameSrc);
     chooseJobFrame.style.display = 'none';
     chooseJobFrame.style.height = chooseJobFrameHeight + 'px';
     chooseJobFrame.style.top = chooseJobFrameTop + 'px';
@@ -94,39 +98,109 @@
         postMessage('bootstrap', {lib : workerFrameSrc.replace(/src\//, 'lib')});
 
     };
-    mainFrame.onload = function(){
-        mainFrameLoaded = true;
-        if (workerFrameLoaded){
-            bootstrapCartFiller();
+    var setMainFrameOnLoadHadler = function(){
+        mainFrame.onload = function(){
+            if (!mainFrameLoaded){
+                mainFrameLoaded = true;
+                if (workerFrameLoaded){
+                    bootstrapCartFiller();
+                }
+            } else {
+                if (workerOnLoadHandler) {
+                    workerOnLoadHandler();
+                }
+            }
         }
     };
+    setMainFrameOnLoadHadler();
+    var resetWorker = function(){
+        workerCurrentTaskIndex = workerCurrentStepIndex = workerOnLoadHandler = false;
+    }
+    var workerStepResultCallback = function(message, recoverable){
+        var status;
+        if ((undefined === message) || ("" === message)) {
+            status = 'ok';
+        } else if ("string" === typeof message){
+            status = recoverable ? 'skip' : 'error';
+        } else {
+            throw "invalid message type " + typeof(message);
+        }
+        postMessage('workerStepResult', {index: workerCurrentTaskIndex, step: workerCurrentStepIndex, status: status, message: message});
+        resetWorker();
+    }
+    var workerOnLoadRegisterFunction = function(cb){
+        workerOnLoadHandler = cb;
+        setMainFrameOnLoadHadler();
+    }
+    window.cartFillerRegisterWorker = function(cb){
+        worker = cb(window.frames[mainFrameName], undefined, workerStepResultCallback, workerOnLoadRegisterFunction);
+        var list = {};
+        for (var taskName in worker){
+            if (worker.hasOwnProperty(taskName)){
+                var taskSteps = [];
+                for (var i = 0 ; i < worker[taskName].length; i++){
+                    if ("string" === typeof worker[taskName][i]){
+                        taskSteps.push(worker[taskName][i]);
+                    }
+                }
+                list[taskName] = taskSteps;
+            }
+        }
+        postMessage('workerRegistered', {jobTaskDescriptions: list});
+    }
     window.addEventListener('message', function(event) {
         var pattern = /^cartFillerMessage:(.*)$/;
         var test = pattern.exec(event.data);
         if (null != test){
             var message = JSON.parse(test[1]);
-            if (message.cmd == 'register'){
+            if ('register' === message.cmd){
                 workerFrameLoaded = true;
                 if (mainFrameLoaded){
                     bootstrapCartFiller();
                 }
-            } else if (message.cmd == 'makeSmaller') {
+            } else if ('makeSmaller' === message.cmd) {
                 setSize('small');
-            } else if (message.cmd == 'makeBigger') {
+            } else if ('makeBigger' === message.cmd) {
                 setSize('big');
-            } else if (message.cmd == 'toggleSize') {
+            } else if ('toggleSize' === message.cmd) {
                 setSize();
-            } else if (message.cmd == 'chooseJob') {
+            } else if ('chooseJob' === message.cmd) {
                 showHideChooseJobFrame(true);
-            } else if (message.cmd == 'chooseJobCancel') {
+            } else if ('chooseJobCancel' === message.cmd) {
                 showHideChooseJobFrame(false);
-            } else if (message.cmd == 'jobDetails') {
+            } else if ('jobDetails' === message.cmd) {
                 showHideChooseJobFrame(false);
                 postMessage('jobDetails', message);
+            } else if ('loadWorker' === message.cmd) {
+                var workerScript = document.createElement('script');
+                workerScript.setAttribute('src', message.src);
+                worker = false;
+                body.appendChild(workerScript);
+            } else if ('invokeWorker' === message.cmd) {
+                if ((false !== workerCurrentTaskIndex) || (false !== workerCurrentStepIndex)){
+                    var err = 'ERROR: worker task is in still in progress';
+                    alert(err);
+                    postMessage('workerStepResult', {index: message.index, step: message.step, result: err});
+                } else {
+                    workerCurrentTaskIndex = message.index;
+                    workerCurrentStepIndex = message.step;
+                    try {
+                        worker[message.task][(message.step * 2) + 1](message.details, message.index);
+                    } catch (err){
+                        alert(err);
+                        debugger;
+                        throw err;
+                    }
+                }
+            } else if ('resetWorker' === message.cmd){
+                resetWorker();
             }
         }
     }, false);
     body.appendChild(mainFrame);
+    window.frames[mainFrameName].location.href=mainFrameSrc;
     body.appendChild(workerFrame);
+    window.frames[workerFrameName].location.href=workerFrameSrc;
     body.appendChild(chooseJobFrame);
+    window.frames[chooseJobFrameName].location.href=chooseJobFrameSrc;
 })(document, window);

@@ -1,1 +1,1 @@
-javascript:{var s=document.createElement('script'); s.setAttribute('src', 'http://localhost/cartfiller/src/boot/framed.js'); s.setAttribute('data-choose-job', 'http://localhost/cartfiller/samples/choose-job.html'); document.getElementsByTagName('head')[0].appendChild(s);}
+javascript:(function(){var d=document,a='setAttribute',s=d.createElement('script');s[a]('src','http://localhost/cartfiller/src/boot/framed.js?' + (new Date()).getTime());s[a]('data-choose-job', 'http://localhost/cartfiller/samples/choose-job.html');d.getElementsByTagName('head')[0].appendChild(s);})();
