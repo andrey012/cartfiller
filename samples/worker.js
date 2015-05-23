@@ -1,5 +1,5 @@
 (function(window, document, undefined){
-    cartFillerRegisterWorker(function(window, document, resultCallback, onload, undefined){
+    cartFillerAPI.registerWorker(function(window, document, api, undefined){
         var state = {};
         var findOrderRows = function(){
             var tbody = window.document.getElementsByTagName('tbody')[0];
@@ -19,7 +19,7 @@
                     for (var i = 0; i < inputs.length; i++){
                         inputs[i].value = '';
                     }
-                    setTimeout(resultCallback, 300);
+                    setTimeout(api.result, 300);
                 }
             ],
             addToCart: [
@@ -35,29 +35,41 @@
                         if (clear) {
                             state.addToCart = {nextFreeRow: i};
                             markNextRow();
-                            resultCallback();
+                            api.result();
                             return true;
                         }
                     }
-                    resultCallback("no more lines");
+                    api.result("no more lines");
                 },
                 'find input for part number', function(task) {
                     var input = findOrderRows()[state.addToCart.nextFreeRow].getElementsByTagName('input')[0];
                     input.focus();
                     input.style.background = 'green';
-                    resultCallback();
+                    api.result();
                 },
                 'put part number', function(task){
                     var input = findOrderRows()[state.addToCart.nextFreeRow].getElementsByTagName('input')[0];
                     input.value = task.partno;
                     input.style.background = 'white';
-                    resultCallback();
+                    api.result();
+                },
+                'put quantity', function(task){
+                    var input = findOrderRows()[state.addToCart.nextFreeRow].getElementsByTagName('input')[1];
+                    input.value = task.quantity;
+                    input.style.background = 'white';
+                    api.result();
+                },
+                'put comment', function(task){
+                    var input = findOrderRows()[state.addToCart.nextFreeRow].getElementsByTagName('input')[2];
+                    input.value = 'populated by cartFiller';
+                    input.style.background = 'white';
+                    api.result();
                 }
             ],
             'submit': [
                 'submit', function(task){
-                    onload(function(){
-                        resultCallback();
+                    api.onload(function(){
+                        api.result();
                     });
                     window.document.getElementsByTagName('form')[0].submit();
 

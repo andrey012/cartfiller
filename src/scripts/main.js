@@ -22,6 +22,11 @@
                     deps: ['bootstrap'],
                 });
                 define('cfMessageService', ['app'], function(app){
+                    app.service('cfDebug', function(){
+                        return {
+                            debugEnabled: message.debug
+                        };
+                    }),
                     app.service('cfMessage', function($rootScope){
                         var postMessageListeners = [];
                         return {

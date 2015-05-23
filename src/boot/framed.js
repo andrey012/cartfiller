@@ -5,7 +5,7 @@
         var pattern = /\/boot\/framed.js(\?\d+)?$/;
         for (var i = scripts.length - 1; i >= 0; i--){
             src = scripts[i].getAttribute('src');
-            if (pattern.test(src)) return {cartFillerUrl: src.replace(pattern, '/'), chooseJobUrl: scripts[i].getAttribute('data-choose-job')};
+            if (pattern.test(src)) return {cartFillerUrl: src.replace(pattern, '/'), chooseJobUrl: scripts[i].getAttribute('data-choose-job'), debug: scripts[i].getAttribute('data-debug')};
         }
         alert('could not find URL for bootloader');
     }
@@ -95,7 +95,7 @@
 
     };
     var bootstrapCartFiller = function(){
-        postMessage('bootstrap', {lib : workerFrameSrc.replace(/src\//, 'lib')});
+        postMessage('bootstrap', {lib : workerFrameSrc.replace(/src\//, 'lib'), debug: cartFillerUrls.debug});
 
     };
     var setMainFrameOnLoadHadler = function(){
@@ -116,38 +116,42 @@
     var resetWorker = function(){
         workerCurrentTaskIndex = workerCurrentStepIndex = workerOnLoadHandler = false;
     }
-    var workerStepResultCallback = function(message, recoverable){
-        var status;
-        if ((undefined === message) || ("" === message)) {
-            status = 'ok';
-        } else if ("string" === typeof message){
-            status = recoverable ? 'skip' : 'error';
-        } else {
-            throw "invalid message type " + typeof(message);
-        }
-        postMessage('workerStepResult', {index: workerCurrentTaskIndex, step: workerCurrentStepIndex, status: status, message: message});
-        resetWorker();
-    }
-    var workerOnLoadRegisterFunction = function(cb){
-        workerOnLoadHandler = cb;
-        setMainFrameOnLoadHadler();
-    }
-    window.cartFillerRegisterWorker = function(cb){
-        worker = cb(window.frames[mainFrameName], undefined, workerStepResultCallback, workerOnLoadRegisterFunction);
-        var list = {};
-        for (var taskName in worker){
-            if (worker.hasOwnProperty(taskName)){
-                var taskSteps = [];
-                for (var i = 0 ; i < worker[taskName].length; i++){
-                    if ("string" === typeof worker[taskName][i]){
-                        taskSteps.push(worker[taskName][i]);
+    var api = {
+        registerWorker: function(cb){
+            worker = cb(window.frames[mainFrameName], undefined, api);
+            var list = {};
+            for (var taskName in worker){
+                if (worker.hasOwnProperty(taskName)){
+                    var taskSteps = [];
+                    for (var i = 0 ; i < worker[taskName].length; i++){
+                        if ("string" === typeof worker[taskName][i]){
+                            taskSteps.push(worker[taskName][i]);
+                        }
                     }
+                    list[taskName] = taskSteps;
                 }
-                list[taskName] = taskSteps;
             }
+            postMessage('workerRegistered', {jobTaskDescriptions: list});
+        },
+        result: function(message, recoverable){
+            var status;
+            if ((undefined === message) || ("" === message)) {
+                status = 'ok';
+            } else if ("string" === typeof message){
+                status = recoverable ? 'skip' : 'error';
+            } else {
+                throw "invalid message type " + typeof(message);
+            }
+            postMessage('workerStepResult', {index: workerCurrentTaskIndex, step: workerCurrentStepIndex, status: status, message: message});
+            resetWorker();
+        },
+        onload: function(cb){
+            workerOnLoadHandler = cb;
+            setMainFrameOnLoadHadler();
         }
-        postMessage('workerRegistered', {jobTaskDescriptions: list});
     }
+    window.cartFillerAPI = api;
+
     window.addEventListener('message', function(event) {
         var pattern = /^cartFillerMessage:(.*)$/;
         var test = pattern.exec(event.data);
@@ -173,6 +177,12 @@
                 postMessage('jobDetails', message);
             } else if ('loadWorker' === message.cmd) {
                 var workerScript = document.createElement('script');
+                if (/\?/.test(message.src)){
+                    message.src += '&';
+                } else {
+                    message.src += '?';
+                }
+                message.src += (new Date()).getTime();
                 workerScript.setAttribute('src', message.src);
                 worker = false;
                 body.appendChild(workerScript);

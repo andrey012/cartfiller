@@ -1,7 +1,7 @@
 define(['app'], function(app){
     'use strict';
     app
-    .controller('indexController', function ($scope, $rootScope, $http, cfMessage, $timeout){
+    .controller('indexController', function ($scope, $rootScope, $http, cfMessage, $timeout, cfDebug){
         $scope.steps = [{name:1}, {name:2}];
         $scope.chooseJobState = false;
         $scope.toggleSize = function(){
@@ -19,6 +19,8 @@ define(['app'], function(app){
         $scope.currentTask = 0;
         $scope.currentStep = 0;
         $timeout(function(){$scope.chooseJob();}, 0);
+        $scope.debugEnabled = cfDebug.debugEnabled;
+        $scope.workerSrc = false;
         cfMessage.register(function(cmd, details){
             if (cmd === 'jobDetails'){
                 cfMessage.send('makeSmaller');
@@ -32,8 +34,10 @@ define(['app'], function(app){
                     $scope.jobTaskProgress.push({complete: false, step: 0, stepsInProgress: {}, stepResults: {}})
                 });
                 if (("string" === typeof details.workerSrc) && (details.workerSrc.length > 0)) {
+                    $scope.workerSrc = details.workerSrc;
                     cfMessage.send('loadWorker', {src: details.workerSrc});
                 } else {
+                    $scope.workerSrc = '';
                     alert('Worker script not specified in job description')
                 }
             } else if (cmd === 'workerRegistered'){
@@ -156,6 +160,10 @@ define(['app'], function(app){
             $scope.doNextStep(); 
             $event.stopPropagation();
             return false;
+        }
+        $scope.reloadWorker = function($event){
+            cfMessage.send('loadWorker', {src: $scope.workerSrc});
+            $event.stopPropagation();
         }
     });
 });

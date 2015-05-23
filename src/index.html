@@ -6,10 +6,9 @@
     <link rel="stylesheet" href="../lib/bootstrap/dist/css/bootstrap.min.css"/>
 </head>
 <body ng-controller="indexController">
-    <div style="text-align: right; z-index: 101; position: fixed; top: 0px;">
+    <div style="text-align: right; z-index: 101; position: fixed; top: 0px; width: 100%; padding: 2px;" class="alert alert-warning">
 
-        <a href="#" class="btn btn-info btn-xs" ng-click="toggleSize()">&lt;&gt;</a>
-        &nbsp;
+        <a href="#" class="btn btn-info btn-xs" ng-click="toggleSize()">[]</a>
         <a href="#"
            ng-if="running"
            ng-click="stop($event)"
@@ -24,7 +23,6 @@
            ng-disabled="workerInProgress"
            onclick="return false;"
            >&gt;&gt;&gt;</a>
-        &nbsp;
         <a href="#"
            ng-if="!running"
            ng-click="run(true)"
@@ -32,17 +30,25 @@
            title="Slow"
            ng-disabled="workerInProgress"
            onclick="return false;"
-           >&gt;...&gt;</a>
-        &nbsp;
+           >&gt;..&gt;</a>
         <a href="#"
            ng-click="clickOnNextStep($event);"
            class="btn btn-xs btn-info"
            title="Step"
            ng-disabled="workerInProgress"
            onclick="return false;"
-           >| &gt;</a>
-        &nbsp;
-        <a href="#" class="btn btn-info btn-xs" ng-click="chooseJob()">{{chooseJobState ? 'Cancel' : 'Choose Job'}}</a>
+           >&gt;</a>
+        <a href="#" 
+           class="btn btn-info btn-xs" 
+           ng-click="chooseJob()"
+           >{{chooseJobState ? 'Cancel' : 'Choose Job'}}</a>
+        <a href="#" 
+           class="btn btn-default btn-active btn-xs" 
+           ng-click="reloadWorker($event)" 
+           title="Reload worker"
+           ng-if="debugEnabled"
+           onclick="return false;"
+           >R</a>
         <div ng-style="{opacity: (workerInProgress ? 1 : 0)}">
             <a href="#" class="btn btn-danger btn-xs" ng-click="resetWorker()">RESET WORKER</a>
         </div>
