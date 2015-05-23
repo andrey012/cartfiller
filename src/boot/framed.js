@@ -35,7 +35,8 @@
         worker = false,
         workerCurrentTaskIndex = false,
         workerCurrentStepIndex = false,
-        workerOnLoadHandler = false;
+        workerOnLoadHandler = false,
+        overlayClassName = 'cartFillerOverlayDiv';
 
     var mainFrame = document.createElement('iframe');
     mainFrame.setAttribute('name', mainFrameName);
@@ -43,7 +44,7 @@
     mainFrame.style.height = framesHeight + 'px';
     mainFrame.style.position = 'fixed';
     mainFrame.style.left = '0px';
-    mainFrame.style.top = '0px;';
+    mainFrame.style.top = '0px';
 
     var workerFrame = document.createElement('iframe');
     workerFrame.setAttribute('name', workerFrameName);
@@ -116,6 +117,47 @@
     var resetWorker = function(){
         workerCurrentTaskIndex = workerCurrentStepIndex = workerOnLoadHandler = false;
     }
+    var createOverlay = function(left, top, right, bottom){
+        var d = window.frames[mainFrameName].document;
+        var div = d.createElement('div');
+        div.style.position = 'absolute';
+        div.style.left = left + 'px';
+        div.style.top = top + 'px';
+        div.style.width = (right - left) + 'px';
+        div.style.height = (bottom - top) + 'px';
+        div.style.backgroundColor = 'rgba(0,0,0,0.2)';
+        div.style.zIndex = 100000;
+        div.className = overlayClassName;
+        d.getElementsByTagName('body')[0].appendChild(div);
+
+    };
+    var scrollTo = function(left, top, right, bottom){
+        var d = window.frames[mainFrameName].document;
+        var centerX = (right + left ) / 2;
+        var centerY = (bottom + top) / 2;
+        var currentX, currentY;
+        var destX = centerX - (d.documentElement.clientWidth / 2);
+        var destY = centerY - (d.documentElement.clientHeight / 2);
+        debugger;
+        while (true){
+            currentX = d.documentElement.scrollTop;
+            currentY = d.documentElement.scrollLeft;
+            window.frames[mainFrameName].scrollBy(destX - currentX, destY -  currentY);
+            if (d.documentElement.scrollTop == currentX &&
+                d.documentElement.scrollLeft == currentY) {
+                break;
+            }
+        }
+
+    };
+    var removeOverlay = function(){
+        var d = window.frames[mainFrameName].document;
+        var divs = d.getElementsByClassName(overlayClassName);
+        for (var i = divs.length - 1; i >= 0 ; i--){
+            divs[i].parentNode.removeChild(divs[i]);
+        }
+    };
+    var highlightedElement = false;
     var api = {
         registerWorker: function(cb){
             worker = cb(window.frames[mainFrameName], undefined, api);
@@ -132,6 +174,7 @@
                 }
             }
             postMessage('workerRegistered', {jobTaskDescriptions: list});
+            return api;
         },
         result: function(message, recoverable){
             var status;
@@ -144,11 +187,27 @@
             }
             postMessage('workerStepResult', {index: workerCurrentTaskIndex, step: workerCurrentStepIndex, status: status, message: message});
             resetWorker();
+            return api;
         },
         onload: function(cb){
             workerOnLoadHandler = cb;
             setMainFrameOnLoadHadler();
-        }
+            return api;
+        },
+        highlight: function(element){
+            highlightedElement = element;
+            removeOverlay();
+            if (undefined !== element) {
+                var rect = element.getBoundingClientRect();
+                var full = window.frames[mainFrameName].document.getElementsByTagName('body')[0].getBoundingClientRect();
+                createOverlay(0, 0, rect.left, full.bottom);
+                createOverlay(rect.right, 0, full.right, full.bottom);
+                createOverlay(rect.left, 0, rect.right, rect.top);
+                createOverlay(rect.left, rect.bottom, rect.right, full.bottom);
+                scrollTo(rect.left, rect.top, rect.right, rect.bottom);
+            }
+            return api;
+        },
     }
     window.cartFillerAPI = api;
 
@@ -194,8 +253,11 @@
                 } else {
                     workerCurrentTaskIndex = message.index;
                     workerCurrentStepIndex = message.step;
+                    var env = {
+                        messageIndex: message.index
+                    }
                     try {
-                        worker[message.task][(message.step * 2) + 1](message.details, message.index);
+                        worker[message.task][(message.step * 2) + 1](message.details, highlightedElement, env);
                     } catch (err){
                         alert(err);
                         debugger;

@@ -1,16 +1,9 @@
 (function(window, document, undefined){
     cartFillerAPI.registerWorker(function(window, document, api, undefined){
-        var state = {};
+        var currentRow;
         var findOrderRows = function(){
             var tbody = window.document.getElementsByTagName('tbody')[0];
             return tbody.getElementsByTagName('tr');
-        }
-        var markNextRow = function(){
-            var rows = findOrderRows();
-            for (var i = 0 ; i < rows.length; i++){
-                rows[i].style.background = (i === state.addToCart.nextFreeRow) ? 'green' : 'white';
-            }
-
         }
         return {
             clearCart: [
@@ -33,37 +26,33 @@
                             if (inputs[j].value.length > 0) clear = false;
                         }
                         if (clear) {
-                            state.addToCart = {nextFreeRow: i};
-                            markNextRow();
-                            api.result();
-                            return true;
+                            return api.highlight(currentRow = rows[i]).result();
                         }
                     }
                     api.result("no more lines");
                 },
                 'find input for part number', function(task) {
-                    var input = findOrderRows()[state.addToCart.nextFreeRow].getElementsByTagName('input')[0];
+                    var input = currentRow.getElementsByTagName('input')[0];
                     input.focus();
-                    input.style.background = 'green';
-                    api.result();
+                    return api.highlight(input).result();
                 },
-                'put part number', function(task){
-                    var input = findOrderRows()[state.addToCart.nextFreeRow].getElementsByTagName('input')[0];
+                'put part number', function(task, input){
                     input.value = task.partno;
-                    input.style.background = 'white';
-                    api.result();
+                    return api.highlight().result();
                 },
-                'put quantity', function(task){
-                    var input = findOrderRows()[state.addToCart.nextFreeRow].getElementsByTagName('input')[1];
+                'find quantity input', function(task){
+                    return api.highlight(currentRow.getElementsByTagName('input')[1]).result();
+                },
+                'put quantity', function(task, input){
                     input.value = task.quantity;
-                    input.style.background = 'white';
-                    api.result();
+                    return api.highlight().result();
                 },
-                'put comment', function(task){
-                    var input = findOrderRows()[state.addToCart.nextFreeRow].getElementsByTagName('input')[2];
+                'find comment input', function(task){
+                    return api.highlight(currentRow.getElementsByTagName('input')[2]).result();
+                },
+                'put comment', function(task, input){
                     input.value = 'populated by cartFiller';
-                    input.style.background = 'white';
-                    api.result();
+                    return api.highlight().result();
                 }
             ],
             'submit': [
