@@ -25,7 +25,7 @@
            >&gt;&gt;&gt;</a>
         <a href="#"
            ng-if="!running"
-           ng-click="run(true)"
+           ng-click="run(true, $event)"
            class="btn btn-xs btn-info"
            title="Slow"
            ng-disabled="workerInProgress"
@@ -50,7 +50,10 @@
            onclick="return false;"
            >R</a>
         <div ng-style="{opacity: (workerInProgress ? 1 : 0)}">
-            <a href="#" class="btn btn-danger btn-xs" ng-click="resetWorker()">RESET WORKER</a>
+            <a href="#" 
+               class="btn btn-danger btn-xs" 
+               ng-click="resetWorker()"
+               onclick="return false;">RESET WORKER</a>
         </div>
     </div>
     <div ng-if="chooseJobState" id="cartFillerOverlay" style="z-index: 100; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); position: absolute; top: 0px; left: 0px;">
@@ -73,7 +76,7 @@
                 >
                     <a 
                        href="#"
-                       title="{{jobTaskStep + ': ' + jobTaskProgress[jobTaskIndex].stepResults[jobTaskStepIndex]}}"
+                       title="{{jobTaskStep + ': ' + jobTaskProgress[jobTaskIndex].stepResults[jobTaskStepIndex].message}}"
                        class="btn"
                        ng-class="getStepClass(jobTaskIndex, jobTaskStepIndex)"
                        ng-click="clickOnStep(jobTaskIndex, jobTaskStepIndex, $event)"

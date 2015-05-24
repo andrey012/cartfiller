@@ -41,14 +41,18 @@
                     return api.highlight().result();
                 },
                 'find quantity input', function(task){
-                    return api.highlight(currentRow.getElementsByTagName('input')[1]).result();
+                    var input = currentRow.getElementsByTagName('input')[1];
+                    input.focus();
+                    return api.highlight(input).result();
                 },
                 'put quantity', function(task, input){
                     input.value = task.quantity;
                     return api.highlight().result();
                 },
                 'find comment input', function(task){
-                    return api.highlight(currentRow.getElementsByTagName('input')[2]).result();
+                    var input = currentRow.getElementsByTagName('input')[2];
+                    input.focus();
+                    return api.highlight(input).result();
                 },
                 'put comment', function(task, input){
                     input.value = 'populated by cartFiller';

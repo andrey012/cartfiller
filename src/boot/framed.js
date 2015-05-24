@@ -5,12 +5,16 @@
         var pattern = /\/boot\/framed.js(\?\d+)?$/;
         for (var i = scripts.length - 1; i >= 0; i--){
             src = scripts[i].getAttribute('src');
-            if (pattern.test(src)) return {cartFillerUrl: src.replace(pattern, '/'), chooseJobUrl: scripts[i].getAttribute('data-choose-job'), debug: scripts[i].getAttribute('data-debug')};
+            if (pattern.test(src)) return {
+                cartFillerUrl: src.replace(pattern, '/'), 
+                chooseJobUrl: scripts[i].getAttribute('data-choose-job'), 
+                debug: scripts[i].getAttribute('data-debug'),
+                workerSrc: scripts[i].getAttribute('data-worker')
+            };
         }
         alert('could not find URL for bootloader');
     }
     var body = document.getElementsByTagName('body')[0];
-    while (body.children.length) body.removeChild(body.children[0]);
     var cartFillerUrls = getCartFillerUrls(),
         mainFrameName = 'cartFillerMainFrame',
         mainFrameSrc = window.location.href,
@@ -36,11 +40,16 @@
         workerCurrentTaskIndex = false,
         workerCurrentStepIndex = false,
         workerOnLoadHandler = false,
-        overlayClassName = 'cartFillerOverlayDiv';
+        overlayClassName = 'cartFillerOverlayDiv',
+        cartFillerAPIGlobalVarName = 'cartFillerAPI';
 
+    if (undefined !== window[cartFillerAPIGlobalVarName]) {
+        alert('CartFiller already attached, please refresh page to reattach');
+        return;
+    }
+    while (body.children.length) body.removeChild(body.children[0]);
     var mainFrame = document.createElement('iframe');
     mainFrame.setAttribute('name', mainFrameName);
-    ////mainFrame.setAttribute('src', mainFrameSrc);
     mainFrame.style.height = framesHeight + 'px';
     mainFrame.style.position = 'fixed';
     mainFrame.style.left = '0px';
@@ -48,14 +57,12 @@
 
     var workerFrame = document.createElement('iframe');
     workerFrame.setAttribute('name', workerFrameName);
-    ////workerFrame.setAttribute('src', workerFrameSrc);
     workerFrame.style.height = framesHeight + 'px';
     workerFrame.style.position = 'fixed';
     workerFrame.style.top = '0px';
 
     var chooseJobFrame = document.createElement('iframe');
     chooseJobFrame.setAttribute('name', chooseJobFrameName);
-    ////chooseJobFrame.setAttribute('src', chooseJobFrameSrc);
     chooseJobFrame.style.display = 'none';
     chooseJobFrame.style.height = chooseJobFrameHeight + 'px';
     chooseJobFrame.style.top = chooseJobFrameTop + 'px';
@@ -117,6 +124,17 @@
     var resetWorker = function(){
         workerCurrentTaskIndex = workerCurrentStepIndex = workerOnLoadHandler = false;
     }
+    var getScrollLeft = function(){
+        var d = window.frames[mainFrameName].document;
+        return d.documentElement.scrollLeft || d.body.scrollLeft
+    }
+    var getScrollTop = function(){
+        var d = window.frames[mainFrameName].document;
+        return d.documentElement.scrollTop || d.body.scrollTop
+
+    }
+
+
     var createOverlay = function(left, top, right, bottom){
         var d = window.frames[mainFrameName].document;
         var div = d.createElement('div');
@@ -128,6 +146,7 @@
         div.style.backgroundColor = 'rgba(0,0,0,0.2)';
         div.style.zIndex = 100000;
         div.className = overlayClassName;
+        div.onclick = function(){removeOverlay();};
         d.getElementsByTagName('body')[0].appendChild(div);
 
     };
@@ -138,13 +157,12 @@
         var currentX, currentY;
         var destX = centerX - (d.documentElement.clientWidth / 2);
         var destY = centerY - (d.documentElement.clientHeight / 2);
-        debugger;
         while (true){
-            currentX = d.documentElement.scrollTop;
-            currentY = d.documentElement.scrollLeft;
+            currentX = getScrollLeft();
+            currentY = getScrollTop();
             window.frames[mainFrameName].scrollBy(destX - currentX, destY -  currentY);
-            if (d.documentElement.scrollTop == currentX &&
-                d.documentElement.scrollLeft == currentY) {
+            if (getScrollLeft() == currentX &&
+                getScrollTop() == currentY) {
                 break;
             }
         }
@@ -194,22 +212,50 @@
             setMainFrameOnLoadHadler();
             return api;
         },
-        highlight: function(element){
+        highlight: function(element, allElements){
             highlightedElement = element;
+            var rect;
+            if (undefined != window.frames[mainFrameName].jQuery && (element instanceof window.frames[mainFrameName].jQuery)){
+                if (1 > element.length) {
+                    element = undefined;
+                } else {
+                    if (true === allElements) {
+                        rect = {left: undefined, right: undefined, top: undefined, bottom: undefined};
+                        element.each(function(i,el){
+                            var thisRect = el.getBoundingClientRect();
+                            rect.left = (undefined === rect.left) ? thisRect.left : Math.min(rect.left, thisRect.left);
+                            rect.right = (undefined === rect.right) ? thisRect.right : Math.max(rect.right, thisRect.right);
+                            rect.top = (undefined === rect.top) ? thisRect.top : Math.min(rect.top, thisRect.top);
+                            rect.bottom = (undefined === rect.bottom) ? thisRect.bottom : Math.max(rect.bottom, thisRect.bottom);
+                        });
+                     } else {
+                        rect = element[0].getBoundingClientRect();                
+                     }
+                }
+            } else if (undefined !== element) {
+                rect = element.getBoundingClientRect();                
+            }
             removeOverlay();
+            var body = window.frames[mainFrameName].document.getElementsByTagName('body')[0];
+            var full = body.getBoundingClientRect();
+            var scrollTop = getScrollTop();
+            var scrollLeft = getScrollLeft();
+            var pageRight = Math.max(full.right + scrollLeft, body.scrollWidth);
+            var pageBottom = Math.max(full.bottom + scrollTop, body.scrollHeight);
             if (undefined !== element) {
-                var rect = element.getBoundingClientRect();
-                var full = window.frames[mainFrameName].document.getElementsByTagName('body')[0].getBoundingClientRect();
-                createOverlay(0, 0, rect.left, full.bottom);
-                createOverlay(rect.right, 0, full.right, full.bottom);
-                createOverlay(rect.left, 0, rect.right, rect.top);
-                createOverlay(rect.left, rect.bottom, rect.right, full.bottom);
-                scrollTo(rect.left, rect.top, rect.right, rect.bottom);
+                var border = 5;
+                createOverlay(0, 0, rect.left + scrollLeft - border, pageBottom);
+                createOverlay(rect.right + scrollLeft + border, 0, pageRight, pageBottom);
+                createOverlay(rect.left + scrollLeft - border, 0, rect.right + scrollLeft + border, rect.top + scrollTop - border);
+                createOverlay(rect.left + scrollLeft - border, rect.bottom + scrollTop + border, rect.right + scrollLeft + border, pageBottom);
+                scrollTo(rect.left + scrollLeft, rect.top + scrollTop, rect.right + scrollLeft, rect.bottom + scrollTop);
+            } else {
+                createOverlay(0, 0, pageRight, pageBottom);
             }
             return api;
         },
     }
-    window.cartFillerAPI = api;
+    window[cartFillerAPIGlobalVarName] = api;
 
     window.addEventListener('message', function(event) {
         var pattern = /^cartFillerMessage:(.*)$/;
@@ -235,6 +281,9 @@
                 showHideChooseJobFrame(false);
                 postMessage('jobDetails', message);
             } else if ('loadWorker' === message.cmd) {
+                if ("string" === typeof cartFillerUrls.workerSrc){
+                    message.src = cartFillerUrls.workerSrc;
+                }
                 var workerScript = document.createElement('script');
                 if (/\?/.test(message.src)){
                     message.src += '&';
