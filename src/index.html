@@ -39,19 +39,26 @@
            onclick="return false;"
            >&gt;</a>
         <a href="#" 
-           class="btn btn-info btn-xs" 
+           class="btn btn-info btn-xs"
            ng-click="chooseJob()"
+           onclick="return false;"
            >{{chooseJobState ? 'Cancel' : 'Choose Job'}}</a>
-        <a href="#" 
-           class="btn btn-default btn-active btn-xs" 
-           ng-click="reloadWorker($event)" 
+        <a href="#"
+           class="btn btn-info btn-xs"
+           ng-click="clickOnReturnResult($event)"
+           onclick="return false;"
+           ng-if="!chooseJobState"
+           >Result</a>
+        <a href="#"
+           class="btn btn-default btn-active btn-xs"
+           ng-click="reloadWorker($event)"
            title="Reload worker"
            ng-if="debugEnabled"
            onclick="return false;"
            >R</a>
         <div ng-style="{opacity: (workerInProgress ? 1 : 0)}">
-            <a href="#" 
-               class="btn btn-danger btn-xs" 
+            <a href="#"
+               class="btn btn-danger btn-xs"
                ng-click="resetWorker()"
                onclick="return false;">RESET WORKER</a>
         </div>
@@ -60,9 +67,9 @@
 
     </div>
     <div id="jobDetails" style="margin-top: 50px;">
-        <div class="alert" 
-             ng-class="jobTaskProgress[jobTaskIndex].complete ? 'alert-success' : 'alert-danger'" 
-             ng-repeat="(jobTaskIndex, jobTask) in jobDetails track by $index" 
+        <div class="alert"
+             ng-class="jobTaskProgress[jobTaskIndex].complete ? 'alert-success' : 'alert-danger'"
+             ng-repeat="(jobTaskIndex, jobTask) in jobDetails track by $index"
              ng-click="toggleTaskProgress(jobTaskIndex)"
         >
             <span><strong>{{jobTitleMap[jobTask.task] ? jobTitleMap[jobTask.task] : jobTask.task}}</strong></span>
@@ -72,9 +79,9 @@
             </div>
             <div>
                 <span
-                   ng-repeat="(jobTaskStepIndex, jobTaskStep) in jobTaskDescriptions[jobTask.task] track by $index" 
+                   ng-repeat="(jobTaskStepIndex, jobTaskStep) in jobTaskDescriptions[jobTask.task] track by $index"
                 >
-                    <a 
+                    <a
                        href="#"
                        title="{{jobTaskStep + ': ' + jobTaskProgress[jobTaskIndex].stepResults[jobTaskStepIndex].message}}"
                        class="btn"

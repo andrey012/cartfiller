@@ -29,19 +29,20 @@
         workerFrameWidthBig = windowWidth * 0.8 - 1,
         workerFrameWidthSmall = windowWidth * 0.2 - 1,
         framesHeight = windowHeight - 15,
-        chooseJobFrameLeft = 0.05 * windowWidth,
-        chooseJobFrameWidth = 0.9 * windowWidth,
-        chooseJobFrameTop = 0.05 * windowHeight,
-        chooseJobFrameHeight = 0.9 * windowHeight,
+        chooseJobFrameLeft = 0.02 * windowWidth,
+        chooseJobFrameWidth = 0.76 * windowWidth,
+        chooseJobFrameTop = 0.02 * windowHeight,
+        chooseJobFrameHeight = 0.96 * windowHeight,
         mainFrameLoaded = false,
-        workerFrameLoaded = false, 
+        workerFrameLoaded = false,
         currentSize = 'big',
         worker = false,
         workerCurrentTaskIndex = false,
         workerCurrentStepIndex = false,
         workerOnLoadHandler = false,
         overlayClassName = 'cartFillerOverlayDiv',
-        cartFillerAPIGlobalVarName = 'cartFillerAPI';
+        cartFillerAPIGlobalVarName = 'cartFillerAPI',
+        resultMessageName = false;
 
     if (undefined !== window[cartFillerAPIGlobalVarName]) {
         alert('CartFiller already attached, please refresh page to reattach');
@@ -278,8 +279,21 @@
             } else if ('chooseJobCancel' === message.cmd) {
                 showHideChooseJobFrame(false);
             } else if ('jobDetails' === message.cmd) {
+                if (message.resultMessage){
+                    resultMessageName = message.resultMessage;
+                } else {
+                    resultMessageName = false;
+                }
                 showHideChooseJobFrame(false);
                 postMessage('jobDetails', message);
+            } else if ('sendResult' === message.cmd) {
+                showHideChooseJobFrame(true);
+                if (resultMessageName){
+                    chooseJobFrame.contentWindow.postMessage(
+                        resultMessageName + ':' + JSON.stringify(message),
+                        '*'
+                    );
+                }
             } else if ('loadWorker' === message.cmd) {
                 if ("string" === typeof cartFillerUrls.workerSrc){
                     message.src = cartFillerUrls.workerSrc;

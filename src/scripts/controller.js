@@ -165,5 +165,13 @@ define(['app'], function(app){
             cfMessage.send('loadWorker', {src: $scope.workerSrc});
             $event.stopPropagation();
         }
+        $scope.returnResult = function(){
+            cfMessage.send('sendResult', {result: $scope.jobTaskProgress, tasks: $scope.jobDetails});
+        }
+        $scope.clickOnReturnResult = function($event){
+            $scope.chooseJobState = true;
+            $scope.returnResult();
+            $event.stopPropagation();
+        }
     });
 });
