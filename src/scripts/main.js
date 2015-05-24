@@ -20,6 +20,7 @@
                         'bootstraptw': ['jquery'],
                     },
                     deps: ['bootstrap'],
+                    waitSeconds: 30
                 });
                 define('cfMessageService', ['app'], function(app){
                     app.service('cfDebug', function(){
