@@ -11,11 +11,42 @@
     <body>
         <div id="navbar" class="navbar" ng-controller="navbarController" ng-cloak>
             <div style="float: left;">
-                <a href="sample-shop.html#/">Home</a>
-                <a href="#" id="linkToBookmark">Go</a>
+                <a href="sample-shop.html#/">Home</a> :
+                <a href="#" id="linkToBookmarkUnminifiedScript">Go Unminified Script</a> :
+                <a href="#" id="linkToBookmarkMinifiedScript">Go Minified Script</a> :
+                <a href="#" id="linkToBookmarkUnminifiedEval">Go Unminified Eval</a> :
+                <a href="#" id="linkToBookmarkMinifiedEval">Go Minified Eval</a>
+                <a href="#" id="linkToBookmarkUnminifiedIframe">Go Unminified Iframe</a>
+                <a href="#" id="linkToBookmarkMinifiedIframe">Go Minified Iframe</a>
+                <a href="#" id="linkToBookmarkMinifiedTab">Go Minified Tab</a>
+                <a href="#" id="linkToBookmarkUnminifiedScriptTab">Go Unminified Script Tab</a>
             </div>
             <script>
-                document.getElementById('linkToBookmark').setAttribute('href', "javascript:(function(){var d=document,a='setAttribute',s=d.createElement('script'),u='" + window.location.href.replace(/samples\/sample-shop.html.*$/, '') + "'; s[a]('src', u+'src/boot/framed.min.js?' + (new Date()).getTime()); s[a]('data-debug', '1'); s[a]('data-choose-job', u+'samples/choose-job.html'); d.getElementsByTagName('head')[0].appendChild(s);})();");
+                var baseUrl = window.location.href.replace(/samples\/sample-shop.html.*$/, '');
+                var framedUrl = baseUrl + '/src/boot/framed.js';
+                var popupUrl = baseUrl + '/src/boot/popup.js';
+                var framedMinifiedUrl = baseUrl + '/src/boot/framed.min.js';
+                var popupMinifiedUrl = baseUrl + '/src/boot/popup.min.js';
+                var chooseJobUrl = baseUrl + '/samples/choose-job.html';
+                var iframeUrlBase = baseUrl + '/src';
+                var iframeUrlDelta = '/boot/i.htm';
+                var iframeMinifiedUrlDelta = '/boot/im.htm';
+                var iframeTabMinifiedUrlDelta = '/boot/tm.htm';
+
+                document.getElementById('linkToBookmarkUnminifiedScript').setAttribute('href', "javascript:(function(d,c,a,u,j,s){s=d.createElement('script');s[a]('src',u+'?'+(new Date()).getTime());s[a](c+'debug',1);s[a](c+'choose-job',j);d.getElementsByTagName('head')[0].appendChild(s);})(document,'data-','setAttribute','" + framedUrl + "','" + chooseJobUrl +"');");
+                document.getElementById('linkToBookmarkMinifiedScript').setAttribute('href', "javascript:(function(d,c,a,u,j,s){s=d.createElement('script');s[a]('src',u+'?'+(new Date()).getTime());s[a](c+'debug',1);s[a](c+'choose-job',j);d.getElementsByTagName('head')[0].appendChild(s);})(document,'data-','setAttribute','" + framedMinifiedUrl + "','" + chooseJobUrl +"');");
+
+                document.getElementById('linkToBookmarkUnminifiedEval').setAttribute('href', "javascript:(function(x,u,j,d){x.open('GET', u+'/boot/framed.js?' + (new Date()).getTime(), false); x.send(); eval('(function(){'+x.response+'}).call({cartFillerEval:[u,j,d]});'); })(new XMLHttpRequest(), '" + window.location.href.replace(/samples\/sample-shop.html.*$/, 'src') + "','" + window.location.href.replace(/samples\/sample-shop.html.*$/, 'samples/choose-job.html') + "',1);");
+                
+                document.getElementById('linkToBookmarkUnminifiedIframe').setAttribute('href', "javascript:(function(d,p,u,v,j,y,x,i){window.addEventListener('message',function(e){if(p.test(x=e.data))eval('(function(){'+x+'}).call({cartFillerEval:[u,j,y]});')},true);i=d.createElement('iframe');d.getElementsByTagName('body')[0].appendChild(i);i.contentWindow.location.href=u+v;})(document,/^\'cartFillerEval\'/,'" + iframeUrlBase +"','" + iframeUrlDelta + "','" + chooseJobUrl + "',1);")
+                document.getElementById('linkToBookmarkMinifiedIframe').setAttribute('href', "javascript:(function(d,p,u,v,j,y,x,i){window.addEventListener('message',function(e){if(p.test(x=e.data))eval('(function(){'+x+'}).call({cartFillerEval:[u,j,y]});')},true);i=d.createElement('iframe');d.getElementsByTagName('body')[0].appendChild(i);i.contentWindow.location.href=u+v;})(document,/^\'cartFillerEval\'/,'" + iframeUrlBase +"','" + iframeMinifiedUrlDelta + "','" + chooseJobUrl + "',1);")
+
+                document.getElementById('linkToBookmarkMinifiedTab').setAttribute('href', "javascript:(function(w,u,v,j,y,x,i){(function(w,d){setTimeout(function(){d=w.document;var s=d.createElement('script');s.innerText='(function(u,j,y,x){window.addEventListener(\\'message\\',function(e){if(/^\\\\\\'cartFillerEval\\\\\\'/.test(x=e.data))eval(\\'(function(){\\'+e.data+\\'}).call({cartFillerEval:[u,j,y]});\\')},true);})(\\''+u+'\\',\\''+j+'\\','+y+');';d.getElementsByTagName('head')[0].appendChild(s);i=d.createElement('iframe');d.getElementsByTagName('body')[0].appendChild(i);i.contentWindow.location.href=u+v;},2000);})(w.open(w.location.href));})(window,'" + iframeUrlBase +"','" + iframeMinifiedUrlDelta + "','" + chooseJobUrl + "',1);");
+
+                document.getElementById('linkToBookmarkMinifiedTab').setAttribute('href', "javascript:(function(d,p,u,v,j,y,x,i){window.addEventListener('message',function(e){if(p.test(x=e.data))eval('(function(){'+x+'}).call({cartFillerEval:[u,j,y]});')},true);i=d.createElement('iframe');d.getElementsByTagName('body')[0].appendChild(i);i.contentWindow.location.href=u+v;})(document,/^\'cartFillerEval\'/,'" + iframeUrlBase +"','" + iframeTabMinifiedUrlDelta + "','" + chooseJobUrl + "',1);")
+
+
+                document.getElementById('linkToBookmarkUnminifiedScriptTab').setAttribute('href', "javascript:(function(d,c,a,u,j,s){s=d.createElement('script');s[a]('src',u+'?'+(new Date()).getTime());s[a](c+'debug',1);s[a](c+'choose-job',j);d.getElementsByTagName('head')[0].appendChild(s);})(document,'data-','setAttribute','" + popupUrl + "','" + chooseJobUrl +"');");
             </script>
             <div style="float: right;">
                 My cart: <strong>{{cart.totalItems}}</strong> item(s), <strong>{{cart.totalCost | number : 2}}</strong> USD. <a href="sample-shop.html#/cart">Open Cart</a>

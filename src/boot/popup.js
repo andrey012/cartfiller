@@ -14,7 +14,7 @@
     config.minified = minified;
     config.scripts = [];
     config.launch = function(){
-        this.modules.ui.framed(document, window);
+        this.modules.ui.popup(document, window);
     }
     var scripts = document.getElementsByTagName('head')[0].getElementsByTagName('script');
     if (!evaled){

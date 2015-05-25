@@ -33,9 +33,16 @@ define('controller', ['app', 'scroll'], function(app){
                 angular.forEach(details.details, function(){
                     $scope.jobTaskProgress.push({complete: false, step: 0, stepsInProgress: {}, stepResults: {}})
                 });
+                var workerSrc = "";
                 if (("string" === typeof details.workerSrc) && (details.workerSrc.length > 0)) {
-                    $scope.workerSrc = details.workerSrc;
-                    cfMessage.send('loadWorker', {src: details.workerSrc});
+                    workerSrc = details.workerSrc;
+                }
+                if (("string" === typeof details.overrideWorkerSrc) && (details.overrideWorkerSrc.length > 0)){
+                    workerSrc = details.overrideWorkerSrc;
+                }
+                if (workerSrc){
+                    $scope.workerSrc = workerSrc;
+                    $scope.loadWorker();
                 } else {
                     $scope.workerSrc = '';
                     alert('Worker script not specified in job description')
@@ -161,8 +168,23 @@ define('controller', ['app', 'scroll'], function(app){
             $event.stopPropagation();
             return false;
         }
+        $scope.loadWorker = function(){
+            var xhr = new XMLHttpRequest();
+            var url = $scope.workerSrc;
+            if (/\?/.test(url)){
+                url += '&';
+            } else {
+                url += '?';
+            }
+            url += (new Date()).getTime();
+            xhr.open('GET', url, false);
+            xhr.send();
+
+            cfMessage.send('loadWorker', {code: xhr.response});
+
+        }
         $scope.reloadWorker = function($event){
-            cfMessage.send('loadWorker', {src: $scope.workerSrc});
+            $scope.loadWorker();
             $event.stopPropagation();
         }
         $scope.returnResult = function(){

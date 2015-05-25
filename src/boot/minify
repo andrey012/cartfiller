@@ -6,4 +6,13 @@ cat helpers/* >> framed.min.js
 echo "" >> framed.min.js
 echo "" >> framed.min.js
 
-echo "}).call(new (function(){this.cartFillerConfiguration = {};}));" >> framed.min.js
+echo "}).call({cartFillerConfiguration:{},cartFillerEval:this.cartFillerEval});" >> framed.min.js
+
+echo "(function(){" > popup.min.js
+echo "" >> popup.min.js
+cat popup.js >> popup.min.js
+cat helpers/* >> popup.min.js
+echo "" >> popup.min.js
+echo "" >> popup.min.js
+
+echo "}).call({cartFillerConfiguration:{},cartFillerEval:this.cartFillerEval});" >> popup.min.js

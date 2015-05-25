@@ -6,7 +6,7 @@
     ];
     var me = this;
     var onScriptLoaded = function(){
-        for (var i in require){
+        for (var i = require.length - 1; i >= 0; i --){
             var found = false;
             for (var j in me.cartFillerConfiguration.scripts){
                 if (me.cartFillerConfiguration.scripts[j].name === require[i]){
@@ -32,7 +32,7 @@
     }
     var head = document.getElementsByTagName('head')[0];
     if (!this.cartFillerConfiguration.minified) {
-        for (var i in require){
+        for (var i = require.length - 1; i >= 0; i --){
             var script = document.createElement('script');
             script.setAttribute('src', this.cartFillerConfiguration.baseUrl + '/boot/helpers/' + require[i] + '.js');
             head.appendChild(script);

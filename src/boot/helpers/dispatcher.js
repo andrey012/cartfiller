@@ -74,6 +74,7 @@
                 resultMessageName = false;
             }
             me.modules.ui.showHideChooseJobFrame(false);
+            message.overrideWorkerSrc = me['data-worker'];
             this.postMessageToWorker('jobDetails', message);
         },
         onMessage_sendResult: function(message){
@@ -83,19 +84,7 @@
             }
         },
         onMessage_loadWorker: function(message){
-            if ("string" === typeof me['data-worker']){
-                message.src = me['data-worker'];
-            }
-            var workerScript = document.createElement('script');
-            if (/\?/.test(message.src)){
-                message.src += '&';
-            } else {
-                message.src += '?';
-            }
-            message.src += (new Date()).getTime();
-            workerScript.setAttribute('src', message.src);
-            worker = false;
-            document.getElementsByTagName('body')[0].appendChild(workerScript);
+            eval(message.code);
         },
         onMessage_invokeWorker: function(message){
             if ((false !== workerCurrentTaskIndex) || (false !== workerCurrentStepIndex)){
@@ -120,12 +109,15 @@
         onMessage_resetWorker: function(){
             resetWorker();
         },
-        onMainFrameLoaded: function() {
+        onMainFrameLoaded: function(watchdog) {
             mainFrameLoaded = true;
             if (workerFrameLoaded && !bootstrapped){
                 this.bootstrapCartFiller();
             }
-            if (workerOnLoadHandler) workerOnLoadHandler();
+            if (workerOnLoadHandler) {
+                workerOnLoadHandler();
+                workerOnLoadHandler = false;
+            }
         },
         postMessageToWorker: function(cmd, details){
             postMessage(me.modules.ui.workerFrameWindow, cmd, details);
