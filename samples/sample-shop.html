@@ -121,7 +121,7 @@
                             </td>
                         </tr>
                         <tr ng-repeat-end ng-if="row.wasAdded">
-                            <td colspan="5">{{row.wasAdded}} item{{(row.wasAdded > 1) ? 's were' : ' was'}} added to cart</td>
+                            <td colspan="5"><strong>{{row.wasAdded}}</strong> item{{(row.wasAdded > 1) ? 's were' : ' was'}} added to cart</td>
                         </tr>
                         <tr ng-if="!searchResults.length">
                             <td ng-if="partNumber.length" colspan="5">Nothing found for <strong>{{partNumber}}</strong></td>

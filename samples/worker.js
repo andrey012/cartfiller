@@ -118,8 +118,11 @@
                         api.highlight().result("Cant find suitable items", true);
                     }
                 },
-                'put appropriate quantity', function(task, row){
+                'find quantity box', function(task, row){
                     var input = window.jQuery(row).find('td:nth-child(5) input[type="text"]:visible');
+                    api.highlight(input).result((1 === input.length) ? "" : "Cant find quantity input");
+                },
+                'put appropriate quantity', function(task, input){
                     input.val(task.quantity);
                     input.change();
                     api.result();
@@ -141,6 +144,15 @@
                     }, function(r){
                         api.result(r ? "" : "Cant add to cart - total cart amount is not changing");
                     });
+                },
+                'make sure, that hint appeared', function(task){
+                    if (!task.quantity) return api.result();
+                    var hint = window.jQuery(suitableRow).next();
+                    api.highlight(hint).result((1 === hint.length) ? "" : "Cant find hint line");
+                },
+                'make sure, that quantity on hint is correct', function(task, hint){
+                    var bold = hint.find('strong');
+                    api.highlight(bold).result(((1 === hint.length) && (task.quantity === parseInt(hint.text()))) ? "" : "Hint problems");
                 },
                 'make sure, that cart amount increased properly', function(task){
                     var cart = cartAmountElement();
