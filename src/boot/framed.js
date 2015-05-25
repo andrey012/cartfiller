@@ -144,7 +144,7 @@
         div.style.top = top + 'px';
         div.style.width = (right - left) + 'px';
         div.style.height = (bottom - top) + 'px';
-        div.style.backgroundColor = 'rgba(0,0,0,0.2)';
+        div.style.backgroundColor = 'rgba(0,0,0,0.3)';
         div.style.zIndex = 100000;
         div.className = overlayClassName;
         div.onclick = function(){removeOverlay();};
@@ -213,6 +213,28 @@
             setMainFrameOnLoadHadler();
             return api;
         },
+        waitFor: function(checkCallback, resultCallback, timeout){
+            if (undefined === timeout){
+                timeout = 20000;
+            }
+            var period = 200;
+            var counter = timeout / period;
+            var fn = function(){
+                var result = checkCallback();
+                if (false === workerCurrentStepIndex) return;
+                if (result) {
+                    resultCallback(result);
+                } else {
+                    counter --;
+                    if (counter > 0){
+                        setTimeout(fn, period);
+                    } else {
+                        resultCallback(false);
+                    }
+                }
+            }
+            setTimeout(fn, period);
+        },
         highlight: function(element, allElements){
             highlightedElement = element;
             var rect;
@@ -236,19 +258,19 @@
             } else if (undefined !== element) {
                 rect = element.getBoundingClientRect();                
             }
-            removeOverlay();
             var body = window.frames[mainFrameName].document.getElementsByTagName('body')[0];
             var full = body.getBoundingClientRect();
             var scrollTop = getScrollTop();
             var scrollLeft = getScrollLeft();
-            var pageRight = Math.max(full.right + scrollLeft, body.scrollWidth);
-            var pageBottom = Math.max(full.bottom + scrollTop, body.scrollHeight);
+            var pageRight = Math.max(full.right + scrollLeft, body.scrollWidth) - 1;
+            var pageBottom = Math.max(full.bottom + scrollTop, body.scrollHeight) - 1;
+            removeOverlay();
             if (undefined !== element) {
                 var border = 5;
-                createOverlay(0, 0, rect.left + scrollLeft - border, pageBottom);
-                createOverlay(rect.right + scrollLeft + border, 0, pageRight, pageBottom);
-                createOverlay(rect.left + scrollLeft - border, 0, rect.right + scrollLeft + border, rect.top + scrollTop - border);
-                createOverlay(rect.left + scrollLeft - border, rect.bottom + scrollTop + border, rect.right + scrollLeft + border, pageBottom);
+                createOverlay(0, 0, Math.max(0, rect.left + scrollLeft - border), pageBottom);
+                createOverlay(Math.min(pageRight, rect.right + scrollLeft + border), 0, pageRight, pageBottom);
+                createOverlay(Math.max(0, rect.left + scrollLeft - border), 0, Math.min(pageRight, rect.right + scrollLeft + border), Math.min(pageBottom, rect.top + scrollTop - border));
+                createOverlay(Math.max(0, rect.left + scrollLeft - border), Math.max(0, rect.bottom + scrollTop + border), Math.min(pageRight, rect.right + scrollLeft + border), pageBottom);
                 scrollTo(rect.left + scrollLeft, rect.top + scrollTop, rect.right + scrollLeft, rect.bottom + scrollTop);
             } else {
                 createOverlay(0, 0, pageRight, pageBottom);
