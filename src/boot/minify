@@ -1,0 +1,9 @@
+#!/bin/bash
+echo "(function(){" > framed.min.js
+echo "" >> framed.min.js
+cat framed.js >> framed.min.js
+cat helpers/* >> framed.min.js
+echo "" >> framed.min.js
+echo "" >> framed.min.js
+
+echo "}).call(new (function(){this.cartFillerConfiguration = {};}));" >> framed.min.js

@@ -7,10 +7,10 @@
         return me.modules.ui.mainFrameWindow.document;
     }
     var getScrollLeft = function(){
-        return getDocument().documentElement.scrollLeft ||  getDocument().body.scrollLeft
+        return getDocument().documentElement.scrollLeft || getDocument().body.scrollLeft;
     }
     var getScrollTop = function(){
-        return  getDocument().documentElement.scrollTop ||  getDocument().body.scrollTop
+        return  getDocument().documentElement.scrollTop || getDocument().body.scrollTop;
 
     }
     var createOverlay = function(left, top, right, bottom){

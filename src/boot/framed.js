@@ -8,30 +8,19 @@
             this.modules.ui.framed(document, window);
         }
     }
-    if (!minified){
-        var scripts = document.getElementsByTagName('script');
-        var pattern = /\/boot\/framed.js(\?\d*)?$/;
-        for (var i = scripts.length - 1; i >= 0; i--){
-            if (pattern.test(scripts[i].getAttribute('src'))) {
-                var attrs = scripts[i].attributes;
-                for (var j = attrs.length - 1 ; j >= 0; j --){
-                    if (/^data-/.test(attrs[j].name)){
-                        this.cartFillerConfiguration[attrs[j].name] = attrs[j].value;
-                    }
-                }
-                var script = document.createElement('script');
-                var baseUrl = this.cartFillerConfiguration.baseUrl = attrs.src.value.replace(pattern, '');
-                script.setAttribute('src', baseUrl + '/boot/helpers/loader.js');
-                document.getElementsByTagName('head')[0].appendChild(script);
-                return;
-            };
+    var scripts = document.getElementsByTagName('head')[0].getElementsByTagName('script');
+    var me = scripts[scripts.length - 1];
+    var baseUrl = me.getAttribute('src').replace(/\/boot\/[^\/]+\.js(\?\d*)?/, '');
+    this.cartFillerConfiguration.baseUrl = baseUrl;
+    var attrs = me.attributes;
+    for (var j = attrs.length - 1 ; j >= 0; j --){
+        if (/^data-/.test(attrs[j].name)){
+            this.cartFillerConfiguration[attrs[j].name] = attrs[j].value;
         }
-        alert('Unable to identify myself');
-
     }
-    return;
-
-
-
-
+    if (!minified) {
+        var script = document.createElement('script');
+        script.setAttribute('src', baseUrl + '/boot/helpers/loader.js');
+        document.getElementsByTagName('head')[0].appendChild(script);
+    }
 }).call(this, document, window);

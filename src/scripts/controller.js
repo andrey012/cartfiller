@@ -1,7 +1,7 @@
-define(['app'], function(app){
+define('controller', ['app', 'scroll'], function(app){
     'use strict';
     app
-    .controller('indexController', function ($scope, $rootScope, $http, cfMessage, $timeout, cfDebug){
+    .controller('indexController', function ($scope, $rootScope, $http, cfMessage, $timeout, cfDebug, cfScroll){
         $scope.steps = [{name:1}, {name:2}];
         $scope.chooseJobState = false;
         $scope.toggleSize = function(){
@@ -146,7 +146,7 @@ define(['app'], function(app){
         $scope.doNextStep = function(){
             if ($scope.currentTask < $scope.jobDetails.length){
                 var taskDiv = jQuery('#jobDetails > div:nth-child(' + ($scope.currentTask + 1) + ')');
-                taskDiv[0].scrollIntoView();
+                cfScroll(taskDiv[0]);
                 $scope.invokeWorker($scope.currentTask, $scope.currentStep);
             } else {
                 $scope.running = false;
