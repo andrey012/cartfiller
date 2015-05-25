@@ -12,7 +12,11 @@
         <div id="navbar" class="navbar" ng-controller="navbarController" ng-cloak>
             <div style="float: left;">
                 <a href="sample-shop.html#/">Home</a>
+                <a href="#" id="linkToBookmark">Go</a>
             </div>
+            <script>
+                document.getElementById('linkToBookmark').setAttribute('href', "javascript:(function(){var d=document,a='setAttribute',s=d.createElement('script'),u='" + window.location.href.replace(/samples\/sample-shop.html.*$/, '') + "'; s[a]('src', u+'src/boot/framed.js?' + (new Date()).getTime()); s[a]('data-debug', '1'); s[a]('data-choose-job', u+'samples/choose-job.html'); d.getElementsByTagName('head')[0].appendChild(s);})();");
+            </script>
             <div style="float: right;">
                 My cart: <strong>{{cart.totalItems}}</strong> item(s), <strong>{{cart.totalCost | number : 2}}</strong> USD. <a href="sample-shop.html#/cart">Open Cart</a>
             </div>
@@ -116,7 +120,10 @@
                     })
                     ;
             })
-            .controller('indexController', function($scope, $rootScope){
+            .controller('indexController', function($scope, $rootScope, $location){
+                if (/\?partNumber\=/.test($location.absUrl())){
+                    $location.path("/search");
+                }
             })
             .controller('navbarController', function($scope, $rootScope){
                 if (angular.isUndefined($rootScope.cart)){

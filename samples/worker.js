@@ -1,5 +1,5 @@
 (function(window, document, undefined){
-    cartFillerAPI.registerWorker(function(window, document, api, undefined){
+    cartFillerAPI().registerWorker(function(window, document, api, undefined){
         var cartIsEmpty = false;
         var cartAmountElement = function(){
             return window.jQuery('#navbar > div > strong:nth-child(1):visible');
@@ -73,7 +73,7 @@
                     homeLink.each(function(i,el){el.click();});
                     api.waitFor(
                         function(){
-                            return 1 === searchBox().length;
+                            return (window.jQuery) && (1 === searchBox().length);
                         },
                         function(result){
                             api.result(result ? "" : "Cant navigate to home");
@@ -95,7 +95,7 @@
                 'click search button', function(task, searchButton){
                     searchButton.each(function(i,el){el.click();});
                     api.waitFor(function(){
-                        return 1 === window.jQuery('h2:contains("Search results"):visible').length;
+                        return (window.jQuery) && (1 === window.jQuery('h2:contains("Search results"):visible').length);
                     }, function(result){
                         api.result(result? "" : "Cant search");
                     });
