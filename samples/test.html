@@ -15,12 +15,26 @@
             $(window).ready(function(){
 
                 var testFrame = window.frames['testFrame'];
-                QUnit.config.testTimeout = 15000;
+                setTimeout(function waitForTestFrame(){
+
+                    if (testFrame.document && (testFrame.document.readyState === "complete")){
+                        QUnit.config.testTimeout = 150000;
+                        for (var i = testFrame.jQuery('#bookmarklets a.bookmarklet').length - 1 ; i >= 0; i--){
+                            testFrame.onload = function(){
+                                alert(1);
+                            }
+                            testFrame.location.href = "sample-shop.html";
+                        }
+                        return;
+                    }
+                    setTimeout(waitForTestFrame, 100);
+                }, 100);
+                return;
+                testFrame
+                .jQuery('#bookmarklets a:nth-child('+i+')')
+                .each(function(i,el){ el.click(); });
                 QUnit.test("QuickRun", function(assert){
                     var done = assert.async();
-                    testFrame
-                    .jQuery('#bookmarklets a:nth-child(2)')
-                    .each(function(i,el){ el.click(); });
                     var tries = 100;
                     setTimeout(function waitForSubmitLink(){
                         try {

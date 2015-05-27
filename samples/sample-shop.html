@@ -42,18 +42,21 @@
                             (minified ? 'Minified ' : 'Unminified ') +
                             (type ? 'Popup ' : 'Framed ');
                         a = document.createElement('a');
+                        a.setAttribute('class', 'bookmarklet');
                         a.href = scriptBookmarklet(type, minified ? injectMinifiedUrl : injectUrl);
                         a.textContent = name + 'Script';
                         div.appendChild(a);
                         div.appendChild(document.createTextNode(' : '));
 
                         a = document.createElement('a');
+                        a.setAttribute('class', 'bookmarklet');
                         a.href = evalBookmarklet(type, minified ? injectMinifiedDeltaUrl : injectDeltaUrl);
                         a.textContent = name + 'Eval';
                         div.appendChild(a);
                         div.appendChild(document.createTextNode(' : '));
 
                         a = document.createElement('a');
+                        a.setAttribute('class', 'bookmarklet');
                         a.href = iframeBookmarklet(type, minified, iframeDeltaUrl);
                         a.textContent = name + 'Iframe';
                         div.appendChild(a);
