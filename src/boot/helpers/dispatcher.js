@@ -31,7 +31,7 @@
     }
 
     this.cartFillerConfiguration.scripts.push({
-        name: 'dispatcher',
+        getName: function(){ return 'dispatcher'; },
         init: function(){
             var dispatcher = this;
             window.addEventListener('message', function(event) {

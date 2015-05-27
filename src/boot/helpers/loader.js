@@ -8,9 +8,10 @@
     var onScriptLoaded = function(){
         for (var i = require.length - 1; i >= 0; i --){
             var found = false;
-            for (var j in me.cartFillerConfiguration.scripts){
-                if (me.cartFillerConfiguration.scripts[j].name === require[i]){
+            for (var j = me.cartFillerConfiguration.scripts.length - 1; j >= 0; j--){
+                if (me.cartFillerConfiguration.scripts[j].getName() === require[i]){
                     found = true;
+                    break;
                 }
             }
             if (!found) return;
@@ -20,9 +21,9 @@
             return me.cartFillerConfiguration.modules.api;
         }
         me.cartFillerConfiguration.modules = {};
-        for (var j in me.cartFillerConfiguration.scripts){
+        for (var j = me.cartFillerConfiguration.scripts.length - 1; j >= 0; j--){
             var script = me.cartFillerConfiguration.scripts[j];
-            me.cartFillerConfiguration.modules[script.name] = script;
+            me.cartFillerConfiguration.modules[script.getName()] = script;
         }
         me.cartFillerConfiguration.launch();
     }

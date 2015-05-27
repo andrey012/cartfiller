@@ -58,7 +58,7 @@
         return me.baseUrl + '/index.html';        
     }
     me.scripts.push({
-        name: 'ui',
+        getName: function(){ return 'ui'; },
         setSize: function() {},
         showHideChooseJobFrame: function() {},
         highlight: function(element, allElements){

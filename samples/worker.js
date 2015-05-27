@@ -11,17 +11,8 @@
 (function(window, document, undefined){
     // register callback with apiCart
     /**
-     * @function CartFiller~SampleWorker~registrationCallback
-     * @param {Window} window
-     * @param {Document} document, undefined will be passed here, to prevent
-     * worker from accessing document. Instead worker should access
-     * window.document. This is because worker is instantiated in the top frame
-     * but operates with main frame where target site is opened, and document
-     * in that main frame changes time to time.
-     * @param {CartFillerAPI} api
-     * @param {Object} task When called first time - contains empty object. When 
-     * particular step callbacks, this object will each time be reinitialized with 
-     * next task
+     * @function CartFiller~SampleWorker~registerCallback
+     * @see CartFiller~Worker~registerCallback
      * @access private
      */
     cartFillerAPI().registerWorker(function(window, document, api, task){
