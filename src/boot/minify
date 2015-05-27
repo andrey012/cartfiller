@@ -1,18 +1,9 @@
 #!/bin/bash
-echo "(function(){" > framed.min.js
-echo "" >> framed.min.js
-cat framed.js >> framed.min.js
-cat helpers/* >> framed.min.js
-echo "" >> framed.min.js
-echo "" >> framed.min.js
+echo "(function(){" > inject.min.js
+echo "" >> inject.min.js
+cat inject.js >> inject.min.js
+cat helpers/* >> inject.min.js
+echo "" >> inject.min.js
+echo "" >> inject.min.js
 
-echo "}).call({cartFillerConfiguration:{},cartFillerEval:this.cartFillerEval});" >> framed.min.js
-
-echo "(function(){" > popup.min.js
-echo "" >> popup.min.js
-cat popup.js >> popup.min.js
-cat helpers/* >> popup.min.js
-echo "" >> popup.min.js
-echo "" >> popup.min.js
-
-echo "}).call({cartFillerConfiguration:{},cartFillerEval:this.cartFillerEval});" >> popup.min.js
+echo "}).call({cartFillerConfiguration:{},cartFillerEval:this.cartFillerEval});" >> inject.min.js

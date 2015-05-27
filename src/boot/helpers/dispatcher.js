@@ -2,6 +2,7 @@
     'use strict';
     var
         worker = false,
+        workerCurrentTask = {},
         workerCurrentTaskIndex = false,
         workerCurrentStepIndex = false,
         workerOnLoadHandler = false,
@@ -92,13 +93,22 @@
                 alert(err);
                 this.postMessage('workerStepResult', {index: message.index, step: message.step, result: err});
             } else {
+                if (workerCurrentTaskIndex !== message.index){
+                    for (var key in workerCurrentTask){
+                        delete workerCurrentTask[key];
+                    }
+                    for (var key in message.details){
+                        workerCurrentTask[key] = message.details[key];
+                    }
+                }
                 workerCurrentTaskIndex = message.index;
                 workerCurrentStepIndex = message.step;
                 var env = {
-                    messageIndex: message.index
+                    stepIndex: message.index,
+                    task: message.details
                 }
                 try {
-                    worker[message.task][(message.step * 2) + 1](message.details, highlightedElement, env);
+                    worker[message.task][(message.step * 2) + 1](highlightedElement, env);
                 } catch (err){
                     alert(err);
                     debugger;
@@ -130,7 +140,7 @@
             this.postMessageToWorker('bootstrap', {lib : me.baseUrl.replace(/src/, 'lib/'), debug: me['data-debug']});
         },
         registerWorker: function(cb, api){
-            worker = cb(me.modules.ui.mainFrameWindow, undefined, api);
+            worker = cb(me.modules.ui.mainFrameWindow, undefined, api, workerCurrentTask);
             var list = {};
             for (var taskName in worker){
                 if (worker.hasOwnProperty(taskName)){
@@ -160,7 +170,8 @@
                     index: workerCurrentTaskIndex, 
                     step: workerCurrentStepIndex, 
                     status: status, 
-                    message: message
+                    message: message,
+                    nop: recoverable === 'nop'
                 }
             );
             resetWorker();

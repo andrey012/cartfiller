@@ -11,6 +11,10 @@
             me.modules.dispatcher.submitWorkerResult(message, recoverable);
             return this;
         },
+        nop: function(){
+            me.modules.dispatcher.submitWorkerResult('', 'nop');
+            return this;
+        },
         onload: function(cb){
             me.modules.dispatcher.registerWorkerOnloadCallback(cb);
             return api;

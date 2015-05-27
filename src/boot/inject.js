@@ -14,7 +14,13 @@
     config.minified = minified;
     config.scripts = [];
     config.launch = function(){
-        this.modules.ui.popup(document, window);
+        if (String(config['data-type']) === "0") {
+            this.modules.ui.framed(document, window);
+        } else if (String(config['data-type']) === "1"){
+            this.modules.ui.popup(document, window);
+        } else {
+            alert("Type not specified, should be 0 for framed, 1 for popup");
+        }
     }
     var scripts = document.getElementsByTagName('head')[0].getElementsByTagName('script');
     if (!evaled){
@@ -28,9 +34,10 @@
         }
     } else {
         config.baseUrl = this.cartFillerEval[0];
-        config['data-choose-job'] = this.cartFillerEval[1];
-        config['data-debug'] = this.cartFillerEval[2];
-        config['data-worker'] = this.cartFillerEval[3];
+        config['data-type'] = this.cartFillerEval[1];
+        config['data-choose-job'] = this.cartFillerEval[2];
+        config['data-debug'] = this.cartFillerEval[3];
+        config['data-worker'] = this.cartFillerEval[4];
     }
     if (!minified) {
         var script = document.createElement('script');

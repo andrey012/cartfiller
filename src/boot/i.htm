@@ -4,9 +4,11 @@
         <script>
             (function(x){
                 x = new XMLHttpRequest();
-                x.open('GET', window.location.href.replace(/\/i\.htm(\?.*)?$/, '/framed.js'), false);
+                x.onload = function(){
+                    window.parent.postMessage('\'cartFillerEval\';' + x.response, '*');
+                };
+                x.open('GET', window.location.href.replace(/\/i\.htm(\?.*)?$/, '/inject'+(/\?min\&/.test(window.location.href) ? '.min' : '') +'.js'), false);
                 x.send();
-                window.parent.postMessage('\'cartFillerEval\';' + x.response, '*');
 
             })();
         </script>

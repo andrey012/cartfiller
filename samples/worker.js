@@ -1,35 +1,109 @@
+/** @namespace CartFiller */
+/**
+ * Anonymous worker wrapper function to make things private.
+ * Registers its callback with cartFiller.
+ * @function CartFiller~workerWrapper
+ * @param {Window} window
+ * @param {Document} document
+ * @param {undefined} undefined
+ * @access private
+ */
 (function(window, document, undefined){
-    cartFillerAPI().registerWorker(function(window, document, api, undefined){
+    // register callback with apiCart
+    /**
+     * @function CartFiller~SampleWorker~registrationCallback
+     * @param {Window} window
+     * @param {Document} document, undefined will be passed here, to prevent
+     * worker from accessing document. Instead worker should access
+     * window.document. This is because worker is instantiated in the top frame
+     * but operates with main frame where target site is opened, and document
+     * in that main frame changes time to time.
+     * @param {CartFillerAPI} api
+     * @param {Object} task When called first time - contains empty object. When 
+     * particular step callbacks, this object will each time be reinitialized with 
+     * next task
+     * @access private
+     */
+    cartFillerAPI().registerWorker(function(window, document, api, task){
+        // some state variables
+        /** 
+         * @member boolean CartFiller~SampleWorker~cartIsEmpty Indicates, that cart is empty. If set to true, then several steps can be skipped
+         * @access private
+        */
         var cartIsEmpty = false;
+
+        /** 
+         * @member integer CartFiller~SampleWorker~currentCartAmount Remembers
+         * total cart amount before we add new items to the cart. Used to 
+         * verify, that exactly required number of items was added to the cart
+         * @access private
+         */
+        var currentCartAmount; 
+        
+        /**
+         * @member {tr} CartFiller~SampleWorker~suitableRow Remembers suitable
+         * offer row, which will later be used to add items to cart
+         * @access private
+         */
+        var suitableRow;
+        /**
+         * Returns total cart amount element in the header
+         * @function CartFiller~SampleWorker~cartAmountElement
+         * @returns {jQuery}
+         * @access private
+         */
         var cartAmountElement = function(){
             return window.jQuery('#navbar > div > strong:nth-child(1):visible');
         }
+        /**
+         * Returns search box element
+         * @function CartFiller~SampleWorker~searchBox
+         * @returns {jQuery}
+         * @access private
+         */
         var searchBox = function(){
             return window.jQuery('input[type="text"][name="partNumber"]:visible');
         }
+        /**
+         * Returns search results heading. Used to detect, that we are on
+         * search results page
+         * @function CartFiller~SampleWorker~searchResultsHeading
+         * @returns {jQuery}
+         * @access private
+         */
         var searchResultsHeading = function(){
             return window.jQuery('h2:contains("Search results"):visible');
         }
-        var currentCartAmount; 
-        var suitableRow;
+        /** 
+         * Object, that contains functions for particular steps of particular
+         * tasks. 
+         * @class CartFiller~SampleWorker~TaskDefinitions
+         * @augments CartFiller~TaskDefinitions
+         */
         return {
+            /**
+             * Makes sure, that cart is empty. If it is not - removes all
+             * items from cart
+             * @member {Array} CartFiller~SampleWorker~TaskDefinitions~clearCart 
+             * @access public
+             */
             clearCart: [
-                'find total amount of items in the cart', function(task){
+                'find total amount of items in the cart', function(){
                     var strong = cartAmountElement();
                     api.highlight(strong).result((1 === strong.length) ? "" : "Cant find amount in cart");
                 },
-                'check, that cart has more then 0 items', function(task, strong){
+                'check, that cart has more then 0 items', function(strong){
                     cartIsEmpty = ("0" === strong.text());
                     api.highlight(strong);
                     api.result();
                 },
-                'if cart is not empty - find link to open cart', function(task){
-                    if (cartIsEmpty) return api.result();
+                'if cart is not empty - find link to open cart', function(){
+                    if (cartIsEmpty) return api.nop();
                     var cartLink = window.jQuery('#navbar a:contains("Open Cart"):visible');
                     api.highlight(cartLink).result((1 === cartLink.length) ? "" : "Cant find link to open cart");
                 },
-                'if cart is not empty - click on open cart link', function(task, cartLink){
-                    if (cartIsEmpty) return api.result();
+                'if cart is not empty - click on open cart link', function(cartLink){
+                    if (cartIsEmpty) return api.nop();
                     cartLink.each(function(i,el){el.click();});
                     api.waitFor(
                         function(){ 
@@ -40,13 +114,13 @@
                         }
                     );
                 },
-                'if cart is not empty - find clear cart button', function(task){
-                    if (cartIsEmpty) return api.result();
+                'if cart is not empty - find clear cart button', function(){
+                    if (cartIsEmpty) return api.nop();
                     var removeAllItems = window.jQuery('a:contains("Remove all items"):visible');
                     api.highlight(removeAllItems).result((1 <= removeAllItems.length) ? "" : "Cant find clear cart button");
                 },
-                'if cart is not empty - click clear cart button', function(task, removeAllItems){
-                    if (cartIsEmpty) return api.result();
+                'if cart is not empty - click clear cart button', function(removeAllItems){
+                    if (cartIsEmpty) return api.nop();
                     removeAllItems.each(function(i,el){el.click();});
                     api.highlight(removeAllItems);
                     api.waitFor(
@@ -58,22 +132,29 @@
                         }
                     );
                 },
-                'if cart was not empty - find cart amount element again', function(task){
-                    if (cartIsEmpty) return api.result();
+                'if cart was not empty - find cart amount element again', function(){
+                    if (cartIsEmpty) return api.nop();
                     var strong = cartAmountElement();
                     api.highlight(strong).result((1 === strong.length) ? "" : "Cant find cart amount element");
                 },
-                'if cart was not empty - make sure it is empty now', function(task){
-                    if (cartIsEmpty) return api.result();
+                'if cart was not empty - make sure it is empty now', function(){
+                    if (cartIsEmpty) return api.nop();
                     api.highlight(cartAmountElement()).result(("0" === cartAmountElement().text()) ? "" : "Cant clear cart - it is still not empty");
                 }
             ],
+            /**
+             * Searches for particular partnumber then looks for 
+             * suitable offer and adds requested amount of items to cart, 
+             * then makes sure, that requested amount of items were added
+             * @member {Array} CartFiller~SampleWorker~TaskDefinitions~addToCart
+             * @access public
+             */
             addToCart: [
-                'go to home', function(task){
+                'go to home', function(){
                     var homeLink = window.jQuery('#navbar a:contains("Home"):visible');
                     api.highlight(homeLink).result((1 === homeLink.length) ? "" : "Cant find home link");
                 }, 
-                'click home', function(task, homeLink){
+                'click home', function(homeLink){
                     homeLink.each(function(i,el){el.click();});
                     api.waitFor(
                         function(){
@@ -84,19 +165,19 @@
                         }
                     );
                 },
-                'find search box', function(task){
+                'find search box', function(){
                     var input = searchBox();
                     api.highlight(input).result((1 === input.length) ? "" : "Cant find search box");
                 },
-                'put part number into search box', function(task, input){
+                'put part number into search box', function(input){
                     input.val(task.partno);
                     api.highlight(input).result();
                 },
-                'find search button', function(task){
+                'find search button', function(){
                     var searchButton = window.jQuery('input[type="submit"][value="Search"]:visible');
                     api.highlight(searchButton).result((1 === searchButton.length) ? "" : "Cant find search button");
                 },
-                'click search button', function(task, searchButton){
+                'click search button', function(searchButton){
                     searchButton.each(function(i,el){el.click();});
                     api.waitFor(function(){
                         return (window.jQuery) && (1 === searchResultsHeading().length);
@@ -104,7 +185,7 @@
                         api.highlight(searchResultsHeading()).result(result? "" : "Cant search");
                     });
                 },
-                'find suitable item', function(task){
+                'find suitable item', function(){
                     var rows = window.jQuery('#container table tbody tr');
                     var found = false;
                     rows.each(function(i,el){
@@ -122,25 +203,25 @@
                         api.highlight().result("Cant find suitable items", true);
                     }
                 },
-                'find quantity box', function(task, row){
+                'find quantity box', function(row){
                     var input = window.jQuery(row).find('td:nth-child(5) input[type="text"]:visible');
                     api.highlight(input).result((1 === input.length) ? "" : "Cant find quantity input");
                 },
-                'put appropriate quantity', function(task, input){
+                'put appropriate quantity', function(input){
                     input.val(task.quantity);
                     input.change();
                     api.highlight(input).result();
                 },
-                'remember current amount in cart', function(task){
+                'remember current amount in cart', function(){
                     var cart = cartAmountElement();
                     currentCartAmount = parseInt(cart.text());
                     api.highlight(cart).result();
                 },
-                'find Add to cart button', function(task){
+                'find Add to cart button', function(){
                     var add = window.jQuery(suitableRow).find('td:nth-child(5) a:visible');
                     api.highlight(add).result((1 === add.length) ? "" : "Cant find add to cart link");
                 },
-                'click on Add to cart button', function(task, add){
+                'click on Add to cart button', function(add){
                     if (!task.quantity) return api.result();
                     add.each(function(i,el){el.click();});
                     api.waitFor(function(){
@@ -149,16 +230,16 @@
                         api.highlight(add).result(r ? "" : "Cant add to cart - total cart amount is not changing");
                     });
                 },
-                'make sure, that hint appeared', function(task){
+                'make sure, that hint appeared', function(){
                     if (!task.quantity) return api.result();
                     var hint = window.jQuery(suitableRow).next();
                     api.highlight(hint).result((1 === hint.length) ? "" : "Cant find hint line");
                 },
-                'make sure, that quantity on hint is correct', function(task, hint){
+                'make sure, that quantity on hint is correct', function(hint){
                     var bold = hint.find('strong');
                     api.highlight(bold).result(((1 === hint.length) && (task.quantity === parseInt(hint.text()))) ? "" : "Hint problems");
                 },
-                'make sure, that cart amount increased properly', function(task){
+                'make sure, that cart amount increased properly', function(){
                     var cart = cartAmountElement();
                     api.highlight(cart);
                     api.result(((currentCartAmount + task.quantity) === parseInt(cart.text())) ? "" : "new total cart amount is incorrect");

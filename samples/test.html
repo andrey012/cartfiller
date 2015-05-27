@@ -19,7 +19,7 @@
                 QUnit.test("QuickRun", function(assert){
                     var done = assert.async();
                     testFrame
-                    .jQuery('#linkToBookmarkUnminifiedScript')
+                    .jQuery('#bookmarklets a:nth-child(2)')
                     .each(function(i,el){ el.click(); });
                     var tries = 100;
                     setTimeout(function waitForSubmitLink(){
