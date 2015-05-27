@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <link rel="stylesheet" href="../lib/qunit/qunit/qunit.css"/>
+        <script src="../lib/jquery/dist/jquery.min.js"></script>
+        <script src="../lib/qunit/qunit/qunit.js"></script>
+    </head>
+    <body>
+        <iframe name="testFrame" src="sample-shop.html" style="width: 100%; height: 50%">
+
+        </iframe>
+        <div id="qunit"></div>
+        <div id="qunit-fixture"></div>
+        <script>
+            $(window).ready(function(){
+
+                var testFrame = window.frames['testFrame'];
+                QUnit.config.testTimeout = 15000;
+                QUnit.test("QuickRun", function(assert){
+                    var done = assert.async();
+                    testFrame
+                    .jQuery('#linkToBookmarkUnminifiedScript')
+                    .each(function(i,el){ el.click(); });
+                    var tries = 100;
+                    setTimeout(function waitForSubmitLink(){
+                        try {
+                            if (!testFrame.jQuery('iframe[name="cartFillerChooseJobFrame"]:visible').length) throw "";
+                            var link = testFrame.frames['cartFillerChooseJobFrame'].document.getElementById('sampleSubmitLink');
+                            if (link) {
+                                link.click();
+                                setTimeout(function waitForWorkerToLoad() {
+                                    try {
+                                        if (testFrame.frames['cartFillerWorkerFrame'].document.readyState !== "complete") throw "";
+                                        var runButton = testFrame.frames['cartFillerWorkerFrame'].document.getElementById('runButton');
+                                        if (runButton && !runButton.disabled){
+                                            runButton.click();
+                                            setTimeout(function waitForCompleted(){
+                                                try {
+                                                    if (testFrame.frames['cartFillerWorkerFrame'].document.getElementById('finishReached')) {
+                                                        assert.ok(true);
+                                                        done();
+                                                        return;
+                                                    } 
+                                                } catch (e){}
+                                                setTimeout(waitForCompleted, 100);
+
+                                            },0);
+                                            return;
+                                        }
+                                    } catch (e){}
+                                    setTimeout(waitForWorkerToLoad, 100);
+                                },0);
+                                return;
+                            }
+
+                        } catch (e) {}
+                        setTimeout(waitForSubmitLink, 100);
+                    },0);
+                });
+            });
+        </script>
+    </body>
+</html>

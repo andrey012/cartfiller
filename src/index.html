@@ -14,28 +14,31 @@
            ng-click="stop($event)"
            class="btn btn-xs btn-danger"
            onclick="return false;"
+           ng-disabled="!workerSrc"
            >Stop</a>
         <a href="#"
+           id="runButton"
            ng-if="!running"
            ng-click="run(false, $event)"
            class="btn btn-xs btn-success"
            title="Run"
-           ng-disabled="workerInProgress"
+           ng-disabled="workerInProgress || !workerSrc"
            onclick="return false;"
+           disabled="disabled"
            >&gt;&gt;&gt;</a>
         <a href="#"
            ng-if="!running"
            ng-click="run(true, $event)"
            class="btn btn-xs btn-info"
            title="Slow"
-           ng-disabled="workerInProgress"
+           ng-disabled="workerInProgress || !workerSrc"
            onclick="return false;"
            >&gt;..&gt;</a>
         <a href="#"
            ng-click="clickOnNextStep($event);"
            class="btn btn-xs btn-info"
            title="Step"
-           ng-disabled="workerInProgress"
+           ng-disabled="workerInProgress || !workerSrc"
            onclick="return false;"
            >&gt;</a>
         <a href="#" 
@@ -93,6 +96,12 @@
                     {{jobTaskProgress[jobTaskIndex].stepResults[jobTaskStepIndex].message}}
                 </span>
             </div>
+        </div>
+        <div class="alert alert-warning"
+             ng-if="finishReached"
+             id="finishReached"
+             >
+            Completed
         </div>
     </div>
     <script data-main="scripts/main" src="../lib/requirejs/require.js"></script>

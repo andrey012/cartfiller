@@ -21,6 +21,7 @@ define('controller', ['app', 'scroll'], function(app){
         $timeout(function(){$scope.chooseJob();}, 0);
         $scope.debugEnabled = cfDebug.debugEnabled;
         $scope.workerSrc = false;
+        $scope.finishReached = false;
         cfMessage.register(function(cmd, details){
             if (cmd === 'jobDetails'){
                 cfMessage.send('makeSmaller');
@@ -58,8 +59,7 @@ define('controller', ['app', 'scroll'], function(app){
                     $scope.incrementCurrentStep();
                     proceed = true
                 } else if ('skip' === details.status){
-                    $scope.currentStep = 0;
-                    $scope.currentTask ++;
+                    $scope.incrementCurrentStep(true);
                     proceed = true;
                 } else {
                     proceed = false;
@@ -76,11 +76,17 @@ define('controller', ['app', 'scroll'], function(app){
                 $scope.workerInProgress = false;
             }
         });
-        $scope.incrementCurrentStep = function(){
+        $scope.incrementCurrentStep = function(skip){
             $scope.currentStep ++;
-            if ($scope.jobTaskDescriptions[$scope.jobDetails[$scope.currentTask].task].length <= $scope.currentStep){
+            if (skip || $scope.jobTaskDescriptions[$scope.jobDetails[$scope.currentTask].task].length <= $scope.currentStep){
                 $scope.currentStep = 0;
                 $scope.currentTask ++;
+                if ($scope.currentTask >= $scope.jobDetails.length){
+                    $scope.finishReached = true;
+                    setTimeout(function(){
+                        cfScroll(jQuery('#finishReached')[0]);
+                    },0);
+                }
             }
         }
         $scope.getNextStepToDo = function(index){
@@ -169,7 +175,6 @@ define('controller', ['app', 'scroll'], function(app){
             return false;
         }
         $scope.loadWorker = function(){
-            var xhr = new XMLHttpRequest();
             var url = $scope.workerSrc;
             if (/\?/.test(url)){
                 url += '&';
@@ -177,10 +182,14 @@ define('controller', ['app', 'scroll'], function(app){
                 url += '?';
             }
             url += (new Date()).getTime();
-            xhr.open('GET', url, false);
+            var xhr = new XMLHttpRequest();
+            xhr.onload = function(){
+                cfMessage.send('loadWorker', {code: xhr.response});
+
+            };
+            xhr.open('GET', url, true);
             xhr.send();
 
-            cfMessage.send('loadWorker', {code: xhr.response});
 
         }
         $scope.reloadWorker = function($event){

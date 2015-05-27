@@ -7,6 +7,9 @@
         var searchBox = function(){
             return window.jQuery('input[type="text"][name="partNumber"]:visible');
         }
+        var searchResultsHeading = function(){
+            return window.jQuery('h2:contains("Search results"):visible');
+        }
         var currentCartAmount; 
         var suitableRow;
         return {
@@ -17,6 +20,7 @@
                 },
                 'check, that cart has more then 0 items', function(task, strong){
                     cartIsEmpty = ("0" === strong.text());
+                    api.highlight(strong);
                     api.result();
                 },
                 'if cart is not empty - find link to open cart', function(task){
@@ -32,22 +36,22 @@
                             return ((undefined !== window.jQuery) && (1 === window.jQuery('h2:contains("Your cart"):visible').length));
                         }, 
                         function(result){ 
-                            api.result(result ? "" : "Cant open cart");
+                            api.highlight().result(result ? "" : "Cant open cart");
                         }
                     );
                 },
                 'if cart is not empty - find clear cart button', function(task){
                     if (cartIsEmpty) return api.result();
-                    var clearCart = window.jQuery('a:contains("Remove all items"):visible');
-                    api.highlight(clearCart).result((1 <= clearCart.length) ? "" : "Cant find clear cart button");
+                    var removeAllItems = window.jQuery('a:contains("Remove all items"):visible');
+                    api.highlight(removeAllItems).result((1 <= removeAllItems.length) ? "" : "Cant find clear cart button");
                 },
-                'if cart is not empty - click clear cart button', function(task, clearCart){
+                'if cart is not empty - click clear cart button', function(task, removeAllItems){
                     if (cartIsEmpty) return api.result();
-                    clearCart.each(function(i,el){el.click();});
-                    api.highlight();
+                    removeAllItems.each(function(i,el){el.click();});
+                    api.highlight(removeAllItems);
                     api.waitFor(
                         function(){
-                            return "0" === cartAmountElement()[0].innerText;
+                            return "0" === cartAmountElement().text();
                         },
                         function(result){
                             api.result(result ? "" : "Cant clear cart");
@@ -61,7 +65,7 @@
                 },
                 'if cart was not empty - make sure it is empty now', function(task){
                     if (cartIsEmpty) return api.result();
-                    api.result(("0" === cartAmountElement()[0].innerText) ? "" : "Cant clear cart - it is still not empty");
+                    api.highlight(cartAmountElement()).result(("0" === cartAmountElement().text()) ? "" : "Cant clear cart - it is still not empty");
                 }
             ],
             addToCart: [
@@ -76,7 +80,7 @@
                             return (window.jQuery) && (1 === searchBox().length);
                         },
                         function(result){
-                            api.result(result ? "" : "Cant navigate to home");
+                            api.highlight(searchBox()).result(result ? "" : "Cant navigate to home");
                         }
                     );
                 },
@@ -86,7 +90,7 @@
                 },
                 'put part number into search box', function(task, input){
                     input.val(task.partno);
-                    api.result();
+                    api.highlight(input).result();
                 },
                 'find search button', function(task){
                     var searchButton = window.jQuery('input[type="submit"][value="Search"]:visible');
@@ -95,9 +99,9 @@
                 'click search button', function(task, searchButton){
                     searchButton.each(function(i,el){el.click();});
                     api.waitFor(function(){
-                        return (window.jQuery) && (1 === window.jQuery('h2:contains("Search results"):visible').length);
+                        return (window.jQuery) && (1 === searchResultsHeading().length);
                     }, function(result){
-                        api.result(result? "" : "Cant search");
+                        api.highlight(searchResultsHeading()).result(result? "" : "Cant search");
                     });
                 },
                 'find suitable item', function(task){
@@ -125,7 +129,7 @@
                 'put appropriate quantity', function(task, input){
                     input.val(task.quantity);
                     input.change();
-                    api.result();
+                    api.highlight(input).result();
                 },
                 'remember current amount in cart', function(task){
                     var cart = cartAmountElement();
@@ -142,7 +146,7 @@
                     api.waitFor(function(){
                         return currentCartAmount !== parseInt(cartAmountElement().text());
                     }, function(r){
-                        api.result(r ? "" : "Cant add to cart - total cart amount is not changing");
+                        api.highlight(add).result(r ? "" : "Cant add to cart - total cart amount is not changing");
                     });
                 },
                 'make sure, that hint appeared', function(task){
