@@ -1,4 +1,32 @@
-/**
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: samples/worker.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: samples/worker.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
  * Sample Worker class
  * @class CartFiller.SampleWorker
  */
@@ -96,7 +124,7 @@
                     cartLink.each(function(i,el){el.click();});
                     api.waitFor(
                         function(){ 
-                            return ((undefined !== window.jQuery) && (1 === window.jQuery('h2:contains("Your cart"):visible').length));
+                            return ((undefined !== window.jQuery) &amp;&amp; (1 === window.jQuery('h2:contains("Your cart"):visible').length));
                         }, 
                         function(result){ 
                             api.highlight().result(result ? "" : "Cant open cart");
@@ -106,7 +134,7 @@
                 'if cart is not empty - find clear cart button', function(){
                     if (cartIsEmpty) return api.nop();
                     var removeAllItems = window.jQuery('a:contains("Remove all items"):visible');
-                    api.highlight(removeAllItems).result((1 <= removeAllItems.length) ? "" : "Cant find clear cart button");
+                    api.highlight(removeAllItems).result((1 &lt;= removeAllItems.length) ? "" : "Cant find clear cart button");
                 },
                 'if cart is not empty - click clear cart button', function(removeAllItems){
                     if (cartIsEmpty) return api.nop();
@@ -147,7 +175,7 @@
                     homeLink.each(function(i,el){el.click();});
                     api.waitFor(
                         function(){
-                            return (window.jQuery) && (1 === searchBox().length);
+                            return (window.jQuery) &amp;&amp; (1 === searchBox().length);
                         },
                         function(result){
                             api.highlight(searchBox()).result(result ? "" : "Cant navigate to home");
@@ -169,7 +197,7 @@
                 'click search button', function(searchButton){
                     searchButton.each(function(i,el){el.click();});
                     api.waitFor(function(){
-                        return (window.jQuery) && (1 === searchResultsHeading().length);
+                        return (window.jQuery) &amp;&amp; (1 === searchResultsHeading().length);
                     }, function(result){
                         api.highlight(searchResultsHeading()).result(result? "" : "Cant search");
                     });
@@ -179,9 +207,9 @@
                     var found = false;
                     rows.each(function(i,el){
                         if (
-                            (window.jQuery(el).find('td:nth-child(1)').text() === task.partno) && 
-                            (parseInt(window.jQuery(el).find('td:nth-child(3)').text()) === 1) &&
-                            (parseFloat(window.jQuery(el).find('td:nth-child(4)').text()) <= (task.price * 1.02))
+                            (window.jQuery(el).find('td:nth-child(1)').text() === task.partno) &amp;&amp; 
+                            (parseInt(window.jQuery(el).find('td:nth-child(3)').text()) === 1) &amp;&amp;
+                            (parseFloat(window.jQuery(el).find('td:nth-child(4)').text()) &lt;= (task.price * 1.02))
                         ){
                             api.highlight(suitableRow = el).result("");
                             found = true;
@@ -226,7 +254,7 @@
                 },
                 'make sure, that quantity on hint is correct', function(hint){
                     var bold = hint.find('strong');
-                    api.highlight(bold).result(((1 === hint.length) && (task.quantity === parseInt(hint.text()))) ? "" : "Hint problems");
+                    api.highlight(bold).result(((1 === hint.length) &amp;&amp; (task.quantity === parseInt(hint.text()))) ? "" : "Hint problems");
                 },
                 'make sure, that cart amount increased properly', function(){
                     var cart = cartAmountElement();
@@ -240,4 +268,26 @@
     // cartFiller by default. In some later version name of this function
     // will probably be configurable through bookmarklet parameters
     cartFillerAPI().registerWorker(registerCallback);
-})(window, document);
+})(window, document);</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="CartFiller.Api.html">Api</a></li><li><a href="CartFiller.Api.StepEnvironment.html">StepEnvironment</a></li><li><a href="CartFiller.Configuration.html">Configuration</a></li><li><a href="CartFiller.Dispatcher.html">Dispatcher</a></li><li><a href="CartFiller.SampleWorker.html">SampleWorker</a></li><li><a href="CartFiller.SampleWorker.SampleWorkerTasks.html">SampleWorkerTasks</a></li></ul><h3>Namespaces</h3><ul><li><a href="CartFiller.html">CartFiller</a></li></ul><h3>Global</h3><ul><li><a href="global.html#config">config</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0</a> on Thu May 28 2015 02:20:22 GMT+0300 (EEST)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

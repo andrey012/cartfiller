@@ -1,4 +1,5 @@
 (function(document, window, undefined){
+    'use strict';
     var require = [
         'dispatcher',
         'ui',
@@ -32,7 +33,7 @@
         onScriptLoaded();
     }
     var head = document.getElementsByTagName('head')[0];
-    if (!this.cartFillerConfiguration.minified) {
+    if (!this.cartFillerConfiguration.concatenated) {
         for (var i = require.length - 1; i >= 0; i --){
             var script = document.createElement('script');
             script.setAttribute('src', this.cartFillerConfiguration.baseUrl + '/boot/helpers/' + require[i] + '.js');

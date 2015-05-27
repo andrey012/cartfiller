@@ -1,4 +1,5 @@
 (function(document, window, undefined){
+    'use strict';
     var me = this.cartFillerConfiguration;
     var currentSize;
     var overlayClassName = 'cartFillerOverlayDiv';
