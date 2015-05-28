@@ -171,7 +171,7 @@
                     "'src','" + this.settings.baseUrl + this.getInjectUrl() + "'," +
                     "'choose-job','" + this.settings.chooseJob + "'," +
                     "'debug'," + (this.settings.debug ? 1: 0) + "," +
-                    "'worker','" + (this.settings.worker) + "'"
+                    "'worker','" + (this.settings.worker) + "'" +
                 ");"+
             "}catch(e){alert(e);}";
         },
