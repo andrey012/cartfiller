@@ -147,7 +147,7 @@
         scriptBookmarklet: function(){
             return "javascript:try{" +
                 this.trace("start") + 
-                "(function(d,c,a,t,o,u,v,j,k,x,y,s){" + 
+                "(function(d,c,a,t,o,u,v,j,k,x,y,w,z,s){" + 
                     this.trace('in function') +
                     "s=d.createElement('script');" + 
                     this.trace('script element created') +
@@ -159,6 +159,8 @@
                     this.trace('choose-job set') +
                     "if(x)s[a](c+x,y);" + 
                     this.trace('debug set') +
+                    "if(w)s[a](c+w,z);" + 
+                    this.trace('worker set') +
                     "d.getElementsByTagName('head')[0].appendChild(s);" +
                     this.trace('script element added') +
                 "})(" +
@@ -169,6 +171,7 @@
                     "'src','" + this.settings.baseUrl + this.getInjectUrl() + "'," +
                     "'choose-job','" + this.settings.chooseJob +"'," +
                     "'debug'," + (this.settings.debug ? 1: 0) +
+                    "'worker','" + (this.settings.worker) + "'"
                 ");"+
             "}catch(e){alert(e);}";
         },

@@ -18,6 +18,10 @@
 
     }
     var createOverlay = function(left, top, right, bottom){
+        left = Math.round(left);
+        top = Math.round(top);
+        right = Math.round(right);
+        bottom = Math.round(bottom);
         var div =  getDocument().createElement('div');
         div.style.position = 'absolute';
         div.style.left = left + 'px';

@@ -19,7 +19,7 @@ define('controller', ['app', 'scroll'], function(app){
         $scope.currentTask = 0;
         $scope.currentStep = 0;
         $timeout(function(){$scope.chooseJob();}, 0);
-        $scope.debugEnabled = cfDebug.debugEnabled;
+        $scope.debugEnabled = parseInt(cfDebug.debugEnabled);
         $scope.workerSrc = false;
         $scope.finishReached = false;
         cfMessage.register(function(cmd, details){
