@@ -4,6 +4,7 @@
         <meta charset="UTF-8">
         <link rel="stylesheet" href="../lib/bootstrap/dist/css/bootstrap.min.css"/>
         <script src="../lib/jquery/dist/jquery.min.js"></script>
+        <script src="../src/jquery-cartFiller.js"></script>
         <script src="../lib/bootstrap/dist/js/bootstrap.min.js"></script>
         <script src="../lib/angular/angular.js"></script>
         <script src="../lib/angular-route/angular-route.js"></script>
@@ -14,56 +15,46 @@
                 <a href="sample-shop.html#/">Home</a> :
             </div>
             <script>
-                var baseUrl = window.location.href.replace(/samples\/sample-shop.html.*$/, '');
-                var injectUrl = baseUrl + '/src/boot/inject.js';
-                var injectMinifiedUrl = baseUrl + '/src/boot/inject.min.js';
-                var injectUrlBase = baseUrl + '/src';
-                var injectDeltaUrl = '/boot/inject.js';
-                var injectMinifiedDeltaUrl = '/boot/inject.min.js';
-                var chooseJobUrl = baseUrl + '/samples/choose-job.html';
-                var iframeUrlBase = baseUrl + '/src';
-                var iframeDeltaUrl = '/boot/i.htm';
-                var iframeMinifiedUrlDelta = '/boot/im.htm';
-                var iframeTabMinifiedUrlDelta = '/boot/tm.htm';
-                var scriptBookmarklet = function(type,injectUrl){
-                    return "javascript:(function(d,c,a,t,o,u,v,j,k,x,y,s){s=d.createElement('script');s[a](u,v+'?'+(new Date()).getTime());if(x)s[a](c+x,y);s[a](c+j,k);s[a](c+t,o);d.getElementsByTagName('head')[0].appendChild(s);})(document,'data-','setAttribute','type'," + type + ",'src','" + injectUrl + "','choose-job','" + chooseJobUrl +"','debug',1);";
-                }
-                var evalBookmarklet = function(type,injectDeltaUrl){
-                    return "javascript:(function(x,t,u,v,j,d){x.open('GET', u+v+'?' +(new Date()).getTime(),true);x.onload=function(){eval('(function(){'+x.response+'}).call({cartFillerEval:[u,t,j,d]});');};x.send();})(new XMLHttpRequest()," + type + ",'" + injectUrlBase + "','" + injectDeltaUrl + "','" + chooseJobUrl + "',1);"
-                }
-                var iframeBookmarklet = function(type, minified, iframeDeltaUrl){
-                    return "javascript:(function(d,p,t,u,v,m,j,y,x,i){window.addEventListener('message',function(e){if(p.test(x=e.data))eval('(function(){'+x+'}).call({cartFillerEval:[u,t,j,y]});')},true);i=d.createElement('iframe');d.getElementsByTagName('body')[0].appendChild(i);i.contentWindow.location.href=u+v+(m?'?min&':'?')+(new Date()).getTime();})(document,/^\'cartFillerEval\'/,"+type+",'" + iframeUrlBase +"','" + iframeDeltaUrl + "'," + (minified ? 1:0) + ",'" + chooseJobUrl + "',1);"
-                }
-                var div = document.getElementById('bookmarklets');
-                var a;
-                for (var minified = 0; minified < 2; minified++){
-                    for (var type = 0; type < 2; type++){
-                        var name = 
-                            (minified ? 'Minified ' : 'Unminified ') +
-                            (type ? 'Popup ' : 'Framed ');
-                        a = document.createElement('a');
-                        a.setAttribute('class', 'bookmarklet');
-                        a.href = scriptBookmarklet(type, minified ? injectMinifiedUrl : injectUrl);
-                        a.textContent = name + 'Script';
-                        div.appendChild(a);
-                        div.appendChild(document.createTextNode(' : '));
-
-                        a = document.createElement('a');
-                        a.setAttribute('class', 'bookmarklet');
-                        a.href = evalBookmarklet(type, minified ? injectMinifiedDeltaUrl : injectDeltaUrl);
-                        a.textContent = name + 'Eval';
-                        div.appendChild(a);
-                        div.appendChild(document.createTextNode(' : '));
-
-                        a = document.createElement('a');
-                        a.setAttribute('class', 'bookmarklet');
-                        a.href = iframeBookmarklet(type, minified, iframeDeltaUrl);
-                        a.textContent = name + 'Iframe';
-                        div.appendChild(a);
-                        div.appendChild(document.createTextNode(' : '));
+                jQuery(window).ready(function(){
+                    var baseUrl = window.location.href.replace(/samples\/sample-shop.html.*$/, '');
+                    var injectUrl = baseUrl + '/src/boot/inject.js';
+                    var injectMinifiedUrl = baseUrl + '/src/boot/inject.min.js';
+                    var injectUrlBase = baseUrl + '/src';
+                    var injectDeltaUrl = '/boot/inject.js';
+                    var injectMinifiedDeltaUrl = '/boot/inject.min.js';
+                    var chooseJobUrl = baseUrl + '/samples/choose-job.html';
+                    var iframeUrlBase = baseUrl + '/src';
+                    var iframeDeltaUrl = '/boot/i.htm';
+                    var iframeMinifiedUrlDelta = '/boot/im.htm';
+                    var iframeTabMinifiedUrlDelta = '/boot/tm.htm';
+                    var div = document.getElementById('bookmarklets');
+                    var a;
+                    var injects = ['script', 'eval', 'iframe'];
+                    var injectNames = ['Script', 'Eval', 'Iframe'];
+                    for (var minified = 0; minified < 2; minified++){
+                        for (var type = 0; type < 2; type++){
+                            for (var inject = 0; inject < 3; inject++){
+                                a = document.createElement('a');
+                                a.setAttribute('class', 'bookmarklet');
+                                jQuery(a).cartFillerPlugin({
+                                    type: type ? 'popup' : 'framed', 
+                                    minified: minified, 
+                                    chooseJob: chooseJobUrl, 
+                                    debug: true, 
+                                    baseUrl: baseUrl + 'src', 
+                                    inject: injects[inject],
+                                    traceStartup: false,
+                                    logLength: true
+                                });
+                                a.textContent = (minified ? 'Minified ' : 'Unminified ') +
+                                    (type ? 'Popup ' : 'Framed ') + 
+                                    injectNames[inject];
+                                div.appendChild(a);
+                                div.appendChild(document.createTextNode(' : '));
+                            }
+                        }
                     }
-                }
-
+                });
             </script>
             <div style="float: right;">
                 My cart: <strong>{{cart.totalItems}}</strong> item(s), <strong>{{cart.totalCost | number : 2}}</strong> USD. <a href="sample-shop.html#/cart">Open Cart</a>
