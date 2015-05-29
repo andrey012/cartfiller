@@ -172,6 +172,8 @@
                     this.trace('debug set') +
                     'if(w)s[a](c+w,z);' + 
                     this.trace('worker set') +
+                    's.onerror=function(){alert(\'error\');};' +
+                    this.trace('onerror set') +
                     'd.getElementsByTagName(\'head\')[0].appendChild(s);' +
                     this.trace('script element added') +
                 '})(' +
@@ -190,7 +192,7 @@
         evalBookmarklet: function(){
             return this.javaScriptUrl() + 'try{' +
                 this.trace('start') +
-                '(function(x,t,u,v,j,d){' +
+                '(function(f,x,t,u,v,j,d){' +
                     this.trace('in function') +
                     'x.open(' +
                         '\'GET\',' +
@@ -201,6 +203,7 @@
                     'x.onload=function(){' +
                         'try{' +
                             this.trace('x onload called') +
+                            'f=1;' +
                             'eval(' +
                                 '\'(function(){\'+' +
                                 'x.response+' +
@@ -210,9 +213,12 @@
                         '}catch(e){alert(e);}' +
                     '};' +
                     this.trace('x onload set') +
+                    'setTimeout(function(){if(!f)alert(\'error\');},5000);' +
+                    this.trace('onerror set') +
                     'x.send();' +
                     this.trace('x sent') +
                 '})(' +
+                    '0,' +
                     'new XMLHttpRequest(),' + 
                     this.getTypeId() + ',' +
                     '\'' + this.settings.baseUrl + '\',' +
@@ -225,11 +231,12 @@
         iframeBookmarklet: function(){
             return this.javaScriptUrl() + 'try{' +
                 this.trace('start') +
-                '(function(d,p,t,u,v,m,j,y,x,i){' +
+                '(function(f,d,p,t,u,v,m,j,y,x,i){' +
                     this.trace('in') +
                     'window.addEventListener(' +
                         '\'message\',' +
                         'function(e){' +
+                            'f=1;' +
                             'try{' +
                                 this.trace('event') +
                                 'if(p.test(x=e.data)){' +
@@ -252,7 +259,10 @@
                     this.trace('iframe+') +
                     'i.contentWindow.location.href=u+v+(m?\'?min&\':\'?\')+(new Date()).getTime();' +
                     this.trace('iframe++') +
+                    'setTimeout(function(){if(!f)alert(\'error\');},5000);' +
+                    this.trace('timeout set') +
                 '})(' +
+                    '0,' +
                     'document,' +
                     '/^\'cartFillerEval\'/,' + 
                     this.getTypeId() + ',' +
