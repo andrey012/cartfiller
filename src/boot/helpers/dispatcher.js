@@ -13,6 +13,12 @@
      */
     var worker = false;
     /**
+     * Keeps worker URL during load process. If load was successful sends URL back to controller
+     * @var {String} CartFiller.Dispatcher~workerSrcPretendent
+     * @access private
+     */
+    var workerSrcPretendent = '';
+    /**
      * Object, that keeps current task details
      * @var {CartFiller.TaskDetails} CartFiller.Dispatcher~workerCurrentTask
      * @access private
@@ -230,6 +236,7 @@
          */
         onMessage_loadWorker: function(message){
             try {
+                workerSrcPretendent = message.src;
                 eval(message.code); // jshint ignore:line
             } catch (e){
                 alert(e);
@@ -383,7 +390,7 @@
                     list[taskName] = taskSteps;
                 }
             }
-            this.postMessageToWorker('workerRegistered', {jobTaskDescriptions: list});
+            this.postMessageToWorker('workerRegistered', {jobTaskDescriptions: list, src: workerSrcPretendent});
         },
         /**
          * Passes step result from worker to worker (job progress) frame

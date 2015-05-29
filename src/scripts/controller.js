@@ -41,15 +41,15 @@ define('controller', ['app', 'scroll'], function(app){
                 if (('string' === typeof details.overrideWorkerSrc) && (details.overrideWorkerSrc.length > 0)){
                     workerSrc = details.overrideWorkerSrc;
                 }
+                $scope.workerSrc = '';
                 if (workerSrc){
-                    $scope.workerSrc = workerSrc;
-                    $scope.loadWorker();
+                    $scope.loadWorker(workerSrc);
                 } else {
-                    $scope.workerSrc = '';
                     alert('Worker script not specified in job description');
                 }
             } else if (cmd === 'workerRegistered'){
                 $scope.jobTaskDescriptions = details.jobTaskDescriptions;
+                $scope.workerSrc = details.src;
             } else if (cmd === 'workerStepResult'){
                 $scope.jobTaskProgress[details.index].stepsInProgress[details.step] = false;
                 $scope.jobTaskProgress[details.index].stepResults[details.step] = {status: details.status, message: details.message};
@@ -176,8 +176,10 @@ define('controller', ['app', 'scroll'], function(app){
             $event.stopPropagation();
             return false;
         };
-        $scope.loadWorker = function(){
-            var url = $scope.workerSrc;
+        $scope.loadWorker = function(url){
+            if (undefined === url) {
+                url = $scope.workerSrc;
+            }
             if (/\?/.test(url)){
                 url += '&';
             } else {
@@ -186,7 +188,7 @@ define('controller', ['app', 'scroll'], function(app){
             url += (new Date()).getTime();
             var xhr = new XMLHttpRequest();
             xhr.onload = function(){
-                cfMessage.send('loadWorker', {code: xhr.response});
+                cfMessage.send('loadWorker', {code: xhr.response, src: url});
 
             };
             xhr.open('GET', url, true);
