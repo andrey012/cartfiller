@@ -40,7 +40,7 @@
     "grunt-contrib-watch": "^0.6.1",
     "grunt-shell": "~0.6.4",
     "jsdoc": "~3.3.0-alpha4",
-    "resolve:": "~1.1.6"
+    "resolve": "~1.1.6"
   },
   "scripts": {
     "test": "grunt travis --verbose"
