@@ -44,6 +44,7 @@
      * {@link CartFiller.Api#result} function
      * 
      * @callback CartFiller.Api.onloadCallback
+     * @param {boolean|undefined} watchdog See {@link CartFiller.Dispatcher#onMainFrameLoaded}
      */
     /**
      * Used by {@link CartFiller.Api#waitFor} to check for particular event.
@@ -71,12 +72,6 @@
      * in case of timeout
      */
 
-    /**
-     * @var {jQuery|HtmlElement} CartFiller.Api~highlightedElement Stores currently highlighted
-     * that will be passed back to next step function
-     * @access private
-     */
-    var highlightedElement = false;
     /**
      * @var {CartFiller.Configuration} CartFiller.Api~me Shortcut to cartFiller configuration
      * @access private
@@ -180,7 +175,9 @@
             var counter = Math.round(timeout / period);
             var fn = function(){
                 var result = checkCallback();
-                if (false === me.modules.dispatcher.getWorkerCurrentStepIndex()) return;
+                if (false === me.modules.dispatcher.getWorkerCurrentStepIndex()){
+                    return;
+                } 
                 if (result) {
                     resultCallback(result);
                 } else {
@@ -191,7 +188,7 @@
                         resultCallback(false);
                     }
                 }
-            }
+            };
             setTimeout(fn, period);
             return this;
         },

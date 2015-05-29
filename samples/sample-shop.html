@@ -29,24 +29,27 @@
                     var iframeTabMinifiedUrlDelta = '/boot/tm.htm';
                     var div = document.getElementById('bookmarklets');
                     var a;
+                    var minifiedNames = ['Unminified', 'Minified', 'Source'];
                     var injects = ['script', 'eval', 'iframe'];
                     var injectNames = ['Script', 'Eval', 'Iframe'];
-                    for (var minified = 0; minified < 2; minified++){
+                    for (var minified = 0; minified < 3; minified++){
                         for (var type = 0; type < 2; type++){
                             for (var inject = 0; inject < 3; inject++){
                                 a = document.createElement('a');
                                 a.setAttribute('class', 'bookmarklet');
                                 jQuery(a).cartFillerPlugin({
                                     type: type ? 'popup' : 'framed', 
-                                    minified: minified, 
+                                    minified: (minified === 2) ? 0 : minified, 
                                     chooseJob: chooseJobUrl, 
                                     debug: true, 
-                                    baseUrl: baseUrl + 'src', 
+                                    baseUrl: baseUrl + (minified === 2 ? 'src' : 'dist'), 
                                     inject: injects[inject],
                                     traceStartup: false,
-                                    logLength: true
+                                    logLength: false,
+                                    useSource: minified === 2
                                 });
-                                a.textContent = (minified ? 'Minified ' : 'Unminified ') +
+                                a.textContent = 
+                                    minifiedNames[minified] + ' ' +
                                     (type ? 'Popup ' : 'Framed ') + 
                                     injectNames[inject];
                                 div.appendChild(a);

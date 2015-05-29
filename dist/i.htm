@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <script>
+            (function(x){
+                x = new XMLHttpRequest();
+                x.onload = function(){
+                    window.parent.postMessage('\'cartFillerEval\';' + x.response, '*');
+                };
+                x.open('GET', window.location.href.replace(/\/i\.htm(\?.*)?$/, '/inject'+(/\?min\&/.test(window.location.href) ? '.min' : '') +'.js'), false);
+                x.send();
+
+            })();
+        </script>
+    </head>
+    <body>
+
+    </body>
+</html>

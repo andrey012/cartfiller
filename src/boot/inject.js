@@ -1,6 +1,9 @@
 /**
  * @namespace CartFiller
  */
+/**
+ * @class CartFiller.Injector
+ */
 (function(document, window, undefined){
     'use strict';
     /** 
@@ -12,7 +15,7 @@
      * @member CartFiller.Injector~concatenated
      * @access private
      */
-    var concatenated = !('undefined' === typeof this.cartFillerConfiguration);
+    var concatenated = ('undefined' !== typeof this.cartFillerConfiguration);
     /**
      * Is set to true if this script (concatenated or not) is launched
      * by eval() statement in the bookmarklet (which is for Eval and Iframe
@@ -25,7 +28,7 @@
      * @member {boolean} CartFiller.Injector~evaled
      * @access private
      */
-    var evaled = !('undefined' === typeof this.cartFillerEval);
+    var evaled = ('undefined' !== typeof this.cartFillerEval);
 
     /**
      * cartFiller configuration object, which keeps parameters passed through
@@ -35,7 +38,7 @@
      * debugging. Otherwise this will be anonymous object used to make nothing
      * leak
      *
-     * @member {CartFiller.Configuration} config
+     * @member {CartFiller.Configuration} CartFiller.Injector~config
      * @access public
      */
     var config;
@@ -74,14 +77,14 @@
      * @access public
      */
     config.launch = function(){
-        if (String(config['data-type']) === "0") {
+        if (String(config['data-type']) === '0') {
             this.modules.ui.framed(document, window);
-        } else if (String(config['data-type']) === "1"){
+        } else if (String(config['data-type']) === '1'){
             this.modules.ui.popup(document, window);
         } else {
-            alert("Type not specified, should be 0 for framed, 1 for popup");
+            alert('Type not specified, should be 0 for framed, 1 for popup');
         }
-    }
+    };
 
     /**
      * Base URL where cartFiller assets will be searched at. When
@@ -90,7 +93,7 @@
      * @member {string} CartFiller.Configuration#baseUrl
      * @access public
      */
-    config.baseUrl = "";
+    config.baseUrl = '';
     
     /**
      * Type of UI. 0 for Framed, 1 for Popup. When configured through
@@ -108,7 +111,7 @@
      * @member {String} CartFiller.Configuration#data-choose-job
      * @access public
      */
-    config['data-choose-job'] = "";
+    config['data-choose-job'] = '';
     
     /**
      * Set to 1 or true to turn on debug features. One on the most
@@ -131,18 +134,21 @@
      * @member {String} CartFiller.Configuration#data-worker
      * @access public
      */
-    config['data-worker'] = "";
+    config['data-worker'] = '';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
     if (!evaled){
         var scripts = document.getElementsByTagName('head')[0].getElementsByTagName('script');
         var me = scripts[scripts.length - 1];
-        config.baseUrl = me.getAttribute('src').replace(/\/boot\/[^\/]+\.js(\?\d*)?/, '');
         var attrs = me.attributes;
         for (var j = attrs.length - 1 ; j >= 0; j --){
             if (/^data-/.test(attrs[j].name)){
-                config[attrs[j].name] = attrs[j].value;
+                if (attrs[j].name === 'data-base-url'){
+                    config.baseUrl = attrs[j].value;
+                } else {
+                    config[attrs[j].name] = attrs[j].value;
+                }
             }
         }
     } else {

@@ -15,62 +15,78 @@
             $(window).ready(function(){
 
                 var testFrame = window.frames['testFrame'];
-                setTimeout(function waitForTestFrame(){
+                var bookmarkletCount;
+                var testFrameSrc;
+                var currentBookmarklet = 0;
+                setTimeout(function waitForTestFrameToCountBookmarklets(){
 
                     if (testFrame.document && (testFrame.document.readyState === "complete")){
-                        QUnit.config.testTimeout = 150000;
-                        for (var i = testFrame.jQuery('#bookmarklets a.bookmarklet').length - 1 ; i >= 0; i--){
-                            testFrame.onload = function(){
-                                alert(1);
-                            }
-                            testFrame.location.href = "sample-shop.html";
-                        }
+                        bookmarkletCount = testFrame.jQuery('#bookmarklets a.bookmarklet').length;
+                        testFrameSrc = testFrame.location.href;
+                        processNextBookmarklet();
                         return;
                     }
-                    setTimeout(waitForTestFrame, 100);
+                    setTimeout(waitForTestFrameToCountBookmarklets, 100);
                 }, 100);
-                return;
-                testFrame
-                .jQuery('#bookmarklets a:nth-child('+i+')')
-                .each(function(i,el){ el.click(); });
-                QUnit.test("QuickRun", function(assert){
-                    var done = assert.async();
-                    var tries = 100;
-                    setTimeout(function waitForSubmitLink(){
-                        try {
-                            if (!testFrame.jQuery('iframe[name="cartFillerChooseJobFrame"]:visible').length) throw "";
-                            var link = testFrame.frames['cartFillerChooseJobFrame'].document.getElementById('sampleSubmitLink');
-                            if (link) {
-                                link.click();
-                                setTimeout(function waitForWorkerToLoad() {
-                                    try {
-                                        if (testFrame.frames['cartFillerWorkerFrame'].document.readyState !== "complete") throw "";
-                                        var runButton = testFrame.frames['cartFillerWorkerFrame'].document.getElementById('runButton');
-                                        if (runButton && !runButton.disabled){
-                                            runButton.click();
-                                            setTimeout(function waitForCompleted(){
-                                                try {
-                                                    if (testFrame.frames['cartFillerWorkerFrame'].document.getElementById('finishReached')) {
-                                                        assert.ok(true);
-                                                        done();
-                                                        return;
-                                                    } 
-                                                } catch (e){}
-                                                setTimeout(waitForCompleted, 100);
+                QUnit.config.testTimeout = 150000;
+                var processNextBookmarklet = function(){
+                    document.getElementsByName('testFrame')[0].onload = function(){
+                        if (currentBookmarklet >= bookmarkletCount) return;
+                        var bookmarklet = 
+                        testFrame
+                        .jQuery('#bookmarklets a.bookmarklet:nth('+currentBookmarklet+')');
+                        bookmarklet
+                        .each(function(i,el){ el.click(); });
+                        currentBookmarklet ++;
+                        QUnit.test("QuickRun " + bookmarklet.text(), function(assert){
+                            var done = assert.async();
+                            var tries = 100;
+                            setTimeout(function waitForSubmitLink(){
+                                try {
+                                    if (!testFrame.jQuery('iframe[name="cartFillerChooseJobFrame"]:visible').length) throw "";
+                                    var loaded = "complete" === testFrame.jQuery('iframe[name="cartFillerChooseJobFrame"]')[0].contentDocument.readyState;
+                                    var link = testFrame.frames['cartFillerChooseJobFrame'].document.getElementById('sampleSubmitLink');
+                                    var chooseJobButton = testFrame.frames['cartFillerWorkerFrame'].jQuery ? testFrame.frames['cartFillerWorkerFrame'].jQuery('#chooseJobButton') : false
+                                    if (link && loaded && chooseJobButton && chooseJobButton.text() === 'Cancel') {
+                                        link.click();
+                                        setTimeout(function waitForWorkerToLoad() {
+                                            try {
+                                                if (testFrame.frames['cartFillerWorkerFrame'].document.readyState !== "complete") throw "";
+                                                var runButton = testFrame.frames['cartFillerWorkerFrame'].document.getElementById('runButton');
+                                                if (runButton && !runButton.getAttribute('disabled')){
+                                                    runButton.click();
+                                                    setTimeout(function waitForCompleted(){
+                                                        try {
+                                                            if (testFrame.frames['cartFillerWorkerFrame'].document.getElementById('finishReached')) {
+                                                                assert.ok(true);
+                                                                done();
+                                                                testFrame.postMessage('cartFillerMessage:{"cmd":"closePopup"}', '*');
+                                                                setTimeout(function(){
 
-                                            },0);
-                                            return;
-                                        }
-                                    } catch (e){}
-                                    setTimeout(waitForWorkerToLoad, 100);
-                                },0);
-                                return;
-                            }
+                                                                     processNextBookmarklet();
+                                                                },100);
+                                                                return;
+                                                            } 
+                                                        } catch (e){}
+                                                        setTimeout(waitForCompleted, 100);
 
-                        } catch (e) {}
-                        setTimeout(waitForSubmitLink, 100);
-                    },0);
-                });
+                                                    },0);
+                                                    return;
+                                                }
+                                            } catch (e){}
+                                            setTimeout(waitForWorkerToLoad, 100);
+                                        },0);
+                                        return;
+                                    }
+
+                                } catch (e) {}
+                                setTimeout(waitForSubmitLink, 100);
+                            },0);
+                        });
+                    }
+                    testFrame.location.href = testFrameSrc;
+                    testFrame.location.reload();
+                }
             });
         </script>
     </body>

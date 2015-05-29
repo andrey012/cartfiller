@@ -102,8 +102,7 @@
             messageName + ':' + JSON.stringify(details),
             '*'
         );
-
-    }
+    };
     /**
      * Resets worker if worker did not report result using 
      * {@link CartFiller.Api#result} or {@link CartFiller.Api#nop} functions
@@ -111,7 +110,7 @@
      */
     var resetWorker = function(){
         workerCurrentTaskIndex = workerCurrentStepIndex = workerOnLoadHandler = false;
-    }
+    };
 
     this.cartFillerConfiguration.scripts.push({
         /** 
@@ -140,27 +139,65 @@
                 }
             }, false);
         },
-        onMessage_register: function(message){
+        /**
+         * Handles event "worker (job progress) frame loaded". If 
+         * main frame is loaded too, then bootstraps worker (job progress) frame
+         * @function CartFiller.Dispatcher#onMessage_register
+         * @access public
+         */
+        onMessage_register: function(){
             workerFrameLoaded = true;
             if (mainFrameLoaded && !bootstrapped){
                 this.bootstrapCartFiller();
             }
         },
+        /**
+         * Makes worker (job progres) frame smaller
+         * @function CartFiller.Dispatcher#onMessage_makeSmaller
+         * @access public
+         */
         onMessage_makeSmaller: function(){
             me.modules.ui.setSize('small');
         },
+        /**
+         * Makes worker (job progress) frame bigger
+         * @function CartFiller.Dispatcher#onMessage_makeBigger
+         * @access public
+         */
         onMessage_makeBigger: function(){
             me.modules.ui.setSize('big');
         },
+        /**
+         * Toggles size of worker (job progress) frame
+         * @function CartFiller.Dispatcher#onMessage_toggleSize
+         * @access public
+         */
         onMessage_toggleSize: function(){
             me.modules.ui.setSize();
         },
+        /**
+         * Shows Choose Job frame
+         * @function CartFiller.Dispatcher#onMessage_chooseJob
+         * @access public
+         */
         onMessage_chooseJob: function(){
             me.modules.ui.showHideChooseJobFrame(true);
         },
+        /**
+         * Hides Choose Job frame
+         * @function CartFiller.Dispatcher#onMessage_chooseJobCancel
+         * @access public
+         */
         onMessage_chooseJobCancel: function(){
             me.modules.ui.showHideChooseJobFrame(false);
         },
+        /**
+         * Passes job details from Choose Job frame to worker (job progress)
+         * frame. 
+         * @function CartFiller.Dispatcher#onMessage_jobDetails
+         * @param {Object} message Job details description. TBD
+         * @access public
+         */
         onMessage_jobDetails: function(message){
             if (message.resultMessage){
                 resultMessageName = message.resultMessage;
@@ -171,15 +208,41 @@
             message.overrideWorkerSrc = me['data-worker'];
             this.postMessageToWorker('jobDetails', message);
         },
+        /**
+         * Sends job result from worker (job progress) frame to Choose Job frame
+         * @function CartFiller.Dispatcher#onMessage_sendResult
+         * @param {Object} message message.result contains result, while
+         * message.tasks contains job details as provided by Choose Job frame
+         * both are arrays of same size and order
+         * @access public
+         */
         onMessage_sendResult: function(message){
             me.modules.ui.showHideChooseJobFrame(true);
             if (resultMessageName){
                 this.postMessageToChooseJob(resultMessageName, message);
             }
         },
+        /**
+         * Loads worker coder by evaluating it
+         * @function CartFiller.Dispatcher#onMessage_loadWorker
+         * @param {Object} message message.code contains source code of worker
+         * @access public
+         */
         onMessage_loadWorker: function(message){
-            eval(message.code);
+            try {
+                eval(message.code); // jshint ignore:line
+            } catch (e){
+                alert(e);
+                throw e;
+            }
         },
+        /**
+         * Makes next worker step
+         * @function CartFiller.Dispatcher#onMessage_invokeWorker
+         * @param {Object} message {index: job task index, step: step index,
+         * details: details for this task as provided by ChooseJob}
+         * @access public
+         */
         onMessage_invokeWorker: function(message){
             if ((false !== workerCurrentTaskIndex) || (false !== workerCurrentStepIndex)){
                 var err = 'ERROR: worker task is in still in progress';
@@ -187,11 +250,11 @@
                 this.postMessage('workerStepResult', {index: message.index, step: message.step, result: err});
             } else {
                 if (workerCurrentTaskIndex !== message.index){
-                    for (var key in workerCurrentTask){
-                        delete workerCurrentTask[key];
+                    for (var oldKey in workerCurrentTask){
+                        delete workerCurrentTask[oldKey];
                     }
-                    for (var key in message.details){
-                        workerCurrentTask[key] = message.details[key];
+                    for (var newKey in message.details){
+                        workerCurrentTask[newKey] = message.details[newKey];
                     }
                 }
                 workerCurrentTaskIndex = message.index;
@@ -214,39 +277,97 @@
                      * @access public
                      */
                     task: message.details
-                }
+                };
                 try {
                     worker[message.task][(message.step * 2) + 1](highlightedElement, env);
                 } catch (err){
                     alert(err);
-                    debugger;
+                    debugger; // jshint ignore:line
                     throw err;
                 }
             }
         },
+        /**
+         * Forces worker reset
+         * @function CartFiller.Dispathcer#onMessage_resetWorker
+         * @access public
+         */
         onMessage_resetWorker: function(){
             resetWorker();
         },
+        /**
+         * Closes popup window in case of popup UI
+         * @function CartFiller.Dispathcer#onMessage_closePopup
+         * @access public
+         */
+        onMessage_closePopup: function(){
+            me.modules.ui.closePopup();
+        },
+        /**
+         * Handles "main frame loaded" event. If both main frame and 
+         * worker (job progress) frames are loaded then bootstraps 
+         * job progress frame
+         * If worker have registered onLoad callback, then calls it
+         * 
+         * @function CartFiller.Dispatcher#onMainFrameLoaded
+         * @param {boolean} watchdog It may happen, that main frame 
+         * window code will replace our onLoad handler with its own one
+         * and we will miss onLoad event. For such cases UI
+         * pings main frame to check whether it is already loaded, and
+         * if yes calls this function with watchdog = true. NOTE: 
+         * as a result this function can be called several times (once)
+         * after each ping.
+         * @access public
+         */
         onMainFrameLoaded: function(watchdog) {
             mainFrameLoaded = true;
             if (workerFrameLoaded && !bootstrapped){
                 this.bootstrapCartFiller();
             }
             if (workerOnLoadHandler) {
-                workerOnLoadHandler();
+                workerOnLoadHandler(watchdog);
                 workerOnLoadHandler = false;
             }
         },
+        /**
+         * Sends message to worker (job progress frame)
+         * @function CartFiller.Dispatcher#postMessageToWorker
+         * @param {String} cmd command
+         * @param {Object} details
+         * @access public
+         */
         postMessageToWorker: function(cmd, details){
             postMessage(me.modules.ui.workerFrameWindow, cmd, details);
         },
+        /**
+         * Sends message to Choose Job frame
+         * @function CartFiller.Dispatcher#postMessageToChooseJob
+         * @param {String} cmd command
+         * @param {Object} details
+         * @access public
+         */
         postMessageToChooseJob: function(cmd, details){
             postMessage(me.modules.ui.chooseJobFrameWindow, cmd, details, cmd);
         },
+        /**
+         * Launches worker (job progress frame)
+         * @function CartFiller.Dispathcer#bootstrapCartFiller
+         * @access public
+         */
         bootstrapCartFiller: function(){
             bootstrapped = true;
-            this.postMessageToWorker('bootstrap', {lib : me.baseUrl.replace(/src/, 'lib/'), debug: me['data-debug']});
+            //// TBD sort out paths
+            this.postMessageToWorker('bootstrap', {lib: me.baseUrl.replace(/(src|dist)\/?$/, 'lib/'), debug: me['data-debug']});
         },
+        /**
+         * Negotiates with worker, fetches its task-handing code
+         * fetches task steps descriptions and passes to worker (job progress)
+         * frame
+         * @function CartFiller.Dispatcher#registerWorker
+         * @param {CartFiller.Api.registerCallback} cb
+         * @param {CartFiller.Api} api
+         * @access public
+         */
         registerWorker: function(cb, api){
             worker = cb(me.modules.ui.mainFrameWindow, undefined, api, workerCurrentTask);
             var list = {};
@@ -254,7 +375,8 @@
                 if (worker.hasOwnProperty(taskName)){
                     var taskSteps = [];
                     for (var i = 0 ; i < worker[taskName].length; i++){
-                        if ("string" === typeof worker[taskName][i]){
+                        // this is step name/comment
+                        if ('string' === typeof worker[taskName][i]){
                             taskSteps.push(worker[taskName][i]);
                         }
                     }
@@ -263,14 +385,21 @@
             }
             this.postMessageToWorker('workerRegistered', {jobTaskDescriptions: list});
         },
+        /**
+         * Passes step result from worker to worker (job progress) frame
+         * @function CartFiller.Dispatcher#submitWorkerResult
+         * @see CartFiller.Api#result
+         * @see CartFiller.Api#nop
+         * @access public
+         */
         submitWorkerResult: function(message, recoverable){
             var status;
-            if ((undefined === message) || ("" === message)) {
+            if ((undefined === message) || ('' === message)) {
                 status = 'ok';
-            } else if ("string" === typeof message){
+            } else if ('string' === typeof message){
                 status = recoverable ? 'skip' : 'error';
             } else {
-                throw "invalid message type " + typeof(message);
+                throw 'invalid message type ' + typeof(message);
             }
             this.postMessageToWorker(
                 'workerStepResult', 
@@ -284,12 +413,30 @@
             );
             resetWorker();
         },
+        /**
+         * Registers worker's onLoad callback for main frame
+         * @function CartFiller.Dispatcher#registerWorkerOnloadCallback
+         * @param {CartFiller.Api.onloadCallback} cb
+         * @access public
+         */
         registerWorkerOnloadCallback: function(cb){
             workerOnLoadHandler = cb;
         },
+        /**
+         * Returns current step indx
+         * @function CartFiller.Dispatcher#getWorkerCurrentStepIndex
+         * @returns {integer}
+         * @access public
+         */
         getWorkerCurrentStepIndex: function(){
             return workerCurrentStepIndex;
         },
+        /**
+         * Sets current highlighted element
+         * @function CartFiller.Dispatcher#setHighlightedElement
+         * @param {jQuery|HtmlElement} element
+         * @access public
+         */
         setHighlightedElement: function(element){
             highlightedElement = element;
         }

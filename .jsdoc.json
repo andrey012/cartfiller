@@ -1,0 +1,5 @@
+{
+    "source": {
+        "excludePattern": "src\\/boot\\/misc\\/concat-.*\\.js$"
+    }
+}

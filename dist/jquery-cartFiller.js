@@ -1,3 +1,11 @@
+/*
+ *  cartFiller - v0.0.1
+ *  Tool for automating cart filling process when doing big purchases
+ *  https://andrey012.github.com/cartFiller
+ *
+ *  Made by Andrey Grinenko
+ *  Under MIT License
+ */
 /**
  * The jQuery core object
  * @external jQuery

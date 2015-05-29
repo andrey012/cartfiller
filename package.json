@@ -1,0 +1,48 @@
+{
+  "name": "cartFiller",
+  "version": "0.0.1",
+  "description": "Tool for automating cart filling process when doing big purchases",
+  "keywords": [
+    "automation",
+    "cart",
+    "wholesale"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/andrey012/cartFiller.git"
+  },
+  "bugs": {
+    "url": "https://github.com/andrey012/cartFiller"
+  },
+  "author": {
+    "name": "Andrey Grinenko",
+    "email": "andrey012@gmail.com",
+    "url": "https://github.com/andrey012"
+  },
+  "homepage": "https://andrey012.github.com/cartFiller",
+  "contributors": [
+    {
+      "name": "Andrey Grinenko",
+      "email": "andrey012@gmail.com",
+      "url": "https://github.com/andrey012"
+    }
+  ],
+  "license": "MIT",
+  "devDependencies": {
+    "findup-sync": "~0.2.1",
+    "grunt": "~0.4.5",
+    "grunt-cli": "~0.1.13",
+    "grunt-contrib-coffee": "^0.12.0",
+    "grunt-contrib-concat": "^0.5.1",
+    "grunt-contrib-copy": "^0.8.0",
+    "grunt-contrib-jshint": "^0.11.0",
+    "grunt-contrib-uglify": "^0.8.0",
+    "grunt-contrib-watch": "^0.6.1",
+    "grunt-shell": "~0.6.4",
+    "jsdoc": "~3.3.0-alpha4",
+    "resolve:": "~1.1.6"
+  },
+  "scripts": {
+    "test": "grunt travis --verbose"
+  }
+}
