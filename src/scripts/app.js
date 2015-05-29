@@ -1,3 +1,3 @@
-define('app', ['angular', 'angular-route', 'angular-resource'], function(){
-    return angular.module('cartFillerApp', ['ngRoute', 'ngResource']);
+define('app', ['angular', 'angular-route'], function(){
+    return angular.module('cartFillerApp', ['ngRoute']);
 });

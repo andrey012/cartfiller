@@ -9,14 +9,12 @@
                     paths: {
                         'angular': message.lib + '/angular/angular.min',
                         'angular-route': message.lib + '/angular-route/angular-route.min',
-                        'angular-resource': message.lib + '/angular-resource/angular-resource.min',
                         'jquery': message.lib + '/jquery/dist/jquery.min',
                         'bootstraptw': message.lib + '/bootstrap/dist/js/bootstrap.min',
                     },
                     shim: {
                         'angular' : {exports: 'angular', deps: ['jquery', 'bootstraptw']},
                         'angular-route': ['angular'],
-                        'angular-resource': ['angular'],
                         'bootstraptw': ['jquery'],
                     },
                     deps: ['bootstrap'],

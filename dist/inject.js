@@ -6,6 +6,7 @@
  *  Made by Andrey Grinenko
  *  Under MIT License
  */
+// this file is used as as header when concatenating inject scripts. It is not valid as standalone.
 /* jshint ignore:start */
 (function(){
 /* jshint ignore:end */
@@ -638,7 +639,6 @@
         onMessage_loadWorker: function(message){
             try {
                 workerSrcPretendent = message.src;
-                console.log(message.code);////
                 eval(message.code); // jshint ignore:line
             } catch (e){
                 alert(e);
@@ -1306,6 +1306,7 @@
         }
     });
 }).call(this, document, window);
+// this file is used as a footer when concatenating inject scripts. It is not valid as standalone.
 /* jshint ignore:start */
 }).call({
     cartFillerConfiguration:{},

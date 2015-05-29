@@ -1,8 +1,7 @@
 define('controller', ['app', 'scroll'], function(app){
     'use strict';
     app
-    .controller('indexController', function ($scope, $rootScope, $http, cfMessage, $timeout, cfDebug, cfScroll){
-        $scope.steps = [{name:1}, {name:2}];
+    .controller('indexController', ['$scope', 'cfMessage', '$timeout', 'cfDebug', 'cfScroll', function ($scope, cfMessage, $timeout, cfDebug, cfScroll){
         $scope.chooseJobState = false;
         $scope.toggleSize = function(){
             cfMessage.send('toggleSize');
@@ -208,5 +207,5 @@ define('controller', ['app', 'scroll'], function(app){
             $scope.returnResult();
             $event.stopPropagation();
         };
-    });
+    }]);
 });
