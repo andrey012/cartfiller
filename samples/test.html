@@ -30,7 +30,9 @@
                                     testFrame
                                         .jQuery('#bookmarklets a.bookmarklet:nth('+i+')');
                                 (function(i){
+                                    console.log('registering test ' + i);
                                     QUnit.test("QuickRun " + i + " (" + bookmarklet.text() + ")", function(assert){
+                                        console.log('test ' + i + ' started');
                                         processNextBookmarklet(i, assert, assert.async());
                                     });
                                 })(i);
@@ -93,6 +95,7 @@
                             setTimeout(waitForSubmitLink, 100);
                         },0);
                     }
+                    console.log('going to reload frame: ' + testFrameSrc);
                     testFrame.location.href = testFrameSrc;
                     testFrame.location.reload();
                 }
