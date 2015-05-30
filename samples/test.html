@@ -46,12 +46,8 @@
                     }, 100);
                 })
                 QUnit.config.testTimeout = 150000;
-                var previousOnLoadHandler = false;
                 var processNextBookmarklet = function(currentBookmarklet, assert, done){
-                    if (previousOnLoadHandler) {
-                        document.getElementsByName('testFrame')[0].removeEventListener('load', previousOnLoadHandler, false);
-                    }
-                    document.getElementsByName('testFrame')[0].addEventListener('load', previousOnLoadHandler = function(){
+                    setTimeout(function(){
                         var bookmarklet = 
                             testFrame
                                 .jQuery('#bookmarklets a.bookmarklet:nth('+currentBookmarklet+')');
@@ -99,7 +95,7 @@
                             } catch (e) {}
                             setTimeout(waitForSubmitLink, 100);
                         },0);
-                    }, false);
+                    }, 1000);
                     var location = testFrame.location.href = testFrameSrc.replace(/sample-shop\.html(\?\d*)?\#/, 'sample-shop.html?' + (reloadCounter++) + '#');
                     console.log('going to reload frame: ' + location);
                 }
