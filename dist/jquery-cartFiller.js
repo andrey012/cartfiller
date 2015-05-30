@@ -338,7 +338,7 @@
         var data = new RegExp('^' + resultMessageName + ':(.*)$').exec(event.data);
         if (data) {
             if (resultCallback){
-                resultCallback(data[1]);
+                resultCallback(JSON.parse(data[1]));
             }
         }
     };
