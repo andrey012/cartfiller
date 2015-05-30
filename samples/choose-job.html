@@ -30,8 +30,7 @@
                         workerSrc: window.location.href.replace(
                             /choose-job.html(\?.*)?(\#.*)?$/, 
                             'worker.js'
-                        ), 
-                        resultMessage: 'sampleResultMessage'
+                        )
                     },
                     function(data){
                         document.getElementById('result').innerText = data;

@@ -322,6 +322,12 @@
      */
     var resultCallback;
     /**
+     * Holds result callback message name
+     * @var {String} CartFillerPlugin~resultMessageName
+     * @access private
+     */
+    var resultMessageName;
+    /**
      * Callback, that will receive job result details from cartFiller
      * @callback CartFillerPlugin.resultCallback
      * @param {Object} message message.result contains result, while
@@ -329,7 +335,7 @@
      * See {@link CartFiller.Dispatcher#onMessage_sendResult}
      */
     var messageEventListener = function(event){
-        var data = /^sampleResultMessage:(.*)$/.exec(event.data);
+        var data = new RegExp('^' + resultMessageName + ':(.*)$').exec(event.data);
         if (data) {
             if (resultCallback){
                 resultCallback(data[1]);
@@ -350,6 +356,13 @@
      * @access public
      */
     $.cartFillerPlugin = function( jobDetails, newResultCallback ) {
+        if (newResultCallback && 
+            ((undefined === jobDetails.resultMessage) || (String(jobDetails.resultMessage).length < 1))
+            ){
+            jobDetails.resultMessage = 'cartFillerResultMessage';
+        }
+        resultMessageName = jobDetails.resultMessage;
+
         window.parent.postMessage(
             'cartFillerMessage:' + 
             JSON.stringify(jobDetails),
