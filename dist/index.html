@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html>
+<html manifest="self.appcache">
 <head>
     <meta charset="UTF-8">
     <title>CartFiller</title>
-    <link rel="stylesheet" href="../lib/bootstrap/dist/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="../lib/bootstrap/dist/css/bootstrap.min.css?__inline=true"/>
 </head>
 <body ng-controller="indexController">
     <div style="text-align: right; z-index: 101; position: fixed; top: 0px; width: 100%; padding: 2px;" class="alert alert-warning">
@@ -106,6 +106,6 @@
             Completed
         </div>
     </div>
-    <script data-main="worker-app-scripts.min.js" src="worker-app-scripts.min.js"></script>
+    <script src="worker-app-scripts.min.js?__inline=true"></script>
 </body>
 </html>

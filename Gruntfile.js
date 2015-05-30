@@ -45,9 +45,22 @@ module.exports = function(grunt) {
                 dest: "dist/i.htm"
             },
             workerFrame: {
+                options: {
+                    process: function(content, srcpath){
+                        return content
+                        .replace(
+                            /bootstrap\.min\.css\"/, 
+                            'bootstrap.min.css?__inline=true"')
+                        .replace(
+                            /\<script\s+data-main=\"scripts\/main\" src="\.\.\/lib\/requirejs\/require\.js\"\>/,
+                            '<script src="worker-app-scripts.min.js?__inline=true">')
+                        .replace(
+                            /\<html\>/,
+                            '<html manifest="self.appcache">');
+                    }
+                },
                 files : [
-                    {expand: true, cwd: "src/", src: ["index.html"], dest: "dist/"},
-                    {expand: true, cwd: "src/", src: ["scripts/**"], dest: "dist/"}
+                    {expand: true, cwd: "src/", src: ["index.html", "self.appcache"], dest: "dist/"},
                 ]
             }
 
@@ -72,18 +85,13 @@ module.exports = function(grunt) {
 			jQueryPlugin: {
 				src: ["dist/jquery-cartFiller.js"],
 				dest: "dist/jquery-cartFiller.min.js"
-			},
-            workerAngularApp: {
-                src: ["dist/worker-app-scripts.js"],
-                dest: "dist/worker-app-scripts.min.js"
-            }
+			}
 		},
         requirejs : {
             cmn : {
                 options : {
                     waitSeconds : 0,
                     baseUrl : '.',
-//                      name : 'test',
                     out : 'dist/worker-app-scripts.min.js',
                     optimize : 'uglify2',
                     generateSourceMaps : false,
@@ -107,6 +115,12 @@ module.exports = function(grunt) {
                     exclude : [
                     ]
                 }
+            }
+        },
+        inline: {
+            dist: {
+                src: 'dist/index.html',
+                dest: 'dist/index.min.html'
             }
         },
         // Generate JSDoc documentation
@@ -134,8 +148,9 @@ module.exports = function(grunt) {
 	grunt.loadNpmTasks("grunt-contrib-watch");
     grunt.loadNpmTasks('grunt-shell');
     grunt.loadNpmTasks('grunt-contrib-requirejs');
+    grunt.loadNpmTasks('grunt-inline');
 
-	grunt.registerTask("build", ["concat", "uglify", "shell", "copy"]);
+	grunt.registerTask("build", ["concat", "uglify", "shell", "copy", "requirejs", "inline"]);
 	grunt.registerTask("default", ["jshint", "build"]);
 	grunt.registerTask("travis", ["default"]);
 

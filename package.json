@@ -42,7 +42,8 @@
     "jsdoc": "~3.3.0-alpha4",
     "resolve": "~1.1.6",
     "grunt-contrib-requirejs": "~0.4.4",
-    "inliner": "~0.1.16"
+    "inliner": "~0.1.16",
+    "grunt-inline": "~0.3.4"
   },
   "scripts": {
     "test": "grunt travis --verbose"

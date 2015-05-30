@@ -1058,7 +1058,7 @@
      * @access private
      */
     var getWorkerFrameSrc = function(){
-        return me.baseUrl + '/index.html';        
+        return me.baseUrl + '/index' + (me.concatenated ? '.min' : '') + '.html';        
     };
     me.scripts.push({
         /**
