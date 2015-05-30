@@ -75,7 +75,23 @@ var page = require('webpage').create();
 page.onConsoleMessage = function(msg) {
     console.log(msg);
 };
+page.onAlert = function(msg) {
+  console.log('ALERT: ' + msg);
+};
+page.onError = function(msg, trace) {
 
+  var msgStack = ['ERROR: ' + msg];
+
+  if (trace && trace.length) {
+    msgStack.push('TRACE:');
+    trace.forEach(function(t) {
+      msgStack.push(' -> ' + t.file + ': ' + t.line + (t.function ? ' (in function "' + t.function +'")' : ''));
+    });
+  }
+
+  console.error(msgStack.join('\n'));
+
+};
 page.open('http://localhost:'+port+'/samples/test.html', function(status){
     if (status !== "success") {
         console.log("Unable to access network");
