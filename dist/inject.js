@@ -153,7 +153,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1432991740755';
+    config.gruntBuildTimeStamp='1432994716510';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -1035,15 +1035,23 @@
     var scrollTo = function(left, top, right, bottom){
         var centerX = (right + left ) / 2;
         var centerY = (bottom + top) / 2;
-        var currentX, currentY;
+        var currentLeft, currentTop;
         var destX = centerX - ( getDocument().documentElement.clientWidth / 2);
         var destY = centerY - ( getDocument().documentElement.clientHeight / 2);
+        var minLeft, maxLeft;
+        minLeft = maxLeft = currentLeft = getScrollLeft();
+        var minTop, maxTop;
+        minTop = maxTop = currentTop = getScrollLeft();
         for (var tries = 1000; tries; tries--){
-            currentX = getScrollLeft();
-            currentY = getScrollTop();
-            me.modules.ui.mainFrameWindow.scrollBy(destX - currentX, destY -  currentY);
-            if (getScrollLeft() === currentX &&
-                getScrollTop() === currentY) {
+            minLeft = Math.min(minLeft, currentLeft);
+            maxLeft = Math.max(maxLeft, currentLeft);
+            minTop = Math.min(minTop, currentTop);
+            maxTop = Math.max(maxTop, currentTop);
+            me.modules.ui.mainFrameWindow.scrollBy(destX - currentLeft, destY -  currentTop);
+            currentLeft = getScrollLeft();
+            currentTop = getScrollTop();
+            if ((currentLeft >= minLeft) && (currentLeft <= maxLeft) &&
+                (currentTop >= minTop) && (currentTop <= maxTop)) {
                 break;
             }
         }
