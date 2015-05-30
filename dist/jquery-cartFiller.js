@@ -309,11 +309,60 @@
      * @access public
      */
     $.fn[ pluginName ] = function ( options ) {
-            return this.each(function() {
-                    if ( !$.data( this, 'plugin_' + pluginName ) ) {
-                            $.data( this, 'plugin_' + pluginName, new Plugin( this, options ) );
-                    }
-            });
+        return this.each(function() {
+            if ( !$.data( this, 'plugin_' + pluginName ) ) {
+                    $.data( this, 'plugin_' + pluginName, new Plugin( this, options ) );
+            }
+        });
+    };
+    /**
+     * Holds result callback registered by user through {@link external:"jQuery".cartFillerPlugin}
+     * @var {CartFillerPlugin.resultCallback} CartFillerPlugin~resultCallback
+     * @access private
+     */
+    var resultCallback;
+    /**
+     * Callback, that will receive job result details from cartFiller
+     * @callback CartFillerPlugin.resultCallback
+     * @param {Object} message message.result contains result, while
+     * message.tasks contains job details as provided by Choose Job frame.
+     * See {@link CartFiller.Dispatcher#onMessage_sendResult}
+     */
+    var messageEventListener = function(event){
+        var data = /^sampleResultMessage:(.*)$/.exec(event.data);
+        if (data) {
+            if (resultCallback){
+                resultCallback(data[1]);
+            }
+        }
+    };
+    /**
+     * Global plugin function - sends job details to cartFiller and
+     * registers optional callback, that will receive results.
+     * @function external:"jQuery".cartFillerPlugin
+     * @global
+     * @name "jQuery.cartFillerPlugin"
+     * @param {Object[]} jobDetails Job details data, array of objects, 
+     * each object should contain .task which has task name and
+     * arbitrary other members for worker
+     * @param {CartFillerPlugin.resultCallback} resultCallback
+     * callback, which will receive results. It can be called several times
+     * @access public
+     */
+    $.cartFillerPlugin = function( jobDetails, newResultCallback ) {
+        window.parent.postMessage(
+            'cartFillerMessage:' + 
+            JSON.stringify(jobDetails),
+            '*'
+        );
+        if (resultCallback){
+            window.removeEventListener('message', messageEventListener, false);
+            resultCallback = undefined;
+        }
+        if (newResultCallback){
+            resultCallback = newResultCallback;
+            window.addEventListener('message', messageEventListener,false);
+        }
     };
 
 })( jQuery, window, document );

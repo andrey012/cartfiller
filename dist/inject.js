@@ -153,7 +153,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1432988547813';
+    config.gruntBuildTimeStamp='1432991740755';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -545,11 +545,15 @@
             var dispatcher = this;
             window.addEventListener('message', function(event) {
                 var pattern = /^cartFillerMessage:(.*)$/;
-                var test = pattern.exec(event.data);
-                if (null != test){
-                    var message = JSON.parse(test[1]);
+                if (pattern.test(event.data)){
+                    var match = pattern.exec(event.data);
+                    var message = JSON.parse(match[1]);
                     var fn = 'onMessage_' + message.cmd;
-                    dispatcher[fn](message);
+                    if (undefined !== dispatcher[fn] && dispatcher[fn] instanceof Function){
+                        dispatcher[fn](message);
+                    } else {
+                        console.log('unknown message: ' + fn + ':' + event.data);
+                    }
                 }
             }, false);
         },
@@ -627,7 +631,7 @@
          * @function CartFiller.Dispatcher#onMessage_sendResult
          * @param {Object} message message.result contains result, while
          * message.tasks contains job details as provided by Choose Job frame
-         * both are arrays of same size and order
+         * both are arrays of same size and order. See {@link CartFillerPlugin.resultCallback}
          * @access public
          */
         onMessage_sendResult: function(message){

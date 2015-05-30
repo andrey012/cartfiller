@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <html>
     <head>
-
+        <script src="../lib/jquery/dist/jquery.min.js"></script>
+        <script src="../src/jquery-cartFiller.js"></script>
     </head>
     <body>
         <a id="sampleSubmitLink" href="#" onclick="submitJob();">submit</a>
@@ -10,40 +11,33 @@
         </div>
         <script>
             function submitJob(){
-                window.parent.postMessage(
-                    'cartFillerMessage:' + 
-                    JSON.stringify(
-                        {
-                            cmd: 'jobDetails', 
-                            details: [
-                                {task: 'clearCart'}, 
-                                {task: 'addToCart', partno: '1111111', quantity: 2, price: 1.22}, 
-                                {task: 'addToCart', partno: '2222222', quantity: 3, price: 2}, 
-                                {task: 'addToCart', partno: '3333333', quantity: 2, price: 1.5}, 
-                                {task: 'addToCart', partno: '4444444', quantity: 3, price: 2}
-                            ], 
-                            titleMap: {
-                                clearCart: 'Clear cart', 
-                                addToCart: 'Add item to cart', 
-                                partno: 'Part number', 
-                                quantity: 'Quantity'
-                            }, 
-                            workerSrc: window.location.href.replace(
-                                /choose-job.html(\?.*)?(\#.*)?$/, 
-                                'worker.js'
-                            ), 
-                            resultMessage: 'sampleResultMessage'
-                        }
-                    ), 
-                    '*'
-                );                
+                jQuery.cartFillerPlugin(
+                    {
+                        cmd: 'jobDetails', 
+                        details: [
+                            {task: 'clearCart'}, 
+                            {task: 'addToCart', partno: '1111111', quantity: 2, price: 1.22}, 
+                            {task: 'addToCart', partno: '2222222', quantity: 3, price: 2}, 
+                            {task: 'addToCart', partno: '3333333', quantity: 2, price: 1.5}, 
+                            {task: 'addToCart', partno: '4444444', quantity: 3, price: 2}
+                        ], 
+                        titleMap: {
+                            clearCart: 'Clear cart', 
+                            addToCart: 'Add item to cart', 
+                            partno: 'Part number', 
+                            quantity: 'Quantity'
+                        }, 
+                        workerSrc: window.location.href.replace(
+                            /choose-job.html(\?.*)?(\#.*)?$/, 
+                            'worker.js'
+                        ), 
+                        resultMessage: 'sampleResultMessage'
+                    },
+                    function(data){
+                        document.getElementById('result').innerText = data;
+                    }
+                );
             }
-            window.addEventListener("message", function(event){
-                var data = /^sampleResultMessage:(.*)$/.exec(event.data);
-                if (data) {
-                    document.getElementById('result').innerText = data[1];
-                }
-            },false);
         </script>
     </body>
 </html>
