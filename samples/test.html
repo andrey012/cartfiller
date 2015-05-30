@@ -53,8 +53,12 @@
                             testFrame
                                 .jQuery('#bookmarklets a.bookmarklet:nth('+currentBookmarklet+')');
                         console.log('bookmarklet: ' + bookmarklet.length);
-                        bookmarklet
-                            .each(function(i,el){ el.click(); });
+                        bookmarklet.each(function(i,el){ 
+                            console.log('going to click link');
+                            el.click(); 
+                            console.log('link clicked');
+                        });
+                        console.log('click done');
                         console.log('step ' + currentBookmarklet + ' (' + bookmarklet.text() + ')')
                         var tries = 100;
                         setTimeout(function waitForSubmitLink(){
