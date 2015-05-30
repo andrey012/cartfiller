@@ -17,6 +17,7 @@
                 var testFrame = window.frames['testFrame'];
                 var bookmarkletCount;
                 var testFrameSrc;
+                var reloadCounter = 0;
                 QUnit.test("Find number of bookmarklets", function (assert){
                     var done = assert.async();
                     setTimeout(function waitForTestFrameToCountBookmarklets(){
@@ -95,9 +96,8 @@
                             setTimeout(waitForSubmitLink, 100);
                         },0);
                     }
-                    console.log('going to reload frame: ' + testFrameSrc);
-                    testFrame.location.href = testFrameSrc;
-                    testFrame.location.reload();
+                    var location = testFrame.location.href = testFrameSrc.replace(/sample-shop\.html(\?\d*)?\#/, 'sample-shop.html?' + (reloadCounter++) + '#');
+                    console.log('going to reload frame: ' + location);
                 }
             });
         </script>
