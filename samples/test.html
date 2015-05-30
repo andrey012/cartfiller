@@ -47,15 +47,21 @@
                 })
                 QUnit.config.testTimeout = 150000;
                 var processNextBookmarklet = function(currentBookmarklet, assert, done){
-                    setTimeout(function(){
+                    document.getElementsByName('testFrame')[0].onload = function(){
                         console.log('inside processNextBookmarklet');
                         var bookmarklet = 
                             testFrame
                                 .jQuery('#bookmarklets a.bookmarklet:nth('+currentBookmarklet+')');
                         console.log('bookmarklet: ' + bookmarklet.length);
                         bookmarklet.each(function(i,el){ 
+
                             console.log('going to click link');
-                            el.click(); 
+                            var code;
+                            console.log('code: ' + (code = el.getAttribute('href').replace(/^javascript:/, '')));
+                            var script = testFrame.document.createElement('script');
+                            script.textContent = code;
+                            testFrame.document.getElementsByTagName('head')[0].appendChild(script);
+
                             console.log('link clicked');
                         });
                         console.log('click done');
@@ -101,7 +107,7 @@
                             } catch (e) {}
                             setTimeout(waitForSubmitLink, 100);
                         },0);
-                    }, 1000);
+                    };
                     var location = testFrame.location.href = testFrameSrc.replace(/sample-shop\.html(\?\d*)?\#/, 'sample-shop.html?' + (reloadCounter++) + '#');
                     console.log('going to reload frame: ' + location);
                 }
