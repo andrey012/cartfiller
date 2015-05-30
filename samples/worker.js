@@ -64,6 +64,25 @@
             return window.jQuery('h2:contains("Search results"):visible');
         }
         /** 
+         * HtmlElement.click() function for PhantomJS
+         * @function CartFiller.SampleWorker~click
+         * @param {HtmlElement} el
+         * @access private
+         */
+        var click = function(el) {
+            var ev = window.document.createEvent('MouseEvent');
+            ev.initMouseEvent(
+                'click',
+                /*bubble*/true, /*cancelable*/true,
+                window, null,
+                0, 0, 0, 0, /*coordinates*/
+                false, false, false, false, /*modifier keys*/
+                0/*button=left*/, null
+            );
+            el.dispatchEvent(ev);
+        };
+
+        /** 
          * Object, that contains task description code -- functions and
          * comments for particular steps
          * @class CartFiller.SampleWorker.SampleWorkerTasks
@@ -93,7 +112,7 @@
                 },
                 'if cart is not empty - click on open cart link', function(cartLink){
                     if (cartIsEmpty) return api.nop();
-                    cartLink.each(function(i,el){el.click();});
+                    cartLink.each(function(i,el){click(el);});
                     api.waitFor(
                         function(){ 
                             return ((undefined !== window.jQuery) && (1 === window.jQuery('h2:contains("Your cart"):visible').length));
@@ -110,7 +129,7 @@
                 },
                 'if cart is not empty - click clear cart button', function(removeAllItems){
                     if (cartIsEmpty) return api.nop();
-                    removeAllItems.each(function(i,el){el.click();});
+                    removeAllItems.each(function(i,el){click(el);});
                     api.highlight(removeAllItems);
                     api.waitFor(
                         function(){
@@ -144,7 +163,7 @@
                     api.highlight(homeLink).result((1 === homeLink.length) ? "" : "Cant find home link");
                 }, 
                 'click home', function(homeLink){
-                    homeLink.each(function(i,el){el.click();});
+                    homeLink.each(function(i,el){click(el);});
                     api.waitFor(
                         function(){
                             return (window.jQuery) && (1 === searchBox().length);
@@ -167,7 +186,7 @@
                     api.highlight(searchButton).result((1 === searchButton.length) ? "" : "Cant find search button");
                 },
                 'click search button', function(searchButton){
-                    searchButton.each(function(i,el){el.click();});
+                    searchButton.each(function(i,el){click(el);});
                     api.waitFor(function(){
                         return (window.jQuery) && (1 === searchResultsHeading().length);
                     }, function(result){
@@ -212,7 +231,7 @@
                 },
                 'click on Add to cart button', function(add){
                     if (!task.quantity) return api.result();
-                    add.each(function(i,el){el.click();});
+                    add.each(function(i,el){click(el);});
                     api.waitFor(function(){
                         return currentCartAmount !== parseInt(cartAmountElement().text());
                     }, function(r){
