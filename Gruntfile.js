@@ -33,6 +33,10 @@ module.exports = function(grunt) {
             jQueryPlugin: {
                 src: ["src/jquery-cartFiller.js"],
                 dest: "dist/jquery-cartFiller.js"
+            },
+            workerAngularApp: {
+                src: ["src/scripts/*.js"],
+                dest: "dist/worker-app-scripts.js"
             }
 		},
         copy: {
@@ -58,6 +62,9 @@ module.exports = function(grunt) {
 
 		// Minify definitions
 		uglify: {
+			options: {
+				banner: "<%= meta.banner %>"
+			},
 			inject: {
 				src: ["dist/inject.js"],
 				dest: "dist/inject.min.js"
@@ -66,11 +73,42 @@ module.exports = function(grunt) {
 				src: ["dist/jquery-cartFiller.js"],
 				dest: "dist/jquery-cartFiller.min.js"
 			},
-			options: {
-				banner: "<%= meta.banner %>"
-			}
+            workerAngularApp: {
+                src: ["dist/worker-app-scripts.js"],
+                dest: "dist/worker-app-scripts.min.js"
+            }
 		},
-
+        requirejs : {
+            cmn : {
+                options : {
+                    waitSeconds : 0,
+                    baseUrl : '.',
+//                      name : 'test',
+                    out : 'dist/worker-app-scripts.min.js',
+                    optimize : 'uglify2',
+                    generateSourceMaps : false,
+                    preserveLicenseComments : false,
+                    inlineText : true,
+                    findNestedDependencies : true,
+                    paths : {
+                      requireLib : 'lib/requirejs/require',
+                      angular: 'lib/angular/angular',
+                      'angular-route': 'lib/angular-route/angular-route',
+                      jquery: 'lib/jquery/dist/jquery',
+                      app: 'dist/worker-app-scripts'
+                    },
+                    include : [
+                      'requireLib',
+                      'app',
+                      'angular',
+                      'angular-route',
+                      'jquery'
+                    ],
+                    exclude : [
+                    ]
+                }
+            }
+        },
         // Generate JSDoc documentation
         shell: {
             build_docs: {
@@ -95,6 +133,7 @@ module.exports = function(grunt) {
 	grunt.loadNpmTasks("grunt-contrib-coffee");
 	grunt.loadNpmTasks("grunt-contrib-watch");
     grunt.loadNpmTasks('grunt-shell');
+    grunt.loadNpmTasks('grunt-contrib-requirejs');
 
 	grunt.registerTask("build", ["concat", "uglify", "shell", "copy"]);
 	grunt.registerTask("default", ["jshint", "build"]);
