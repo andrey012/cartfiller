@@ -13,6 +13,18 @@
         <div id="qunit-fixture"></div>
         <script>
             $(window).ready(function(){
+                var click = function(el) {
+                    var ev = document.createEvent('MouseEvent');
+                    ev.initMouseEvent(
+                        'click',
+                        /*bubble*/true, /*cancelable*/true,
+                        window, null,
+                        0, 0, 0, 0, /*coordinates*/
+                        false, false, false, false, /*modifier keys*/
+                        0/*button=left*/, null
+                    );
+                    el.dispatchEvent(ev);
+                };
 
                 var testFrame = window.frames['testFrame'];
                 var bookmarkletCount;
@@ -75,14 +87,15 @@
                                 var chooseJobButton = testFrame.frames['cartFillerWorkerFrame'].jQuery ? testFrame.frames['cartFillerWorkerFrame'].jQuery('#chooseJobButton') : false
                                 if (link && loaded && chooseJobButton && chooseJobButton.text() === 'Cancel') {
                                     console.log('submit link found');
-                                    link.click();
+                                    click(link);
+                                    console.log('submit link clicked');
                                     setTimeout(function waitForWorkerToLoad() {
                                         try {
                                             if (testFrame.frames['cartFillerWorkerFrame'].document.readyState !== "complete") throw "";
                                             var runButton = testFrame.frames['cartFillerWorkerFrame'].document.getElementById('runButton');
                                             if (runButton && !runButton.getAttribute('disabled')){
                                                 console.log('run button found');
-                                                runButton.click();
+                                                click(runButton);
                                                 setTimeout(function waitForCompleted(){
                                                     try {
                                                         if (testFrame.frames['cartFillerWorkerFrame'].document.getElementById('finishReached')) {

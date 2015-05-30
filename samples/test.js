@@ -89,8 +89,12 @@ page.onError = function(msg, trace) {
     });
   }
 
-  console.error(msgStack.join('\n'));
+  console.log(msgStack.join('\n'));
 
+};
+page.onResourceError = function(resourceError) {
+  console.log('Unable to load resource (#' + resourceError.id + 'URL:' + resourceError.url + ')');
+  console.log('Error code: ' + resourceError.errorCode + '. Description: ' + resourceError.errorString);
 };
 page.open('http://localhost:'+port+'/samples/test.html', function(status){
     if (status !== "success") {
