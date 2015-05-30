@@ -48,9 +48,11 @@
                 QUnit.config.testTimeout = 150000;
                 var processNextBookmarklet = function(currentBookmarklet, assert, done){
                     setTimeout(function(){
+                        console.log('inside processNextBookmarklet');
                         var bookmarklet = 
                             testFrame
                                 .jQuery('#bookmarklets a.bookmarklet:nth('+currentBookmarklet+')');
+                        console.log('bookmarklet: ' + bookmarklet.length);
                         bookmarklet
                             .each(function(i,el){ el.click(); });
                         console.log('step ' + currentBookmarklet + ' (' + bookmarklet.text() + ')')
