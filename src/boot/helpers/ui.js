@@ -139,7 +139,7 @@
      * @access private
      */
     var getWorkerFrameSrc = function(){
-        return me.baseUrl + '/index' + (me.concatenated ? '.min' : '') + '.html';        
+        return me.baseUrl + '/index' + (me.concatenated ? '.min' : '') + '.html' + (me.gruntBuildTimeStamp ? ('?' + me.gruntBuildTimeStamp) : '');        
     };
     me.scripts.push({
         /**

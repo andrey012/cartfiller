@@ -19,7 +19,10 @@ module.exports = function(grunt) {
 		// Concat definitions
 		concat: {
             options: {
-                banner: "<%= meta.banner %>"
+                banner: "<%= meta.banner %>",
+                process: function(content, path){
+                    return content.replace(/config.gruntBuildTimeStamp=\'\'\;/, 'config.gruntBuildTimeStamp=\'' + (new Date()).getTime() + '\';');
+                }
             },
             inject: {
                 src: [
@@ -87,6 +90,7 @@ module.exports = function(grunt) {
 				dest: "dist/jquery-cartFiller.min.js"
 			}
 		},
+        // Build one JS package from jQuery, requireJs, Angular
         requirejs : {
             cmn : {
                 options : {
@@ -117,6 +121,7 @@ module.exports = function(grunt) {
                 }
             }
         },
+        // Build one single-file application
         inline: {
             dist: {
                 src: 'dist/index.html',

@@ -148,6 +148,12 @@
      * @access public
      */
     config['data-worker'] = '';
+    /**
+     * Used to optimize deep caching of worker (job progress) frame app
+     * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
+     * @access public
+     */
+    config.gruntBuildTimeStamp='1432988547813';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -1058,7 +1064,7 @@
      * @access private
      */
     var getWorkerFrameSrc = function(){
-        return me.baseUrl + '/index' + (me.concatenated ? '.min' : '') + '.html';        
+        return me.baseUrl + '/index' + (me.concatenated ? '.min' : '') + '.html' + (me.gruntBuildTimeStamp ? ('?' + me.gruntBuildTimeStamp) : '');        
     };
     me.scripts.push({
         /**
