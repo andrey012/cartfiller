@@ -115,7 +115,7 @@
         div.style.width = (right - left) + 'px';
         div.style.height = (bottom - top) + 'px';
         div.style.backgroundColor = 'rgba(0,0,0,0.3)';
-        div.style.zIndex = 100000;
+        div.style.zIndex = getZIndexForOverlay();
         div.className = overlayClassName;
         div.onclick = function(){removeOverlay();};
         getDocument().getElementsByTagName('body')[0].appendChild(div);
@@ -134,15 +134,23 @@
     var scrollTo = function(left, top, right, bottom){
         var centerX = (right + left ) / 2;
         var centerY = (bottom + top) / 2;
-        var currentX, currentY;
+        var currentLeft, currentTop;
         var destX = centerX - ( getDocument().documentElement.clientWidth / 2);
         var destY = centerY - ( getDocument().documentElement.clientHeight / 2);
+        var minLeft, maxLeft;
+        minLeft = maxLeft = currentLeft = getScrollLeft();
+        var minTop, maxTop;
+        minTop = maxTop = currentTop = getScrollLeft();
         for (var tries = 1000; tries; tries--){
-            currentX = getScrollLeft();
-            currentY = getScrollTop();
-            me.modules.ui.mainFrameWindow.scrollBy(destX - currentX, destY -  currentY);
-            if (getScrollLeft() === currentX &amp;&amp;
-                getScrollTop() === currentY) {
+            minLeft = Math.min(minLeft, currentLeft);
+            maxLeft = Math.max(maxLeft, currentLeft);
+            minTop = Math.min(minTop, currentTop);
+            maxTop = Math.max(maxTop, currentTop);
+            me.modules.ui.mainFrameWindow.scrollBy(destX - currentLeft, destY -  currentTop);
+            currentLeft = getScrollLeft();
+            currentTop = getScrollTop();
+            if ((currentLeft >= minLeft) &amp;&amp; (currentLeft &lt;= maxLeft) &amp;&amp;
+                (currentTop >= minTop) &amp;&amp; (currentTop &lt;= maxTop)) {
                 break;
             }
         }
@@ -167,9 +175,37 @@
      * @access private
      */
     var getWorkerFrameSrc = function(){
-        return me.baseUrl + '/index.html';        
+        return me.baseUrl + '/index' + (me.concatenated ? '.min' : '') + '.html' + (me.gruntBuildTimeStamp ? ('?' + me.gruntBuildTimeStamp) : '');        
     };
+    /**
+     * Horizontal position of center of highlighted element
+     * @member {integer} CartFiller.UI~highlightedElementCenterLeft
+     * @access private
+     */
+    var highlightedElementCenterLeft = false;
+    /**
+     * Vertical position of top of highlighted element
+     * @member {integer} CartFiller.UI~highlightedElementTop
+     * @access private
+     */
+    var highlightedElementTop = false;
+    /**
+     * Vertical position of bottom of highlighted element
+     * @member {integer} CartFiller.UI~highlightedElementBottom
+     * @access private
+     */
+    var highlightedElementBottom = false;
+    /**
+     * Returns z-index for overlay divs. 
+     * @function {integer} CartFiller.UI~getZIndexForOverlay
+     * @access private
+     */
+    var getZIndexForOverlay = function(){
+        return 100000; // TBD look for max zIndex used in the main frame
+    };
+
     me.scripts.push({
+
         /**
          * Returns name used by loader to organize modules
          * @function CartFiller.Api#getName 
@@ -209,8 +245,12 @@
          * @access public
          */
         highlight: function(element, allElements){
-                var rect;
-                if (undefined !== this.mainFrameWindow.jQuery &amp;&amp; (element instanceof this.mainFrameWindow.jQuery)){
+            var rect;
+            var body = this.mainFrameWindow.document.getElementsByTagName('body')[0];
+            body.style.paddingBottom = this.mainFrameWindow.innerHeight + 'px';
+            var ui = this;
+            setTimeout(function(){
+                if (undefined !== ui.mainFrameWindow.jQuery &amp;&amp; (element instanceof ui.mainFrameWindow.jQuery)){
                     if (1 > element.length) {
                         element = undefined;
                     } else {
@@ -230,15 +270,17 @@
                 } else if (undefined !== element) {
                     rect = element.getBoundingClientRect();                
                 }
-                var body = this.mainFrameWindow.document.getElementsByTagName('body')[0];
                 var full = body.getBoundingClientRect();
                 var scrollTop = getScrollTop();
                 var scrollLeft = getScrollLeft();
-                var pageRight = Math.max(full.right + scrollLeft, body.scrollWidth, this.mainFrameWindow.innerWidth) - 1;
-                var pageBottom = Math.max(full.bottom + scrollTop, body.scrollHeight, this.mainFrameWindow.innerHeight) - 1;
+                var pageRight = Math.max(full.right + scrollLeft, body.scrollWidth, ui.mainFrameWindow.innerWidth) - 1;
+                var pageBottom = Math.max(full.bottom + scrollTop, body.scrollHeight, ui.mainFrameWindow.innerHeight) - 1;
                 removeOverlay();
                 if (undefined !== element) {
                     var border = 5;
+                    highlightedElementCenterLeft = scrollLeft + Math.round(rect.left + rect.right) / 2;
+                    highlightedElementBottom = scrollTop + rect.bottom;
+                    highlightedElementTop = scrollTop + rect.top;
                     createOverlay(0, 0, Math.max(0, rect.left + scrollLeft - border), pageBottom);
                     createOverlay(Math.min(pageRight, rect.right + scrollLeft + border), 0, pageRight, pageBottom);
                     createOverlay(Math.max(0, rect.left + scrollLeft - border), 0, Math.min(pageRight, rect.right + scrollLeft + border), Math.min(pageBottom, rect.top + scrollTop - border));
@@ -246,9 +288,89 @@
                     scrollTo(rect.left + scrollLeft, rect.top + scrollTop, rect.right + scrollLeft, rect.bottom + scrollTop);
                 } else {
                     createOverlay(0, 0, pageRight, pageBottom);
+                    highlightedElementCenterLeft = highlightedElementBottom = highlightedElementTop = false;
                 }
+            },0);
+        },
+        /**
+         * Displays comment message over the overlay in the main frame
+         * @function CartFiller.UI#say
+         * @param {String} text
+         * @access public
+         */
+        say: function(text){
+            var ui = this;
+            setTimeout(function(){
+                var initialWidth = Math.max(100, Math.round(ui.mainFrameWindow.innerWidth * 0.5));
+                var messageDiv = ui.mainFrameWindow.document.createElement('div');
+                messageDiv.style.display = 'block';
+                messageDiv.style.backgroundColor = '#fff';
+                messageDiv.style.padding = '10px';
+                messageDiv.style.fontSize = '20px;';
+                messageDiv.style.zIndex = getZIndexForOverlay() + 1;
+                messageDiv.style.border = '#bbb solid 10px';
+                messageDiv.style.borderRadius = '20px;';
+                messageDiv.style.overflow = 'auto';
+                messageDiv.style.visibility = 'hidden';
+                messageDiv.style.top = (highlightedElementBottom + 5) + 'px';
+                messageDiv.style.left = Math.max(0, (highlightedElementCenterLeft - initialWidth)) + 'px';
+                messageDiv.style.width = initialWidth + 'px';
+                messageDiv.style.height = 'auto';
+                messageDiv.style.position = 'absolute';
+                messageDiv.className = overlayClassName;
+                messageDiv.textContent = text;
+                messageDiv.onclick = function(){removeOverlay();};
 
-            },
+                ui.mainFrameWindow.document.getElementsByTagName('body')[0].appendChild(messageDiv);
+                ui.adjustMessageDiv(messageDiv);
+            },0);
+        },
+        /**
+         * Finds appropriate position and size for message div
+         * to make text fit on page if possible
+         * @function CartFiller.UI#adjustMessageDiv
+         * @param {HtmlElement} div message div
+         * @param {integer} counter iteration counter. When reaches 100, then
+         * this function stops iterating
+         * @access public
+         */
+        adjustMessageDiv: function(div, counter){
+            if (undefined === counter) {
+                counter = 0;
+            }
+            var ui = this;
+            setTimeout(function(){
+                var ok = false;
+                if (counter &lt; 100) {
+                    var rect = div.getBoundingClientRect();
+                    if (rect.bottom > ui.mainFrameWindow.innerHeight){
+                        if (rect.width > 0.95 * ui.mainFrameWindow.innerWidth){
+                            // let's try scrolling down
+                            if ((rect.top - (highlightedElementBottom - highlightedElementTop) - 10) &lt; ui.mainFrameWindow.innerHeight * 0.05){
+                                // no more scrolling available
+                                ok = true;
+                            } else {
+                                ui.mainFrameWindow.scrollBy(0, Math.round(ui.mainFrameWindow.innerHeight * 0.05));
+                            }
+                        } else {
+                            // let's make div wider
+                            div.style.left = Math.max(0, (parseInt(div.style.left.replace('px', '')) - Math.round(ui.mainFrameWindow.innerWidth * 0.04))) + 'px';
+                            div.style.width = Math.min(ui.mainFrameWindow.innerWidth, (parseInt(div.style.width.replace('px', '')) + Math.round(ui.mainFrameWindow.innerWidth * 0.04))) + 'px';
+                        }
+                    } else {
+                        // that's ok 
+                        ok = true;
+                    }
+                } else {
+                    ok = true;
+                }
+                if (ok){
+                    div.style.visibility = 'visible';
+                } else {
+                    ui.adjustMessageDiv(div, counter + 1);
+                }
+            },0);
+        },
         /**
          * Starts Popup type UI
          * @function CartFiller.UI#popup
@@ -424,13 +546,13 @@
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Externals</h3><ul><li><a href="external%2520jQuery.external__jQuery.fn_.html">jQuery.fn</a></li><li><a href="external-jQuery.html">jQuery</a></li></ul><h3>Classes</h3><ul><li><a href="CartFiller.Api.html">Api</a></li><li><a href="CartFiller.Api.StepEnvironment.html">StepEnvironment</a></li><li><a href="CartFiller.Configuration.html">Configuration</a></li><li><a href="CartFiller.Dispatcher.html">Dispatcher</a></li><li><a href="CartFiller.Injector.html">Injector</a></li><li><a href="CartFiller.Loader.html">Loader</a></li><li><a href="CartFiller.SampleWorker.html">SampleWorker</a></li><li><a href="CartFiller.SampleWorker.SampleWorkerTasks.html">SampleWorkerTasks</a></li><li><a href="CartFiller.UI.html">UI</a></li><li><a href="CartFillerPlugin-Plugin.html">Plugin</a></li><li><a href="cartFillerPlugin-Settings.html">Settings</a></li></ul><h3>Namespaces</h3><ul><li><a href="CartFiller.html">CartFiller</a></li><li><a href="CartFillerPlugin.html">CartFillerPlugin</a></li></ul><h3>Global</h3><ul><li><a href="global.html#%2522jQuery.fn.cartFillerPlugin%2522">"jQuery.fn.cartFillerPlugin"</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Externals</h3><ul><li><a href="external%2520jQuery.external__jQuery.fn_.html">jQuery.fn</a></li><li><a href="external-jQuery.html">jQuery</a></li></ul><h3>Classes</h3><ul><li><a href="CartFiller.Api.html">Api</a></li><li><a href="CartFiller.Api.StepEnvironment.html">StepEnvironment</a></li><li><a href="CartFiller.Configuration.html">Configuration</a></li><li><a href="CartFiller.Dispatcher.html">Dispatcher</a></li><li><a href="CartFiller.Injector.html">Injector</a></li><li><a href="CartFiller.Loader.html">Loader</a></li><li><a href="CartFiller.SampleWorker.html">SampleWorker</a></li><li><a href="CartFiller.SampleWorker.SampleWorkerTasks.html">SampleWorkerTasks</a></li><li><a href="CartFiller.UI.html">UI</a></li><li><a href="CartFillerPlugin-Plugin.html">Plugin</a></li><li><a href="cartFillerPlugin-Settings.html">Settings</a></li></ul><h3>Namespaces</h3><ul><li><a href="CartFiller.html">CartFiller</a></li><li><a href="CartFillerPlugin.html">CartFillerPlugin</a></li></ul><h3>Global</h3><ul><li><a href="global.html#%2522jQuery.cartFillerPlugin%2522">"jQuery.cartFillerPlugin"</a></li><li><a href="global.html#%2522jQuery.fn.cartFillerPlugin%2522">"jQuery.fn.cartFillerPlugin"</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0</a> on Fri May 29 2015 15:12:21 GMT+0300 (EEST)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0</a> on Sun May 31 2015 21:12:24 GMT+0300 (EEST)
 </footer>
 
 <script> prettyPrint(); </script>

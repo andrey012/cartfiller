@@ -41,6 +41,12 @@
      */
     var worker = false;
     /**
+     * Keeps worker URL during load process. If load was successful sends URL back to controller
+     * @var {String} CartFiller.Dispatcher~workerSrcPretendent
+     * @access private
+     */
+    var workerSrcPretendent = '';
+    /**
      * Object, that keeps current task details
      * @var {CartFiller.TaskDetails} CartFiller.Dispatcher~workerCurrentTask
      * @access private
@@ -159,11 +165,15 @@
             var dispatcher = this;
             window.addEventListener('message', function(event) {
                 var pattern = /^cartFillerMessage:(.*)$/;
-                var test = pattern.exec(event.data);
-                if (null != test){
-                    var message = JSON.parse(test[1]);
+                if (pattern.test(event.data)){
+                    var match = pattern.exec(event.data);
+                    var message = JSON.parse(match[1]);
                     var fn = 'onMessage_' + message.cmd;
-                    dispatcher[fn](message);
+                    if (undefined !== dispatcher[fn] &amp;&amp; dispatcher[fn] instanceof Function){
+                        dispatcher[fn](message);
+                    } else {
+                        console.log('unknown message: ' + fn + ':' + event.data);
+                    }
                 }
             }, false);
         },
@@ -241,7 +251,7 @@
          * @function CartFiller.Dispatcher#onMessage_sendResult
          * @param {Object} message message.result contains result, while
          * message.tasks contains job details as provided by Choose Job frame
-         * both are arrays of same size and order
+         * both are arrays of same size and order. See {@link CartFillerPlugin.resultCallback}
          * @access public
          */
         onMessage_sendResult: function(message){
@@ -258,6 +268,7 @@
          */
         onMessage_loadWorker: function(message){
             try {
+                workerSrcPretendent = message.src;
                 eval(message.code); // jshint ignore:line
             } catch (e){
                 alert(e);
@@ -411,7 +422,7 @@
                     list[taskName] = taskSteps;
                 }
             }
-            this.postMessageToWorker('workerRegistered', {jobTaskDescriptions: list});
+            this.postMessageToWorker('workerRegistered', {jobTaskDescriptions: list, src: workerSrcPretendent});
         },
         /**
          * Passes step result from worker to worker (job progress) frame
@@ -480,13 +491,13 @@
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Externals</h3><ul><li><a href="external%2520jQuery.external__jQuery.fn_.html">jQuery.fn</a></li><li><a href="external-jQuery.html">jQuery</a></li></ul><h3>Classes</h3><ul><li><a href="CartFiller.Api.html">Api</a></li><li><a href="CartFiller.Api.StepEnvironment.html">StepEnvironment</a></li><li><a href="CartFiller.Configuration.html">Configuration</a></li><li><a href="CartFiller.Dispatcher.html">Dispatcher</a></li><li><a href="CartFiller.Injector.html">Injector</a></li><li><a href="CartFiller.Loader.html">Loader</a></li><li><a href="CartFiller.SampleWorker.html">SampleWorker</a></li><li><a href="CartFiller.SampleWorker.SampleWorkerTasks.html">SampleWorkerTasks</a></li><li><a href="CartFiller.UI.html">UI</a></li><li><a href="CartFillerPlugin-Plugin.html">Plugin</a></li><li><a href="cartFillerPlugin-Settings.html">Settings</a></li></ul><h3>Namespaces</h3><ul><li><a href="CartFiller.html">CartFiller</a></li><li><a href="CartFillerPlugin.html">CartFillerPlugin</a></li></ul><h3>Global</h3><ul><li><a href="global.html#%2522jQuery.fn.cartFillerPlugin%2522">"jQuery.fn.cartFillerPlugin"</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Externals</h3><ul><li><a href="external%2520jQuery.external__jQuery.fn_.html">jQuery.fn</a></li><li><a href="external-jQuery.html">jQuery</a></li></ul><h3>Classes</h3><ul><li><a href="CartFiller.Api.html">Api</a></li><li><a href="CartFiller.Api.StepEnvironment.html">StepEnvironment</a></li><li><a href="CartFiller.Configuration.html">Configuration</a></li><li><a href="CartFiller.Dispatcher.html">Dispatcher</a></li><li><a href="CartFiller.Injector.html">Injector</a></li><li><a href="CartFiller.Loader.html">Loader</a></li><li><a href="CartFiller.SampleWorker.html">SampleWorker</a></li><li><a href="CartFiller.SampleWorker.SampleWorkerTasks.html">SampleWorkerTasks</a></li><li><a href="CartFiller.UI.html">UI</a></li><li><a href="CartFillerPlugin-Plugin.html">Plugin</a></li><li><a href="cartFillerPlugin-Settings.html">Settings</a></li></ul><h3>Namespaces</h3><ul><li><a href="CartFiller.html">CartFiller</a></li><li><a href="CartFillerPlugin.html">CartFillerPlugin</a></li></ul><h3>Global</h3><ul><li><a href="global.html#%2522jQuery.cartFillerPlugin%2522">"jQuery.cartFillerPlugin"</a></li><li><a href="global.html#%2522jQuery.fn.cartFillerPlugin%2522">"jQuery.fn.cartFillerPlugin"</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0</a> on Fri May 29 2015 15:12:21 GMT+0300 (EEST)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0</a> on Sun May 31 2015 21:12:24 GMT+0300 (EEST)
 </footer>
 
 <script> prettyPrint(); </script>

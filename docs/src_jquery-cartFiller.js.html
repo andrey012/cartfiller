@@ -200,6 +200,8 @@
                     this.trace('debug set') +
                     'if(w)s[a](c+w,z);' + 
                     this.trace('worker set') +
+                    's.onerror=function(){alert(\'error\');};' +
+                    this.trace('onerror set') +
                     'd.getElementsByTagName(\'head\')[0].appendChild(s);' +
                     this.trace('script element added') +
                 '})(' +
@@ -218,7 +220,7 @@
         evalBookmarklet: function(){
             return this.javaScriptUrl() + 'try{' +
                 this.trace('start') +
-                '(function(x,t,u,v,j,d){' +
+                '(function(f,x,t,u,v,j,d){' +
                     this.trace('in function') +
                     'x.open(' +
                         '\'GET\',' +
@@ -229,6 +231,7 @@
                     'x.onload=function(){' +
                         'try{' +
                             this.trace('x onload called') +
+                            'f=1;' +
                             'eval(' +
                                 '\'(function(){\'+' +
                                 'x.response+' +
@@ -238,9 +241,12 @@
                         '}catch(e){alert(e);}' +
                     '};' +
                     this.trace('x onload set') +
+                    'setTimeout(function(){if(!f)alert(\'error\');},5000);' +
+                    this.trace('onerror set') +
                     'x.send();' +
                     this.trace('x sent') +
                 '})(' +
+                    '0,' +
                     'new XMLHttpRequest(),' + 
                     this.getTypeId() + ',' +
                     '\'' + this.settings.baseUrl + '\',' +
@@ -253,11 +259,12 @@
         iframeBookmarklet: function(){
             return this.javaScriptUrl() + 'try{' +
                 this.trace('start') +
-                '(function(d,p,t,u,v,m,j,y,x,i){' +
+                '(function(f,d,p,t,u,v,m,j,y,x,i){' +
                     this.trace('in') +
                     'window.addEventListener(' +
                         '\'message\',' +
                         'function(e){' +
+                            'f=1;' +
                             'try{' +
                                 this.trace('event') +
                                 'if(p.test(x=e.data)){' +
@@ -280,7 +287,10 @@
                     this.trace('iframe+') +
                     'i.contentWindow.location.href=u+v+(m?\'?min&amp;\':\'?\')+(new Date()).getTime();' +
                     this.trace('iframe++') +
+                    'setTimeout(function(){if(!f)alert(\'error\');},5000);' +
+                    this.trace('timeout set') +
                 '})(' +
+                    '0,' +
                     'document,' +
                     '/^\'cartFillerEval\'/,' + 
                     this.getTypeId() + ',' +
@@ -319,11 +329,73 @@
      * @access public
      */
     $.fn[ pluginName ] = function ( options ) {
-            return this.each(function() {
-                    if ( !$.data( this, 'plugin_' + pluginName ) ) {
-                            $.data( this, 'plugin_' + pluginName, new Plugin( this, options ) );
-                    }
-            });
+        return this.each(function() {
+            if ( !$.data( this, 'plugin_' + pluginName ) ) {
+                    $.data( this, 'plugin_' + pluginName, new Plugin( this, options ) );
+            }
+        });
+    };
+    /**
+     * Holds result callback registered by user through {@link external:"jQuery".cartFillerPlugin}
+     * @var {CartFillerPlugin.resultCallback} CartFillerPlugin~resultCallback
+     * @access private
+     */
+    var resultCallback;
+    /**
+     * Holds result callback message name
+     * @var {String} CartFillerPlugin~resultMessageName
+     * @access private
+     */
+    var resultMessageName;
+    /**
+     * Callback, that will receive job result details from cartFiller
+     * @callback CartFillerPlugin.resultCallback
+     * @param {Object} message message.result contains result, while
+     * message.tasks contains job details as provided by Choose Job frame.
+     * See {@link CartFiller.Dispatcher#onMessage_sendResult}
+     */
+    var messageEventListener = function(event){
+        var data = new RegExp('^' + resultMessageName + ':(.*)$').exec(event.data);
+        if (data) {
+            if (resultCallback){
+                resultCallback(JSON.parse(data[1]));
+            }
+        }
+    };
+    /**
+     * Global plugin function - sends job details to cartFiller and
+     * registers optional callback, that will receive results.
+     * @function external:"jQuery".cartFillerPlugin
+     * @global
+     * @name "jQuery.cartFillerPlugin"
+     * @param {Object[]} jobDetails Job details data, array of objects, 
+     * each object should contain .task which has task name and
+     * arbitrary other members for worker
+     * @param {CartFillerPlugin.resultCallback} resultCallback
+     * callback, which will receive results. It can be called several times
+     * @access public
+     */
+    $.cartFillerPlugin = function( jobDetails, newResultCallback ) {
+        if (newResultCallback &amp;&amp; 
+            ((undefined === jobDetails.resultMessage) || (String(jobDetails.resultMessage).length &lt; 1))
+            ){
+            jobDetails.resultMessage = 'cartFillerResultMessage';
+        }
+        resultMessageName = jobDetails.resultMessage;
+
+        window.parent.postMessage(
+            'cartFillerMessage:' + 
+            JSON.stringify(jobDetails),
+            '*'
+        );
+        if (resultCallback){
+            window.removeEventListener('message', messageEventListener, false);
+            resultCallback = undefined;
+        }
+        if (newResultCallback){
+            resultCallback = newResultCallback;
+            window.addEventListener('message', messageEventListener,false);
+        }
     };
 
 })( jQuery, window, document );
@@ -337,13 +409,13 @@
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Externals</h3><ul><li><a href="external%2520jQuery.external__jQuery.fn_.html">jQuery.fn</a></li><li><a href="external-jQuery.html">jQuery</a></li></ul><h3>Classes</h3><ul><li><a href="CartFiller.Api.html">Api</a></li><li><a href="CartFiller.Api.StepEnvironment.html">StepEnvironment</a></li><li><a href="CartFiller.Configuration.html">Configuration</a></li><li><a href="CartFiller.Dispatcher.html">Dispatcher</a></li><li><a href="CartFiller.Injector.html">Injector</a></li><li><a href="CartFiller.Loader.html">Loader</a></li><li><a href="CartFiller.SampleWorker.html">SampleWorker</a></li><li><a href="CartFiller.SampleWorker.SampleWorkerTasks.html">SampleWorkerTasks</a></li><li><a href="CartFiller.UI.html">UI</a></li><li><a href="CartFillerPlugin-Plugin.html">Plugin</a></li><li><a href="cartFillerPlugin-Settings.html">Settings</a></li></ul><h3>Namespaces</h3><ul><li><a href="CartFiller.html">CartFiller</a></li><li><a href="CartFillerPlugin.html">CartFillerPlugin</a></li></ul><h3>Global</h3><ul><li><a href="global.html#%2522jQuery.fn.cartFillerPlugin%2522">"jQuery.fn.cartFillerPlugin"</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Externals</h3><ul><li><a href="external%2520jQuery.external__jQuery.fn_.html">jQuery.fn</a></li><li><a href="external-jQuery.html">jQuery</a></li></ul><h3>Classes</h3><ul><li><a href="CartFiller.Api.html">Api</a></li><li><a href="CartFiller.Api.StepEnvironment.html">StepEnvironment</a></li><li><a href="CartFiller.Configuration.html">Configuration</a></li><li><a href="CartFiller.Dispatcher.html">Dispatcher</a></li><li><a href="CartFiller.Injector.html">Injector</a></li><li><a href="CartFiller.Loader.html">Loader</a></li><li><a href="CartFiller.SampleWorker.html">SampleWorker</a></li><li><a href="CartFiller.SampleWorker.SampleWorkerTasks.html">SampleWorkerTasks</a></li><li><a href="CartFiller.UI.html">UI</a></li><li><a href="CartFillerPlugin-Plugin.html">Plugin</a></li><li><a href="cartFillerPlugin-Settings.html">Settings</a></li></ul><h3>Namespaces</h3><ul><li><a href="CartFiller.html">CartFiller</a></li><li><a href="CartFillerPlugin.html">CartFillerPlugin</a></li></ul><h3>Global</h3><ul><li><a href="global.html#%2522jQuery.cartFillerPlugin%2522">"jQuery.cartFillerPlugin"</a></li><li><a href="global.html#%2522jQuery.fn.cartFillerPlugin%2522">"jQuery.fn.cartFillerPlugin"</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0</a> on Fri May 29 2015 15:12:21 GMT+0300 (EEST)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0</a> on Sun May 31 2015 21:12:24 GMT+0300 (EEST)
 </footer>
 
 <script> prettyPrint(); </script>

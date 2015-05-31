@@ -153,7 +153,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1433017364126';
+    config.gruntBuildTimeStamp='1433095922120';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -401,6 +401,16 @@
         highlight: function(element, allElements){
             me.modules.ui.highlight(element, allElements);
             me.modules.dispatcher.setHighlightedElement(element);
+            return this;
+        },
+        /**
+         * Displays comment message over the overlay in the main frame
+         * @function CartFiller.Api#say
+         * @param {String} message
+         * @access public
+         */
+        say: function(message){
+            me.modules.ui.say(message);
             return this;
         }
 
@@ -1016,7 +1026,7 @@
         div.style.width = (right - left) + 'px';
         div.style.height = (bottom - top) + 'px';
         div.style.backgroundColor = 'rgba(0,0,0,0.3)';
-        div.style.zIndex = 100000;
+        div.style.zIndex = getZIndexForOverlay();
         div.className = overlayClassName;
         div.onclick = function(){removeOverlay();};
         getDocument().getElementsByTagName('body')[0].appendChild(div);
@@ -1078,7 +1088,35 @@
     var getWorkerFrameSrc = function(){
         return me.baseUrl + '/index' + (me.concatenated ? '.min' : '') + '.html' + (me.gruntBuildTimeStamp ? ('?' + me.gruntBuildTimeStamp) : '');        
     };
+    /**
+     * Horizontal position of center of highlighted element
+     * @member {integer} CartFiller.UI~highlightedElementCenterLeft
+     * @access private
+     */
+    var highlightedElementCenterLeft = false;
+    /**
+     * Vertical position of top of highlighted element
+     * @member {integer} CartFiller.UI~highlightedElementTop
+     * @access private
+     */
+    var highlightedElementTop = false;
+    /**
+     * Vertical position of bottom of highlighted element
+     * @member {integer} CartFiller.UI~highlightedElementBottom
+     * @access private
+     */
+    var highlightedElementBottom = false;
+    /**
+     * Returns z-index for overlay divs. 
+     * @function {integer} CartFiller.UI~getZIndexForOverlay
+     * @access private
+     */
+    var getZIndexForOverlay = function(){
+        return 100000; // TBD look for max zIndex used in the main frame
+    };
+
     me.scripts.push({
+
         /**
          * Returns name used by loader to organize modules
          * @function CartFiller.Api#getName 
@@ -1118,8 +1156,12 @@
          * @access public
          */
         highlight: function(element, allElements){
-                var rect;
-                if (undefined !== this.mainFrameWindow.jQuery && (element instanceof this.mainFrameWindow.jQuery)){
+            var rect;
+            var body = this.mainFrameWindow.document.getElementsByTagName('body')[0];
+            body.style.paddingBottom = this.mainFrameWindow.innerHeight + 'px';
+            var ui = this;
+            setTimeout(function(){
+                if (undefined !== ui.mainFrameWindow.jQuery && (element instanceof ui.mainFrameWindow.jQuery)){
                     if (1 > element.length) {
                         element = undefined;
                     } else {
@@ -1139,15 +1181,17 @@
                 } else if (undefined !== element) {
                     rect = element.getBoundingClientRect();                
                 }
-                var body = this.mainFrameWindow.document.getElementsByTagName('body')[0];
                 var full = body.getBoundingClientRect();
                 var scrollTop = getScrollTop();
                 var scrollLeft = getScrollLeft();
-                var pageRight = Math.max(full.right + scrollLeft, body.scrollWidth, this.mainFrameWindow.innerWidth) - 1;
-                var pageBottom = Math.max(full.bottom + scrollTop, body.scrollHeight, this.mainFrameWindow.innerHeight) - 1;
+                var pageRight = Math.max(full.right + scrollLeft, body.scrollWidth, ui.mainFrameWindow.innerWidth) - 1;
+                var pageBottom = Math.max(full.bottom + scrollTop, body.scrollHeight, ui.mainFrameWindow.innerHeight) - 1;
                 removeOverlay();
                 if (undefined !== element) {
                     var border = 5;
+                    highlightedElementCenterLeft = scrollLeft + Math.round(rect.left + rect.right) / 2;
+                    highlightedElementBottom = scrollTop + rect.bottom;
+                    highlightedElementTop = scrollTop + rect.top;
                     createOverlay(0, 0, Math.max(0, rect.left + scrollLeft - border), pageBottom);
                     createOverlay(Math.min(pageRight, rect.right + scrollLeft + border), 0, pageRight, pageBottom);
                     createOverlay(Math.max(0, rect.left + scrollLeft - border), 0, Math.min(pageRight, rect.right + scrollLeft + border), Math.min(pageBottom, rect.top + scrollTop - border));
@@ -1155,9 +1199,89 @@
                     scrollTo(rect.left + scrollLeft, rect.top + scrollTop, rect.right + scrollLeft, rect.bottom + scrollTop);
                 } else {
                     createOverlay(0, 0, pageRight, pageBottom);
+                    highlightedElementCenterLeft = highlightedElementBottom = highlightedElementTop = false;
                 }
+            },0);
+        },
+        /**
+         * Displays comment message over the overlay in the main frame
+         * @function CartFiller.UI#say
+         * @param {String} text
+         * @access public
+         */
+        say: function(text){
+            var ui = this;
+            setTimeout(function(){
+                var initialWidth = Math.max(100, Math.round(ui.mainFrameWindow.innerWidth * 0.5));
+                var messageDiv = ui.mainFrameWindow.document.createElement('div');
+                messageDiv.style.display = 'block';
+                messageDiv.style.backgroundColor = '#fff';
+                messageDiv.style.padding = '10px';
+                messageDiv.style.fontSize = '20px;';
+                messageDiv.style.zIndex = getZIndexForOverlay() + 1;
+                messageDiv.style.border = '#bbb solid 10px';
+                messageDiv.style.borderRadius = '20px;';
+                messageDiv.style.overflow = 'auto';
+                messageDiv.style.visibility = 'hidden';
+                messageDiv.style.top = (highlightedElementBottom + 5) + 'px';
+                messageDiv.style.left = Math.max(0, (highlightedElementCenterLeft - initialWidth)) + 'px';
+                messageDiv.style.width = initialWidth + 'px';
+                messageDiv.style.height = 'auto';
+                messageDiv.style.position = 'absolute';
+                messageDiv.className = overlayClassName;
+                messageDiv.textContent = text;
+                messageDiv.onclick = function(){removeOverlay();};
 
-            },
+                ui.mainFrameWindow.document.getElementsByTagName('body')[0].appendChild(messageDiv);
+                ui.adjustMessageDiv(messageDiv);
+            },0);
+        },
+        /**
+         * Finds appropriate position and size for message div
+         * to make text fit on page if possible
+         * @function CartFiller.UI#adjustMessageDiv
+         * @param {HtmlElement} div message div
+         * @param {integer} counter iteration counter. When reaches 100, then
+         * this function stops iterating
+         * @access public
+         */
+        adjustMessageDiv: function(div, counter){
+            if (undefined === counter) {
+                counter = 0;
+            }
+            var ui = this;
+            setTimeout(function(){
+                var ok = false;
+                if (counter < 100) {
+                    var rect = div.getBoundingClientRect();
+                    if (rect.bottom > ui.mainFrameWindow.innerHeight){
+                        if (rect.width > 0.95 * ui.mainFrameWindow.innerWidth){
+                            // let's try scrolling down
+                            if ((rect.top - (highlightedElementBottom - highlightedElementTop) - 10) < ui.mainFrameWindow.innerHeight * 0.05){
+                                // no more scrolling available
+                                ok = true;
+                            } else {
+                                ui.mainFrameWindow.scrollBy(0, Math.round(ui.mainFrameWindow.innerHeight * 0.05));
+                            }
+                        } else {
+                            // let's make div wider
+                            div.style.left = Math.max(0, (parseInt(div.style.left.replace('px', '')) - Math.round(ui.mainFrameWindow.innerWidth * 0.04))) + 'px';
+                            div.style.width = Math.min(ui.mainFrameWindow.innerWidth, (parseInt(div.style.width.replace('px', '')) + Math.round(ui.mainFrameWindow.innerWidth * 0.04))) + 'px';
+                        }
+                    } else {
+                        // that's ok 
+                        ok = true;
+                    }
+                } else {
+                    ok = true;
+                }
+                if (ok){
+                    div.style.visibility = 'visible';
+                } else {
+                    ui.adjustMessageDiv(div, counter + 1);
+                }
+            },0);
+        },
         /**
          * Starts Popup type UI
          * @function CartFiller.UI#popup
