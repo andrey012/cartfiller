@@ -81,6 +81,7 @@
             );
             el.dispatchEvent(ev);
         };
+        console.log('hello from sample worker'); // to easier find its current source
 
         /** 
          * Object, that contains task description code -- functions and
@@ -98,17 +99,16 @@
             clearCart: [
                 'find total amount of items in the cart', function(){
                     var strong = cartAmountElement();
-                    api.highlight(strong).result((1 === strong.length) ? "" : "Cant find amount in cart");
+                    api.highlight(strong).say('Here is total amount in cart. To start filling the cart we need to make sure, that cart is empty.').result((1 === strong.length) ? "" : "Cant find amount in cart");
                 },
                 'check, that cart has more then 0 items', function(strong){
                     cartIsEmpty = ("0" === strong.text());
-                    api.highlight(strong);
-                    api.result();
+                    api.highlight(strong).say(cartIsEmpty ? 'Cart is empty' : 'Cart is not empty').result();
                 },
                 'if cart is not empty - find link to open cart', function(){
                     if (cartIsEmpty) return api.nop();
                     var cartLink = window.jQuery('#navbar a:contains("Open Cart"):visible');
-                    api.highlight(cartLink).result((1 === cartLink.length) ? "" : "Cant find link to open cart");
+                    api.highlight(cartLink).say('Here is "open cart" link, we are going to open cart').result((1 === cartLink.length) ? "" : "Cant find link to open cart");
                 },
                 'if cart is not empty - click on open cart link', function(cartLink){
                     if (cartIsEmpty) return api.nop();
@@ -125,12 +125,12 @@
                 'if cart is not empty - find clear cart button', function(){
                     if (cartIsEmpty) return api.nop();
                     var removeAllItems = window.jQuery('a:contains("Remove all items"):visible');
-                    api.highlight(removeAllItems).result((1 <= removeAllItems.length) ? "" : "Cant find clear cart button");
+                    api.highlight(removeAllItems).say('Here is "Remove all" button').result((1 <= removeAllItems.length) ? "" : "Cant find clear cart button");
                 },
                 'if cart is not empty - click clear cart button', function(removeAllItems){
                     if (cartIsEmpty) return api.nop();
                     removeAllItems.each(function(i,el){click(el);});
-                    api.highlight(removeAllItems);
+                    api.highlight(removeAllItems).say('We are going to clear cart.');
                     api.waitFor(
                         function(){
                             return "0" === cartAmountElement().text();
@@ -143,11 +143,13 @@
                 'if cart was not empty - find cart amount element again', function(){
                     if (cartIsEmpty) return api.nop();
                     var strong = cartAmountElement();
-                    api.highlight(strong).result((1 === strong.length) ? "" : "Cant find cart amount element");
+                    api.highlight(strong).say('Let\'s see if cart is empty now').result((1 === strong.length) ? "" : "Cant find cart amount element");
                 },
                 'if cart was not empty - make sure it is empty now', function(){
                     if (cartIsEmpty) return api.nop();
-                    api.highlight(cartAmountElement()).result(("0" === cartAmountElement().text()) ? "" : "Cant clear cart - it is still not empty");
+                    var cartIsEmptyNow = ("0" === cartAmountElement().text());
+
+                    api.highlight(cartAmountElement()).say(cartIsEmptyNow ? 'Cart is empty now' : 'Cart is still not empty').result(cartIsEmptyNow ? "" : "Cant clear cart - it is still not empty");
                 }
             ],
             /**
@@ -160,7 +162,7 @@
             addToCart: [
                 'go to home', function(){
                     var homeLink = window.jQuery('#navbar a:contains("Home"):visible');
-                    api.highlight(homeLink).result((1 === homeLink.length) ? "" : "Cant find home link");
+                    api.highlight(homeLink).say('This is "Home" link that we will use to search for product').result((1 === homeLink.length) ? "" : "Cant find home link");
                 }, 
                 'click home', function(homeLink){
                     homeLink.each(function(i,el){click(el);});
@@ -169,28 +171,28 @@
                             return (window.jQuery) && (1 === searchBox().length);
                         },
                         function(result){
-                            api.highlight(searchBox()).result(result ? "" : "Cant navigate to home");
+                            api.highlight(searchBox()).say('Here is search box, which means, that we came to home page.').result(result ? "" : "Cant navigate to home");
                         }
                     );
                 },
                 'find search box', function(){
                     var input = searchBox();
-                    api.highlight(input).result((1 === input.length) ? "" : "Cant find search box");
+                    api.highlight(input).say('Here is search box').result((1 === input.length) ? "" : "Cant find search box");
                 },
                 'put part number into search box', function(input){
                     input.val(task.partno);
-                    api.highlight(input).result();
+                    api.highlight(input).say('Let\'s put our number (' + task.partno + ') into search box').result();
                 },
                 'find search button', function(){
                     var searchButton = window.jQuery('input[type="submit"][value="Search"]:visible');
-                    api.highlight(searchButton).result((1 === searchButton.length) ? "" : "Cant find search button");
+                    api.highlight(searchButton).say('Here is search button').result((1 === searchButton.length) ? "" : "Cant find search button");
                 },
                 'click search button', function(searchButton){
                     searchButton.each(function(i,el){click(el);});
                     api.waitFor(function(){
                         return (window.jQuery) && (1 === searchResultsHeading().length);
                     }, function(result){
-                        api.highlight(searchResultsHeading()).result(result? "" : "Cant search");
+                        api.highlight(searchResultsHeading()).say('Here is search results heading, which means, that search operation was successful').result(result? "" : "Cant search");
                     });
                 },
                 'find suitable item', function(){
@@ -202,32 +204,32 @@
                             (parseInt(window.jQuery(el).find('td:nth-child(3)').text()) === 1) &&
                             (parseFloat(window.jQuery(el).find('td:nth-child(4)').text()) <= (task.price * 1.02))
                         ){
-                            api.highlight(suitableRow = el).result("");
+                            api.highlight(suitableRow = el).say('This row looks suitable for our search criteria').result("");
                             found = true;
                             return false;
                         }
                     });
                     if (!found){
-                        api.highlight().result("Cant find suitable items", true);
+                        api.highlight().say('We could not find any suitable lines').result("Cant find suitable items", true);
                     }
                 },
                 'find quantity box', function(row){
                     var input = window.jQuery(row).find('td:nth-child(5) input[type="text"]:visible');
-                    api.highlight(input).result((1 === input.length) ? "" : "Cant find quantity input");
+                    api.highlight(input).say('This is quantity box').result((1 === input.length) ? "" : "Cant find quantity input");
                 },
                 'put appropriate quantity', function(input){
                     input.val(task.quantity);
                     input.change();
-                    api.highlight(input).result();
+                    api.highlight(input).say('Let\'s put necessary quantity (' + task.quantity + ') into it').result();
                 },
                 'remember current amount in cart', function(){
                     var cart = cartAmountElement();
                     currentCartAmount = parseInt(cart.text());
-                    api.highlight(cart).result();
+                    api.highlight(cart).say('We are going to remember current cart amount (' + currentCartAmount + ') and after we\'ll add more items to cart - we are going to check, that cart amount increased accordingly').result();
                 },
                 'find Add to cart button', function(){
                     var add = window.jQuery(suitableRow).find('td:nth-child(5) a:visible');
-                    api.highlight(add).result((1 === add.length) ? "" : "Cant find add to cart link");
+                    api.highlight(add).say('This is "Add to cart" button').result((1 === add.length) ? "" : "Cant find add to cart link");
                 },
                 'click on Add to cart button', function(add){
                     if (!task.quantity) return api.result();
@@ -235,22 +237,22 @@
                     api.waitFor(function(){
                         return currentCartAmount !== parseInt(cartAmountElement().text());
                     }, function(r){
-                        api.highlight(add).result(r ? "" : "Cant add to cart - total cart amount is not changing");
+                        api.highlight(add).say('Something was added, let\'s check what in the next step').result(r ? "" : "Cant add to cart - total cart amount is not changing");
                     });
                 },
                 'make sure, that hint appeared', function(){
                     if (!task.quantity) return api.result();
                     var hint = window.jQuery(suitableRow).next();
-                    api.highlight(hint).result((1 === hint.length) ? "" : "Cant find hint line");
+                    api.highlight(hint).say('Here is hint box').result((1 === hint.length) ? "" : "Cant find hint line");
                 },
                 'make sure, that quantity on hint is correct', function(hint){
                     var bold = hint.find('strong');
-                    api.highlight(bold).result(((1 === hint.length) && (task.quantity === parseInt(hint.text()))) ? "" : "Hint problems");
+                    api.highlight(bold).say('Let\'s make sure, that amount in the hint is correct').result(((1 === hint.length) && (task.quantity === parseInt(hint.text()))) ? "" : "Hint problems");
                 },
                 'make sure, that cart amount increased properly', function(){
                     var cart = cartAmountElement();
                     api.highlight(cart);
-                    api.result(((currentCartAmount + task.quantity) === parseInt(cart.text())) ? "" : "new total cart amount is incorrect");
+                    api.say('Let\'s make sure, that total cart amount increased appropriately').result(((currentCartAmount + task.quantity) === parseInt(cart.text())) ? "" : "new total cart amount is incorrect");
                 }
             ]
         };

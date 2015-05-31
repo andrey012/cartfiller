@@ -214,6 +214,16 @@
             me.modules.ui.highlight(element, allElements);
             me.modules.dispatcher.setHighlightedElement(element);
             return this;
+        },
+        /**
+         * Displays comment message over the overlay in the main frame
+         * @function CartFiller.Api#say
+         * @param {String} message
+         * @access public
+         */
+        say: function(message){
+            me.modules.ui.say(message);
+            return this;
         }
 
     });
