@@ -153,7 +153,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1433095922120';
+    config.gruntBuildTimeStamp='1433110972160';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -976,7 +976,8 @@
      * @default
      */
     var chooseJobFrameName = 'cartFillerChooseJobFrame';
-
+    ////
+    var chooseJobFrameLoaded = false;
     /**
      * Returns main frame document
      * @function CartFiller.UI~getDocument
@@ -1139,6 +1140,11 @@
          * @access public
          */
         showHideChooseJobFrame: function(show){
+            if (show && !chooseJobFrameLoaded) {
+                // load choose job frame now
+                this.chooseJobFrameWindow.location.href = me['data-choose-job'];
+                chooseJobFrameLoaded = true;
+            }
             this.chooseJobFrame.style.display = show ? 'block' : 'none';
         },
         /**
@@ -1156,6 +1162,12 @@
          * @access public
          */
         highlight: function(element, allElements){
+            var findMaxRect = function(rect, thisRect){
+                rect.left = (undefined === rect.left) ? thisRect.left : Math.min(rect.left, thisRect.left);
+                rect.right = (undefined === rect.right) ? thisRect.right : Math.max(rect.right, thisRect.right);
+                rect.top = (undefined === rect.top) ? thisRect.top : Math.min(rect.top, thisRect.top);
+                rect.bottom = (undefined === rect.bottom) ? thisRect.bottom : Math.max(rect.bottom, thisRect.bottom);
+            };
             var rect;
             var body = this.mainFrameWindow.document.getElementsByTagName('body')[0];
             body.style.paddingBottom = this.mainFrameWindow.innerHeight + 'px';
@@ -1167,19 +1179,24 @@
                     } else {
                         if (true === allElements) {
                             rect = {left: undefined, right: undefined, top: undefined, bottom: undefined};
-                            element.each(function(i,el){
-                                var thisRect = el.getBoundingClientRect();
-                                rect.left = (undefined === rect.left) ? thisRect.left : Math.min(rect.left, thisRect.left);
-                                rect.right = (undefined === rect.right) ? thisRect.right : Math.max(rect.right, thisRect.right);
-                                rect.top = (undefined === rect.top) ? thisRect.top : Math.min(rect.top, thisRect.top);
-                                rect.bottom = (undefined === rect.bottom) ? thisRect.bottom : Math.max(rect.bottom, thisRect.bottom);
-                            });
+                            element.each(function(i,el){ findMaxRect(rect, el.getBoundingClientRect()); });
                          } else {
-                            rect = element[0].getBoundingClientRect();                
+                            rect = element[0].getBoundingClientRect();
                          }
                     }
+                } else if (element instanceof Array) {
+                    if (true === allElements) {
+                        rect = {left: undefined, right: undefined, top: undefined, bottom: undefined};
+                        for (var i = element.length - 1 ; i >= 0 ; i--){
+                            findMaxRect(rect, element[i].getBoundingClientRect());
+                        }
+                    } else if (element.length > 0) {
+                        rect = element[0].getBoundingClientRect();
+                    } else {
+                        element = undefined;
+                    }
                 } else if (undefined !== element) {
-                    rect = element.getBoundingClientRect();                
+                    rect = element.getBoundingClientRect();
                 }
                 var full = body.getBoundingClientRect();
                 var scrollTop = getScrollTop();
@@ -1220,7 +1237,7 @@
                 messageDiv.style.fontSize = '20px;';
                 messageDiv.style.zIndex = getZIndexForOverlay() + 1;
                 messageDiv.style.border = '#bbb solid 10px';
-                messageDiv.style.borderRadius = '20px;';
+                messageDiv.style.borderRadius = '20px';
                 messageDiv.style.overflow = 'auto';
                 messageDiv.style.visibility = 'hidden';
                 messageDiv.style.top = (highlightedElementBottom + 5) + 'px';
@@ -1228,6 +1245,7 @@
                 messageDiv.style.width = initialWidth + 'px';
                 messageDiv.style.height = 'auto';
                 messageDiv.style.position = 'absolute';
+                messageDiv.style.fontSize = '20px';
                 messageDiv.className = overlayClassName;
                 messageDiv.textContent = text;
                 messageDiv.onclick = function(){removeOverlay();};
@@ -1357,7 +1375,6 @@
             this.chooseJobFrame.style.background = 'white';
             body.appendChild(this.chooseJobFrame);
             this.chooseJobFrameWindow = window.frames[chooseJobFrameName];
-            this.chooseJobFrameWindow.location.href=me['data-choose-job'];
 
 
         },
@@ -1372,7 +1389,6 @@
             me.modules.dispatcher.init();
             var body = document.getElementsByTagName('body')[0];
             var mainFrameSrc = window.location.href,
-                chooseJobFrameSrc = me['data-choose-job'],
                 windowWidth = window.innerWidth,
                 windowHeight = window.innerHeight,
                 mainFrameWidthBig = windowWidth * 0.8 - 1,
@@ -1426,7 +1442,6 @@
             this.workerFrameWindow.location.href=getWorkerFrameSrc();
             body.appendChild(this.chooseJobFrame);
             this.chooseJobFrameWindow = window.frames[chooseJobFrameName];
-            this.chooseJobFrameWindow.location.href=chooseJobFrameSrc;
 
             this.setSize = function(size){
                 if (undefined === size) {

@@ -228,7 +228,7 @@
                 rect.right = (undefined === rect.right) ? thisRect.right : Math.max(rect.right, thisRect.right);
                 rect.top = (undefined === rect.top) ? thisRect.top : Math.min(rect.top, thisRect.top);
                 rect.bottom = (undefined === rect.bottom) ? thisRect.bottom : Math.max(rect.bottom, thisRect.bottom);
-            }
+            };
             var rect;
             var body = this.mainFrameWindow.document.getElementsByTagName('body')[0];
             body.style.paddingBottom = this.mainFrameWindow.innerHeight + 'px';
