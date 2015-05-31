@@ -363,6 +363,8 @@
         }
         resultMessageName = jobDetails.resultMessage;
 
+        jobDetails.cmd = 'jobDetails';
+
         window.parent.postMessage(
             'cartFillerMessage:' + 
             JSON.stringify(jobDetails),

@@ -37,7 +37,8 @@
      * @default
      */
     var chooseJobFrameName = 'cartFillerChooseJobFrame';
-
+    ////
+    var chooseJobFrameLoaded = false;
     /**
      * Returns main frame document
      * @function CartFiller.UI~getDocument
@@ -200,6 +201,11 @@
          * @access public
          */
         showHideChooseJobFrame: function(show){
+            if (show && !chooseJobFrameLoaded) {
+                // load choose job frame now
+                this.chooseJobFrameWindow.location.href = me['data-choose-job'];
+                chooseJobFrameLoaded = true;
+            }
             this.chooseJobFrame.style.display = show ? 'block' : 'none';
         },
         /**
@@ -417,10 +423,6 @@
             this.chooseJobFrame.style.zIndex = '1000000';
             this.chooseJobFrame.style.background = 'white';
             body.appendChild(this.chooseJobFrame);
-            this.chooseJobFrameWindow = window.frames[chooseJobFrameName];
-            this.chooseJobFrameWindow.location.href=me['data-choose-job'];
-
-
         },
         /**
          * Starts Popup type UI
@@ -433,7 +435,6 @@
             me.modules.dispatcher.init();
             var body = document.getElementsByTagName('body')[0];
             var mainFrameSrc = window.location.href,
-                chooseJobFrameSrc = me['data-choose-job'],
                 windowWidth = window.innerWidth,
                 windowHeight = window.innerHeight,
                 mainFrameWidthBig = windowWidth * 0.8 - 1,
@@ -487,7 +488,6 @@
             this.workerFrameWindow.location.href=getWorkerFrameSrc();
             body.appendChild(this.chooseJobFrame);
             this.chooseJobFrameWindow = window.frames[chooseJobFrameName];
-            this.chooseJobFrameWindow.location.href=chooseJobFrameSrc;
 
             this.setSize = function(size){
                 if (undefined === size) {
