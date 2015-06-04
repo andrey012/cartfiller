@@ -5,7 +5,7 @@
         <script src="../src/jquery-cartFiller.js"></script>
     </head>
     <body>
-        <a id="sampleSubmitLink" href="#" onclick="submitJob();">submit</a>
+        <a id="sampleSubmitLink" href="#" onclick="submitJob();">submit sample job</a>
         <div id="result">
 
         </div>
@@ -33,7 +33,7 @@
                         )
                     },
                     function(data){
-                        document.getElementById('result').innerText = JSON.stringify(data);
+                        document.getElementById('result').innerText = 'Job result: ' + JSON.stringify(data);
                     }
                 );
             }
