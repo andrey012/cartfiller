@@ -153,7 +153,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1433454653400';
+    config.gruntBuildTimeStamp='1433455004230';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -976,7 +976,14 @@
      * @default
      */
     var chooseJobFrameName = 'cartFillerChooseJobFrame';
-    ////
+    /**
+     * Indicates, that ChooseJob frame is already loaded. ChooseJob frame
+     * is loadeda after both main and worker frames are completely initialized. 
+     * This is done to allow ChooseJob frame submit job immediately without user
+     * interaction.
+     * @member {boolean} CartFiller.UI~chooseJobFrameLoaded
+     * @access private
+     */
     var chooseJobFrameLoaded = false;
     /**
      * Returns main frame document

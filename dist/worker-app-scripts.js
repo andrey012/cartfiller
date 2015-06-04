@@ -127,7 +127,6 @@ define('controller', ['app', 'scroll'], function(app){
         $scope.selectTaskInput = function(index, $event){
             $event.target.select();
             $event.stopPropagation();
-            ////$scope.selectTask(index);
         };
         $scope.clickOnStep = function(taskIndex, stepIndex, $event){
             $scope.currentTask = taskIndex;
