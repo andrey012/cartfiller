@@ -255,7 +255,7 @@
          * @access public
          */
         onMessage_invokeWorker: function(message){
-            if ((false !== workerCurrentTaskIndex) || (false !== workerCurrentStepIndex)){
+            if (false !== workerCurrentStepIndex){
                 var err = 'ERROR: worker task is in still in progress';
                 alert(err);
                 this.postMessage('workerStepResult', {index: message.index, step: message.step, result: err});
@@ -290,7 +290,13 @@
                     task: message.details
                 };
                 try {
-                    worker[message.task][(message.step * 2) + 1](highlightedElement, env);
+                    if (undefined === worker[message.task][(message.step * 2) + 1]){
+                        alert('invalid worker - function for ' + message.task + ' step ' + message.step + ' does not exist');
+                    } else if ('function' !== typeof worker[message.task][(message.step * 2) + 1]){
+                        alert('invalid worker - function for ' + message.task + ' step ' + message.step + ' is not a function');
+                    } else {
+                        worker[message.task][(message.step * 2) + 1](highlightedElement, env);
+                    }
                 } catch (err){
                     alert(err);
                     debugger; // jshint ignore:line
@@ -308,11 +314,21 @@
         },
         /**
          * Closes popup window in case of popup UI
-         * @function CartFiller.Dispathcer#onMessage_closePopup
+         * @function CartFiller.Dispatcher#onMessage_closePopup
          * @access public
          */
         onMessage_closePopup: function(){
             me.modules.ui.closePopup();
+        },
+        /**
+         * Receives hello message from {@link CartFillerPlugin.Plugin}
+         * and sends response bessage back
+         * @function CartFiller.Dispatcher#onMessage_helloFromPlugin
+         * @param {Object} details
+         * @access public
+         */
+        onMessage_helloFromPlugin: function(details){
+            this.postMessageToChooseJob(details.message, {});
         },
         /**
          * Handles "main frame loaded" event. If both main frame and 
@@ -422,7 +438,7 @@
                     nop: recoverable === 'nop'
                 }
             );
-            resetWorker();
+            workerCurrentStepIndex = workerOnLoadHandler = false;
         },
         /**
          * Registers worker's onLoad callback for main frame

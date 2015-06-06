@@ -153,7 +153,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1433455004230';
+    config.gruntBuildTimeStamp='1433583169285';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -400,6 +400,22 @@
          */
         highlight: function(element, allElements){
             me.modules.ui.highlight(element, allElements);
+            me.modules.dispatcher.setHighlightedElement(element);
+            return this;
+        },
+        /**
+         * Sames as {@link CartFiller.API#highlight}, but draws red overlay
+         * arrows instead. This function does not try to scroll anything. This 
+         * function is useful for those sites, that have various scrollable 
+         * elements besides page itself. Parameters are same as 
+         * {@link CartFiller.API#highlight}
+         * 
+         * @function CartFiller.API#arrow
+         * @see CartFiller.API#highlight
+         * @access public
+         */
+        arrow: function(element, allElements){
+            me.modules.ui.arrowTo(element, allElements);
             me.modules.dispatcher.setHighlightedElement(element);
             return this;
         },
@@ -673,7 +689,7 @@
          * @access public
          */
         onMessage_invokeWorker: function(message){
-            if ((false !== workerCurrentTaskIndex) || (false !== workerCurrentStepIndex)){
+            if (false !== workerCurrentStepIndex){
                 var err = 'ERROR: worker task is in still in progress';
                 alert(err);
                 this.postMessage('workerStepResult', {index: message.index, step: message.step, result: err});
@@ -708,7 +724,13 @@
                     task: message.details
                 };
                 try {
-                    worker[message.task][(message.step * 2) + 1](highlightedElement, env);
+                    if (undefined === worker[message.task][(message.step * 2) + 1]){
+                        alert('invalid worker - function for ' + message.task + ' step ' + message.step + ' does not exist');
+                    } else if ('function' !== typeof worker[message.task][(message.step * 2) + 1]){
+                        alert('invalid worker - function for ' + message.task + ' step ' + message.step + ' is not a function');
+                    } else {
+                        worker[message.task][(message.step * 2) + 1](highlightedElement, env);
+                    }
                 } catch (err){
                     alert(err);
                     debugger; // jshint ignore:line
@@ -726,11 +748,21 @@
         },
         /**
          * Closes popup window in case of popup UI
-         * @function CartFiller.Dispathcer#onMessage_closePopup
+         * @function CartFiller.Dispatcher#onMessage_closePopup
          * @access public
          */
         onMessage_closePopup: function(){
             me.modules.ui.closePopup();
+        },
+        /**
+         * Receives hello message from {@link CartFillerPlugin.Plugin}
+         * and sends response bessage back
+         * @function CartFiller.Dispatcher#onMessage_helloFromPlugin
+         * @param {Object} details
+         * @access public
+         */
+        onMessage_helloFromPlugin: function(details){
+            this.postMessageToChooseJob(details.message, {});
         },
         /**
          * Handles "main frame loaded" event. If both main frame and 
@@ -840,7 +872,7 @@
                     nop: recoverable === 'nop'
                 }
             );
-            resetWorker();
+            workerCurrentStepIndex = workerOnLoadHandler = false;
         },
         /**
          * Registers worker's onLoad callback for main frame
@@ -986,6 +1018,197 @@
      */
     var chooseJobFrameLoaded = false;
     /**
+     * Structure, that keeps information about highlighted element
+     * @class CartFiller.UI.ArrowToElement
+     */
+    /**
+     * @member {HtmlElement} CartFiller.UI.ArrowToElement#element
+     * @access public
+     */
+    /**
+     * @member {integer} CartFiller.UI.ArrowToElement#left
+     * @access public
+     */
+    /**
+     * @member {integer} CartFiller.UI.ArrowToElement#top 
+     * @access public
+     */
+    /**
+     * @member {integer} CartFiller.UI.ArrowToElement#width
+     * @access public
+     */
+    /**
+     * @member {integer} CartFiller.UI.ArrowToElement#height
+     * @access public
+     */
+    /**
+     * Keeps list of highlighted elements, which we should draw marking arrows to
+     * @member {CartFiller.UI.ArrowToElement} CartFiller.UI~arrowToElements
+     * @access private
+     */
+    var arrowToElements = [];
+    /**
+     * Returns color for red overlay arrows
+     * @function CartFiller.UI~getRedArrowColorDefinition
+     * @return {String}
+     * @access private
+     */
+    var getRedArrowColor = function(){
+        return 'rgba(255,0,0,0.3)';
+    };
+    /**
+     * Creates overlay div for red arrows
+     * @function CartFiller.UI~getOverlayDiv2
+     * @return {HtmlElement} div
+     * @access private
+     */
+    var getOverlayDiv2 = function(){ 
+        var div = getDocument().createElement('div');
+        div.style.position = 'fixed';
+        div.style.backgroundColor = getRedArrowColor();
+        div.style.zIndex = getZIndexForOverlay();
+        div.className = overlayClassName;
+        div.onclick = function(){removeOverlay();};
+        getDocument().getElementsByTagName('body')[0].appendChild(div);
+        return div;
+    };
+    /**
+     * Draws vertical arrow line
+     * @function CartFiller.UI~verticalLineOverlay
+     * @param {integer} left
+     * @param {integer} top
+     * @param {integer} height
+     * @access private
+     */
+    var verticalLineOverlay = function(left, top, height){
+        var div = getOverlayDiv2();
+        div.style.left = left + 'px';
+        div.style.top = top + 'px';
+        div.style.width = '20px';
+        div.style.height = height + 'px';
+    };
+    /**
+     * Draws horizontal overlay line
+     * @function CartFiller.UI~horizontalLineOverlay
+     * @param {integer} left
+     * @param {integer} top
+     * @param {integer} width
+     * @access private
+     */
+    var horizontalLineOverlay = function(left, top, width) {
+        var div = getOverlayDiv2();
+        div.style.left = left + 'px';
+        div.style.top = top + 'px';
+        div.style.width = width + 'px';
+        div.style.height = '20px';
+    };
+    /**
+     * Draws horizontal overlay arrow, direction = right
+     * @function CartFiller.UI~horizontalArrowOverlayRight
+     * @param {integer} left
+     * @param {integer} top
+     * @access private
+     */
+    var horizontalArrowOverlayRight = function (left, top){
+        var div = getOverlayDiv2();
+        div.style.left = left + 'px';
+        div.style.top = (top - 25) + 'px';
+        div.style.width = div.style.height = '0px';
+        div.style.backgroundColor = 'transparent';
+        div.style.borderTop = div.style.borderBottom = '25px solid transparent';
+        div.style.borderLeft = '30px solid rgba(255,0,0,0.3)';
+    };
+    /**
+     * Draws vertical overlay arrow, direction = down
+     * @function CartFiller.UI~verticalArrowOverlayDown
+     * @param {integer} left
+     * @param {integer} top
+     * @access private
+     */
+    var verticalArrowOverlayDown = function(left, top){
+        var div = getOverlayDiv2();
+        div.style.left = (left - 25) + 'px';
+        div.style.top = top + 'px';
+        div.style.width = div.style.height = '0px';
+        div.style.backgroundColor = 'transparent';
+        div.style.borderLeft = div.style.borderRight = '25px solid transparent';
+        div.style.borderTop = '30px solid rgba(255,0,0,0.3)';
+    };
+    /**
+     * Draws vertical overlay arrow, direction = up
+     * @function CartFiller.UI~verticalArrowOverlayUp
+     * @param {integer} left
+     * @param {integer} top
+     * @access private
+     */
+    var verticalArrowOverlayUp = function(left, top){
+        var div = getOverlayDiv2();
+        div.style.left = (left - 25) + 'px';
+        div.style.top = top + 'px';
+        div.style.width = div.style.height = '0px';
+        div.style.backgroundColor = 'transparent';
+        div.style.borderLeft = div.style.borderRight = '25px solid transparent';
+        div.style.borderBottom = '30px solid rgba(255,0,0,0.3)';
+    };
+    /**
+     * Function, that maintains arrows on screen, called time to time.
+     * @function CartFiller.UI~arrowToFunction
+     * @access private
+     */
+    var arrowToFunction = function(){
+        try {
+            var rebuild = false;
+            var i, top, left, bottom;
+            // check whether positions of elements have changed
+            for (i = arrowToElements.length - 1; i >= 0; i--){
+                var rect = arrowToElements[i].element.getBoundingClientRect();
+                top = Math.round(rect.top - 5);
+                left = Math.round(rect.left - 5);
+                if ((top !== arrowToElements[i].top) ||
+                    (left !== arrowToElements[i].left)){
+                    rebuild = true;
+                    arrowToElements[i].top = top;
+                    arrowToElements[i].left = left;
+                    arrowToElements[i].height = Math.round(rect.height + 9);
+                    arrowToElements[i].width = Math.round(rect.width + 9);
+                }
+            }
+            // if yes - redraw all arrows
+            if (rebuild){
+                removeOverlay();
+                for (i = arrowToElements.length - 1; i >= 0; i--){
+                    var el = arrowToElements[i];
+                    var div = getOverlayDiv2();
+                    div.style.backgroundColor = 'transparent';
+                    div.style.borderLeft = div.style.borderTop = div.style.borderRight = div.style.borderBottom = '5px solid rgba(255,0,0,0.3)';
+                    div.style.left = el.left + 'px';
+                    div.style.top = el.top + 'px';
+                    div.style.width = el.width + 'px';
+                    div.style.height = el.height + 'px';
+                    div.style.boxSizing = 'border-box';
+                    if (el.left > 40) {
+                        top = el.top + Math.round(el.height/2);
+                        verticalLineOverlay(0, 0, top - 10);
+                        horizontalLineOverlay(0, top - 10, el.left - 30);
+                        horizontalArrowOverlayRight(el.left - 30, top);
+                    } else if (el.top > 40) {
+                        left = el.left + Math.min(30, Math.round(el.width / 2));
+                        horizontalLineOverlay(0, 0, left - 10);
+                        verticalLineOverlay(left - 10, 0, el.top - 30);
+                        verticalArrowOverlayDown(left, el.top - 30);
+                    } else {
+                        left = el.left + Math.min(30, Math.round(el.width / 2));
+                        bottom = el.top + el.height;
+                        horizontalLineOverlay(0, bottom + 60, left + 10);
+                        verticalLineOverlay(left - 10, bottom + 30, 30);
+                        verticalArrowOverlayUp(left, bottom);
+
+                    }
+                }
+            }
+        } catch (e) {}
+    };
+    /**
      * Returns main frame document
      * @function CartFiller.UI~getDocument
      * @returns {Document}
@@ -1123,6 +1346,9 @@
         return 100000; // TBD look for max zIndex used in the main frame
     };
 
+    // Launch arrowToFunction
+    setInterval(arrowToFunction, 200);
+
     me.scripts.push({
 
         /**
@@ -1226,6 +1452,32 @@
                     highlightedElementCenterLeft = highlightedElementBottom = highlightedElementTop = false;
                 }
             },0);
+        },
+        /**
+         * Draw arrow to element(s). 
+         * Parameters are same as for {@link CartFiller.UI#highlight}
+         * @function CartFiller.UI#arrowTo
+         * @access public
+         */
+        arrowTo: function(element, allElements){
+            arrowToElements = [];
+            if (undefined !== this.mainFrameWindow.jQuery && (element instanceof this.mainFrameWindow.jQuery)){
+                element.each(function(i,el){
+                    arrowToElements.push({element: el}); 
+                    if (!allElements) {
+                        return false;
+                    }
+                });
+            } else if (element instanceof Array) {
+                for (var i = 0; i < element.length; i++){
+                    arrowToElements.push({element: element[i]});
+                    if (!allElements) {
+                        break;
+                    }
+                }
+            } else if (undefined !== element) {
+                arrowToElements.push({element: element});
+            }
         },
         /**
          * Displays comment message over the overlay in the main frame

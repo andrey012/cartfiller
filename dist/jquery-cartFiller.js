@@ -31,6 +31,23 @@
      */
     var pluginName = 'cartFillerPlugin';
 
+    /**
+     * Set to true if plugin receives hello message from
+     * {@link CartFiller.Dispatcher}, which means, that page, where this
+     * plugin is included is launched as ChooseJob frame from CartFiller
+     * @var {boolean} CartFillerPlugin~runningInsideCartFiller
+     * @access private
+     */
+    var runningInsideCartFiller = false;
+    
+    /**
+     * This array is populated with bookmarklet elements, so, that if
+     * we receive hello message from {@link CartFiller.Dispatcher}, 
+     * we can hide bookmarklets
+     * @var {HtmlElement[]} CartFillerPlugin~knownBookmarkletElements
+     * @access private
+     */
+    var knownBookmarkletElements = [];
 
     /**
      * @class cartFillerPlugin~Settings
@@ -117,20 +134,25 @@
          * @access private
          */
         init: function () {
-            var href;
-            if (this.settings.inject === 'script'){
-                href = this.scriptBookmarklet();
-            } else if (this.settings.inject === 'eval'){
-                href = this.evalBookmarklet();
-            } else if (this.settings.inject === 'iframe'){
-                href = this.iframeBookmarklet();
+            if (runningInsideCartFiller){
+                $(this.element).hide();
             } else {
-                alert('invalid inject value, correct values are "script", "eval" and "iframe"');
+                var href;
+                if (this.settings.inject === 'script'){
+                    href = this.scriptBookmarklet();
+                } else if (this.settings.inject === 'eval'){
+                    href = this.evalBookmarklet();
+                } else if (this.settings.inject === 'iframe'){
+                    href = this.iframeBookmarklet();
+                } else {
+                    alert('invalid inject value, correct values are "script", "eval" and "iframe"');
+                }
+                if (this.settings.logLength) {
+                    console.log('generated bookmarklet: ' + href.length);
+                }
+                $(this.element).attr('href', href);
+                knownBookmarkletElements.push(this.element);
             }
-            if (this.settings.logLength) {
-                console.log('generated bookmarklet: ' + href.length);
-            }
-            $(this.element).attr('href', href);
         },
         getTypeId: function(){
             if (this.settings.type === 'framed'){
@@ -328,6 +350,13 @@
      */
     var resultMessageName;
     /**
+     * Message to be used as "hello" message from {@link CartFiller.Dispatcher}
+     * to plugin
+     * @var {String} CartFillerPlugin~helloMessageName
+     * @access private
+     */
+    var helloMessageName = 'helloFromCartFiller';
+    /**
      * Callback, that will receive job result details from cartFiller
      * @callback CartFillerPlugin.resultCallback
      * @param {Object} message message.result contains result, while
@@ -335,10 +364,17 @@
      * See {@link CartFiller.Dispatcher#onMessage_sendResult}
      */
     var messageEventListener = function(event){
-        var data = new RegExp('^' + resultMessageName + ':(.*)$').exec(event.data);
-        if (data) {
-            if (resultCallback){
-                resultCallback(JSON.parse(data[1]));
+        if ((new RegExp('^' + helloMessageName + ':{')).test(event.data)){
+            $('.cart-filler-submit').show();
+            $('.cart-filler-helper').hide();
+            $(knownBookmarkletElements).hide();
+            runningInsideCartFiller = true;
+        } else {
+            var data = new RegExp('^' + resultMessageName + ':(.*)$').exec(event.data);
+            if (data) {
+                if (resultCallback){
+                    resultCallback(JSON.parse(data[1]));
+                }
             }
         }
     };
@@ -370,14 +406,22 @@
             JSON.stringify(jobDetails),
             '*'
         );
-        if (resultCallback){
-            window.removeEventListener('message', messageEventListener, false);
-            resultCallback = undefined;
-        }
-        if (newResultCallback){
-            resultCallback = newResultCallback;
-            window.addEventListener('message', messageEventListener,false);
-        }
+        resultCallback = newResultCallback;
     };
+
+    window.addEventListener('message', messageEventListener,false);
+    if (window.parent !== window){
+        window.parent.postMessage('cartFillerMessage:{"cmd":"helloFromPlugin","message":"' + helloMessageName + '"}', '*');
+    }
+    $(document).ready(function(){
+        if (!runningInsideCartFiller){
+            $('.cart-filler-submit').hide();
+            $('.cart-filler-helper').show();
+        } else {
+            $('.cart-filler-submit').show();
+            $('.cart-filler-helper').hide();
+            $(knownBookmarkletElements).hide();
+        }
+    });
 
 })( jQuery, window, document );

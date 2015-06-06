@@ -47,6 +47,197 @@
      */
     var chooseJobFrameLoaded = false;
     /**
+     * Structure, that keeps information about highlighted element
+     * @class CartFiller.UI.ArrowToElement
+     */
+    /**
+     * @member {HtmlElement} CartFiller.UI.ArrowToElement#element
+     * @access public
+     */
+    /**
+     * @member {integer} CartFiller.UI.ArrowToElement#left
+     * @access public
+     */
+    /**
+     * @member {integer} CartFiller.UI.ArrowToElement#top 
+     * @access public
+     */
+    /**
+     * @member {integer} CartFiller.UI.ArrowToElement#width
+     * @access public
+     */
+    /**
+     * @member {integer} CartFiller.UI.ArrowToElement#height
+     * @access public
+     */
+    /**
+     * Keeps list of highlighted elements, which we should draw marking arrows to
+     * @member {CartFiller.UI.ArrowToElement} CartFiller.UI~arrowToElements
+     * @access private
+     */
+    var arrowToElements = [];
+    /**
+     * Returns color for red overlay arrows
+     * @function CartFiller.UI~getRedArrowColorDefinition
+     * @return {String}
+     * @access private
+     */
+    var getRedArrowColor = function(){
+        return 'rgba(255,0,0,0.3)';
+    };
+    /**
+     * Creates overlay div for red arrows
+     * @function CartFiller.UI~getOverlayDiv2
+     * @return {HtmlElement} div
+     * @access private
+     */
+    var getOverlayDiv2 = function(){ 
+        var div = getDocument().createElement('div');
+        div.style.position = 'fixed';
+        div.style.backgroundColor = getRedArrowColor();
+        div.style.zIndex = getZIndexForOverlay();
+        div.className = overlayClassName;
+        div.onclick = function(){removeOverlay();};
+        getDocument().getElementsByTagName('body')[0].appendChild(div);
+        return div;
+    };
+    /**
+     * Draws vertical arrow line
+     * @function CartFiller.UI~verticalLineOverlay
+     * @param {integer} left
+     * @param {integer} top
+     * @param {integer} height
+     * @access private
+     */
+    var verticalLineOverlay = function(left, top, height){
+        var div = getOverlayDiv2();
+        div.style.left = left + 'px';
+        div.style.top = top + 'px';
+        div.style.width = '20px';
+        div.style.height = height + 'px';
+    };
+    /**
+     * Draws horizontal overlay line
+     * @function CartFiller.UI~horizontalLineOverlay
+     * @param {integer} left
+     * @param {integer} top
+     * @param {integer} width
+     * @access private
+     */
+    var horizontalLineOverlay = function(left, top, width) {
+        var div = getOverlayDiv2();
+        div.style.left = left + 'px';
+        div.style.top = top + 'px';
+        div.style.width = width + 'px';
+        div.style.height = '20px';
+    };
+    /**
+     * Draws horizontal overlay arrow, direction = right
+     * @function CartFiller.UI~horizontalArrowOverlayRight
+     * @param {integer} left
+     * @param {integer} top
+     * @access private
+     */
+    var horizontalArrowOverlayRight = function (left, top){
+        var div = getOverlayDiv2();
+        div.style.left = left + 'px';
+        div.style.top = (top - 25) + 'px';
+        div.style.width = div.style.height = '0px';
+        div.style.backgroundColor = 'transparent';
+        div.style.borderTop = div.style.borderBottom = '25px solid transparent';
+        div.style.borderLeft = '30px solid rgba(255,0,0,0.3)';
+    };
+    /**
+     * Draws vertical overlay arrow, direction = down
+     * @function CartFiller.UI~verticalArrowOverlayDown
+     * @param {integer} left
+     * @param {integer} top
+     * @access private
+     */
+    var verticalArrowOverlayDown = function(left, top){
+        var div = getOverlayDiv2();
+        div.style.left = (left - 25) + 'px';
+        div.style.top = top + 'px';
+        div.style.width = div.style.height = '0px';
+        div.style.backgroundColor = 'transparent';
+        div.style.borderLeft = div.style.borderRight = '25px solid transparent';
+        div.style.borderTop = '30px solid rgba(255,0,0,0.3)';
+    };
+    /**
+     * Draws vertical overlay arrow, direction = up
+     * @function CartFiller.UI~verticalArrowOverlayUp
+     * @param {integer} left
+     * @param {integer} top
+     * @access private
+     */
+    var verticalArrowOverlayUp = function(left, top){
+        var div = getOverlayDiv2();
+        div.style.left = (left - 25) + 'px';
+        div.style.top = top + 'px';
+        div.style.width = div.style.height = '0px';
+        div.style.backgroundColor = 'transparent';
+        div.style.borderLeft = div.style.borderRight = '25px solid transparent';
+        div.style.borderBottom = '30px solid rgba(255,0,0,0.3)';
+    };
+    /**
+     * Function, that maintains arrows on screen, called time to time.
+     * @function CartFiller.UI~arrowToFunction
+     * @access private
+     */
+    var arrowToFunction = function(){
+        try {
+            var rebuild = false;
+            var i, top, left, bottom;
+            // check whether positions of elements have changed
+            for (i = arrowToElements.length - 1; i >= 0; i--){
+                var rect = arrowToElements[i].element.getBoundingClientRect();
+                top = Math.round(rect.top - 5);
+                left = Math.round(rect.left - 5);
+                if ((top !== arrowToElements[i].top) ||
+                    (left !== arrowToElements[i].left)){
+                    rebuild = true;
+                    arrowToElements[i].top = top;
+                    arrowToElements[i].left = left;
+                    arrowToElements[i].height = Math.round(rect.height + 9);
+                    arrowToElements[i].width = Math.round(rect.width + 9);
+                }
+            }
+            // if yes - redraw all arrows
+            if (rebuild){
+                removeOverlay();
+                for (i = arrowToElements.length - 1; i >= 0; i--){
+                    var el = arrowToElements[i];
+                    var div = getOverlayDiv2();
+                    div.style.backgroundColor = 'transparent';
+                    div.style.borderLeft = div.style.borderTop = div.style.borderRight = div.style.borderBottom = '5px solid rgba(255,0,0,0.3)';
+                    div.style.left = el.left + 'px';
+                    div.style.top = el.top + 'px';
+                    div.style.width = el.width + 'px';
+                    div.style.height = el.height + 'px';
+                    div.style.boxSizing = 'border-box';
+                    if (el.left > 40) {
+                        top = el.top + Math.round(el.height/2);
+                        verticalLineOverlay(0, 0, top - 10);
+                        horizontalLineOverlay(0, top - 10, el.left - 30);
+                        horizontalArrowOverlayRight(el.left - 30, top);
+                    } else if (el.top > 40) {
+                        left = el.left + Math.min(30, Math.round(el.width / 2));
+                        horizontalLineOverlay(0, 0, left - 10);
+                        verticalLineOverlay(left - 10, 0, el.top - 30);
+                        verticalArrowOverlayDown(left, el.top - 30);
+                    } else {
+                        left = el.left + Math.min(30, Math.round(el.width / 2));
+                        bottom = el.top + el.height;
+                        horizontalLineOverlay(0, bottom + 60, left + 10);
+                        verticalLineOverlay(left - 10, bottom + 30, 30);
+                        verticalArrowOverlayUp(left, bottom);
+
+                    }
+                }
+            }
+        } catch (e) {}
+    };
+    /**
      * Returns main frame document
      * @function CartFiller.UI~getDocument
      * @returns {Document}
@@ -184,6 +375,9 @@
         return 100000; // TBD look for max zIndex used in the main frame
     };
 
+    // Launch arrowToFunction
+    setInterval(arrowToFunction, 200);
+
     me.scripts.push({
 
         /**
@@ -287,6 +481,32 @@
                     highlightedElementCenterLeft = highlightedElementBottom = highlightedElementTop = false;
                 }
             },0);
+        },
+        /**
+         * Draw arrow to element(s). 
+         * Parameters are same as for {@link CartFiller.UI#highlight}
+         * @function CartFiller.UI#arrowTo
+         * @access public
+         */
+        arrowTo: function(element, allElements){
+            arrowToElements = [];
+            if (undefined !== this.mainFrameWindow.jQuery && (element instanceof this.mainFrameWindow.jQuery)){
+                element.each(function(i,el){
+                    arrowToElements.push({element: el}); 
+                    if (!allElements) {
+                        return false;
+                    }
+                });
+            } else if (element instanceof Array) {
+                for (var i = 0; i < element.length; i++){
+                    arrowToElements.push({element: element[i]});
+                    if (!allElements) {
+                        break;
+                    }
+                }
+            } else if (undefined !== element) {
+                arrowToElements.push({element: element});
+            }
         },
         /**
          * Displays comment message over the overlay in the main frame

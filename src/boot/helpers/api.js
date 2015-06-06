@@ -216,6 +216,22 @@
             return this;
         },
         /**
+         * Sames as {@link CartFiller.API#highlight}, but draws red overlay
+         * arrows instead. This function does not try to scroll anything. This 
+         * function is useful for those sites, that have various scrollable 
+         * elements besides page itself. Parameters are same as 
+         * {@link CartFiller.API#highlight}
+         * 
+         * @function CartFiller.API#arrow
+         * @see CartFiller.API#highlight
+         * @access public
+         */
+        arrow: function(element, allElements){
+            me.modules.ui.arrowTo(element, allElements);
+            me.modules.dispatcher.setHighlightedElement(element);
+            return this;
+        },
+        /**
          * Displays comment message over the overlay in the main frame
          * @function CartFiller.Api#say
          * @param {String} message
