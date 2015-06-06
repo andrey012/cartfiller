@@ -131,7 +131,7 @@ module.exports = function(grunt) {
         // Generate JSDoc documentation
         shell: {
             build_docs: {
-                command: "./lib/jsdoc/jsdoc src/* samples/worker.js -c .jsdoc.json -r -p -R src/README.md -d docs"
+                command: "./node_modules/jsdoc/jsdoc.js src/* samples/worker.js -c .jsdoc.json -r -p -R src/README.md -d docs"
             }
         },
 
