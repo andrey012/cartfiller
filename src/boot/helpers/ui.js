@@ -97,7 +97,10 @@
         div.style.backgroundColor = getRedArrowColor();
         div.style.zIndex = getZIndexForOverlay();
         div.className = overlayClassName;
-        div.onclick = function(){removeOverlay();};
+        div.onclick = function(){
+            removeOverlay();
+            arrowToElements = [];
+        };
         getDocument().getElementsByTagName('body')[0].appendChild(div);
         return div;
     };
@@ -372,7 +375,7 @@
      * @access private
      */
     var getZIndexForOverlay = function(){
-        return 100000; // TBD look for max zIndex used in the main frame
+        return 10000000; // TBD look for max zIndex used in the main frame
     };
 
     // Launch arrowToFunction
@@ -506,6 +509,9 @@
                 }
             } else if (undefined !== element) {
                 arrowToElements.push({element: element});
+            } else {
+                arrowToElements = [];
+                removeOverlay();
             }
         },
         /**

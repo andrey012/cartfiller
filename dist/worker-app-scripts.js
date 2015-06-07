@@ -182,6 +182,7 @@ define('controller', ['app', 'scroll'], function(app){
         $scope.resetWorker = function(){
             cfMessage.send('resetWorker');
             $scope.workerInProgress = false;
+            $scope.running = false;
         };
         $scope.clickOnNextStep = function($event){
             $scope.doNextStep(); 

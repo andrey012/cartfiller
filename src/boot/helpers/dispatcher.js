@@ -216,6 +216,7 @@
             }
             me.modules.ui.showHideChooseJobFrame(false);
             message.overrideWorkerSrc = me['data-worker'];
+            resetWorker();
             this.postMessageToWorker('jobDetails', message);
         },
         /**
