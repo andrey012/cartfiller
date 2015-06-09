@@ -22,6 +22,14 @@
      * When particular step callbacks, this object will each time be
      * reinitialized with next task as provided by 
      * {@link CartFiller.submitJobDetails}
+     * @return {Array} where even members are names of steps, and odd members
+     * are either step functions or arrays of function + parameters object, e.g.
+     * [
+     *  'step 1',
+     *  function(task,env){ ... },
+     *  'step 2',
+     *  [function(task,env){.. env.params.theParam ...}, {theParam: 2}],
+     * ]
      * @see CartFiller.SampleWorker~registerCallback
      */
     

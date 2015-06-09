@@ -153,7 +153,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1433720346761';
+    config.gruntBuildTimeStamp='1433879989256';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -210,6 +210,14 @@
      * When particular step callbacks, this object will each time be
      * reinitialized with next task as provided by 
      * {@link CartFiller.submitJobDetails}
+     * @return {Array} where even members are names of steps, and odd members
+     * are either step functions or arrays of function + parameters object, e.g.
+     * [
+     *  'step 1',
+     *  function(task,env){ ... },
+     *  'step 2',
+     *  [function(task,env){.. env.params.theParam ...}, {theParam: 2}],
+     * ]
      * @see CartFiller.SampleWorker~registerCallback
      */
     
@@ -546,10 +554,29 @@
     /**
      * Resets worker if worker did not report result using 
      * {@link CartFiller.Api#result} or {@link CartFiller.Api#nop} functions
+     * @function CartFiller.Dispatcher~resetWorker
      * @access private
      */
     var resetWorker = function(){
         workerCurrentTaskIndex = workerCurrentStepIndex = workerOnLoadHandler = false;
+    };
+    /**
+     * Fills workerCurrentTask object with current task parameters.
+     * See {@link CartFiller.Dispatcher~workerCurrentTask}
+     * @function CartFiller.Dispatcher~fillWorkerCurrentTask
+     * @access private
+     */
+    var fillWorkerCurrentTask = function(src){
+        for (var oldKey in workerCurrentTask){
+            if (workerCurrentTask.hasOwnProperty(oldKey)){
+                delete workerCurrentTask[oldKey];
+            }
+        }
+        for (var newKey in src){
+            if (src.hasOwnProperty(newKey)){
+                workerCurrentTask[newKey] = src[newKey];
+            }
+        }
     };
 
     this.cartFillerConfiguration.scripts.push({
@@ -677,6 +704,7 @@
             try {
                 workerSrcPretendent = message.src;
                 eval(message.code); // jshint ignore:line
+                resetWorker();
             } catch (e){
                 alert(e);
                 throw e;
@@ -696,12 +724,7 @@
                 this.postMessage('workerStepResult', {index: message.index, step: message.step, result: err});
             } else {
                 if (workerCurrentTaskIndex !== message.index){
-                    for (var oldKey in workerCurrentTask){
-                        delete workerCurrentTask[oldKey];
-                    }
-                    for (var newKey in message.details){
-                        workerCurrentTask[newKey] = message.details[newKey];
-                    }
+                    fillWorkerCurrentTask(message.details);
                 }
                 workerCurrentTaskIndex = message.index;
                 workerCurrentStepIndex = message.step;
@@ -722,13 +745,23 @@
                      * {@link CartFiller.submitJobDetails}
                      * @access public
                      */
-                    task: message.details
+                    task: message.details,
+                    /**
+                     * @member {Object} CartFiller.Api.StepEnvironment#params Task parameters as submitted by
+                     * {@link CartFiller.Api.registerCallback}
+                     */
+                    params: {}
                 };
                 try {
                     if (undefined === worker[message.task][(message.step * 2) + 1]){
                         alert('invalid worker - function for ' + message.task + ' step ' + message.step + ' does not exist');
                     } else if ('function' !== typeof worker[message.task][(message.step * 2) + 1]){
-                        alert('invalid worker - function for ' + message.task + ' step ' + message.step + ' is not a function');
+                        if ('function' === typeof worker[message.task][(message.step * 2) + 1][0]){
+                            env.params =  worker[message.task][(message.step * 2) + 1][1];
+                            worker[message.task][(message.step * 2) + 1][0](highlightedElement, env);
+                        } else {
+                            alert('invalid worker - function for ' + message.task + ' step ' + message.step + ' is not a function');
+                        }
                     } else {
                         worker[message.task][(message.step * 2) + 1](highlightedElement, env);
                     }
@@ -831,6 +864,7 @@
          * @access public
          */
         registerWorker: function(cb, api){
+            workerCurrentTask = {};
             worker = cb(me.modules.ui.mainFrameWindow, undefined, api, workerCurrentTask);
             var list = {};
             for (var taskName in worker){

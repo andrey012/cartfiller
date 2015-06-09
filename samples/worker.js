@@ -6,7 +6,7 @@
     // register callback with apiCart
     /**
      * @function CartFiller.SampleWorker~registerCallback
-     * @see CartFiller~Api~registerCallback
+     * @see CartFiller.Api.registerCallback
      * @access private
      */
     var registerCallback = function(window, document, api, task){
@@ -97,10 +97,11 @@
              * @access public
              */
             clearCart: [
-                'find total amount of items in the cart', function(){
+                'find total amount of items in the cart', [function(el, env){
+                    if (env.params.theParam !== 1) throw "params are passed incorrectly";
                     var strong = cartAmountElement();
                     api.highlight(strong).say('Here is total amount in cart. To start filling the cart we need to make sure, that cart is empty.').result((1 === strong.length) ? "" : "Cant find amount in cart");
-                },
+                }, {theParam: 1}],
                 'check, that cart has more then 0 items', function(strong){
                     cartIsEmpty = ("0" === strong.text());
                     api.highlight(strong).say(cartIsEmpty ? 'Cart is empty' : 'Cart is not empty').result();
