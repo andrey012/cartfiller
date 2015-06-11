@@ -29,6 +29,9 @@ define('controller', ['app', 'scroll'], function(app){
                 $scope.jobTitleMap = angular.isUndefined(details.titleMap) ? [] : details.titleMap;
                 $scope.jobTaskProgress = [];
                 $scope.jobTaskStepProgress = [];
+                $scope.currentTask = 0;
+                $scope.currentStep = 0;
+                cfScroll(jQuery('#jobDetails')[0], true);
 
                 angular.forEach(details.details, function(){
                     $scope.jobTaskProgress.push({complete: false, step: 0, stepsInProgress: {}, stepResults: {}});

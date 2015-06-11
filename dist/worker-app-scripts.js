@@ -43,6 +43,9 @@ define('controller', ['app', 'scroll'], function(app){
                 $scope.jobTitleMap = angular.isUndefined(details.titleMap) ? [] : details.titleMap;
                 $scope.jobTaskProgress = [];
                 $scope.jobTaskStepProgress = [];
+                $scope.currentTask = 0;
+                $scope.currentStep = 0;
+                cfScroll(jQuery('#jobDetails')[0], true);
 
                 angular.forEach(details.details, function(){
                     $scope.jobTaskProgress.push({complete: false, step: 0, stepsInProgress: {}, stepResults: {}});
@@ -291,10 +294,10 @@ define('controller', ['app', 'scroll'], function(app){
 
 define('scroll', ['app', 'scroll'], function(app){
     app.service('cfScroll', function(){
-        return function(element){
+        return function(element, useTop){
             var rect = element.getBoundingClientRect();
             var bottom = window.innerHeight;
-            var delta = rect.bottom - bottom;
+            var delta = (useTop ? rect.top : rect.bottom) - bottom;
             window.scrollBy(0, delta);
         };
     });
