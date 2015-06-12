@@ -100,13 +100,14 @@
                 'find total amount of items in the cart', [function(el, env){
                     if (env.params.theParam !== 1) throw "params are passed incorrectly";
                     var strong = cartAmountElement();
-                    api.highlight(strong).say('Here is total amount in cart. To start filling the cart we need to make sure, that cart is empty.').result((1 === strong.length) ? "" : "Cant find amount in cart");
+                    api.highlight(strong).arrow(strong).say('Here is total amount in cart. To start filling the cart we need to make sure, that cart is empty.').result((1 === strong.length) ? "" : "Cant find amount in cart");
                 }, {theParam: 1}],
                 'check, that cart has more then 0 items', function(strong){
                     cartIsEmpty = ("0" === strong.text());
-                    api.highlight(strong).say(cartIsEmpty ? 'Cart is empty' : 'Cart is not empty').result();
+                    api.highlight(strong).arrow(strong).say(cartIsEmpty ? 'Cart is empty' : 'Cart is not empty').result();
                 },
                 'if cart is not empty - find link to open cart', function(){
+                    api.arrow();
                     if (cartIsEmpty) return api.nop();
                     var cartLink = window.jQuery('#navbar a:contains("Open Cart"):visible');
                     api.highlight(cartLink).say('Here is "open cart" link, we are going to open cart').result((1 === cartLink.length) ? "" : "Cant find link to open cart");

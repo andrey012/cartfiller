@@ -153,7 +153,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1434108777876';
+    config.gruntBuildTimeStamp='1434110933633';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -1109,6 +1109,21 @@
      */
     var currentMessageDivWidth = false;
     /**
+     * Is set to true if UI is working in framed mode
+     * This lets us draw overlays in main window instead of main frame
+     * @member {boolean} CartFiller.UI~isFramed
+     * @access private
+     */
+    var isFramed = false;
+    /**
+     * Returns window, that will be used to draw overlays
+     * @function {Window} CartFiller.UI~overlayWindow
+     * @access private
+     */
+    var overlayWindow = function(){
+        return isFramed ? window : me.modules.ui.mainFrameWindow;
+    };
+    /**
      * Returns color for red overlay arrows
      * @function CartFiller.UI~getRedArrowColorDefinition
      * @return {String}
@@ -1124,13 +1139,13 @@
      * @access private
      */
     var getOverlayDiv2 = function(){ 
-        var div = getDocument().createElement('div');
+        var div = overlayWindow().document.createElement('div');
         div.style.position = 'fixed';
         div.style.backgroundColor = getRedArrowColor();
         div.style.zIndex = getZIndexForOverlay();
         div.className = overlayClassName;
         div.onclick = function(){removeOverlay(true);};
-        getDocument().getElementsByTagName('body')[0].appendChild(div);
+        overlayWindow().document.getElementsByTagName('body')[0].appendChild(div);
         return div;
     };
     /**
@@ -1232,6 +1247,8 @@
                     element.height = height;
                     element.width = width;
                 }
+            } else {
+                element.left = element.right = element.top = element.bottom = undefined;
             }
         }
         return rebuild;
@@ -1242,9 +1259,12 @@
      * @access private
      */
     var drawArrows = function(){
-        var i;
+        var i, top, left, bottom;
         for (i = arrowToElements.length - 1; i >= 0; i--){
             var el = arrowToElements[i];
+            if (el.left === undefined) {
+                continue;
+            }
             var div = getOverlayDiv2();
             div.style.backgroundColor = 'transparent';
             div.style.borderLeft = div.style.borderTop = div.style.borderRight = div.style.borderBottom = '5px solid rgba(255,0,0,0.3)';
@@ -1316,6 +1336,9 @@
      */
     var drawHighlights = function(){
         var rect = findMaxRect(highlightedElements);
+        if (rect.left === undefined) {
+            return;
+        }
         var pageBottom = me.modules.ui.mainFrameWindow.innerHeight;
         var pageRight = me.modules.ui.mainFrameWindow.innerWidth;
         var border = 5;
@@ -1334,7 +1357,7 @@
         if (rect.left === undefined) {
             return;
         }
-        var messageDiv = me.modules.ui.mainFrameWindow.document.createElement('div');
+        var messageDiv = overlayWindow().document.createElement('div');
         messageDiv.style.display = 'block';
         messageDiv.style.backgroundColor = '#fff';
         messageDiv.style.padding = '10px';
@@ -1353,7 +1376,7 @@
         messageDiv.className = overlayClassName;
         messageDiv.textContent = messageToSay;
         messageDiv.onclick = function(){removeOverlay(true);};
-        me.modules.ui.mainFrameWindow.document.getElementsByTagName('body')[0].appendChild(messageDiv);
+        overlayWindow().document.getElementsByTagName('body')[0].appendChild(messageDiv);
         messageAdjustmentRemainingAttempts = 100;
         me.modules.ui.adjustMessageDiv(messageDiv);
     };
@@ -1457,8 +1480,12 @@
      * @access private
      */
     var removeOverlay = function(forever){
-        var divs = getDocument().getElementsByClassName(overlayClassName);
-        for (var i = divs.length - 1; i >= 0 ; i--){
+        var i, divs = getDocument().getElementsByClassName(overlayClassName);
+        for (i = divs.length - 1; i >= 0 ; i--){
+            divs[i].parentNode.removeChild(divs[i]);
+        }
+        divs = overlayWindow().document.getElementsByClassName(overlayClassName);
+        for (i = divs.length - 1; i >= 0 ; i--){
             divs[i].parentNode.removeChild(divs[i]);
         }
         if (true === forever) {
@@ -1745,6 +1772,7 @@
          * @access public
          */
         framed: function(document, window) {
+            isFramed = true;
             me.modules.dispatcher.init();
             var body = document.getElementsByTagName('body')[0];
             var mainFrameSrc = window.location.href,
@@ -1772,6 +1800,7 @@
             this.mainFrame.style.position = 'fixed';
             this.mainFrame.style.left = '0px';
             this.mainFrame.style.top = '0px';
+            this.mainFrame.style.borderWidth = '0px';
 
             this.workerFrame = document.createElement('iframe');
             this.workerFrame.setAttribute('name', workerFrameName);
