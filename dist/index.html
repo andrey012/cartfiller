@@ -80,7 +80,7 @@
             <span><strong>{{jobTitleMap[jobTask.task] ? jobTitleMap[jobTask.task] : jobTask.task}}</strong></span>
             <div ng-repeat="(propertyName, propertyValue) in jobTask" ng-if="propertyName != 'task' && propertyValue.toString().length">
                 <span>{{jobTitleMap[propertyName] ? jobTitleMap[propertyName] : propertyName}}</span>
-                <input type="text" readonly="readonly" value="{{propertyValue}}" ng-click="selectTaskInput(jobTaskIndex, $event);"/>
+                <input type="text" readonly="readonly" value="{{propertyValue}}" ng-click="selectTaskInput(jobTaskIndex, $event);" title="{{propertyName}}"/>
             </div>
             <div>
                 <span
