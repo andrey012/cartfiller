@@ -153,7 +153,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1434100679746';
+    config.gruntBuildTimeStamp='1434108777876';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -1083,6 +1083,32 @@
      */
     var arrowToElements = [];
     /**
+     * Keeps list of elements, which we should highlight
+     * @member {CartFiller.UI.ArrowToElement} CartFiller.UI~arrowToElements
+     * @access private
+     */
+    var highlightedElements = [];
+    /**
+     * Keeps current message to say
+     * @member {String} CartFiller.UI~messageToSay
+     * @access private
+     */
+    var messageToSay = '';
+    /**
+     * Keeps current remaining attempts to adjust message div to fit whole message 
+     * on current viewport
+     * @member {String} CartFiller.UI~messageAdjustmentRemainingAttempts
+     * @access private
+     */
+    var messageAdjustmentRemainingAttempts = 0;
+    /**
+     * Keeps current message div width, which is adjusted (made wider) in
+     * steps until message will fit in current viewport
+     * @member {integer} CartFiller.UI~currentMessageDivWidth
+     * @access private
+     */
+    var currentMessageDivWidth = false;
+    /**
      * Returns color for red overlay arrows
      * @function CartFiller.UI~getRedArrowColorDefinition
      * @return {String}
@@ -1103,10 +1129,7 @@
         div.style.backgroundColor = getRedArrowColor();
         div.style.zIndex = getZIndexForOverlay();
         div.className = overlayClassName;
-        div.onclick = function(){
-            removeOverlay();
-            arrowToElements = [];
-        };
+        div.onclick = function(){removeOverlay(true);};
         getDocument().getElementsByTagName('body')[0].appendChild(div);
         return div;
     };
@@ -1188,6 +1211,152 @@
         div.style.borderLeft = div.style.borderRight = '25px solid transparent';
         div.style.borderBottom = '30px solid rgba(255,0,0,0.3)';
     };
+    var findChanges = function(elements){
+        var rebuild = false, i, top, left, width, height, element, rect;
+        // check whether positions of elements have changed
+        for (i = elements.length - 1; i >= 0; i--){
+            element = elements[i];
+            rect = element.element.getBoundingClientRect();
+            if (rect.width > 0 || rect.height > 0 || rect.left > 0 || rect.top > 0) {
+                top = Math.round(rect.top - 5);
+                left = Math.round(rect.left - 5);
+                height = Math.round(rect.height + 9);
+                width = Math.round(rect.width + 9);
+                if ((top !== element.top) ||
+                    (left !== element.left) ||
+                    (height !== element.height) ||
+                    (width !== element.width)){
+                    rebuild = true;
+                    element.top = top;
+                    element.left = left;
+                    element.height = height;
+                    element.width = width;
+                }
+            }
+        }
+        return rebuild;
+    };
+    /**
+     * Draws arrow overlay divs
+     * @function CartFiller.UI~drawArrows
+     * @access private
+     */
+    var drawArrows = function(){
+        var i;
+        for (i = arrowToElements.length - 1; i >= 0; i--){
+            var el = arrowToElements[i];
+            var div = getOverlayDiv2();
+            div.style.backgroundColor = 'transparent';
+            div.style.borderLeft = div.style.borderTop = div.style.borderRight = div.style.borderBottom = '5px solid rgba(255,0,0,0.3)';
+            div.style.left = el.left + 'px';
+            div.style.top = el.top + 'px';
+            div.style.width = el.width + 'px';
+            div.style.height = el.height + 'px';
+            div.style.boxSizing = 'border-box';
+            if (el.left > 40) {
+                top = el.top + Math.round(el.height/2);
+                verticalLineOverlay(0, 0, top - 10);
+                horizontalLineOverlay(0, top - 10, el.left - 30);
+                horizontalArrowOverlayRight(el.left - 30, top);
+            } else if (el.top > 40) {
+                left = el.left + Math.min(30, Math.round(el.width / 2));
+                horizontalLineOverlay(0, 0, left - 10);
+                verticalLineOverlay(left - 10, 0, el.top - 30);
+                verticalArrowOverlayDown(left, el.top - 30);
+            } else {
+                left = el.left + Math.min(30, Math.round(el.width / 2));
+                bottom = el.top + el.height;
+                horizontalLineOverlay(0, bottom + 60, left + 10);
+                verticalLineOverlay(left - 10, bottom + 30, 30);
+                verticalArrowOverlayUp(left, bottom);
+
+            }
+        }
+    };
+    /**
+     * Finds max bounding rectange of elements
+     * @function CartFiller.UI~findMaxRect
+     * @param {CartFiller.UI.ArrowToElement[]} elements
+     * @param {CartFiller.UI.ArrowToElement[]} moreElements
+     * @access private
+     */
+    var findMaxRect = function(elements, moreElements){
+        var src = [elements, moreElements];
+        var i, j, left, top, right, bottom, el;
+        for (j = src.length - 1 ; j >= 0; j--){
+            if (undefined === src[j]) {
+                continue;
+            }
+            for (i = src[j].length - 1; i >= 0; i--){
+                el = src[j][i];
+                left = undefined === left ? el.left : Math.min(left, el.left);
+                right = undefined === right ? (el.left + el.width) : Math.max(right, (el.left + el.width));
+                top = undefined === top ? el.top : Math.min(top, el.top);
+                bottom = undefined === bottom ? (el.top + el.height) : Math.max(bottom, (el.top + el.height));
+            }
+        }
+        return {left: left, right: right, top: top, bottom: bottom};
+    };
+    /**
+     * Schedules redraw of overlay divs by clearing cached positions
+     * @function CartFiller.UI~scheduleOverlayRedraw
+     * @param {CartFiller.UI.ArrowToElement[]} elements
+     * @access private
+     */
+    var scheduleOverlayRedraw = function(elements){
+        var i;
+        for (i = elements.length - 1 ; i >= 0; i --){
+            elements[i].left = elements[i].top = elements[i].width = elements[i].height = undefined;
+        }
+    };
+    /**
+     * Draws highlighting overlay divs
+     * @function CartFiller.UI~drawHighlights
+     * @access private
+     */
+    var drawHighlights = function(){
+        var rect = findMaxRect(highlightedElements);
+        var pageBottom = me.modules.ui.mainFrameWindow.innerHeight;
+        var pageRight = me.modules.ui.mainFrameWindow.innerWidth;
+        var border = 5;
+        createOverlay(0, 0, Math.max(0, rect.left - border), pageBottom);
+        createOverlay(Math.min(pageRight, rect.right + border), 0, pageRight, pageBottom);
+        createOverlay(Math.max(0, rect.left - border), 0, Math.min(pageRight, rect.right + border), Math.min(pageBottom, rect.top - border));
+        createOverlay(Math.max(0, rect.left - border), Math.max(0, rect.bottom + border), Math.min(pageRight, rect.right + border), pageBottom);
+    };
+    /**
+     * Draws message div
+     * @function CartFiller.UI~drawMessage
+     * @access private
+     */
+    var drawMessage = function(){
+        var rect = findMaxRect(arrowToElements, highlightedElements);
+        if (rect.left === undefined) {
+            return;
+        }
+        var messageDiv = me.modules.ui.mainFrameWindow.document.createElement('div');
+        messageDiv.style.display = 'block';
+        messageDiv.style.backgroundColor = '#fff';
+        messageDiv.style.padding = '10px';
+        messageDiv.style.fontSize = '20px;';
+        messageDiv.style.zIndex = getZIndexForOverlay() + 1;
+        messageDiv.style.border = '#bbb solid 10px';
+        messageDiv.style.borderRadius = '20px';
+        messageDiv.style.overflow = 'auto';
+        messageDiv.style.visibility = 'hidden';
+        messageDiv.style.top = (rect.bottom + 5) + 'px';
+        messageDiv.style.left = Math.max(0, (Math.round((rect.left + rect.right) / 2) - currentMessageDivWidth)) + 'px';
+        messageDiv.style.width = currentMessageDivWidth + 'px';
+        messageDiv.style.height = 'auto';
+        messageDiv.style.position = 'fixed';
+        messageDiv.style.fontSize = '20px';
+        messageDiv.className = overlayClassName;
+        messageDiv.textContent = messageToSay;
+        messageDiv.onclick = function(){removeOverlay(true);};
+        me.modules.ui.mainFrameWindow.document.getElementsByTagName('body')[0].appendChild(messageDiv);
+        messageAdjustmentRemainingAttempts = 100;
+        me.modules.ui.adjustMessageDiv(messageDiv);
+    };
     /**
      * Function, that maintains arrows on screen, called time to time.
      * @function CartFiller.UI~arrowToFunction
@@ -1195,55 +1364,15 @@
      */
     var arrowToFunction = function(){
         try {
-            var rebuild = false;
-            var i, top, left, bottom;
-            // check whether positions of elements have changed
-            for (i = arrowToElements.length - 1; i >= 0; i--){
-                var rect = arrowToElements[i].element.getBoundingClientRect();
-                top = Math.round(rect.top - 5);
-                left = Math.round(rect.left - 5);
-                if ((top !== arrowToElements[i].top) ||
-                    (left !== arrowToElements[i].left)){
-                    rebuild = true;
-                    arrowToElements[i].top = top;
-                    arrowToElements[i].left = left;
-                    arrowToElements[i].height = Math.round(rect.height + 9);
-                    arrowToElements[i].width = Math.round(rect.width + 9);
-                }
-            }
-            // if yes - redraw all arrows
-            if (rebuild){
+            var rebuildArrows = findChanges(arrowToElements);
+            var rebuildHighlights = findChanges(highlightedElements);
+            if (rebuildArrows || rebuildHighlights){
                 removeOverlay();
-                for (i = arrowToElements.length - 1; i >= 0; i--){
-                    var el = arrowToElements[i];
-                    var div = getOverlayDiv2();
-                    div.style.backgroundColor = 'transparent';
-                    div.style.borderLeft = div.style.borderTop = div.style.borderRight = div.style.borderBottom = '5px solid rgba(255,0,0,0.3)';
-                    div.style.left = el.left + 'px';
-                    div.style.top = el.top + 'px';
-                    div.style.width = el.width + 'px';
-                    div.style.height = el.height + 'px';
-                    div.style.boxSizing = 'border-box';
-                    if (el.left > 40) {
-                        top = el.top + Math.round(el.height/2);
-                        verticalLineOverlay(0, 0, top - 10);
-                        horizontalLineOverlay(0, top - 10, el.left - 30);
-                        horizontalArrowOverlayRight(el.left - 30, top);
-                    } else if (el.top > 40) {
-                        left = el.left + Math.min(30, Math.round(el.width / 2));
-                        horizontalLineOverlay(0, 0, left - 10);
-                        verticalLineOverlay(left - 10, 0, el.top - 30);
-                        verticalArrowOverlayDown(left, el.top - 30);
-                    } else {
-                        left = el.left + Math.min(30, Math.round(el.width / 2));
-                        bottom = el.top + el.height;
-                        horizontalLineOverlay(0, bottom + 60, left + 10);
-                        verticalLineOverlay(left - 10, bottom + 30, 30);
-                        verticalArrowOverlayUp(left, bottom);
-
-                    }
-                }
+                drawArrows();
+                drawHighlights();
+                drawMessage();
             }
+
         } catch (e) {}
     };
     /**
@@ -1254,25 +1383,6 @@
      */
     var getDocument = function(){
         return me.modules.ui.mainFrameWindow.document;
-    };
-    /**
-     * Returns horizontal scroll position
-     * @function CartFiller.UI~getScrollLeft
-     * @returns {integer} 
-     * @access private
-     */
-    var getScrollLeft = function(){
-        return getDocument().documentElement.scrollLeft || getDocument().body.scrollLeft;
-    };
-    /**
-     * Returns vertical scroll position
-     * @function CartFiller.UI~getScrollTop
-     * @returns {integer}
-     * @access private
-     */
-    var getScrollTop = function(){
-        return  getDocument().documentElement.scrollTop || getDocument().body.scrollTop;
-
     };
     /**
      * Creates overlay div
@@ -1289,7 +1399,7 @@
         right = Math.round(right);
         bottom = Math.round(bottom);
         var div =  getDocument().createElement('div');
-        div.style.position = 'absolute';
+        div.style.position = 'fixed';
         div.style.left = left + 'px';
         div.style.top = top + 'px';
         div.style.width = (right - left) + 'px';
@@ -1297,7 +1407,7 @@
         div.style.backgroundColor = 'rgba(0,0,0,0.3)';
         div.style.zIndex = getZIndexForOverlay();
         div.className = overlayClassName;
-        div.onclick = function(){removeOverlay();};
+        div.onclick = function(){removeOverlay(true);};
         getDocument().getElementsByTagName('body')[0].appendChild(div);
 
     };
@@ -1311,40 +1421,49 @@
      * @param {integer} bottom
      * @access private
      */
-    var scrollTo = function(left, top, right, bottom){
-        var centerX = (right + left ) / 2;
-        var centerY = (bottom + top) / 2;
-        var currentLeft, currentTop;
-        var destX = centerX - ( getDocument().documentElement.clientWidth / 2);
-        var destY = centerY - ( getDocument().documentElement.clientHeight / 2);
-        var minLeft, maxLeft;
-        minLeft = maxLeft = currentLeft = getScrollLeft();
-        var minTop, maxTop;
-        minTop = maxTop = currentTop = getScrollLeft();
-        for (var tries = 1000; tries; tries--){
-            minLeft = Math.min(minLeft, currentLeft);
-            maxLeft = Math.max(maxLeft, currentLeft);
-            minTop = Math.min(minTop, currentTop);
-            maxTop = Math.max(maxTop, currentTop);
-            me.modules.ui.mainFrameWindow.scrollBy(destX - currentLeft, destY -  currentTop);
-            currentLeft = getScrollLeft();
-            currentTop = getScrollTop();
-            if ((currentLeft >= minLeft) && (currentLeft <= maxLeft) &&
-                (currentTop >= minTop) && (currentTop <= maxTop)) {
-                break;
+    var scrollTo = function(elements){
+        var rect;
+        var bottom = me.modules.ui.mainFrameWindow.innerHeight;
+        var right =  me.modules.ui.mainFrameWindow.innerWidth;
+        var minLeft, maxLeft, newLeft;
+        var minTop, maxTop, newTop;
+        if (elements.length > 0){
+            if ('function' === typeof elements[0].element.scrollIntoView){
+                elements[0].element.scrollIntoView();
             }
         }
-
+        for (var tries = 1000; tries; tries--){
+            findChanges(elements);
+            rect = findMaxRect(elements);
+            newLeft = Math.round((rect.right + rect.left) / 2);
+            newTop = Math.round((rect.bottom + rect.top) / 2);
+            if ((undefined !== minLeft) && 
+               (newLeft >= minLeft) && (newLeft <= maxLeft) &&
+               (newTop >= minTop) && (newTop <= maxTop))
+            {
+                break;
+            }
+            minLeft = undefined === minLeft ? newLeft : Math.min(minLeft, newLeft);
+            maxLeft = undefined === maxLeft ? newLeft : Math.max(maxLeft, newLeft);
+            minTop = undefined === minTop ? newTop : Math.min(minTop, newTop);
+            maxTop = undefined === maxTop ? newTop : Math.max(maxTop, newTop);
+            me.modules.ui.mainFrameWindow.scrollBy(newLeft - Math.round(right/2), newTop - Math.round(bottom/2));
+        }
+        scheduleOverlayRedraw(elements);
     };
     /**
      * Removes overlay divs
      * @function CartFiller.UI~removeOverlay
      * @access private
      */
-    var removeOverlay = function(){
-        var divs =  getDocument().getElementsByClassName(overlayClassName);
+    var removeOverlay = function(forever){
+        var divs = getDocument().getElementsByClassName(overlayClassName);
         for (var i = divs.length - 1; i >= 0 ; i--){
             divs[i].parentNode.removeChild(divs[i]);
+        }
+        if (true === forever) {
+            arrowToElements = highlightedElements = [];
+            messageToSay = '';
         }
     };
 
@@ -1357,12 +1476,6 @@
     var getWorkerFrameSrc = function(){
         return me.baseUrl + '/index' + (me.concatenated ? '.min' : '') + '.html' + (me.gruntBuildTimeStamp ? ('?' + me.gruntBuildTimeStamp) : '');        
     };
-    /**
-     * Horizontal position of center of highlighted element
-     * @member {integer} CartFiller.UI~highlightedElementCenterLeft
-     * @access private
-     */
-    var highlightedElementCenterLeft = false;
     /**
      * Vertical position of top of highlighted element
      * @member {integer} CartFiller.UI~highlightedElementTop
@@ -1433,63 +1546,36 @@
          * @access public
          */
         highlight: function(element, allElements){
-            var findMaxRect = function(rect, thisRect){
-                rect.left = (undefined === rect.left) ? thisRect.left : Math.min(rect.left, thisRect.left);
-                rect.right = (undefined === rect.right) ? thisRect.right : Math.max(rect.right, thisRect.right);
-                rect.top = (undefined === rect.top) ? thisRect.top : Math.min(rect.top, thisRect.top);
-                rect.bottom = (undefined === rect.bottom) ? thisRect.bottom : Math.max(rect.bottom, thisRect.bottom);
-            };
-            var rect;
+            messageToSay = '';
             var body = this.mainFrameWindow.document.getElementsByTagName('body')[0];
+            var i;
+
             body.style.paddingBottom = this.mainFrameWindow.innerHeight + 'px';
             var ui = this;
-            setTimeout(function(){
-                if (undefined !== ui.mainFrameWindow.jQuery && (element instanceof ui.mainFrameWindow.jQuery)){
-                    if (1 > element.length) {
-                        element = undefined;
-                    } else {
-                        if (true === allElements) {
-                            rect = {left: undefined, right: undefined, top: undefined, bottom: undefined};
-                            element.each(function(i,el){ findMaxRect(rect, el.getBoundingClientRect()); });
-                         } else {
-                            rect = element[0].getBoundingClientRect();
-                         }
+
+            highlightedElements = [];
+            if (undefined !== ui.mainFrameWindow.jQuery && (element instanceof ui.mainFrameWindow.jQuery)){
+                for (i = element.length -1 ; i >= 0 ; i --){
+                    highlightedElements.push({element: element[i]});
+                    if (true !== allElements) {
+                        break;
                     }
-                } else if (element instanceof Array) {
-                    if (true === allElements) {
-                        rect = {left: undefined, right: undefined, top: undefined, bottom: undefined};
-                        for (var i = element.length - 1 ; i >= 0 ; i--){
-                            findMaxRect(rect, element[i].getBoundingClientRect());
-                        }
-                    } else if (element.length > 0) {
-                        rect = element[0].getBoundingClientRect();
-                    } else {
-                        element = undefined;
+                }
+            } else if (element instanceof Array) {
+                for (i = element.length -1 ; i >= 0 ; i --){
+                    highlightedElements.push({element: element[i]});
+                    if (true !== allElements) {
+                        break;
                     }
-                } else if (undefined !== element) {
-                    rect = element.getBoundingClientRect();
                 }
-                var full = body.getBoundingClientRect();
-                var scrollTop = getScrollTop();
-                var scrollLeft = getScrollLeft();
-                var pageRight = Math.max(full.right + scrollLeft, body.scrollWidth, ui.mainFrameWindow.innerWidth) - 1;
-                var pageBottom = Math.max(full.bottom + scrollTop, body.scrollHeight, ui.mainFrameWindow.innerHeight) - 1;
-                removeOverlay();
-                if (undefined !== element) {
-                    var border = 5;
-                    highlightedElementCenterLeft = scrollLeft + Math.round(rect.left + rect.right) / 2;
-                    highlightedElementBottom = scrollTop + rect.bottom;
-                    highlightedElementTop = scrollTop + rect.top;
-                    createOverlay(0, 0, Math.max(0, rect.left + scrollLeft - border), pageBottom);
-                    createOverlay(Math.min(pageRight, rect.right + scrollLeft + border), 0, pageRight, pageBottom);
-                    createOverlay(Math.max(0, rect.left + scrollLeft - border), 0, Math.min(pageRight, rect.right + scrollLeft + border), Math.min(pageBottom, rect.top + scrollTop - border));
-                    createOverlay(Math.max(0, rect.left + scrollLeft - border), Math.max(0, rect.bottom + scrollTop + border), Math.min(pageRight, rect.right + scrollLeft + border), pageBottom);
-                    scrollTo(rect.left + scrollLeft, rect.top + scrollTop, rect.right + scrollLeft, rect.bottom + scrollTop);
-                } else {
-                    createOverlay(0, 0, pageRight, pageBottom);
-                    highlightedElementCenterLeft = highlightedElementBottom = highlightedElementTop = false;
-                }
-            },0);
+            } else if (undefined !== element) {
+                highlightedElements.push({element: element});
+            }
+            if (highlightedElements.length > 0) {
+                setTimeout(function(){
+                    scrollTo(highlightedElements);
+                },0);
+            }
         },
         /**
          * Draw arrow to element(s). 
@@ -1527,50 +1613,23 @@
          * @access public
          */
         say: function(text){
-            var ui = this;
-            setTimeout(function(){
-                var initialWidth = Math.max(100, Math.round(ui.mainFrameWindow.innerWidth * 0.5));
-                var messageDiv = ui.mainFrameWindow.document.createElement('div');
-                messageDiv.style.display = 'block';
-                messageDiv.style.backgroundColor = '#fff';
-                messageDiv.style.padding = '10px';
-                messageDiv.style.fontSize = '20px;';
-                messageDiv.style.zIndex = getZIndexForOverlay() + 1;
-                messageDiv.style.border = '#bbb solid 10px';
-                messageDiv.style.borderRadius = '20px';
-                messageDiv.style.overflow = 'auto';
-                messageDiv.style.visibility = 'hidden';
-                messageDiv.style.top = (highlightedElementBottom + 5) + 'px';
-                messageDiv.style.left = Math.max(0, (highlightedElementCenterLeft - initialWidth)) + 'px';
-                messageDiv.style.width = initialWidth + 'px';
-                messageDiv.style.height = 'auto';
-                messageDiv.style.position = 'absolute';
-                messageDiv.style.fontSize = '20px';
-                messageDiv.className = overlayClassName;
-                messageDiv.textContent = text;
-                messageDiv.onclick = function(){removeOverlay();};
-
-                ui.mainFrameWindow.document.getElementsByTagName('body')[0].appendChild(messageDiv);
-                ui.adjustMessageDiv(messageDiv);
-            },0);
+            messageToSay = undefined === text ? '' : text;
+            currentMessageDivWidth = Math.max(100, Math.round(this.mainFrameWindow.innerWidth * 0.5));
+            messageAdjustmentRemainingAttempts = 100;
         },
         /**
          * Finds appropriate position and size for message div
          * to make text fit on page if possible
          * @function CartFiller.UI#adjustMessageDiv
          * @param {HtmlElement} div message div
-         * @param {integer} counter iteration counter. When reaches 100, then
-         * this function stops iterating
          * @access public
          */
-        adjustMessageDiv: function(div, counter){
-            if (undefined === counter) {
-                counter = 0;
-            }
+        adjustMessageDiv: function(div){
             var ui = this;
             setTimeout(function(){
-                var ok = false;
-                if (counter < 100) {
+                var ok = true;
+                if (messageAdjustmentRemainingAttempts > 0){
+                    ok = false;
                     var rect = div.getBoundingClientRect();
                     if (rect.bottom > ui.mainFrameWindow.innerHeight){
                         if (rect.width > 0.95 * ui.mainFrameWindow.innerWidth){
@@ -1583,20 +1642,20 @@
                             }
                         } else {
                             // let's make div wider
-                            div.style.left = Math.max(0, (parseInt(div.style.left.replace('px', '')) - Math.round(ui.mainFrameWindow.innerWidth * 0.04))) + 'px';
-                            div.style.width = Math.min(ui.mainFrameWindow.innerWidth, (parseInt(div.style.width.replace('px', '')) + Math.round(ui.mainFrameWindow.innerWidth * 0.04))) + 'px';
+                            currentMessageDivWidth = Math.min(ui.mainFrameWindow.innerWidth, (parseInt(div.style.width.replace('px', '')) + Math.round(ui.mainFrameWindow.innerWidth * 0.04)));
                         }
                     } else {
                         // that's ok 
                         ok = true;
                     }
-                } else {
-                    ok = true;
-                }
-                if (ok){
-                    div.style.visibility = 'visible';
-                } else {
-                    ui.adjustMessageDiv(div, counter + 1);
+                    if (ok){
+                        div.style.visibility = 'visible';
+                        messageAdjustmentRemainingAttempts = 0;
+                    } else {
+                        messageAdjustmentRemainingAttempts --;
+                        scheduleOverlayRedraw(arrowToElements);
+                        scheduleOverlayRedraw(highlightedElements);
+                    }
                 }
             },0);
         },
