@@ -351,28 +351,33 @@
         if (rect.left === undefined) {
             return;
         }
-        var messageDiv = overlayWindow().document.createElement('div');
-        messageDiv.style.display = 'block';
-        messageDiv.style.backgroundColor = '#fff';
-        messageDiv.style.padding = '10px';
-        messageDiv.style.fontSize = '20px;';
-        messageDiv.style.zIndex = getZIndexForOverlay() + 1;
-        messageDiv.style.border = '#bbb solid 10px';
-        messageDiv.style.borderRadius = '20px';
-        messageDiv.style.overflow = 'auto';
-        messageDiv.style.visibility = 'hidden';
-        messageDiv.style.top = (rect.bottom + 5) + 'px';
-        messageDiv.style.left = Math.max(0, (Math.round((rect.left + rect.right) / 2) - currentMessageDivWidth)) + 'px';
-        messageDiv.style.width = currentMessageDivWidth + 'px';
-        messageDiv.style.height = 'auto';
-        messageDiv.style.position = 'fixed';
-        messageDiv.style.fontSize = '20px';
-        messageDiv.className = overlayClassName;
-        messageDiv.textContent = messageToSay;
-        messageDiv.onclick = function(){removeOverlay(true);};
-        overlayWindow().document.getElementsByTagName('body')[0].appendChild(messageDiv);
-        messageAdjustmentRemainingAttempts = 100;
-        me.modules.ui.adjustMessageDiv(messageDiv);
+        if (
+            (('string' === typeof messageToSay) && (messageToSay.length > 0)) ||
+            (('string' !== typeof messageToSay) && (undefined !== messageToSay) && (null !== messageToSay) && !isNaN(messageToSay))
+        ){
+            var messageDiv = overlayWindow().document.createElement('div');
+            messageDiv.style.display = 'block';
+            messageDiv.style.backgroundColor = '#fff';
+            messageDiv.style.padding = '10px';
+            messageDiv.style.fontSize = '20px;';
+            messageDiv.style.zIndex = getZIndexForOverlay() + 1;
+            messageDiv.style.border = '#bbb solid 10px';
+            messageDiv.style.borderRadius = '20px';
+            messageDiv.style.overflow = 'auto';
+            messageDiv.style.visibility = 'hidden';
+            messageDiv.style.top = (rect.bottom + 5) + 'px';
+            messageDiv.style.left = Math.max(0, (Math.round((rect.left + rect.right) / 2) - currentMessageDivWidth)) + 'px';
+            messageDiv.style.width = currentMessageDivWidth + 'px';
+            messageDiv.style.height = 'auto';
+            messageDiv.style.position = 'fixed';
+            messageDiv.style.fontSize = '20px';
+            messageDiv.className = overlayClassName;
+            messageDiv.textContent = messageToSay;
+            messageDiv.onclick = function(){removeOverlay(true);};
+            overlayWindow().document.getElementsByTagName('body')[0].appendChild(messageDiv);
+            messageAdjustmentRemainingAttempts = 100;
+            me.modules.ui.adjustMessageDiv(messageDiv);
+        }
     };
     /**
      * Function, that maintains arrows on screen, called time to time.
