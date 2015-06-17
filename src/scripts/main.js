@@ -60,9 +60,15 @@
             }
         }
     }, false);
+    var destination;
     if (window.parent !== window){
-        window.parent.postMessage('cartFillerMessage:{"cmd":"register"}', '*');
+        destination = window.parent;
     } else if ((window.opener !== null) && (window.opener !== window)){
-        window.opener.postMessage('cartFillerMessage:{"cmd":"register"}', '*');
+        destination = window.opener;
+    } else {
+        alert('unknown destination');
+    }
+    if (destination){
+        destination.postMessage('cartFillerMessage:{"cmd":"register"}', '*');
     }
 })();
