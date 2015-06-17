@@ -288,11 +288,8 @@ define('controller', ['app', 'scroll'], function(app){
             }
         }
     }, false);
-    if (window.parent !== window){
-        window.parent.postMessage('cartFillerMessage:{"cmd":"register"}', '*');
-    } else if ((window.opener !== null) && (window.opener !== window)){
-        window.opener.postMessage('cartFillerMessage:{"cmd":"register"}', '*');
-    }
+
+    window.parent.postMessage('cartFillerMessage:{"cmd":"register"}', '*');
 })();
 
 define('scroll', ['app', 'scroll'], function(app){

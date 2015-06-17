@@ -153,7 +153,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1434572842074';
+    config.gruntBuildTimeStamp='1434576366959';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -1561,21 +1561,7 @@
                 this.chooseJobFrameWindow.location.href = me['data-choose-job'];
                 chooseJobFrameLoaded = true;
             }
-            if (this.chooseJobFrame) {
-                this.chooseJobFrame.style.display = show ? 'block' : 'none';
-            } else {
-                if (show){
-                    this.chooseJobFrameWindow.moveTo(0,0);
-                    this.chooseJobFrameWindow.resizeTo(
-                        Math.round(window.outerWidth*0.8),
-                        Math.round(window.outerHeight)
-                    );
-                    this.chooseJobFrameWindow.focus();
-                } else {
-                    this.chooseJobFrameWindow.resizeTo(0,0);
-                    this.mainFrameWindow.focus();
-                }
-            }
+            this.chooseJobFrame.style.display = show ? 'block' : 'none';
         },
         /**
          * Closes popup window in case of popup UI
@@ -1713,14 +1699,19 @@
          * @access public
          */
         popup: function(document, window){
+            var windowWidth = window.innerWidth,
+                windowHeight = window.innerHeight,
+                chooseJobFrameLeft = 0.02 * windowWidth,
+                chooseJobFrameWidth = 0.76 * windowWidth,
+                chooseJobFrameTop = 0.02 * windowHeight,
+                chooseJobFrameHeight = 0.96 * windowHeight,
+                workerFrameWidthBig = windowWidth * 0.8 - 1,
+                workerFrameWidthSmall = windowWidth * 0.2 - 1;
+
             me.modules.dispatcher.init();
             this.mainFrameWindow = window.open(window.location.href, '_blank', 'height=' + Math.round(window.outerHeight) + ', width=' + Math.round(window.outerWidth*0.8));
             this.closePopup = function(){
                 this.mainFrameWindow.close();
-                this.workerFrameWindow.close();
-                if (this.chooseJobFrameWindow){
-                    this.chooseJobFrameWindow.close();
-                }
             };
             this.mainFrameWindow.addEventListener('load', function(){
                 me.modules.dispatcher.onMainFrameLoaded();
@@ -1740,32 +1731,46 @@
             }
 
             this.setSize = function(size){
-                var oldSize = (currentSize === 'big') ? 'big' : 'small';
                 if (undefined === size) {
                     size = (currentSize === 'big') ? 'small' : 'big';
                 }
                 currentSize = size;
-                if (oldSize !== currentSize){
-                    if (currentSize === 'small'){
-                        this.workerFrameWindow.resizeBy(-Math.round(window.outerWidth*0.8), 0);
-                        this.workerFrameWindow.moveBy(Math.round(window.outerWidth*0.8), 0);
-
-                    } else {
-                        this.workerFrameWindow.moveBy(-Math.round(window.outerWidth*0.8));
-                        this.workerFrameWindow.resizeBy(Math.round(window.outerWidth*0.8), 0);
-                    }
+                if (size === 'big') {
+                    this.workerFrame.style.width = workerFrameWidthBig + 'px';
+                    this.workerFrame.style.left = (windowWidth - workerFrameWidthBig - 5) + 'px';
+                } else if (size === 'small') {
+                    this.workerFrame.style.width = workerFrameWidthSmall + 'px';
+                    this.workerFrame.style.left = (windowWidth - workerFrameWidthSmall - 5) + 'px';
                 }
             };
 
-            this.workerFrameWindow = window.open('', '_blank', 'height=' + Math.round(window.outerHeight) + ', width=' + Math.round(window.outerWidth*0.2) + ', left=' + Math.round(window.outerWidth*0.8));
-            this.workerFrameWindow.location.href = getWorkerFrameSrc();
+            this.workerFrame = window.document.createElement('iframe');
+            this.workerFrame.setAttribute('name', workerFrameName);
+            this.workerFrame.style.position='fixed';
+            this.workerFrame.style.top = '0px';
+            this.workerFrame.style.height = '100%';
+            this.workerFrame.style.zIndex = '100000';
+            this.setSize('big');
+            body.appendChild(this.workerFrame);
+            this.workerFrameWindow = window.frames[workerFrameName];
+            this.workerFrameWindow.location.href=getWorkerFrameSrc();
 
-            this.chooseJobFrameWindow = window.open('', '_blank', 'height=' + Math.round(window.outerHeight) + ', width=' + Math.round(window.outerWidth*0.8));
+            this.chooseJobFrame = window.document.createElement('iframe');
+            this.chooseJobFrame.setAttribute('name', chooseJobFrameName);
+            this.chooseJobFrame.style.position='fixed';
+            this.chooseJobFrame.style.height = chooseJobFrameHeight + 'px';
+            this.chooseJobFrame.style.top = chooseJobFrameTop + 'px';
+            this.chooseJobFrame.style.left = chooseJobFrameLeft + 'px';
+            this.chooseJobFrame.style.width = chooseJobFrameWidth + 'px';
+            this.chooseJobFrame.style.zIndex = '1000000';
+            this.chooseJobFrame.style.background = 'white';
+            body.appendChild(this.chooseJobFrame);
+            this.chooseJobFrameWindow = window.frames[chooseJobFrameName];
 
 
         },
         /**
-         * Starts Framed type UI
+         * Starts Popup type UI
          * @function CartFiller.UI#framed
          * @param {Document} document Document where we are at the moment of injecting
          * @param {Window} window Window, that we are at the moment of injecting

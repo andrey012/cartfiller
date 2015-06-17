@@ -393,21 +393,11 @@
 
         jobDetails.cmd = 'jobDetails';
 
-        var destination; 
-        if (window.parent !== window){
-            destination = window.parent;
-        } else if ((window.opener !== null) && (window.opener !== window)){
-            destination = window.opener;
-        } else {
-            alert('unknown destination');
-        }
-        if (destination){
-            destination.postMessage(
-                'cartFillerMessage:' + 
-                JSON.stringify(jobDetails),
-                '*'
-            );
-        }
+        window.parent.postMessage(
+            'cartFillerMessage:' + 
+            JSON.stringify(jobDetails),
+            '*'
+        );
         resultCallback = newResultCallback;
     };
 

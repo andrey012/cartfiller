@@ -13,7 +13,6 @@
         <div id="qunit-fixture"></div>
         <script>
             $(window).ready(function(){
-
                 var click = function(el) {
                     var ev = document.createEvent('MouseEvent');
                     ev.initMouseEvent(
@@ -62,14 +61,6 @@
                 var processNextBookmarklet = function(currentBookmarklet, assert, done){
                     document.getElementsByName('testFrame')[0].onload = function(){
                         console.log('inside processNextBookmarklet');
-                        var oldOpen = testFrame.open;
-                        var popups = [];
-                        testFrame.open = function(){
-                            var popup = oldOpen.apply(this, arguments);
-                            popups.push(popup);
-                            return popup;
-                        }
-
                         var bookmarklet = 
                             testFrame
                                 .jQuery('#bookmarklets a.bookmarklet:nth('+currentBookmarklet+')');
@@ -90,37 +81,24 @@
                         var tries = 100;
                         setTimeout(function waitForSubmitLink(){
                             try {
-                                if (!testFrame.jQuery('iframe[name="cartFillerChooseJobFrame"]:visible').length && !popups[2]) throw "";
-                                var loaded;
-                                var link;
-                                if (testFrame.jQuery('iframe[name="cartFillerChooseJobFrame"]:visible').length) {
-
-                                    loaded = "complete" === testFrame.jQuery('iframe[name="cartFillerChooseJobFrame"]')[0].contentDocument.readyState;
-                                    link = testFrame.frames['cartFillerChooseJobFrame'].document.getElementById('sampleSubmitLink');
-                                } else {
-                                    loaded = "complete" === popups[2].document.readyState;
-                                    link = popups[2].document.getElementById('sampleSubmitLink');
-                                }
-                                var chooseJobButton;
-                                if (popups[1]) {
-                                    chooseJobButton = popups[1].jQuery ? popups[1].jQuery('#chooseJobButton') : false;
-                                } else {
-                                    chooseJobButton = testFrame.frames['cartFillerWorkerFrame'].jQuery ? testFrame.frames['cartFillerWorkerFrame'].jQuery('#chooseJobButton') : false;
-                                }
+                                if (!testFrame.jQuery('iframe[name="cartFillerChooseJobFrame"]:visible').length) throw "";
+                                var loaded = "complete" === testFrame.jQuery('iframe[name="cartFillerChooseJobFrame"]')[0].contentDocument.readyState;
+                                var link = testFrame.frames['cartFillerChooseJobFrame'].document.getElementById('sampleSubmitLink');
+                                var chooseJobButton = testFrame.frames['cartFillerWorkerFrame'].jQuery ? testFrame.frames['cartFillerWorkerFrame'].jQuery('#chooseJobButton') : false
                                 if (link && loaded && chooseJobButton && chooseJobButton.text() === 'Cancel') {
                                     console.log('submit link found');
                                     click(link);
                                     console.log('submit link clicked');
                                     setTimeout(function waitForWorkerToLoad() {
                                         try {
-                                            if (!popups[1] && testFrame.frames['cartFillerWorkerFrame'].document.readyState !== "complete") throw "";
-                                            var runButton = (popups[1] ? popups[1] : testFrame.frames['cartFillerWorkerFrame']).document.getElementById('runButton');
+                                            if (testFrame.frames['cartFillerWorkerFrame'].document.readyState !== "complete") throw "";
+                                            var runButton = testFrame.frames['cartFillerWorkerFrame'].document.getElementById('runButton');
                                             if (runButton && !runButton.getAttribute('disabled')){
                                                 console.log('run button found');
                                                 click(runButton);
                                                 setTimeout(function waitForCompleted(){
                                                     try {
-                                                        if ((popups[1] ? popups[1] : testFrame.frames['cartFillerWorkerFrame']).document.getElementById('finishReached')) {
+                                                        if (testFrame.frames['cartFillerWorkerFrame'].document.getElementById('finishReached')) {
                                                             console.log('complete alert found');
                                                             assert.ok(true);
                                                             done();
