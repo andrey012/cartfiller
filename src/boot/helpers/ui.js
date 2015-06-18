@@ -765,10 +765,12 @@
             } catch (e){}
             var ui = this;
             setTimeout(function loadWatcher(){
-                if (ui.mainFrameWindow.document && 
-                    (ui.mainFrameWindow.document.readyState === 'complete')){
-                    me.modules.dispatcher.onMainFrameLoaded(true);
-                }
+                try {
+                    if (ui.mainFrameWindow.document && 
+                        (ui.mainFrameWindow.document.readyState === 'complete')){
+                        me.modules.dispatcher.onMainFrameLoaded(true);
+                    }
+                } catch (e){}
                 setTimeout(loadWatcher, 100);
             }, 100);
 
