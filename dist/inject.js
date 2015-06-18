@@ -153,7 +153,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1434587953163';
+    config.gruntBuildTimeStamp='1434616510351';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -1229,7 +1229,18 @@
         if (undefined !== el.ownerDocument && undefined !== el.ownerDocument.defaultView && undefined !== el.ownerDocument.defaultView.parent && el.ownerDocument.defaultView.parent !== el.ownerDocument.defaultView) {
             var frames = el.ownerDocument.defaultView.parent.document.getElementsByTagName('iframe');
             for (var i = frames.length - 1 ; i >= 0 ;i --){
-                if (frames[i].contentDocument === el.ownerDocument){
+                var frameDocument;
+                try {
+                    frameDocument = frames[i].contentDocument;
+                } catch (e){}
+                var frameWindow;
+                try {
+                    frameWindow = frames[i].contentWindow;
+                } catch (e){}
+                if (
+                    (frameDocument === el.ownerDocument) ||
+                    (el.ownerDocument !== undefined && el.ownerDocument.defaultView === frameWindow)
+                ){
                     var frameRect = frames[i].getBoundingClientRect();
                     var newRect = {
                         top: rect.top + frameRect.top,
