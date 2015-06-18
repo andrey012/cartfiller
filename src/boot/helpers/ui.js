@@ -751,7 +751,7 @@
                 screenWidth = window.outerWidth;
 
             me.modules.dispatcher.init();
-            this.mainFrameWindow = window.open(window.location.href, '_blank', 'resizable=1, height=1, width=1');
+            this.mainFrameWindow = window.open(window.location.href, '_blank', 'resizable=1, height=1, width=1, scrollbars=1');
             this.closePopup = function(){
                 this.mainFrameWindow.close();
             };

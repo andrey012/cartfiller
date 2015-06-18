@@ -153,7 +153,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1434622660217';
+    config.gruntBuildTimeStamp='1434623802560';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -1765,7 +1765,7 @@
                 screenWidth = window.outerWidth;
 
             me.modules.dispatcher.init();
-            this.mainFrameWindow = window.open(window.location.href, '_blank', 'resizable=1, height=1, width=1');
+            this.mainFrameWindow = window.open(window.location.href, '_blank', 'resizable=1, height=1, width=1, scrollbars=1');
             this.closePopup = function(){
                 this.mainFrameWindow.close();
             };
