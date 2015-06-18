@@ -122,6 +122,7 @@ define('controller', ['app', 'scroll'], function(app){
             $scope.currentStep = stepIndex;
             $scope.invokeWorker(taskIndex, stepIndex);
             $event.stopPropagation();
+            cfMessage.send('focusMainFrameWindow');
             return false;
         };
         $scope.invokeWorker = function(taskIndex, stepIndex){
@@ -152,11 +153,13 @@ define('controller', ['app', 'scroll'], function(app){
             $scope.running = slow ? 'slow' : true;
             $scope.doNextStep();
             $event.stopPropagation();
+            cfMessage.send('focusMainFrameWindow');
             return false;
         };
         $scope.stop = function($event){
             $event.stopPropagation();
             $scope.running = false;
+            cfMessage.send('focusMainFrameWindow');
             return false;
         };
         $scope.doNextStep = function(){
@@ -176,6 +179,7 @@ define('controller', ['app', 'scroll'], function(app){
         $scope.clickOnNextStep = function($event){
             $scope.doNextStep(); 
             $event.stopPropagation();
+            cfMessage.send('focusMainFrameWindow');
             return false;
         };
         $scope.loadWorker = function(url){

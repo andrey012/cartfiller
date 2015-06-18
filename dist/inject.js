@@ -153,7 +153,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1434576366959';
+    config.gruntBuildTimeStamp='1434587953163';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -773,8 +773,16 @@
             }
         },
         /**
+         * Pops up mainFrame window if it is popup UI, if possible
+         * @function CartFiller.Dispatcher#onMessage_focusMainWindow
+         * @access public
+         */
+        onMessage_focusMainFrameWindow: function(){
+            me.modules.ui.focusMainFrameWindow();
+        },
+        /**
          * Forces worker reset
-         * @function CartFiller.Dispathcer#onMessage_resetWorker
+         * @function CartFiller.Dispatcher#onMessage_resetWorker
          * @access public
          */
         onMessage_resetWorker: function(){
@@ -1084,7 +1092,7 @@
     var arrowToElements = [];
     /**
      * Keeps list of elements, which we should highlight
-     * @member {CartFiller.UI.ArrowToElement} CartFiller.UI~arrowToElements
+     * @member {CartFiller.UI.ArrowToElement} CartFiller.UI~highlightedElements
      * @access private
      */
     var highlightedElements = [];
@@ -1211,6 +1219,33 @@
         div.style.borderTop = '30px solid rgba(255,0,0,0.3)';
     };
     /**
+     * Shifts client bounding rectangle if an element is inside frame(s)
+     * @param {Object} rect Client bounding rect
+     * @param {HtmlElement} el
+     * @return {Object} rect
+     * @access private
+     */
+    var shiftRectWithFrames = function(rect, el){
+        if (undefined !== el.ownerDocument && undefined !== el.ownerDocument.defaultView && undefined !== el.ownerDocument.defaultView.parent && el.ownerDocument.defaultView.parent !== el.ownerDocument.defaultView) {
+            var frames = el.ownerDocument.defaultView.parent.document.getElementsByTagName('iframe');
+            for (var i = frames.length - 1 ; i >= 0 ;i --){
+                if (frames[i].contentDocument === el.ownerDocument){
+                    var frameRect = frames[i].getBoundingClientRect();
+                    var newRect = {
+                        top: rect.top + frameRect.top,
+                        bottom: rect.bottom + frameRect.top,
+                        left: rect.left + frameRect.left,
+                        right: rect.right + frameRect.left,
+                        width: rect.width,
+                        height: rect.height
+                    };
+                    return shiftRectWithFrames(newRect, frames[i]);
+                }
+            }
+        }
+        return rect;
+    };
+    /**
      * Draws vertical overlay arrow, direction = up
      * @function CartFiller.UI~verticalArrowOverlayUp
      * @param {integer} left
@@ -1232,6 +1267,7 @@
         for (i = elements.length - 1; i >= 0; i--){
             element = elements[i];
             rect = element.element.getBoundingClientRect();
+            rect = shiftRectWithFrames(rect, element.element);
             if (rect.width > 0 || rect.height > 0 || rect.left > 0 || rect.top > 0) {
                 top = Math.round(rect.top - 5);
                 left = Math.round(rect.left - 5);
@@ -1562,6 +1598,7 @@
                 chooseJobFrameLoaded = true;
             }
             this.chooseJobFrame.style.display = show ? 'block' : 'none';
+            this.setSize(show ? 'big' : 'small');
         },
         /**
          * Closes popup window in case of popup UI
@@ -1571,6 +1608,13 @@
         closePopup: function() {
 
         },
+        /**
+         * Pops up mainFrame window if it is popup UI, if possible.
+         * Implementation depends on UI
+         * @function CartFiller.Dispatcher#onMessage_focusMainWindow
+         * @access public
+         */
+        focusMainFrameWindow: function(){},
         /**
          * Highlights element by drawing an overlay
          * @see CartFiller.Api#highlight
@@ -1583,16 +1627,15 @@
             var i;
 
             body.style.paddingBottom = this.mainFrameWindow.innerHeight + 'px';
-            var ui = this;
 
             highlightedElements = [];
-            if (undefined !== ui.mainFrameWindow.jQuery && (element instanceof ui.mainFrameWindow.jQuery)){
-                for (i = element.length -1 ; i >= 0 ; i --){
-                    highlightedElements.push({element: element[i]});
-                    if (true !== allElements) {
-                        break;
+            if ('object' === typeof element && 'string' === typeof element.jquery && undefined !== element.length && 'function' === typeof element.each){
+                element.each(function(i,el){
+                    highlightedElements.push({element: el}); 
+                    if (!allElements) {
+                        return false;
                     }
-                }
+                });
             } else if (element instanceof Array) {
                 for (i = element.length -1 ; i >= 0 ; i --){
                     highlightedElements.push({element: element[i]});
@@ -1617,7 +1660,7 @@
          */
         arrowTo: function(element, allElements){
             arrowToElements = [];
-            if (undefined !== this.mainFrameWindow.jQuery && (element instanceof this.mainFrameWindow.jQuery)){
+            if ('object' === typeof element && 'string' === typeof element.jquery && undefined !== element.length && 'function' === typeof element.each){
                 element.each(function(i,el){
                     arrowToElements.push({element: el}); 
                     if (!allElements) {
@@ -1706,12 +1749,17 @@
                 chooseJobFrameTop = 0.02 * windowHeight,
                 chooseJobFrameHeight = 0.96 * windowHeight,
                 workerFrameWidthBig = windowWidth * 0.8 - 1,
-                workerFrameWidthSmall = windowWidth * 0.2 - 1;
+                workerFrameWidthSmall = windowWidth * 0.2 - 1,
+                screenHeight = window.outerHeight,
+                screenWidth = window.outerWidth;
 
             me.modules.dispatcher.init();
-            this.mainFrameWindow = window.open(window.location.href, '_blank', 'height=' + Math.round(window.outerHeight) + ', width=' + Math.round(window.outerWidth*0.8));
+            this.mainFrameWindow = window.open(window.location.href, '_blank', 'resizable=1, height=1, width=1');
             this.closePopup = function(){
                 this.mainFrameWindow.close();
+            };
+            this.focusMainFrameWindow = function(){
+                this.mainFrameWindow.focus();
             };
             this.mainFrameWindow.addEventListener('load', function(){
                 me.modules.dispatcher.onMainFrameLoaded();
@@ -1736,9 +1784,12 @@
                 }
                 currentSize = size;
                 if (size === 'big') {
+                    this.mainFrameWindow.resizeTo(1,1);
                     this.workerFrame.style.width = workerFrameWidthBig + 'px';
                     this.workerFrame.style.left = (windowWidth - workerFrameWidthBig - 5) + 'px';
                 } else if (size === 'small') {
+                    this.mainFrameWindow.resizeTo(Math.round(screenWidth*0.8), Math.round(screenHeight));
+                    this.mainFrameWindow.focus();
                     this.workerFrame.style.width = workerFrameWidthSmall + 'px';
                     this.workerFrame.style.left = (windowWidth - workerFrameWidthSmall - 5) + 'px';
                 }

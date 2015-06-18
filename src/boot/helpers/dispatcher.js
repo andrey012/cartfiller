@@ -331,8 +331,16 @@
             }
         },
         /**
+         * Pops up mainFrame window if it is popup UI, if possible
+         * @function CartFiller.Dispatcher#onMessage_focusMainWindow
+         * @access public
+         */
+        onMessage_focusMainFrameWindow: function(){
+            me.modules.ui.focusMainFrameWindow();
+        },
+        /**
          * Forces worker reset
-         * @function CartFiller.Dispathcer#onMessage_resetWorker
+         * @function CartFiller.Dispatcher#onMessage_resetWorker
          * @access public
          */
         onMessage_resetWorker: function(){
