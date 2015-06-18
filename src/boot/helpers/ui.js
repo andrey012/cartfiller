@@ -758,9 +758,11 @@
             this.focusMainFrameWindow = function(){
                 this.mainFrameWindow.focus();
             };
-            this.mainFrameWindow.addEventListener('load', function(){
-                me.modules.dispatcher.onMainFrameLoaded();
-            }, true);
+            try {
+                this.mainFrameWindow.addEventListener('load', function(){
+                    me.modules.dispatcher.onMainFrameLoaded();
+                }, true);
+            } catch (e){}
             var ui = this;
             setTimeout(function loadWatcher(){
                 if (ui.mainFrameWindow.document && 

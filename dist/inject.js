@@ -153,7 +153,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1434616510351';
+    config.gruntBuildTimeStamp='1434622660217';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -1772,9 +1772,11 @@
             this.focusMainFrameWindow = function(){
                 this.mainFrameWindow.focus();
             };
-            this.mainFrameWindow.addEventListener('load', function(){
-                me.modules.dispatcher.onMainFrameLoaded();
-            }, true);
+            try {
+                this.mainFrameWindow.addEventListener('load', function(){
+                    me.modules.dispatcher.onMainFrameLoaded();
+                }, true);
+            } catch (e){}
             var ui = this;
             setTimeout(function loadWatcher(){
                 if (ui.mainFrameWindow.document && 
