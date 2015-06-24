@@ -13,6 +13,7 @@ define('controller', ['app', 'scroll'], function(app){
         $scope.jobDetails = [];
         $scope.jobTaskProgress = [];
         $scope.jobTaskDescriptions = {};
+        $scope.indexTitles = {};
         $scope.running = false;
         $scope.workerInProgress = false;
         $scope.currentTask = 0;
@@ -52,6 +53,7 @@ define('controller', ['app', 'scroll'], function(app){
             } else if (cmd === 'workerRegistered'){
                 $scope.jobTaskDescriptions = details.jobTaskDescriptions;
                 $scope.workerSrc = details.src;
+                $scope.updateIndexTitles();
             } else if (cmd === 'workerStepResult'){
                 $scope.jobTaskProgress[details.index].stepsInProgress[details.step] = false;
                 $scope.jobTaskProgress[details.index].stepResults[details.step] = {status: details.status, message: details.message};
@@ -213,6 +215,21 @@ define('controller', ['app', 'scroll'], function(app){
             $scope.chooseJobState = true;
             $scope.returnResult();
             $event.stopPropagation();
+        };
+        $scope.updateIndexTitles = function(){
+            $scope.indexTitles = {};
+            var space = String.fromCharCode(0xa0);
+            angular.forEach($scope.jobTaskDescriptions, function(details, task){
+                var len = String(details.length+1).length;
+                $scope.indexTitles[task] = [];
+                for (var i = 0; i < details.length; i++){
+                    var r = String(i+1);
+                    while (r.length < len) {
+                        r += space;
+                    }
+                    $scope.indexTitles[task].push(r);
+                }
+            });
         };
     }]);
 });

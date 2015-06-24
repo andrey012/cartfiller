@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>CartFiller</title>
     <link rel="stylesheet" href="../lib/bootstrap/dist/css/bootstrap.min.css?__inline=true"/>
+    <style>#jobDetails .btn {font-family: monospace; font-size: 12px;} #jobDetails .btn-xs {margin: 5px 7px;  font-size: 12px;} </style>
 </head>
 <body ng-controller="indexController">
     <div style="text-align: right; z-index: 101; position: fixed; top: 0px; width: 100%; padding: 2px;" class="alert alert-warning">
@@ -94,7 +95,7 @@
                        ng-click="clickOnStep(jobTaskIndex, jobTaskStepIndex, $event)"
                        ng-disabled="workerInProgress"
                        onclick="return false;"
-                    >{{jobTaskStepIndex + 1}}</a>
+                    >{{indexTitles[jobTask.task][jobTaskStepIndex]}}</a>
                     {{jobTaskProgress[jobTaskIndex].stepResults[jobTaskStepIndex].message}}
                 </span>
             </div>
