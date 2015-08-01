@@ -109,6 +109,9 @@ define('controller', ['app', 'scroll'], function(app){
                     }
                 }
                 $scope.workerInProgress = false;
+                if (!proceed){
+                    digestTask($scope.currentTask);
+                }
                 digestButtonPanel();
             }
         });
@@ -287,7 +290,7 @@ define('controller', ['app', 'scroll'], function(app){
             if (message.cmd === 'bootstrap') {
                 require.config({
                     paths: {
-                        'angular': message.lib + '/angular/angular',
+                        'angular': message.lib + '/angular/angular.min',
                         'angular-route': message.lib + '/angular-route/angular-route.min',
                         'jquery': message.lib + '/jquery/dist/jquery.min',
                         'bootstraptw': message.lib + '/bootstrap/dist/js/bootstrap.min',

@@ -95,6 +95,9 @@ define('controller', ['app', 'scroll'], function(app){
                     }
                 }
                 $scope.workerInProgress = false;
+                if (!proceed){
+                    digestTask($scope.currentTask);
+                }
                 digestButtonPanel();
             }
         });
