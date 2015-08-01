@@ -98,7 +98,8 @@
                                                 click(runButton);
                                                 setTimeout(function waitForCompleted(){
                                                     try {
-                                                        if (testFrame.frames['cartFillerWorkerFrame'].document.getElementById('finishReached')) {
+                                                        var finishReached = testFrame.frames['cartFillerWorkerFrame'].document.getElementById('finishReached');
+                                                        if (finishReached && "1" === String(finishReached.style.opacity)) {
                                                             console.log('complete alert found');
                                                             assert.ok(true);
                                                             done();

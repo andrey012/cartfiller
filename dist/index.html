@@ -7,40 +7,38 @@
     <style>#jobDetails .btn {font-family: monospace; font-size: 12px;} #jobDetails .btn-xs {margin: 5px 7px;  font-size: 12px;} </style>
 </head>
 <body ng-controller="indexController">
-    <div style="text-align: right; z-index: 101; position: fixed; top: 0px; width: 100%; padding: 2px;" class="alert alert-warning">
-
+    <div id="buttonPanel"
+         style="text-align: right; z-index: 101; position: fixed; top: 0px; width: 100%; padding: 2px;" 
+         class="alert alert-warning"
+         ng-repeat="dummy in [0]">
         <a href="#" class="btn btn-info btn-xs" ng-click="toggleSize()">[]</a>
         <a href="#"
            ng-if="running"
-           ng-click="stop($event)"
            class="btn btn-xs btn-danger"
-           onclick="return false;"
+           onclick="var event = arguments[0] || window.event; return angular.element(this).scope().stopNoWatch(event);"
            ng-disabled="!workerSrc"
            >Stop</a>
         <a href="#"
            id="runButton"
            ng-if="!running"
-           ng-click="run(false, $event)"
            class="btn btn-xs btn-success"
            title="Run"
            ng-disabled="workerInProgress || !workerSrc"
-           onclick="return false;"
+           onclick="var event = arguments[0] || window.event; return angular.element(this).scope().runNoWatch(false, event);"
            disabled="disabled"
            >&gt;&gt;&gt;</a>
         <a href="#"
            ng-if="!running"
-           ng-click="run(true, $event)"
            class="btn btn-xs btn-info"
            title="Slow"
            ng-disabled="workerInProgress || !workerSrc"
-           onclick="return false;"
+           onclick="var event = arguments[0] || window.event; return angular.element(this).scope().runNoWatch(true, event);"
            >&gt;..&gt;</a>
         <a href="#"
-           ng-click="clickOnNextStep($event);"
            class="btn btn-xs btn-info"
            title="Step"
            ng-disabled="workerInProgress || !workerSrc"
-           onclick="return false;"
+           onclick="var event = arguments[0] || window.event; return angular.element(this).scope().clickOnNextStepNoWatch(event);"
            >&gt;</a>
         <a href="#" 
            id="chooseJobButton"
@@ -65,15 +63,15 @@
             <a href="#"
                id="resetWorkerButton"
                class="btn btn-danger btn-xs"
-               ng-click="resetWorker()"
-               onclick="return false;">RESET WORKER</a>
+               onclick="var event = arguments[0] || window.event; return angular.element(this).scope().resetWorkerNoWatch();">RESET WORKER</a>
         </div>
     </div>
     <div ng-if="chooseJobState" id="cartFillerOverlay" style="z-index: 100; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); position: absolute; top: 0px; left: 0px;">
 
     </div>
     <div id="jobDetails" style="margin-top: 100px;">
-        <div class="alert"
+        <div id="{{'taskDiv_' + jobTaskIndex}}"
+             class="alert"
              ng-class="jobTaskProgress[jobTaskIndex].complete ? 'alert-success' : 'alert-danger'"
              ng-repeat="(jobTaskIndex, jobTask) in jobDetails track by $index"
              ng-click="toggleTaskProgress(jobTaskIndex)"
@@ -87,21 +85,19 @@
                 <span
                    ng-repeat="(jobTaskStepIndex, jobTaskStep) in jobTaskDescriptions[jobTask.task] track by $index"
                 >
-                    <a
+                    <a id="{{'stepButton_' + jobTaskIndex + '_' + jobTaskStepIndex}}"
                        href="#"
                        title="{{jobTaskStep + ': ' + jobTaskProgress[jobTaskIndex].stepResults[jobTaskStepIndex].message}}"
                        class="btn"
                        ng-class="getStepClass(jobTaskIndex, jobTaskStepIndex)"
-                       ng-click="clickOnStep(jobTaskIndex, jobTaskStepIndex, $event)"
-                       ng-disabled="workerInProgress"
-                       onclick="return false;"
+                       onclick="var event = arguments[0] || window.event; return angular.element(this).scope().clickOnStepNoWatch(this, event);"
                     >{{indexTitles[jobTask.task][jobTaskStepIndex]}}</a>
                     {{jobTaskProgress[jobTaskIndex].stepResults[jobTaskStepIndex].message}}
                 </span>
             </div>
         </div>
         <div class="alert alert-warning"
-             ng-if="finishReached"
+             ng-style="{opacity : (finishReached ? 1 : 0)}"
              id="finishReached"
              >
             Completed

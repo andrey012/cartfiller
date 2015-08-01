@@ -51,10 +51,8 @@
                 });
             } else {
                 if ('object' === typeof injector){
-                    injector.invoke(['cfMessage', '$rootScope', function(cfMessage, $rootScope){
-                        $rootScope.$apply(function(){
-                            cfMessage.receive(message.cmd, message);
-                        });
+                    injector.invoke(['cfMessage', function(cfMessage){
+                        cfMessage.receive(message.cmd, message);
                     }]);
                 }
             }
