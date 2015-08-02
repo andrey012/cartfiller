@@ -33,7 +33,8 @@
                                 if (undefined === details) {
                                     details = {};
                                 }
-                                details.cmd = cmd; event.source.postMessage('cartFillerMessage:' + JSON.stringify(details), '*');
+                                details.cmd = cmd;
+                                event.source.postMessage('cartFillerMessage:' + JSON.stringify(details), '*');
                             },
                             receive: function(cmd, details) {
                                 angular.forEach(postMessageListeners, function(listener){

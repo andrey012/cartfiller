@@ -78,6 +78,9 @@ define('controller', ['app', 'scroll'], function(app){
                     } else {
                         alert('Worker script not specified in job description');
                     }
+                    if (details.autorun) {
+                        setTimeout(function() { $scope.runNoWatch(false); }, details.autorun);
+                    }
                 });
             } else if (cmd === 'workerRegistered'){
                 $scope.$apply(function(){
@@ -87,8 +90,9 @@ define('controller', ['app', 'scroll'], function(app){
                 });
             } else if (cmd === 'workerStepResult'){
                 $scope.jobTaskProgress[details.index].stepsInProgress[details.step] = false;
-                $scope.jobTaskProgress[details.index].stepResults[details.step] = {status: details.status, message: details.message};
+                $scope.jobTaskProgress[details.index].stepResults[details.step] = {status: details.status, message: details.message, response: details.response};
                 $scope.jobTaskProgress[details.index].complete = $scope.updateTaskCompleteMark(details.index);
+                cfMessage.send('sendStatus', {result: $scope.jobTaskProgress, tasks: $scope.jobDetails, currentTaskIndex: details.index, currentTaskStepIndex: details.step});
                 var proceed;
                 if ('ok' === details.status){
                     $scope.incrementCurrentStep();
@@ -198,7 +202,9 @@ define('controller', ['app', 'scroll'], function(app){
             $scope.running = slow ? 'slow' : true;
             digestButtonPanel();
             $scope.doNextStep();
-            $event.stopPropagation();
+            if ($event) {
+                $event.stopPropagation();
+            }
             cfMessage.send('focusMainFrameWindow');
             return false;
         };
@@ -316,7 +322,8 @@ define('controller', ['app', 'scroll'], function(app){
                                 if (undefined === details) {
                                     details = {};
                                 }
-                                details.cmd = cmd; event.source.postMessage('cartFillerMessage:' + JSON.stringify(details), '*');
+                                details.cmd = cmd;
+                                event.source.postMessage('cartFillerMessage:' + JSON.stringify(details), '*');
                             },
                             receive: function(cmd, details) {
                                 angular.forEach(postMessageListeners, function(listener){

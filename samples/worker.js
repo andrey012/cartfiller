@@ -104,7 +104,8 @@
                 }, {theParam: 1}],
                 'check, that cart has more then 0 items', function(strong){
                     cartIsEmpty = ("0" === strong.text());
-                    api.highlight(strong).arrow(strong).say(cartIsEmpty ? 'Cart is empty' : 'Cart is not empty').result();
+                    var msg = cartIsEmpty ? 'Cart is empty' : 'Cart is not empty';
+                    api.highlight(strong).arrow(strong).say(msg).result('', false, msg);
                 },
                 'if cart is not empty - find link to open cart', function(){
                     api.arrow();

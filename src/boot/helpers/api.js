@@ -101,7 +101,8 @@
          * @param {CartFiller.Api.registerCallback} cb A callback, that will
          * will return an object, whoes properties are tasks, and each property
          * should be an array of ['step1 name', function(){...}, 'step2 name' ,
-         * function(){...}, ...]
+         * function(){...}, ...]. If this array will contain arrays as elements
+         * then these will be 'flattened'
          * @see CartFiller.SampleWorker~registerCallback
          * @access public
          * @return {CartFiller.Api} for chaining
@@ -127,11 +128,13 @@
          * that error is severe and we should stop, while true means, that
          * we can skip all next steps of same task and continue to next task
          * To report 'nop' it is easier to use {CartFiller.Api#nop} method.
+         * @param {String|Object|undefined} response If there is anything meaninful,
+         * that should be delivered back to ChooseJob frame - then put it here.
          * @access public
          * @return {CartFiller.Api} for chaining
          */
-        result: function(message, recoverable){
-            me.modules.dispatcher.submitWorkerResult(message, recoverable);
+        result: function(message, recoverable, response){
+            me.modules.dispatcher.submitWorkerResult(message, recoverable, response);
             return this;
         },
         /**

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>JSDoc: Class: Configuration</title>
+    <title>JSDoc: Class: Settings</title>
 
     <script src="scripts/prettify/prettify.js"> </script>
     <script src="scripts/prettify/lang-css.js"> </script>
@@ -17,7 +17,7 @@
 
 <div id="main">
 
-    <h1 class="page-title">Class: Configuration</h1>
+    <h1 class="page-title">Class: Settings</h1>
 
     
 
@@ -29,9 +29,9 @@
 <header>
     
         <h2>
-            <span class="ancestors"><a href="CartFiller.html">CartFiller</a>.</span>
+            <span class="ancestors"><a href="CartFillerPlugin.html">CartFillerPlugin</a>~</span>
         
-        Configuration
+        Settings
         </h2>
         
     
@@ -44,7 +44,7 @@
 
     
 
-    <h4 class="name" id="Configuration"><span class="type-signature"></span>new Configuration<span class="signature">()</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="Settings"><span class="type-signature"></span>new Settings<span class="signature">()</span><span class="type-signature"></span></h4>
 
     
 
@@ -91,7 +91,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_inject.js.html">src/boot/inject.js</a>, <a href="src_boot_inject.js.html#line46">line 46</a>
+        <a href="src_jquery-cartFiller.js.html">src/jquery-cartFiller.js</a>, <a href="src_jquery-cartFiller.js.html#line44">line 44</a>
     </li></ul></dd>
     
 
@@ -141,7 +141,7 @@
 
 
 <div class="description">
-    Base URL where cartFiller assets will be searched at. Whendebugging, this value should be .../src
+    Base URL to cartFiller files
 </div>
 
 
@@ -189,7 +189,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_inject.js.html">src/boot/inject.js</a>, <a href="src_boot_inject.js.html#line89">line 89</a>
+        <a href="src_jquery-cartFiller.js.html">src/jquery-cartFiller.js</a>, <a href="src_jquery-cartFiller.js.html#line53">line 53</a>
     </li></ul></dd>
     
 
@@ -207,13 +207,85 @@
 
         
             
-<h4 class="name" id="concatenated"><span class="type-signature"></span>concatenated<span class="type-signature"> :boolean</span></h4>
+<h4 class="name" id="chooseJob"><span class="type-signature"></span>chooseJob<span class="type-signature"> :string</span></h4>
 
 
 
 
 <div class="description">
-    Set to true if source code is concatenated and probably minified
+    Choose Job URL
+</div>
+
+
+
+    <h5>Type:</h5>
+    <ul>
+        <li>
+            
+<span class="param-type">string</span>
+
+
+        </li>
+    </ul>
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_jquery-cartFiller.js.html">src/jquery-cartFiller.js</a>, <a href="src_jquery-cartFiller.js.html#line48">line 48</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="debug"><span class="type-signature"></span>debug<span class="type-signature"> :boolean</span></h4>
+
+
+
+
+<div class="description">
+    Turn on debug features
 </div>
 
 
@@ -257,11 +329,16 @@
     
 
     
+    <dt class="tag-default">Default Value:</dt>
+    <dd class="tag-default"><ul class="dummy">
+            <li>false</li>
+        </ul></dd>
+    
 
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_inject.js.html">src/boot/inject.js</a>, <a href="src_boot_inject.js.html#line59">line 59</a>
+        <a href="src_jquery-cartFiller.js.html">src/jquery-cartFiller.js</a>, <a href="src_jquery-cartFiller.js.html#line76">line 76</a>
     </li></ul></dd>
     
 
@@ -279,13 +356,13 @@
 
         
             
-<h4 class="name" id="data-choose-job"><span class="type-signature"></span>data-choose-job<span class="type-signature"> :String</span></h4>
+<h4 class="name" id="inject"><span class="type-signature"></span>inject<span class="type-signature"> :string</span></h4>
 
 
 
 
 <div class="description">
-    Choose Job URL - will be opened in separate frame to provide integrationwith another website, which provides source data for jobs
+    Injection method. Either 'script', 'eval' or 'iframe'
 </div>
 
 
@@ -294,7 +371,7 @@
     <ul>
         <li>
             
-<span class="param-type">String</span>
+<span class="param-type">string</span>
 
 
         </li>
@@ -329,11 +406,16 @@
     
 
     
+    <dt class="tag-default">Default Value:</dt>
+    <dd class="tag-default"><ul class="dummy">
+            <li>'eval'</li>
+        </ul></dd>
+    
 
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_inject.js.html">src/boot/inject.js</a>, <a href="src_boot_inject.js.html#line107">line 107</a>
+        <a href="src_jquery-cartFiller.js.html">src/jquery-cartFiller.js</a>, <a href="src_jquery-cartFiller.js.html#line58">line 58</a>
     </li></ul></dd>
     
 
@@ -351,13 +433,13 @@
 
         
             
-<h4 class="name" id="data-debug"><span class="type-signature"></span>data-debug<span class="type-signature"> :boolean</span></h4>
+<h4 class="name" id="logLength"><span class="type-signature"></span>logLength<span class="type-signature"> :boolean</span></h4>
 
 
 
 
 <div class="description">
-    Set to 1 or true to turn on debug features. One on the mostimportant features is ability to reload new version of workerduring step pause
+    If set to true, then lengths of bookmarklets will be logged to console
 </div>
 
 
@@ -401,11 +483,16 @@
     
 
     
+    <dt class="tag-default">Default Value:</dt>
+    <dd class="tag-default"><ul class="dummy">
+            <li>false</li>
+        </ul></dd>
+    
 
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_inject.js.html">src/boot/inject.js</a>, <a href="src_boot_inject.js.html#line116">line 116</a>
+        <a href="src_jquery-cartFiller.js.html">src/jquery-cartFiller.js</a>, <a href="src_jquery-cartFiller.js.html#line94">line 94</a>
     </li></ul></dd>
     
 
@@ -423,13 +510,13 @@
 
         
             
-<h4 class="name" id="data-type"><span class="type-signature"></span>data-type<span class="type-signature"> :integer</span></h4>
+<h4 class="name" id="minified"><span class="type-signature"></span>minified<span class="type-signature"> :boolean</span></h4>
 
 
 
 
 <div class="description">
-    Type of UI. 0 for Framed, 1 for Popup. When configured throughscript attributes - the attribute name is 'data-type'
+    Whether to use minified version or not
 </div>
 
 
@@ -438,7 +525,7 @@
     <ul>
         <li>
             
-<span class="param-type">integer</span>
+<span class="param-type">boolean</span>
 
 
         </li>
@@ -473,11 +560,16 @@
     
 
     
+    <dt class="tag-default">Default Value:</dt>
+    <dd class="tag-default"><ul class="dummy">
+            <li>true</li>
+        </ul></dd>
+    
 
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_inject.js.html">src/boot/inject.js</a>, <a href="src_boot_inject.js.html#line98">line 98</a>
+        <a href="src_jquery-cartFiller.js.html">src/jquery-cartFiller.js</a>, <a href="src_jquery-cartFiller.js.html#line64">line 64</a>
     </li></ul></dd>
     
 
@@ -495,13 +587,13 @@
 
         
             
-<h4 class="name" id="data-worker"><span class="type-signature"></span>data-worker<span class="type-signature"> :String</span></h4>
+<h4 class="name" id="traceStartup"><span class="type-signature"></span>traceStartup<span class="type-signature"> :boolean</span></h4>
 
 
 
 
 <div class="description">
-    Overrides worker URL. This is used to debug worker - in thiscase you put worker JS file locally, specify its URL inbookmarklet parameters, while leavingChoose Job URLpointing to live system. If set to "" (default), thenworker URL will be delivered with Choose Job details
+    Injects an alert for each step into the bookmarklet to troubleshoot
 </div>
 
 
@@ -510,7 +602,7 @@
     <ul>
         <li>
             
-<span class="param-type">String</span>
+<span class="param-type">boolean</span>
 
 
         </li>
@@ -545,11 +637,16 @@
     
 
     
+    <dt class="tag-default">Default Value:</dt>
+    <dd class="tag-default"><ul class="dummy">
+            <li>false</li>
+        </ul></dd>
+    
 
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_inject.js.html">src/boot/inject.js</a>, <a href="src_boot_inject.js.html#line126">line 126</a>
+        <a href="src_jquery-cartFiller.js.html">src/jquery-cartFiller.js</a>, <a href="src_jquery-cartFiller.js.html#line88">line 88</a>
     </li></ul></dd>
     
 
@@ -567,13 +664,13 @@
 
         
             
-<h4 class="name" id="gruntBuildTimeStamp"><span class="type-signature"></span>gruntBuildTimeStamp<span class="type-signature"> :String</span></h4>
+<h4 class="name" id="type"><span class="type-signature"></span>type<span class="type-signature"> :string</span></h4>
 
 
 
 
 <div class="description">
-    Used to optimize deep caching of worker (job progress) frame app
+    Type of UI - either 'framed' or 'popup'
 </div>
 
 
@@ -582,7 +679,7 @@
     <ul>
         <li>
             
-<span class="param-type">String</span>
+<span class="param-type">string</span>
 
 
         </li>
@@ -617,11 +714,16 @@
     
 
     
+    <dt class="tag-default">Default Value:</dt>
+    <dd class="tag-default"><ul class="dummy">
+            <li>'framed'</li>
+        </ul></dd>
+    
 
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_inject.js.html">src/boot/inject.js</a>, <a href="src_boot_inject.js.html#line138">line 138</a>
+        <a href="src_jquery-cartFiller.js.html">src/jquery-cartFiller.js</a>, <a href="src_jquery-cartFiller.js.html#line70">line 70</a>
     </li></ul></dd>
     
 
@@ -639,16 +741,26 @@
 
         
             
-<h4 class="name" id="scripts"><span class="type-signature"></span>scripts<span class="type-signature"></span></h4>
+<h4 class="name" id="useSource"><span class="type-signature"></span>useSource<span class="type-signature"> :boolean</span></h4>
 
 
 
 
 <div class="description">
-    Array of scripts (modules) of cartFiller, that were loadedSee <a href="CartFiller.Loader.html">CartFiller.Loader</a>
+    If set to true, then source files will be loaded instead of concatenated/minified single file. Used for development
 </div>
 
 
+
+    <h5>Type:</h5>
+    <ul>
+        <li>
+            
+<span class="param-type">boolean</span>
+
+
+        </li>
+    </ul>
 
 
 
@@ -679,11 +791,16 @@
     
 
     
+    <dt class="tag-default">Default Value:</dt>
+    <dd class="tag-default"><ul class="dummy">
+            <li>false</li>
+        </ul></dd>
+    
 
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_inject.js.html">src/boot/inject.js</a>, <a href="src_boot_inject.js.html#line66">line 66</a>
+        <a href="src_jquery-cartFiller.js.html">src/jquery-cartFiller.js</a>, <a href="src_jquery-cartFiller.js.html#line100">line 100</a>
     </li></ul></dd>
     
 
@@ -700,33 +817,27 @@
 
 
         
-    
-
-    
-        <h3 class="subsection-title">Methods</h3>
-
-        
             
+<h4 class="name" id="worker"><span class="type-signature"></span>worker<span class="type-signature"> :string</span></h4>
 
-    
-
-    <h4 class="name" id="launch"><span class="type-signature"></span>launch<span class="signature">()</span><span class="type-signature"></span></h4>
-
-    
 
 
 
 <div class="description">
-    Launches the <a href="CartFiller.UI.html">CartFiller.UI</a>
+    Override URL of worker script
 </div>
 
 
 
+    <h5>Type:</h5>
+    <ul>
+        <li>
+            
+<span class="param-type">string</span>
 
 
-
-
-
+        </li>
+    </ul>
 
 
 
@@ -757,11 +868,16 @@
     
 
     
+    <dt class="tag-default">Default Value:</dt>
+    <dd class="tag-default"><ul class="dummy">
+            <li>'Ok'</li>
+        </ul></dd>
+    
 
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_inject.js.html">src/boot/inject.js</a>, <a href="src_boot_inject.js.html#line73">line 73</a>
+        <a href="src_jquery-cartFiller.js.html">src/jquery-cartFiller.js</a>, <a href="src_jquery-cartFiller.js.html#line82">line 82</a>
     </li></ul></dd>
     
 
@@ -777,17 +893,9 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
         
+    
+
     
 
     
@@ -809,7 +917,7 @@
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0</a> on Sun Dec 27 2015 23:32:15 GMT+0300 (MSK)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0</a> on Sun Dec 27 2015 23:32:16 GMT+0300 (MSK)
 </footer>
 
 <script> prettyPrint(); </script>

@@ -70,7 +70,7 @@
     var knownBookmarkletElements = [];
 
     /**
-     * @class cartFillerPlugin~Settings
+     * @class CartFillerPlugin~Settings
      */
     var defaults = {
         /**
@@ -364,11 +364,28 @@
      */
     var resultCallback;
     /**
-     * Holds result callback message name
+     * Host intermediate status update callback registered by user through 
+     * {@link external:"jQuery".cartFillerPlugin}
+     * @var {CartFillerPlugin.statusCallback} CartFillerPlugin~statusCallback
+     * @access private
+     */
+    var statusCallback;
+    /**
+     * Holds result callback message name, can be configured via jobDetails, 
+     * with only reason - not to conflict with other messages. Defaults to 
+     * 'cartFillerResultMessage'
      * @var {String} CartFillerPlugin~resultMessageName
      * @access private
      */
     var resultMessageName;
+    /**
+     * Holds status callback message name, can be configured via jobDetails, 
+     * with only reason - not to conflict with other messages. Defaults to 
+     * 'cartFillerStatusMessage'
+     * @var {String} CartFillerPlugin~statusMessageName
+     * @access private
+     */
+    var statusMessageName;
     /**
      * Message to be used as "hello" message from {@link CartFiller.Dispatcher}
      * to plugin
@@ -381,6 +398,15 @@
      * @callback CartFillerPlugin.resultCallback
      * @param {Object} message message.result contains result, while
      * message.tasks contains job details as provided by Choose Job frame.
+     * See {@link CartFiller.Dispatcher#onMessage_sendResult}
+     */
+    /**
+     * Callback, that will receive intermediate job status update from cartFiller
+     * @callback CartFillerPlugin.statusCallback
+     * @param {Object} message message.result contains result, while
+     * message.tasks contains job details as provided by Choose Job frame, 
+     * message.currentTaskIndex and message.currentTaskStepIndex identify
+     * task and step which triggered status update, and message.
      * See {@link CartFiller.Dispatcher#onMessage_sendResult}
      */
     var messageEventListener = function(event){
@@ -396,28 +422,62 @@
                     resultCallback(JSON.parse(data[1]));
                 }
             }
+            data = new RegExp('^' + statusMessageName + ':(.*)$').exec(event.data);
+            if (data) {
+                if (statusCallback){
+                    statusCallback(JSON.parse(data[1]));
+                }
+            }
         }
     };
+    /** 
+     * @class CartFillerPlugin~jobDetails
+     */
+    /** 
+     * @member {Object[]} CartFillerPlugin~jobDetails#details Array of tasks, each task is 
+     * object with mandatory task property which specifies the task alias, and any 
+     * set of other properties which will be transferred to worker. 
+     */
+    /**
+     *  @member {Object} CartFillerPlugin~jobDetails#titleMap Map of human readable titles 
+     * of tasks. Property name = task alias, value = title. 
+     */
+    /**
+     * @member {integer} CartFillerPlugin~jobDetails#autorun Time (ms) after which 
+     * worker will run automatically. If set to null, undefined or 0 -- no autorun will
+     * be done
+     */
+    /**
+     * @member {string} CartFillerPlugin~jobDetails#workerSrc URL of worker to 
+     * be used instead of one given by bookmarklet
+     */
     /**
      * Global plugin function - sends job details to cartFiller and
      * registers optional callback, that will receive results.
      * @function external:"jQuery".cartFillerPlugin
      * @global
      * @name "jQuery.cartFillerPlugin"
-     * @param {Object[]} jobDetails Job details data, array of objects, 
-     * each object should contain .task which has task name and
-     * arbitrary other members for worker
+     * @param {CartFillerPlugin~jobDetails} jobDetails Job details data
      * @param {CartFillerPlugin.resultCallback} resultCallback
      * callback, which will receive results. It can be called several times
+     * @param {CartFillerPlugin.statusCallback} resultCallback
+     * callback, which will receive status updates after each step of each task will
+     * be completed.
      * @access public
      */
-    $.cartFillerPlugin = function( jobDetails, newResultCallback ) {
+    $.cartFillerPlugin = function( jobDetails, newResultCallback, newStatusCallback) {
         if (newResultCallback &amp;&amp; 
             ((undefined === jobDetails.resultMessage) || (String(jobDetails.resultMessage).length &lt; 1))
             ){
             jobDetails.resultMessage = 'cartFillerResultMessage';
         }
+        if (newStatusCallback &amp;&amp;
+            ((undefined === jobDetails.statusMessage) || (String(jobDetails.statusMessage).length &lt; 1)) 
+            ){
+            jobDetails.statusMessage = 'cartFillerStatusMessage';
+        }
         resultMessageName = jobDetails.resultMessage;
+        statusMessageName = jobDetails.statusMessage;
 
         jobDetails.cmd = 'jobDetails';
 
@@ -427,6 +487,7 @@
             '*'
         );
         resultCallback = newResultCallback;
+        statusCallback = newStatusCallback;
     };
 
     window.addEventListener('message', messageEventListener,false);
@@ -455,13 +516,13 @@
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Externals</h3><ul><li><a href="external%2520jQuery.external__jQuery.fn_.html">jQuery.fn</a></li><li><a href="external-jQuery.html">jQuery</a></li></ul><h3>Classes</h3><ul><li><a href="CartFiller.Api.html">Api</a></li><li><a href="CartFiller.Api.StepEnvironment.html">StepEnvironment</a></li><li><a href="CartFiller.Configuration.html">Configuration</a></li><li><a href="CartFiller.Dispatcher.html">Dispatcher</a></li><li><a href="CartFiller.Injector.html">Injector</a></li><li><a href="CartFiller.Loader.html">Loader</a></li><li><a href="CartFiller.SampleWorker.html">SampleWorker</a></li><li><a href="CartFiller.SampleWorker.SampleWorkerTasks.html">SampleWorkerTasks</a></li><li><a href="CartFiller.UI.html">UI</a></li><li><a href="CartFiller.UI.ArrowToElement.html">ArrowToElement</a></li><li><a href="CartFillerPlugin-Plugin.html">Plugin</a></li><li><a href="cartFillerPlugin-Settings.html">Settings</a></li></ul><h3>Namespaces</h3><ul><li><a href="CartFiller.html">CartFiller</a></li><li><a href="CartFillerPlugin.html">CartFillerPlugin</a></li></ul><h3>Global</h3><ul><li><a href="global.html#%2522jQuery.cartFillerPlugin%2522">"jQuery.cartFillerPlugin"</a></li><li><a href="global.html#%2522jQuery.fn.cartFillerPlugin%2522">"jQuery.fn.cartFillerPlugin"</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Externals</h3><ul><li><a href="external%2520jQuery.external__jQuery.fn_.html">jQuery.fn</a></li><li><a href="external-jQuery.html">jQuery</a></li></ul><h3>Classes</h3><ul><li><a href="CartFiller.Api.html">Api</a></li><li><a href="CartFiller.Api.StepEnvironment.html">StepEnvironment</a></li><li><a href="CartFiller.Configuration.html">Configuration</a></li><li><a href="CartFiller.Dispatcher.html">Dispatcher</a></li><li><a href="CartFiller.Injector.html">Injector</a></li><li><a href="CartFiller.Loader.html">Loader</a></li><li><a href="CartFiller.SampleWorker.html">SampleWorker</a></li><li><a href="CartFiller.SampleWorker.SampleWorkerTasks.html">SampleWorkerTasks</a></li><li><a href="CartFiller.UI.html">UI</a></li><li><a href="CartFiller.UI.ArrowToElement.html">ArrowToElement</a></li><li><a href="CartFillerPlugin-jobDetails.html">jobDetails</a></li><li><a href="CartFillerPlugin-Plugin.html">Plugin</a></li><li><a href="CartFillerPlugin-Settings.html">Settings</a></li></ul><h3>Namespaces</h3><ul><li><a href="CartFiller.html">CartFiller</a></li><li><a href="CartFillerPlugin.html">CartFillerPlugin</a></li></ul><h3>Global</h3><ul><li><a href="global.html#%2522jQuery.cartFillerPlugin%2522">"jQuery.cartFillerPlugin"</a></li><li><a href="global.html#%2522jQuery.fn.cartFillerPlugin%2522">"jQuery.fn.cartFillerPlugin"</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.3</a> on Sat Dec 12 2015 13:30:09 GMT+0300 (MSK)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0</a> on Sun Dec 27 2015 23:32:15 GMT+0300 (MSK)
 </footer>
 
 <script> prettyPrint(); </script>

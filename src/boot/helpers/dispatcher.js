@@ -44,13 +44,21 @@
      */
     var workerOnLoadHandler = false;
     /**
-     * Keeps message name, used to deliver job results to
+     * Keeps message result name, used to deliver job results to
      * Choose Job page opened in separate frame, if that is necessary at all
      * If set to false, empty string or undefined - no results will be delivered
-     * @var {String} CartFiller.Dispatcher~resultMessageName 
+     * @var {String} CartFiller.Dispatcher~resultMessageName
      * @access private
      */
     var resultMessageName = false;
+    /**
+     * Keeps message name, used to deliver intermediate job status to
+     * Choose Job page opened in separate frame, if that is necessary at all
+     * If set to false, empty string or undefined - no results will be delivered
+     * @var {String} CartFiller.Dispatcher~resultMessageName
+     * @access private
+     */
+    var statusMessageName = false;
     /**
      * Flag, that is set to true when main frame (with target
      * website) is loaded first time
@@ -233,9 +241,21 @@
             } else {
                 resultMessageName = false;
             }
+            if (message.statusMessage){
+                statusMessageName = message.statusMessage;
+            } else {
+                statusMessageName = false;
+            }
             me.modules.ui.showHideChooseJobFrame(false);
             message.overrideWorkerSrc = me['data-worker'];
             resetWorker();
+            if (! (message.details instanceof Array)) {
+                var newDetails = [];
+                for (var i = 0; 'undefined' !== typeof message.details[i]; i++ ){
+                    newDetails.push(message.details[i]);
+                }
+                message.details = newDetails;
+            }
             this.postMessageToWorker('jobDetails', message);
         },
         /**
@@ -250,6 +270,19 @@
             me.modules.ui.showHideChooseJobFrame(true);
             if (resultMessageName){
                 this.postMessageToChooseJob(resultMessageName, message);
+            }
+        },
+        /**
+         * Sends intermediate job status from worker (job progress) frame to Choose Job frame
+         * @function CartFiller.Dispatcher#onMessage_sendStatus
+         * @param {Object} message see onMessage_sendResult for description, in 
+         * addition to that - message.currentTaskIndex, and message.currentTaskStepIndex
+         * identify the task and step, that triggered this status update
+         * @access public
+         */
+        onMessage_sendStatus: function(message){
+            if (statusMessageName){
+                this.postMessageToChooseJob(statusMessageName, message);
             }
         },
         /**
@@ -294,10 +327,15 @@
                  */
                 var env = {
                     /**
-                     * @member {integer} CartFiller.Api.StepEnvironment#stepIndex 0-based index of current step
+                     * @member {integer} CartFiller.Api.StepEnvironment#taskIndex 0-based index of current task
                      * @access public
                      */
-                    stepIndex: message.index,
+                    taskIndex: message.index,
+                    /**
+                     * @member {integer} CartFiller.Api.StepEnvironment#stepIndex 0-based index of current step within task
+                     * @access public
+                     */
+                    stepIndex: message.step,
                     /**
                      * @member {Object} CartFiller.Api.StepEnvironment#task Task object as provided by 
                      * {@link CartFiller.submitJobDetails}
@@ -324,8 +362,7 @@
                         worker[message.task][(message.step * 2) + 1](highlightedElement, env);
                     }
                 } catch (err){
-                    alert(err);
-                    debugger; // jshint ignore:line
+                    console.log(err);
                     throw err;
                 }
             }
@@ -430,11 +467,25 @@
          * @access public
          */
         registerWorker: function(cb, api){
+            var recursivelyCollectSteps = function(source, taskSteps) {
+                if ('undefined' === typeof taskSteps) {
+                    taskSteps = [];
+                }
+                for (var i = 0 ; i < source.length ; i ++) {
+                    if (source[i] instanceof Array && source[i].length > 0 && 'string' === typeof source[i][0]) {
+                        recursivelyCollectSteps(source[i], taskSteps);
+                    } else {
+                        taskSteps.push(source[i]);
+                    }
+                }
+                return taskSteps;
+            };
             workerCurrentTask = {};
             worker = cb(me.modules.ui.mainFrameWindow, undefined, api, workerCurrentTask);
             var list = {};
             for (var taskName in worker){
                 if (worker.hasOwnProperty(taskName)){
+                    worker[taskName] = recursivelyCollectSteps(worker[taskName]);
                     var taskSteps = [];
                     for (var i = 0 ; i < worker[taskName].length; i++){
                         // this is step name/comment
@@ -454,7 +505,7 @@
          * @see CartFiller.Api#nop
          * @access public
          */
-        submitWorkerResult: function(message, recoverable){
+        submitWorkerResult: function(message, recoverable, response){
             var status;
             if ((undefined === message) || ('' === message)) {
                 status = 'ok';
@@ -470,6 +521,7 @@
                     step: workerCurrentStepIndex, 
                     status: status, 
                     message: message,
+                    response: response,
                     nop: recoverable === 'nop'
                 }
             );

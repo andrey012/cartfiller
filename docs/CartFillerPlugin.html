@@ -96,7 +96,13 @@
         <h3 class="subsection-title">Classes</h3>
 
         <dl>
+            <dt><a href="CartFillerPlugin-jobDetails.html">jobDetails</a></dt>
+            <dd></dd>
+        
             <dt><a href="CartFillerPlugin-Plugin.html">Plugin</a></dt>
+            <dd></dd>
+        
+            <dt><a href="CartFillerPlugin-Settings.html">Settings</a></dt>
             <dd></dd>
         </dl>
     
@@ -164,7 +170,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_jquery-cartFiller.js.html">src/jquery-cartFiller.js</a>, <a href="src_jquery-cartFiller.js.html#line344">line 344</a>
+        <a href="src_jquery-cartFiller.js.html">src/jquery-cartFiller.js</a>, <a href="src_jquery-cartFiller.js.html#line361">line 361</a>
     </li></ul></dd>
     
 
@@ -332,7 +338,7 @@
 
 
 <div class="description">
-    Holds result callback message name
+    Holds result callback message name, can be configured via jobDetails, with only reason - not to conflict with other messages. Defaults to 'cartFillerResultMessage'
 </div>
 
 
@@ -380,7 +386,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_jquery-cartFiller.js.html">src/jquery-cartFiller.js</a>, <a href="src_jquery-cartFiller.js.html#line338">line 338</a>
+        <a href="src_jquery-cartFiller.js.html">src/jquery-cartFiller.js</a>, <a href="src_jquery-cartFiller.js.html#line345">line 345</a>
     </li></ul></dd>
     
 
@@ -453,6 +459,150 @@
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
         <a href="src_jquery-cartFiller.js.html">src/jquery-cartFiller.js</a>, <a href="src_jquery-cartFiller.js.html#line26">line 26</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="~statusCallback"><span class="type-signature">(private, inner) </span>statusCallback<span class="type-signature"> :<a href="CartFillerPlugin.html#.statusCallback">CartFillerPlugin.statusCallback</a></span></h4>
+
+
+
+
+<div class="description">
+    Host intermediate status update callback registered by user through external:"jQuery".cartFillerPlugin
+</div>
+
+
+
+    <h5>Type:</h5>
+    <ul>
+        <li>
+            
+<span class="param-type"><a href="CartFillerPlugin.html#.statusCallback">CartFillerPlugin.statusCallback</a></span>
+
+
+        </li>
+    </ul>
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_jquery-cartFiller.js.html">src/jquery-cartFiller.js</a>, <a href="src_jquery-cartFiller.js.html#line338">line 338</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="~statusMessageName"><span class="type-signature">(private, inner) </span>statusMessageName<span class="type-signature"> :String</span></h4>
+
+
+
+
+<div class="description">
+    Holds status callback message name, can be configured via jobDetails, with only reason - not to conflict with other messages. Defaults to 'cartFillerStatusMessage'
+</div>
+
+
+
+    <h5>Type:</h5>
+    <ul>
+        <li>
+            
+<span class="param-type">String</span>
+
+
+        </li>
+    </ul>
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_jquery-cartFiller.js.html">src/jquery-cartFiller.js</a>, <a href="src_jquery-cartFiller.js.html#line353">line 353</a>
     </li></ul></dd>
     
 
@@ -581,7 +731,138 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_jquery-cartFiller.js.html">src/jquery-cartFiller.js</a>, <a href="src_jquery-cartFiller.js.html#line351">line 351</a>
+        <a href="src_jquery-cartFiller.js.html">src/jquery-cartFiller.js</a>, <a href="src_jquery-cartFiller.js.html#line368">line 368</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+            
+                
+
+    
+
+    <h4 class="name" id=".statusCallback"><span class="type-signature"></span>statusCallback<span class="signature">(message)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    Callback, that will receive intermediate job status update from cartFiller
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>message</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">message.result contains result, whilemessage.tasks contains job details as provided by Choose Job frame, message.currentTaskIndex and message.currentTaskStepIndex identifytask and step which triggered status update, and message.See <a href="CartFiller.Dispatcher.html#onMessage_sendResult">CartFiller.Dispatcher#onMessage_sendResult</a></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_jquery-cartFiller.js.html">src/jquery-cartFiller.js</a>, <a href="src_jquery-cartFiller.js.html#line375">line 375</a>
     </li></ul></dd>
     
 
@@ -621,13 +902,13 @@
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Externals</h3><ul><li><a href="external%2520jQuery.external__jQuery.fn_.html">jQuery.fn</a></li><li><a href="external-jQuery.html">jQuery</a></li></ul><h3>Classes</h3><ul><li><a href="CartFiller.Api.html">Api</a></li><li><a href="CartFiller.Api.StepEnvironment.html">StepEnvironment</a></li><li><a href="CartFiller.Configuration.html">Configuration</a></li><li><a href="CartFiller.Dispatcher.html">Dispatcher</a></li><li><a href="CartFiller.Injector.html">Injector</a></li><li><a href="CartFiller.Loader.html">Loader</a></li><li><a href="CartFiller.SampleWorker.html">SampleWorker</a></li><li><a href="CartFiller.SampleWorker.SampleWorkerTasks.html">SampleWorkerTasks</a></li><li><a href="CartFiller.UI.html">UI</a></li><li><a href="CartFiller.UI.ArrowToElement.html">ArrowToElement</a></li><li><a href="CartFillerPlugin-Plugin.html">Plugin</a></li><li><a href="cartFillerPlugin-Settings.html">Settings</a></li></ul><h3>Namespaces</h3><ul><li><a href="CartFiller.html">CartFiller</a></li><li><a href="CartFillerPlugin.html">CartFillerPlugin</a></li></ul><h3>Global</h3><ul><li><a href="global.html#%2522jQuery.cartFillerPlugin%2522">"jQuery.cartFillerPlugin"</a></li><li><a href="global.html#%2522jQuery.fn.cartFillerPlugin%2522">"jQuery.fn.cartFillerPlugin"</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Externals</h3><ul><li><a href="external%2520jQuery.external__jQuery.fn_.html">jQuery.fn</a></li><li><a href="external-jQuery.html">jQuery</a></li></ul><h3>Classes</h3><ul><li><a href="CartFiller.Api.html">Api</a></li><li><a href="CartFiller.Api.StepEnvironment.html">StepEnvironment</a></li><li><a href="CartFiller.Configuration.html">Configuration</a></li><li><a href="CartFiller.Dispatcher.html">Dispatcher</a></li><li><a href="CartFiller.Injector.html">Injector</a></li><li><a href="CartFiller.Loader.html">Loader</a></li><li><a href="CartFiller.SampleWorker.html">SampleWorker</a></li><li><a href="CartFiller.SampleWorker.SampleWorkerTasks.html">SampleWorkerTasks</a></li><li><a href="CartFiller.UI.html">UI</a></li><li><a href="CartFiller.UI.ArrowToElement.html">ArrowToElement</a></li><li><a href="CartFillerPlugin-jobDetails.html">jobDetails</a></li><li><a href="CartFillerPlugin-Plugin.html">Plugin</a></li><li><a href="CartFillerPlugin-Settings.html">Settings</a></li></ul><h3>Namespaces</h3><ul><li><a href="CartFiller.html">CartFiller</a></li><li><a href="CartFillerPlugin.html">CartFillerPlugin</a></li></ul><h3>Global</h3><ul><li><a href="global.html#%2522jQuery.cartFillerPlugin%2522">"jQuery.cartFillerPlugin"</a></li><li><a href="global.html#%2522jQuery.fn.cartFillerPlugin%2522">"jQuery.fn.cartFillerPlugin"</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.3</a> on Sat Dec 12 2015 13:30:10 GMT+0300 (MSK)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0</a> on Sun Dec 27 2015 23:32:16 GMT+0300 (MSK)
 </footer>
 
 <script> prettyPrint(); </script>

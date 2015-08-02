@@ -5,12 +5,22 @@
         <script src="../src/jquery-cartFiller.js"></script>
     </head>
     <body>
-        <a id="sampleSubmitLink" href="#" onclick="submitJob();">submit sample job</a>
+        <a id="sampleSubmitLink" href="#" onclick="submitJob();">submit sample job</a><br/>
+        <a id="sampleSubmitLink" href="#" onclick="submitJob(2000);">submit sample job with autorun in 2 seconds</a>
+        <h1>
+            Result
+        </h1>
         <div id="result">
 
         </div>
+        <h1>
+            Status update
+        </h1>
+        <div id="status">
+
+        </div>
         <script>
-            function submitJob(){
+            function submitJob(autorun){
                 jQuery.cartFillerPlugin(
                     {
                         details: [
@@ -29,10 +39,14 @@
                         workerSrc: window.location.href.replace(
                             /choose-job.html(\?.*)?(\#.*)?$/, 
                             'worker.js'
-                        )
+                        ),
+                        autorun: autorun
                     },
                     function(data){
                         document.getElementById('result').innerText = 'Job result: ' + JSON.stringify(data);
+                    },
+                    function(data){
+                        document.getElementById('status').innerText = 'Job status update: ' + JSON.stringify(data);
                     }
                 );
             }

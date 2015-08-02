@@ -42,7 +42,7 @@
     var knownBookmarkletElements = [];
 
     /**
-     * @class cartFillerPlugin~Settings
+     * @class CartFillerPlugin~Settings
      */
     var defaults = {
         /**
@@ -336,11 +336,28 @@
      */
     var resultCallback;
     /**
-     * Holds result callback message name
+     * Host intermediate status update callback registered by user through 
+     * {@link external:"jQuery".cartFillerPlugin}
+     * @var {CartFillerPlugin.statusCallback} CartFillerPlugin~statusCallback
+     * @access private
+     */
+    var statusCallback;
+    /**
+     * Holds result callback message name, can be configured via jobDetails, 
+     * with only reason - not to conflict with other messages. Defaults to 
+     * 'cartFillerResultMessage'
      * @var {String} CartFillerPlugin~resultMessageName
      * @access private
      */
     var resultMessageName;
+    /**
+     * Holds status callback message name, can be configured via jobDetails, 
+     * with only reason - not to conflict with other messages. Defaults to 
+     * 'cartFillerStatusMessage'
+     * @var {String} CartFillerPlugin~statusMessageName
+     * @access private
+     */
+    var statusMessageName;
     /**
      * Message to be used as "hello" message from {@link CartFiller.Dispatcher}
      * to plugin
@@ -353,6 +370,15 @@
      * @callback CartFillerPlugin.resultCallback
      * @param {Object} message message.result contains result, while
      * message.tasks contains job details as provided by Choose Job frame.
+     * See {@link CartFiller.Dispatcher#onMessage_sendResult}
+     */
+    /**
+     * Callback, that will receive intermediate job status update from cartFiller
+     * @callback CartFillerPlugin.statusCallback
+     * @param {Object} message message.result contains result, while
+     * message.tasks contains job details as provided by Choose Job frame, 
+     * message.currentTaskIndex and message.currentTaskStepIndex identify
+     * task and step which triggered status update, and message.
      * See {@link CartFiller.Dispatcher#onMessage_sendResult}
      */
     var messageEventListener = function(event){
@@ -368,28 +394,62 @@
                     resultCallback(JSON.parse(data[1]));
                 }
             }
+            data = new RegExp('^' + statusMessageName + ':(.*)$').exec(event.data);
+            if (data) {
+                if (statusCallback){
+                    statusCallback(JSON.parse(data[1]));
+                }
+            }
         }
     };
+    /** 
+     * @class CartFillerPlugin~jobDetails
+     */
+    /** 
+     * @member {Object[]} CartFillerPlugin~jobDetails#details Array of tasks, each task is 
+     * object with mandatory task property which specifies the task alias, and any 
+     * set of other properties which will be transferred to worker. 
+     */
+    /**
+     *  @member {Object} CartFillerPlugin~jobDetails#titleMap Map of human readable titles 
+     * of tasks. Property name = task alias, value = title. 
+     */
+    /**
+     * @member {integer} CartFillerPlugin~jobDetails#autorun Time (ms) after which 
+     * worker will run automatically. If set to null, undefined or 0 -- no autorun will
+     * be done
+     */
+    /**
+     * @member {string} CartFillerPlugin~jobDetails#workerSrc URL of worker to 
+     * be used instead of one given by bookmarklet
+     */
     /**
      * Global plugin function - sends job details to cartFiller and
      * registers optional callback, that will receive results.
      * @function external:"jQuery".cartFillerPlugin
      * @global
      * @name "jQuery.cartFillerPlugin"
-     * @param {Object[]} jobDetails Job details data, array of objects, 
-     * each object should contain .task which has task name and
-     * arbitrary other members for worker
+     * @param {CartFillerPlugin~jobDetails} jobDetails Job details data
      * @param {CartFillerPlugin.resultCallback} resultCallback
      * callback, which will receive results. It can be called several times
+     * @param {CartFillerPlugin.statusCallback} resultCallback
+     * callback, which will receive status updates after each step of each task will
+     * be completed.
      * @access public
      */
-    $.cartFillerPlugin = function( jobDetails, newResultCallback ) {
+    $.cartFillerPlugin = function( jobDetails, newResultCallback, newStatusCallback) {
         if (newResultCallback && 
             ((undefined === jobDetails.resultMessage) || (String(jobDetails.resultMessage).length < 1))
             ){
             jobDetails.resultMessage = 'cartFillerResultMessage';
         }
+        if (newStatusCallback &&
+            ((undefined === jobDetails.statusMessage) || (String(jobDetails.statusMessage).length < 1)) 
+            ){
+            jobDetails.statusMessage = 'cartFillerStatusMessage';
+        }
         resultMessageName = jobDetails.resultMessage;
+        statusMessageName = jobDetails.statusMessage;
 
         jobDetails.cmd = 'jobDetails';
 
@@ -399,6 +459,7 @@
             '*'
         );
         resultCallback = newResultCallback;
+        statusCallback = newStatusCallback;
     };
 
     window.addEventListener('message', messageEventListener,false);
