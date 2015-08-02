@@ -675,7 +675,7 @@
                 arrowToElements.push({element: element});
             } else {
                 arrowToElements = [];
-                removeOverlay();
+                removeOverlay(true);
             }
         },
         /**
