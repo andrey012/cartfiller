@@ -78,7 +78,8 @@
     <div ng-if="chooseJobState" id="cartFillerOverlay" style="z-index: 100; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); position: absolute; top: 0px; left: 0px;">
 
     </div>
-    <div id="jobDetails" style="margin-top: 100px;">
+    <a class="btn btn-info btn-xs" style="width: 100%; margin-top: 75px; margin-bottom: 5px;" onclick="alert('Long click on step = debug, long click on Run (fast and slow) = Run until');">help</a>
+    <div id="jobDetails">
         <div id="{{'taskDiv_' + jobTaskIndex}}"
              class="alert"
              ng-class="jobTaskProgress[jobTaskIndex].complete ? 'alert-success' : 'alert-danger'"

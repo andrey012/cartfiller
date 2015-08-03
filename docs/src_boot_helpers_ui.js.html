@@ -40,12 +40,6 @@
      */
     var me = this.cartFillerConfiguration;
     /**
-     * Keeps current size of worker (job progress) frame
-     * @member {String} CartFiller.UI~currentSize can be 'big' or 'small'
-     * @access private
-     */
-    var currentSize;
-    /**
      * @const {String} CartFiller.UI~overlayClassName
      * @default
      */
@@ -137,6 +131,12 @@
      * @access private
      */
     var isFramed = false;
+    /**
+     * Keeps current size of worker (job progress) frame, can be either 'small' or 'big'
+     * @member {String} CartFiller.UI~currentWorkerFrameSize
+     * @access private
+     */
+    var currentWorkerFrameSize = 'big';
     /**
      * Returns window, that will be used to draw overlays
      * @function {Window} CartFiller.UI~overlayWindow
@@ -464,6 +464,78 @@
 
         } catch (e) {}
     };
+    var currentWindowDimensions = {
+        width: false,
+        height: false,
+        outerWidth: false,
+        outerHeight: false,
+        workerFrameSize: false,
+    };
+    /**
+     * Function that checks whether dimensions of browser window have changed and 
+     * adjusts frames coordinates accordingly
+     * @function CartFiller.UI~adjustFrameCoordinates
+     * @access private
+     */
+    var adjustFrameCoordinates = function(){
+        var windowWidth = window.innerWidth,
+            windowHeight = window.innerHeight,
+            outerWidth = isFramed ? false : window.outerWidth,
+            outerHeight = isFramed ? false : window.outerHeight;
+        if (currentWindowDimensions.width !== windowWidth ||
+            currentWindowDimensions.height !== windowHeight ||
+            currentWindowDimensions.outerWidth !== outerWidth ||
+            currentWindowDimensions.outerHeight !== outerHeight ||
+            currentWindowDimensions.workerFrameSize !== currentWorkerFrameSize) {
+            (function() {
+                var mainFrameWidthBig = windowWidth * 0.8 - 1,
+                    mainFrameWidthSmall = windowWidth * 0.2 - 1,
+                    workerFrameWidthBig = windowWidth * 0.8 - 1,
+                    workerFrameWidthSmall = windowWidth * 0.2 - 1,
+                    framesHeight = windowHeight - 15,
+                    chooseJobFrameLeft = 0.02 * windowWidth + (isFramed ? 0 : 200),
+                    chooseJobFrameWidth = 0.76 * windowWidth - (isFramed ? 0 : 200),
+                    chooseJobFrameTop = 0.02 * windowHeight,
+                    chooseJobFrameHeight = 0.96 * windowHeight;
+
+                    if (isFramed) {
+                        me.modules.ui.mainFrame.style.height = framesHeight + 'px';////
+                    }
+                    me.modules.ui.workerFrame.style.height = framesHeight + 'px';
+                    me.modules.ui.chooseJobFrame.style.height = chooseJobFrameHeight + 'px';
+                    me.modules.ui.chooseJobFrame.style.top = chooseJobFrameTop + 'px';
+                    me.modules.ui.chooseJobFrame.style.left = chooseJobFrameLeft + 'px';
+                    me.modules.ui.chooseJobFrame.style.width = chooseJobFrameWidth + 'px';
+                    if (currentWorkerFrameSize === 'big') {
+                        if (isFramed) {
+                            me.modules.ui.workerFrame.style.width = workerFrameWidthBig + 'px';
+                            me.modules.ui.mainFrame.style.width = mainFrameWidthSmall + 'px';
+                            me.modules.ui.workerFrame.style.left = mainFrameWidthSmall + 'px';
+                        } else {
+                            me.modules.ui.mainFrameWindow.resizeTo(1,1);
+                            me.modules.ui.workerFrame.style.width = workerFrameWidthBig + 'px';
+                            me.modules.ui.workerFrame.style.left = (windowWidth - workerFrameWidthBig - 5) + 'px';
+                        }
+                    } else if (currentWorkerFrameSize === 'small') {
+                        if (isFramed) {
+                            me.modules.ui.workerFrame.style.width = workerFrameWidthSmall + 'px';
+                            me.modules.ui.mainFrame.style.width = mainFrameWidthBig + 'px';
+                            me.modules.ui.workerFrame.style.left = mainFrameWidthBig + 'px';
+                        } else {
+                            me.modules.ui.mainFrameWindow.resizeTo(Math.round(outerWidth*0.8 - 10), Math.round(outerHeight));
+                            me.modules.ui.workerFrame.style.width = workerFrameWidthSmall + 'px';
+                            me.modules.ui.workerFrame.style.left = (windowWidth - workerFrameWidthSmall - 5) + 'px';
+                        }
+                    }
+            })();
+            currentWindowDimensions.width = windowWidth;
+            currentWindowDimensions.height = windowHeight;
+            currentWindowDimensions.outerWidth = outerWidth;
+            currentWindowDimensions.outerHeight = outerHeight;
+            currentWindowDimensions.workerFrameSize = currentWorkerFrameSize;
+        }
+        ////
+    };
     /**
      * Returns main frame document
      * @function CartFiller.UI~getDocument
@@ -592,6 +664,8 @@
 
     // Launch arrowToFunction
     setInterval(arrowToFunction, 200);
+    // Launch adjustFrameCoordinates
+    setInterval(adjustFrameCoordinates, 2000);
 
     me.scripts.push({
 
@@ -772,17 +846,6 @@
          * @access public
          */
         popup: function(document, window){
-            var windowWidth = window.innerWidth,
-                windowHeight = window.innerHeight,
-                chooseJobFrameLeft = 0.02 * windowWidth,
-                chooseJobFrameWidth = 0.76 * windowWidth,
-                chooseJobFrameTop = 0.02 * windowHeight,
-                chooseJobFrameHeight = 0.96 * windowHeight,
-                workerFrameWidthBig = windowWidth * 0.8 - 1,
-                workerFrameWidthSmall = windowWidth * 0.2 - 1,
-                screenHeight = window.outerHeight,
-                screenWidth = window.outerWidth;
-
             me.modules.dispatcher.init();
             this.mainFrameWindow = window.open(window.location.href, '_blank', 'resizable=1, height=1, width=1, scrollbars=1');
             this.closePopup = function(){
@@ -813,19 +876,14 @@
             }
 
             this.setSize = function(size){
+                ////
                 if (undefined === size) {
-                    size = (currentSize === 'big') ? 'small' : 'big';
+                    size = (currentWorkerFrameSize === 'big') ? 'small' : 'big';
                 }
-                currentSize = size;
-                if (size === 'big') {
-                    this.mainFrameWindow.resizeTo(1,1);
-                    this.workerFrame.style.width = workerFrameWidthBig + 'px';
-                    this.workerFrame.style.left = (windowWidth - workerFrameWidthBig - 5) + 'px';
-                } else if (size === 'small') {
-                    this.mainFrameWindow.resizeTo(Math.round(screenWidth*0.8), Math.round(screenHeight));
+                currentWorkerFrameSize = size;
+                adjustFrameCoordinates();
+                if (size === 'small') {
                     this.mainFrameWindow.focus();
-                    this.workerFrame.style.width = workerFrameWidthSmall + 'px';
-                    this.workerFrame.style.left = (windowWidth - workerFrameWidthSmall - 5) + 'px';
                 }
             };
 
@@ -835,7 +893,6 @@
             this.workerFrame.style.top = '0px';
             this.workerFrame.style.height = '100%';
             this.workerFrame.style.zIndex = '100000';
-            this.setSize('big');
             body.appendChild(this.workerFrame);
             this.workerFrameWindow = window.frames[workerFrameName];
             this.workerFrameWindow.location.href=getWorkerFrameSrc();
@@ -843,19 +900,20 @@
             this.chooseJobFrame = window.document.createElement('iframe');
             this.chooseJobFrame.setAttribute('name', chooseJobFrameName);
             this.chooseJobFrame.style.position='fixed';
-            this.chooseJobFrame.style.height = chooseJobFrameHeight + 'px';
-            this.chooseJobFrame.style.top = chooseJobFrameTop + 'px';
-            this.chooseJobFrame.style.left = chooseJobFrameLeft + 'px';
-            this.chooseJobFrame.style.width = chooseJobFrameWidth + 'px';
+            this.chooseJobFrame.style.height = '0px';
+            this.chooseJobFrame.style.top = '0px';
+            this.chooseJobFrame.style.left = '0px';
+            this.chooseJobFrame.style.width = '0px';
             this.chooseJobFrame.style.zIndex = '1000000';
             this.chooseJobFrame.style.background = 'white';
             body.appendChild(this.chooseJobFrame);
             this.chooseJobFrameWindow = window.frames[chooseJobFrameName];
+            this.setSize('big');
 
 
         },
         /**
-         * Starts Popup type UI
+         * Starts Framed type UI
          * @function CartFiller.UI#framed
          * @param {Document} document Document where we are at the moment of injecting
          * @param {Window} window Window, that we are at the moment of injecting
@@ -865,28 +923,14 @@
             isFramed = true;
             me.modules.dispatcher.init();
             var body = document.getElementsByTagName('body')[0];
-            var mainFrameSrc = window.location.href,
-                windowWidth = window.innerWidth,
-                windowHeight = window.innerHeight,
-                mainFrameWidthBig = windowWidth * 0.8 - 1,
-                mainFrameWidthSmall = windowWidth * 0.2 - 1,
-                workerFrameWidthBig = windowWidth * 0.8 - 1,
-                workerFrameWidthSmall = windowWidth * 0.2 - 1,
-                framesHeight = windowHeight - 15,
-                chooseJobFrameLeft = 0.02 * windowWidth,
-                chooseJobFrameWidth = 0.76 * windowWidth,
-                chooseJobFrameTop = 0.02 * windowHeight,
-                chooseJobFrameHeight = 0.96 * windowHeight,
-                currentSize = 'big';
-
-
+            var mainFrameSrc = window.location.href;
 
             while (body.children.length) {
                 body.removeChild(body.children[0]);
             }
             this.mainFrame = document.createElement('iframe');
             this.mainFrame.setAttribute('name', mainFrameName);
-            this.mainFrame.style.height = framesHeight + 'px';
+            this.mainFrame.style.height = '0px';
             this.mainFrame.style.position = 'fixed';
             this.mainFrame.style.left = '0px';
             this.mainFrame.style.top = '0px';
@@ -894,17 +938,17 @@
 
             this.workerFrame = document.createElement('iframe');
             this.workerFrame.setAttribute('name', workerFrameName);
-            this.workerFrame.style.height = framesHeight + 'px';
+            this.workerFrame.style.height = '0px';
             this.workerFrame.style.position = 'fixed';
             this.workerFrame.style.top = '0px';
 
             this.chooseJobFrame = document.createElement('iframe');
             this.chooseJobFrame.setAttribute('name', chooseJobFrameName);
             this.chooseJobFrame.style.display = 'none';
-            this.chooseJobFrame.style.height = chooseJobFrameHeight + 'px';
-            this.chooseJobFrame.style.top = chooseJobFrameTop + 'px';
-            this.chooseJobFrame.style.left = chooseJobFrameLeft + 'px';
-            this.chooseJobFrame.style.width = chooseJobFrameWidth + 'px';
+            this.chooseJobFrame.style.height = '0px';
+            this.chooseJobFrame.style.top = '0px';
+            this.chooseJobFrame.style.left = '0px';
+            this.chooseJobFrame.style.width = '0px';
             this.chooseJobFrame.style.position = 'fixed';
             this.chooseJobFrame.style.background = 'white';
             body.appendChild(this.mainFrame);
@@ -923,18 +967,10 @@
 
             this.setSize = function(size){
                 if (undefined === size) {
-                    size = (currentSize === 'big') ? 'small' : 'big';
+                    size = (currentWorkerFrameSize === 'big') ? 'small' : 'big';
                 }
-                currentSize = size;
-                if (size === 'big') {
-                    this.workerFrame.style.width = workerFrameWidthBig + 'px';
-                    this.mainFrame.style.width = mainFrameWidthSmall + 'px';
-                    this.workerFrame.style.left = mainFrameWidthSmall + 'px';
-                } else if (size === 'small') {
-                    this.workerFrame.style.width = workerFrameWidthSmall + 'px';
-                    this.mainFrame.style.width = mainFrameWidthBig + 'px';
-                    this.workerFrame.style.left = mainFrameWidthBig + 'px';
-                }
+                currentWorkerFrameSize = size;
+                adjustFrameCoordinates();
             };
 
             this.setSize('big');
@@ -956,7 +992,7 @@
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0</a> on Wed Feb 03 2016 01:56:00 GMT+0300 (MSK)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0</a> on Sat Feb 13 2016 14:59:54 GMT+0300 (MSK)
 </footer>
 
 <script> prettyPrint(); </script>
