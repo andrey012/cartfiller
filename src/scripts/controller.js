@@ -35,7 +35,18 @@ define('controller', ['app', 'scroll'], function(app){
         $scope.debugEnabled = parseInt(cfDebug.debugEnabled);
         $scope.workerSrc = false;
         $scope.finishReached = false;
+        $scope.awaitingForFinish = false;
+        $scope.runUntilTask = $scope.runUntilStep = false;
         var mouseDownTime;
+        var isLongClick = function(){
+            return ((new Date()).getTime() - mouseDownTime) > 1000;
+        };
+        var run = function(slow) {
+            $scope.running = slow ? 'slow' : true;
+            digestButtonPanel();
+            $scope.doNextStep();
+            cfMessage.send('focusMainFrameWindow');
+        };
         var scrollCurrentTaskIntoView = function(useTop) {
             cfScroll(jQuery('#jobDetails > div:nth-child(' + ($scope.currentTask + 1) + ')')[0], useTop);
         };
@@ -69,7 +80,7 @@ define('controller', ['app', 'scroll'], function(app){
                         alert('Worker script not specified in job description');
                     }
                     if (details.autorun) {
-                        setTimeout(function() { $scope.runNoWatch(false); }, details.autorun);
+                        setTimeout(function() { $scope.runNoWatch(false, null, true); }, details.autorun);
                     }
                 });
             } else if (cmd === 'workerRegistered'){
@@ -91,6 +102,10 @@ define('controller', ['app', 'scroll'], function(app){
                     $scope.incrementCurrentStep(true, details.nextTaskFlow);
                     proceed = true;
                 } else {
+                    proceed = false;
+                }
+                if ($scope.runUntilTask !== false && $scope.runUntilStep !== false && ($scope.runUntilTask < $scope.currentTask || ($scope.runUntilStep <= $scope.currentStep && $scope.runUntilTask === $scope.currentTask))) {
+                    $scope.runUntilTask = $scope.runUntilStep = false;
                     proceed = false;
                 }
                 if ($scope.running){
@@ -157,10 +172,18 @@ define('controller', ['app', 'scroll'], function(app){
             var s = element.getAttribute('id').split('_');
             var taskIndex = parseInt(s[1]);
             var stepIndex = parseInt(s[2]);
-            $scope.currentTask = taskIndex;
-            $scope.currentStep = stepIndex;
-            var debug = ((new Date()).getTime() - mouseDownTime) > 1000;
-            $scope.invokeWorker(taskIndex, stepIndex, debug);
+            if ($scope.awaitingForFinish) {
+                $scope.runUntilTask = taskIndex;
+                $scope.runUntilStep = stepIndex;
+                run($scope.awaitingForFinish === 'slow');
+                $scope.awaitingForFinish = false;
+            } else {
+                $scope.runUntilTask = $scope.runUntilStep = false;
+                $scope.currentTask = taskIndex;
+                $scope.currentStep = stepIndex;
+                var debug = isLongClick();
+                $scope.invokeWorker(taskIndex, stepIndex, debug);
+            }
             $event.stopPropagation();
             cfMessage.send('focusMainFrameWindow');
             return false;
@@ -191,17 +214,30 @@ define('controller', ['app', 'scroll'], function(app){
             }
             return size + 'btn-warning';
         };
-        $scope.runNoWatch = function(slow, $event){
-            $scope.running = slow ? 'slow' : true;
-            digestButtonPanel();
-            $scope.doNextStep();
+        $scope.runNoWatch = function(slow, $event, ignoreMouseDown){
+            if (! ignoreMouseDown && isLongClick()) {
+                $scope.awaitingForFinish = slow ? 'slow' : true;
+                digestButtonPanel();
+            } else {
+                $scope.awaitingForFinish = false;
+                $scope.runUntilTask = $scope.runUntilStep = false;
+                run(slow);
+            }
             if ($event) {
                 $event.stopPropagation();
             }
-            cfMessage.send('focusMainFrameWindow');
+            return false;
+        };
+        $scope.cancelRunUntil = function($event) {
+            $scope.awaitingForFinish = false;
+            digestButtonPanel();
+            if ($event) {
+                $event.stopPropagation();
+            }
             return false;
         };
         $scope.stopNoWatch = function($event){
+            $scope.runUntilTask = $scope.runUntilStep = false;
             $event.stopPropagation();
             $scope.running = false;
             digestButtonPanel();
@@ -217,14 +253,18 @@ define('controller', ['app', 'scroll'], function(app){
                 digestButtonPanel();
             }
         };
-        $scope.resetWorkerNoWatch = function(){
+        $scope.resetWorkerNoWatch = function($event){
             cfMessage.send('resetWorker');
             $scope.workerInProgress = false;
             $scope.running = false;
             digestButtonPanel();
-            setTimeout(function() {scrollCurrentTaskIntoView();}, 100);
+            if ($event) {
+                $event.stopPropagation();
+            }
+            return false;
         };
         $scope.clickOnNextStepNoWatch = function($event){
+            $scope.runUntilTask = $scope.runUntilStep = false;
             $scope.doNextStep(); 
             $event.stopPropagation();
             cfMessage.send('focusMainFrameWindow');
@@ -278,7 +318,7 @@ define('controller', ['app', 'scroll'], function(app){
                 }
             });
         };
-        $scope.stepMouseDown = function() {
+        $scope.mouseDown = function() {
             mouseDownTime = (new Date()).getTime();
         };
     }]);
