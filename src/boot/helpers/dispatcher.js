@@ -87,6 +87,14 @@
      */
     var highlightedElement = false;
     /**
+     * Cache job details to give it to worker in full. Purpose is to make it 
+     * possible to deliver configuration/environment variables from 
+     * chooseJob to worker, and make them accessible by all tasks
+     * @var {CartFillerPlugin~jobDetails} CartFiller.Dispatcher~jobDetailsCache
+     * @access private
+     */
+    var jobDetailsCache = {};
+    /**
      * Just to make code shorter
      * @var {CartFiller.Configuration} CartFiller.Dispatcher~me
      * @access private
@@ -144,6 +152,12 @@
             }
         }
     };
+    /**
+     * Keeps directions on next task flow
+     * @var {string} CartFiller.Dispatcher~nextTaskFlow
+     * @access private
+     */
+    var nextTaskFlow;
 
     this.cartFillerConfiguration.scripts.push({
         /** 
@@ -249,9 +263,18 @@
             me.modules.ui.showHideChooseJobFrame(false);
             message.overrideWorkerSrc = me['data-worker'];
             resetWorker();
+            var i;
+            for (i in jobDetailsCache) {
+                if (jobDetailsCache.hasOwnProperty(i)) {
+                    delete jobDetailsCache[i];
+                }
+            }
+            for (i in message) {
+                jobDetailsCache[i] = message[i];
+            }
             if (! (message.details instanceof Array)) {
                 var newDetails = [];
-                for (var i = 0; 'undefined' !== typeof message.details[i]; i++ ){
+                for (i = 0; 'undefined' !== typeof message.details[i]; i++ ){
                     newDetails.push(message.details[i]);
                 }
                 message.details = newDetails;
@@ -314,8 +337,11 @@
                 alert(err);
                 this.postMessage('workerStepResult', {index: message.index, step: message.step, result: err});
             } else {
+                nextTaskFlow = 'normal';
                 if (workerCurrentTaskIndex !== message.index){
                     fillWorkerCurrentTask(message.details);
+                    // clear arrows and highlights
+                    me.modules.api.arrow().highlight();
                 }
                 workerCurrentTaskIndex = message.index;
                 workerCurrentStepIndex = message.step;
@@ -349,17 +375,27 @@
                     params: {}
                 };
                 try {
-                    if (undefined === worker[message.task][(message.step * 2) + 1]){
+                    if (undefined === worker[message.task]) {
+                        alert('invalid worker - no function for ' + message.task + ' exist');
+                    } else if (undefined === worker[message.task][(message.step * 2) + 1]){
                         alert('invalid worker - function for ' + message.task + ' step ' + message.step + ' does not exist');
-                    } else if ('function' !== typeof worker[message.task][(message.step * 2) + 1]){
-                        if ('function' === typeof worker[message.task][(message.step * 2) + 1][0]){
-                            env.params =  worker[message.task][(message.step * 2) + 1][1];
-                            worker[message.task][(message.step * 2) + 1][0](highlightedElement, env);
-                        } else {
-                            alert('invalid worker - function for ' + message.task + ' step ' + message.step + ' is not a function');
-                        }
                     } else {
-                        worker[message.task][(message.step * 2) + 1](highlightedElement, env);
+                        var workerFn = worker[message.task][(message.step * 2) + 1];
+                        if ('function' !== typeof workerFn){
+                            if ('function' === typeof workerFn[0]){
+                                env.params = workerFn[1];
+                                workerFn = workerFn[0];
+                            } else {
+                                alert('invalid worker - function for ' + message.task + ' step ' + message.step + ' is not a function');
+                                return;
+                            }
+                        }
+                        if (message.debug) {
+                            /* jshint ignore:start */
+                            debugger;
+                            /* jshint ignore:end */
+                        }
+                        workerFn(highlightedElement, env);
                     }
                 } catch (err){
                     console.log(err);
@@ -481,7 +517,7 @@
                 return taskSteps;
             };
             workerCurrentTask = {};
-            worker = cb(me.modules.ui.mainFrameWindow, undefined, api, workerCurrentTask);
+            worker = cb(me.modules.ui.mainFrameWindow, undefined, api, workerCurrentTask, jobDetailsCache);
             var list = {};
             for (var taskName in worker){
                 if (worker.hasOwnProperty(taskName)){
@@ -497,6 +533,16 @@
                 }
             }
             this.postMessageToWorker('workerRegistered', {jobTaskDescriptions: list, src: workerSrcPretendent});
+        },
+        /**
+         * Remembers directions for task flow to be passed to worker (job progress)
+         * frame
+         * @function CartFiller.Dispatcher#manageTaskFlow
+         * @param {string} action
+         * @access public
+         */
+        manageTaskFlow: function(action) {
+            nextTaskFlow = action;
         },
         /**
          * Passes step result from worker to worker (job progress) frame
@@ -522,7 +568,8 @@
                     status: status, 
                     message: message,
                     response: response,
-                    nop: recoverable === 'nop'
+                    nop: recoverable === 'nop',
+                    nextTaskFlow: nextTaskFlow
                 }
             );
             workerCurrentStepIndex = workerOnLoadHandler = false;

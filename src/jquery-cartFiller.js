@@ -404,6 +404,13 @@
     };
     /** 
      * @class CartFillerPlugin~jobDetails
+     * Used to configure job by chooseJob frame, contains set of pre-defined
+     * properties as well as arbitrary properties set by chooseJob which will be 
+     * delivered to worker.
+     */
+    /**
+     * @member {string} CartFillerPlugin~jobDetails#cmd Reserved property used for transport,
+     * should not be used
      */
     /** 
      * @member {Object[]} CartFillerPlugin~jobDetails#details Array of tasks, each task is 

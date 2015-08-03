@@ -22,6 +22,8 @@
      * When particular step callbacks, this object will each time be
      * reinitialized with next task as provided by 
      * {@link CartFiller.submitJobDetails}
+     * @param {CartFillerPlugin~jobDetails} job contains full copy of job details
+     * as passed by chooseJob frame
      * @return {Array} where even members are names of steps, and odd members
      * are either step functions or arrays of function + parameters object, e.g.
      * [
@@ -78,6 +80,20 @@
      * @param {boolean} result Result, returned by 
      * {@link CartFilter.Api.waitForCheckCallback} function or false 
      * in case of timeout
+     */
+
+    /**
+     * Used by {@link CartFiller.Api#each} when iterating through arrays
+     * @callback CartFiller.Api.eachCallback
+     * @param {integer} index
+     * @param {Object} value
+     * @return {boolean} false means stop iteration
+     */
+
+    /**
+     * Another callback used by {@link CartFiller.Api#each} -- called when iterating through
+     * array items was not interrupted
+     * @callback CartFillerApi.eachOtherwiseCallback
      */
 
     /**
@@ -138,6 +154,32 @@
             return this;
         },
         /**
+         * Tells that this task should be completely skipped, so cartFiller will
+         * proceed with next task. After using this function you still have to call
+         * api.result, and it is important to call api.skipTask first and 
+         * api.result then. 
+         * @function CartFiller.Api#skipTask
+         * @return {CartFiller.Api} for chaining
+         * @access public
+         */
+        skipTask: function() {
+            me.modules.dispatcher.manageTaskFlow('skipTask');
+            return this;
+        },
+        /**
+         * Tells that this task should be repeated, so cartFiller will
+         * proceed with first step of this task. After using this function
+         * you still have to call api.result, and it is important to call
+         * api.skipTask first and api.result then.
+         * @function CartFiller.Api#repeatTask
+         * @return {CartFiller.Api} for chaining
+         * @access public
+         */
+        repeatTask: function() {
+            me.modules.dispatcher.manageTaskFlow('repeatTask');
+            return this;
+        },
+        /**
          * Reports, that nothing happend during this step. Means success. 
          * @function CartFiller.Api#nop
          * @access public
@@ -154,11 +196,17 @@
          * worker will register it by calling onload() another time
          *
          * @function CartFiller.Api#onload
-         * @param {CartFiller.Api.onloadCallback} cb Callback
+         * @param {CartFiller.Api.onloadCallback} cb Callback, if not specified
+         *          then just api.result() will be ussued after page loads
          * @return {CartFiller.Api} for chaining
          * @access public
          */
         onload: function(cb){
+            if (undefined === cb) {
+                cb = function() {
+                    me.modules.api.result();
+                };
+            }
             me.modules.dispatcher.registerWorkerOnloadCallback(cb);
             return this;
         },
@@ -235,6 +283,7 @@
          * 
          * @function CartFiller.API#arrow
          * @see CartFiller.API#highlight
+         * @return {CartFiller.Api} for chaining
          * @access public
          */
         arrow: function(element, allElements){
@@ -246,11 +295,73 @@
          * Displays comment message over the overlay in the main frame
          * @function CartFiller.Api#say
          * @param {String} message
+         * @return {CartFiller.Api} for chaining
          * @access public
          */
         say: function(message){
             me.modules.ui.say(message);
             return this;
+        },
+        /**
+         * Just another for-each implementation, jQuery style
+         * @function CartFiller.Api#each
+         * @param {Array} array Array to iterate through
+         * @param {CartFiller.Api.eachCallback} Called for each item
+         * @param {CartFillerApi.eachOtherwiseCallback} otherwise Called if iteration was
+         * not interrupted
+         * @return {CartFiller.Api} for chaining
+         * @return this for chaining 
+         * @access public
+         */
+        each: function(array, fn, otherwise){
+            var i;
+            var breaked = false;
+            if (array instanceof Array) {
+                for (i = 0 ; i < array.length; i++ ) {
+                    if (false === fn(i, array[i])) {
+                        breaked = true;
+                        break;
+                    }
+                }
+            } else {
+                for (i in array) {
+                    if (array.hasOwnProperty(i)) {
+                        if (false === fn(i, array[i])) {
+                            breaked = true;
+                            break;
+                        }
+                    }
+                }
+            }
+            if (! breaked) {
+                otherwise();
+            }
+        },
+        /**
+         * Compare two strings, if they match return '', if they mismatch return full
+         * dump showing exact position where they mismatch
+         * @function CartFiller.Api#compare
+         * @param {string} ethalon
+         * @param {string} value
+         * @return {string}
+         * @access public
+         */
+        compare: function(ethalon, value) {
+            ethalon = String(ethalon);
+            value = String(value);
+            if (ethalon === value) {
+                return '';
+            }
+            var r = '[';
+            for (var i = 0; i < Math.max(ethalon.length, value.length); i++) {
+                if (ethalon.substr(i, 1) === value.substr(i, 1)) {
+                    r += ethalon.substr(i, 1);
+                } else {
+                    r += '] <<< expected: [' + ethalon.substr(i) + '], have: [' + value.substr(i) + ']';
+                    break;
+                }
+            }
+            return r;
         }
 
     });

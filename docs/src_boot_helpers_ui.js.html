@@ -298,18 +298,18 @@
                 left = Math.round(rect.left - 5);
                 height = Math.round(rect.height + 9);
                 width = Math.round(rect.width + 9);
-                if ((top !== element.top) ||
-                    (left !== element.left) ||
-                    (height !== element.height) ||
-                    (width !== element.width)){
-                    rebuild = true;
-                    element.top = top;
-                    element.left = left;
-                    element.height = height;
-                    element.width = width;
-                }
             } else {
                 element.left = element.right = element.top = element.bottom = undefined;
+            }
+            if ((top !== element.top) ||
+                (left !== element.left) ||
+                (height !== element.height) ||
+                (width !== element.width)){
+                rebuild = true;
+                element.top = top;
+                element.left = left;
+                element.height = height;
+                element.width = width;
             }
         }
         return rebuild;
@@ -654,7 +654,7 @@
             body.style.paddingBottom = this.mainFrameWindow.innerHeight + 'px';
 
             highlightedElements = [];
-            if ('object' === typeof element &amp;&amp; 'string' === typeof element.jquery &amp;&amp; undefined !== element.length &amp;&amp; 'function' === typeof element.each){
+            if (null !== element &amp;&amp; 'object' === typeof element &amp;&amp; 'string' === typeof element.jquery &amp;&amp; undefined !== element.length &amp;&amp; 'function' === typeof element.each){
                 element.each(function(i,el){
                     highlightedElements.push({element: el}); 
                     if (!allElements) {
@@ -685,7 +685,7 @@
          */
         arrowTo: function(element, allElements){
             arrowToElements = [];
-            if ('object' === typeof element &amp;&amp; 'string' === typeof element.jquery &amp;&amp; undefined !== element.length &amp;&amp; 'function' === typeof element.each){
+            if (null !== element &amp;&amp; 'object' === typeof element &amp;&amp; 'string' === typeof element.jquery &amp;&amp; undefined !== element.length &amp;&amp; 'function' === typeof element.each){
                 element.each(function(i,el){
                     arrowToElements.push({element: el}); 
                     if (!allElements) {
@@ -704,6 +704,11 @@
             } else {
                 arrowToElements = [];
                 removeOverlay(true);
+            }
+            if (arrowToElements.length > 0) {
+                setTimeout(function(){
+                    scrollTo(arrowToElements);
+                },0);
             }
         },
         /**
@@ -945,13 +950,13 @@
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Externals</h3><ul><li><a href="external%2520jQuery.external__jQuery.fn_.html">jQuery.fn</a></li><li><a href="external-jQuery.html">jQuery</a></li></ul><h3>Classes</h3><ul><li><a href="CartFiller.Api.html">Api</a></li><li><a href="CartFiller.Api.StepEnvironment.html">StepEnvironment</a></li><li><a href="CartFiller.Configuration.html">Configuration</a></li><li><a href="CartFiller.Dispatcher.html">Dispatcher</a></li><li><a href="CartFiller.Injector.html">Injector</a></li><li><a href="CartFiller.Loader.html">Loader</a></li><li><a href="CartFiller.SampleWorker.html">SampleWorker</a></li><li><a href="CartFiller.SampleWorker.SampleWorkerTasks.html">SampleWorkerTasks</a></li><li><a href="CartFiller.UI.html">UI</a></li><li><a href="CartFiller.UI.ArrowToElement.html">ArrowToElement</a></li><li><a href="CartFillerPlugin-jobDetails.html">jobDetails</a></li><li><a href="CartFillerPlugin-Plugin.html">Plugin</a></li><li><a href="CartFillerPlugin-Settings.html">Settings</a></li></ul><h3>Namespaces</h3><ul><li><a href="CartFiller.html">CartFiller</a></li><li><a href="CartFillerPlugin.html">CartFillerPlugin</a></li></ul><h3>Global</h3><ul><li><a href="global.html#%2522jQuery.cartFillerPlugin%2522">"jQuery.cartFillerPlugin"</a></li><li><a href="global.html#%2522jQuery.fn.cartFillerPlugin%2522">"jQuery.fn.cartFillerPlugin"</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Externals</h3><ul><li><a href="external%2520jQuery.external__jQuery.fn_.html">jQuery.fn</a></li><li><a href="external-jQuery.html">jQuery</a></li></ul><h3>Classes</h3><ul><li><a href="CartFiller.Api.html">Api</a></li><li><a href="CartFiller.Api.StepEnvironment.html">StepEnvironment</a></li><li><a href="CartFiller.Configuration.html">Configuration</a></li><li><a href="CartFiller.Dispatcher.html">Dispatcher</a></li><li><a href="CartFiller.Injector.html">Injector</a></li><li><a href="CartFiller.Loader.html">Loader</a></li><li><a href="CartFiller.SampleWorker.html">SampleWorker</a></li><li><a href="CartFiller.SampleWorker.SampleWorkerTasks.html">SampleWorkerTasks</a></li><li><a href="CartFiller.UI.html">UI</a></li><li><a href="CartFiller.UI.ArrowToElement.html">ArrowToElement</a></li><li><a href="CartFillerPlugin-Plugin.html">Plugin</a></li><li><a href="CartFillerPlugin-Settings.html">Settings</a></li></ul><h3>Namespaces</h3><ul><li><a href="CartFiller.html">CartFiller</a></li><li><a href="CartFillerPlugin.html">CartFillerPlugin</a></li></ul><h3>Global</h3><ul><li><a href="global.html#%2522jQuery.cartFillerPlugin%2522">"jQuery.cartFillerPlugin"</a></li><li><a href="global.html#%2522jQuery.fn.cartFillerPlugin%2522">"jQuery.fn.cartFillerPlugin"</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0</a> on Sun Dec 27 2015 23:32:15 GMT+0300 (MSK)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0</a> on Mon Feb 01 2016 01:17:46 GMT+0300 (MSK)
 </footer>
 
 <script> prettyPrint(); </script>

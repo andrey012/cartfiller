@@ -9,7 +9,7 @@
      * @see CartFiller.Api.registerCallback
      * @access private
      */
-    var registerCallback = function(window, document, api, task){
+    var registerCallback = function(window, document, api, task, job){
         // some state variables
         /**
          * Indicates, that cart is empty. If set to true, then several 

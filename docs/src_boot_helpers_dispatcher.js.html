@@ -115,6 +115,14 @@
      */
     var highlightedElement = false;
     /**
+     * Cache job details to give it to worker in full. Purpose is to make it 
+     * possible to deliver configuration/environment variables from 
+     * chooseJob to worker, and make them accessible by all tasks
+     * @var {CartFillerPlugin~jobDetails} CartFiller.Dispatcher~jobDetailsCache
+     * @access private
+     */
+    var jobDetailsCache = {};
+    /**
      * Just to make code shorter
      * @var {CartFiller.Configuration} CartFiller.Dispatcher~me
      * @access private
@@ -172,6 +180,12 @@
             }
         }
     };
+    /**
+     * Keeps directions on next task flow
+     * @var {string} CartFiller.Dispatcher~nextTaskFlow
+     * @access private
+     */
+    var nextTaskFlow;
 
     this.cartFillerConfiguration.scripts.push({
         /** 
@@ -277,9 +291,18 @@
             me.modules.ui.showHideChooseJobFrame(false);
             message.overrideWorkerSrc = me['data-worker'];
             resetWorker();
+            var i;
+            for (i in jobDetailsCache) {
+                if (jobDetailsCache.hasOwnProperty(i)) {
+                    delete jobDetailsCache[i];
+                }
+            }
+            for (i in message) {
+                jobDetailsCache[i] = message[i];
+            }
             if (! (message.details instanceof Array)) {
                 var newDetails = [];
-                for (var i = 0; 'undefined' !== typeof message.details[i]; i++ ){
+                for (i = 0; 'undefined' !== typeof message.details[i]; i++ ){
                     newDetails.push(message.details[i]);
                 }
                 message.details = newDetails;
@@ -342,8 +365,11 @@
                 alert(err);
                 this.postMessage('workerStepResult', {index: message.index, step: message.step, result: err});
             } else {
+                nextTaskFlow = 'normal';
                 if (workerCurrentTaskIndex !== message.index){
                     fillWorkerCurrentTask(message.details);
+                    // clear arrows and highlights
+                    me.modules.api.arrow().highlight();
                 }
                 workerCurrentTaskIndex = message.index;
                 workerCurrentStepIndex = message.step;
@@ -377,17 +403,27 @@
                     params: {}
                 };
                 try {
-                    if (undefined === worker[message.task][(message.step * 2) + 1]){
+                    if (undefined === worker[message.task]) {
+                        alert('invalid worker - no function for ' + message.task + ' exist');
+                    } else if (undefined === worker[message.task][(message.step * 2) + 1]){
                         alert('invalid worker - function for ' + message.task + ' step ' + message.step + ' does not exist');
-                    } else if ('function' !== typeof worker[message.task][(message.step * 2) + 1]){
-                        if ('function' === typeof worker[message.task][(message.step * 2) + 1][0]){
-                            env.params =  worker[message.task][(message.step * 2) + 1][1];
-                            worker[message.task][(message.step * 2) + 1][0](highlightedElement, env);
-                        } else {
-                            alert('invalid worker - function for ' + message.task + ' step ' + message.step + ' is not a function');
-                        }
                     } else {
-                        worker[message.task][(message.step * 2) + 1](highlightedElement, env);
+                        var workerFn = worker[message.task][(message.step * 2) + 1];
+                        if ('function' !== typeof workerFn){
+                            if ('function' === typeof workerFn[0]){
+                                env.params = workerFn[1];
+                                workerFn = workerFn[0];
+                            } else {
+                                alert('invalid worker - function for ' + message.task + ' step ' + message.step + ' is not a function');
+                                return;
+                            }
+                        }
+                        if (message.debug) {
+                            /* jshint ignore:start */
+                            debugger;
+                            /* jshint ignore:end */
+                        }
+                        workerFn(highlightedElement, env);
                     }
                 } catch (err){
                     console.log(err);
@@ -509,7 +545,7 @@
                 return taskSteps;
             };
             workerCurrentTask = {};
-            worker = cb(me.modules.ui.mainFrameWindow, undefined, api, workerCurrentTask);
+            worker = cb(me.modules.ui.mainFrameWindow, undefined, api, workerCurrentTask, jobDetailsCache);
             var list = {};
             for (var taskName in worker){
                 if (worker.hasOwnProperty(taskName)){
@@ -525,6 +561,16 @@
                 }
             }
             this.postMessageToWorker('workerRegistered', {jobTaskDescriptions: list, src: workerSrcPretendent});
+        },
+        /**
+         * Remembers directions for task flow to be passed to worker (job progress)
+         * frame
+         * @function CartFiller.Dispatcher#manageTaskFlow
+         * @param {string} action
+         * @access public
+         */
+        manageTaskFlow: function(action) {
+            nextTaskFlow = action;
         },
         /**
          * Passes step result from worker to worker (job progress) frame
@@ -550,7 +596,8 @@
                     status: status, 
                     message: message,
                     response: response,
-                    nop: recoverable === 'nop'
+                    nop: recoverable === 'nop',
+                    nextTaskFlow: nextTaskFlow
                 }
             );
             workerCurrentStepIndex = workerOnLoadHandler = false;
@@ -594,13 +641,13 @@
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Externals</h3><ul><li><a href="external%2520jQuery.external__jQuery.fn_.html">jQuery.fn</a></li><li><a href="external-jQuery.html">jQuery</a></li></ul><h3>Classes</h3><ul><li><a href="CartFiller.Api.html">Api</a></li><li><a href="CartFiller.Api.StepEnvironment.html">StepEnvironment</a></li><li><a href="CartFiller.Configuration.html">Configuration</a></li><li><a href="CartFiller.Dispatcher.html">Dispatcher</a></li><li><a href="CartFiller.Injector.html">Injector</a></li><li><a href="CartFiller.Loader.html">Loader</a></li><li><a href="CartFiller.SampleWorker.html">SampleWorker</a></li><li><a href="CartFiller.SampleWorker.SampleWorkerTasks.html">SampleWorkerTasks</a></li><li><a href="CartFiller.UI.html">UI</a></li><li><a href="CartFiller.UI.ArrowToElement.html">ArrowToElement</a></li><li><a href="CartFillerPlugin-jobDetails.html">jobDetails</a></li><li><a href="CartFillerPlugin-Plugin.html">Plugin</a></li><li><a href="CartFillerPlugin-Settings.html">Settings</a></li></ul><h3>Namespaces</h3><ul><li><a href="CartFiller.html">CartFiller</a></li><li><a href="CartFillerPlugin.html">CartFillerPlugin</a></li></ul><h3>Global</h3><ul><li><a href="global.html#%2522jQuery.cartFillerPlugin%2522">"jQuery.cartFillerPlugin"</a></li><li><a href="global.html#%2522jQuery.fn.cartFillerPlugin%2522">"jQuery.fn.cartFillerPlugin"</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Externals</h3><ul><li><a href="external%2520jQuery.external__jQuery.fn_.html">jQuery.fn</a></li><li><a href="external-jQuery.html">jQuery</a></li></ul><h3>Classes</h3><ul><li><a href="CartFiller.Api.html">Api</a></li><li><a href="CartFiller.Api.StepEnvironment.html">StepEnvironment</a></li><li><a href="CartFiller.Configuration.html">Configuration</a></li><li><a href="CartFiller.Dispatcher.html">Dispatcher</a></li><li><a href="CartFiller.Injector.html">Injector</a></li><li><a href="CartFiller.Loader.html">Loader</a></li><li><a href="CartFiller.SampleWorker.html">SampleWorker</a></li><li><a href="CartFiller.SampleWorker.SampleWorkerTasks.html">SampleWorkerTasks</a></li><li><a href="CartFiller.UI.html">UI</a></li><li><a href="CartFiller.UI.ArrowToElement.html">ArrowToElement</a></li><li><a href="CartFillerPlugin-Plugin.html">Plugin</a></li><li><a href="CartFillerPlugin-Settings.html">Settings</a></li></ul><h3>Namespaces</h3><ul><li><a href="CartFiller.html">CartFiller</a></li><li><a href="CartFillerPlugin.html">CartFillerPlugin</a></li></ul><h3>Global</h3><ul><li><a href="global.html#%2522jQuery.cartFillerPlugin%2522">"jQuery.cartFillerPlugin"</a></li><li><a href="global.html#%2522jQuery.fn.cartFillerPlugin%2522">"jQuery.fn.cartFillerPlugin"</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0</a> on Sun Dec 27 2015 23:32:15 GMT+0300 (MSK)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0</a> on Mon Feb 01 2016 01:17:46 GMT+0300 (MSK)
 </footer>
 
 <script> prettyPrint(); </script>

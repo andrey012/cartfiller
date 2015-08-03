@@ -270,18 +270,18 @@
                 left = Math.round(rect.left - 5);
                 height = Math.round(rect.height + 9);
                 width = Math.round(rect.width + 9);
-                if ((top !== element.top) ||
-                    (left !== element.left) ||
-                    (height !== element.height) ||
-                    (width !== element.width)){
-                    rebuild = true;
-                    element.top = top;
-                    element.left = left;
-                    element.height = height;
-                    element.width = width;
-                }
             } else {
                 element.left = element.right = element.top = element.bottom = undefined;
+            }
+            if ((top !== element.top) ||
+                (left !== element.left) ||
+                (height !== element.height) ||
+                (width !== element.width)){
+                rebuild = true;
+                element.top = top;
+                element.left = left;
+                element.height = height;
+                element.width = width;
             }
         }
         return rebuild;
@@ -626,7 +626,7 @@
             body.style.paddingBottom = this.mainFrameWindow.innerHeight + 'px';
 
             highlightedElements = [];
-            if ('object' === typeof element && 'string' === typeof element.jquery && undefined !== element.length && 'function' === typeof element.each){
+            if (null !== element && 'object' === typeof element && 'string' === typeof element.jquery && undefined !== element.length && 'function' === typeof element.each){
                 element.each(function(i,el){
                     highlightedElements.push({element: el}); 
                     if (!allElements) {
@@ -657,7 +657,7 @@
          */
         arrowTo: function(element, allElements){
             arrowToElements = [];
-            if ('object' === typeof element && 'string' === typeof element.jquery && undefined !== element.length && 'function' === typeof element.each){
+            if (null !== element && 'object' === typeof element && 'string' === typeof element.jquery && undefined !== element.length && 'function' === typeof element.each){
                 element.each(function(i,el){
                     arrowToElements.push({element: el}); 
                     if (!allElements) {
@@ -676,6 +676,11 @@
             } else {
                 arrowToElements = [];
                 removeOverlay(true);
+            }
+            if (arrowToElements.length > 0) {
+                setTimeout(function(){
+                    scrollTo(arrowToElements);
+                },0);
             }
         },
         /**

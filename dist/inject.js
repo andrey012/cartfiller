@@ -153,7 +153,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1451248331221';
+    config.gruntBuildTimeStamp='1454278662883';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -210,6 +210,8 @@
      * When particular step callbacks, this object will each time be
      * reinitialized with next task as provided by 
      * {@link CartFiller.submitJobDetails}
+     * @param {CartFillerPlugin~jobDetails} job contains full copy of job details
+     * as passed by chooseJob frame
      * @return {Array} where even members are names of steps, and odd members
      * are either step functions or arrays of function + parameters object, e.g.
      * [
@@ -266,6 +268,20 @@
      * @param {boolean} result Result, returned by 
      * {@link CartFilter.Api.waitForCheckCallback} function or false 
      * in case of timeout
+     */
+
+    /**
+     * Used by {@link CartFiller.Api#each} when iterating through arrays
+     * @callback CartFiller.Api.eachCallback
+     * @param {integer} index
+     * @param {Object} value
+     * @return {boolean} false means stop iteration
+     */
+
+    /**
+     * Another callback used by {@link CartFiller.Api#each} -- called when iterating through
+     * array items was not interrupted
+     * @callback CartFillerApi.eachOtherwiseCallback
      */
 
     /**
@@ -326,6 +342,32 @@
             return this;
         },
         /**
+         * Tells that this task should be completely skipped, so cartFiller will
+         * proceed with next task. After using this function you still have to call
+         * api.result, and it is important to call api.skipTask first and 
+         * api.result then. 
+         * @function CartFiller.Api#skipTask
+         * @return {CartFiller.Api} for chaining
+         * @access public
+         */
+        skipTask: function() {
+            me.modules.dispatcher.manageTaskFlow('skipTask');
+            return this;
+        },
+        /**
+         * Tells that this task should be repeated, so cartFiller will
+         * proceed with first step of this task. After using this function
+         * you still have to call api.result, and it is important to call
+         * api.skipTask first and api.result then.
+         * @function CartFiller.Api#repeatTask
+         * @return {CartFiller.Api} for chaining
+         * @access public
+         */
+        repeatTask: function() {
+            me.modules.dispatcher.manageTaskFlow('repeatTask');
+            return this;
+        },
+        /**
          * Reports, that nothing happend during this step. Means success. 
          * @function CartFiller.Api#nop
          * @access public
@@ -342,11 +384,17 @@
          * worker will register it by calling onload() another time
          *
          * @function CartFiller.Api#onload
-         * @param {CartFiller.Api.onloadCallback} cb Callback
+         * @param {CartFiller.Api.onloadCallback} cb Callback, if not specified
+         *          then just api.result() will be ussued after page loads
          * @return {CartFiller.Api} for chaining
          * @access public
          */
         onload: function(cb){
+            if (undefined === cb) {
+                cb = function() {
+                    me.modules.api.result();
+                };
+            }
             me.modules.dispatcher.registerWorkerOnloadCallback(cb);
             return this;
         },
@@ -423,6 +471,7 @@
          * 
          * @function CartFiller.API#arrow
          * @see CartFiller.API#highlight
+         * @return {CartFiller.Api} for chaining
          * @access public
          */
         arrow: function(element, allElements){
@@ -434,11 +483,73 @@
          * Displays comment message over the overlay in the main frame
          * @function CartFiller.Api#say
          * @param {String} message
+         * @return {CartFiller.Api} for chaining
          * @access public
          */
         say: function(message){
             me.modules.ui.say(message);
             return this;
+        },
+        /**
+         * Just another for-each implementation, jQuery style
+         * @function CartFiller.Api#each
+         * @param {Array} array Array to iterate through
+         * @param {CartFiller.Api.eachCallback} Called for each item
+         * @param {CartFillerApi.eachOtherwiseCallback} otherwise Called if iteration was
+         * not interrupted
+         * @return {CartFiller.Api} for chaining
+         * @return this for chaining 
+         * @access public
+         */
+        each: function(array, fn, otherwise){
+            var i;
+            var breaked = false;
+            if (array instanceof Array) {
+                for (i = 0 ; i < array.length; i++ ) {
+                    if (false === fn(i, array[i])) {
+                        breaked = true;
+                        break;
+                    }
+                }
+            } else {
+                for (i in array) {
+                    if (array.hasOwnProperty(i)) {
+                        if (false === fn(i, array[i])) {
+                            breaked = true;
+                            break;
+                        }
+                    }
+                }
+            }
+            if (! breaked) {
+                otherwise();
+            }
+        },
+        /**
+         * Compare two strings, if they match return '', if they mismatch return full
+         * dump showing exact position where they mismatch
+         * @function CartFiller.Api#compare
+         * @param {string} ethalon
+         * @param {string} value
+         * @return {string}
+         * @access public
+         */
+        compare: function(ethalon, value) {
+            ethalon = String(ethalon);
+            value = String(value);
+            if (ethalon === value) {
+                return '';
+            }
+            var r = '[';
+            for (var i = 0; i < Math.max(ethalon.length, value.length); i++) {
+                if (ethalon.substr(i, 1) === value.substr(i, 1)) {
+                    r += ethalon.substr(i, 1);
+                } else {
+                    r += '] <<< expected: [' + ethalon.substr(i) + '], have: [' + value.substr(i) + ']';
+                    break;
+                }
+            }
+            return r;
         }
 
     });
@@ -532,6 +643,14 @@
      */
     var highlightedElement = false;
     /**
+     * Cache job details to give it to worker in full. Purpose is to make it 
+     * possible to deliver configuration/environment variables from 
+     * chooseJob to worker, and make them accessible by all tasks
+     * @var {CartFillerPlugin~jobDetails} CartFiller.Dispatcher~jobDetailsCache
+     * @access private
+     */
+    var jobDetailsCache = {};
+    /**
      * Just to make code shorter
      * @var {CartFiller.Configuration} CartFiller.Dispatcher~me
      * @access private
@@ -589,6 +708,12 @@
             }
         }
     };
+    /**
+     * Keeps directions on next task flow
+     * @var {string} CartFiller.Dispatcher~nextTaskFlow
+     * @access private
+     */
+    var nextTaskFlow;
 
     this.cartFillerConfiguration.scripts.push({
         /** 
@@ -694,9 +819,18 @@
             me.modules.ui.showHideChooseJobFrame(false);
             message.overrideWorkerSrc = me['data-worker'];
             resetWorker();
+            var i;
+            for (i in jobDetailsCache) {
+                if (jobDetailsCache.hasOwnProperty(i)) {
+                    delete jobDetailsCache[i];
+                }
+            }
+            for (i in message) {
+                jobDetailsCache[i] = message[i];
+            }
             if (! (message.details instanceof Array)) {
                 var newDetails = [];
-                for (var i = 0; 'undefined' !== typeof message.details[i]; i++ ){
+                for (i = 0; 'undefined' !== typeof message.details[i]; i++ ){
                     newDetails.push(message.details[i]);
                 }
                 message.details = newDetails;
@@ -759,8 +893,11 @@
                 alert(err);
                 this.postMessage('workerStepResult', {index: message.index, step: message.step, result: err});
             } else {
+                nextTaskFlow = 'normal';
                 if (workerCurrentTaskIndex !== message.index){
                     fillWorkerCurrentTask(message.details);
+                    // clear arrows and highlights
+                    me.modules.api.arrow().highlight();
                 }
                 workerCurrentTaskIndex = message.index;
                 workerCurrentStepIndex = message.step;
@@ -794,17 +931,27 @@
                     params: {}
                 };
                 try {
-                    if (undefined === worker[message.task][(message.step * 2) + 1]){
+                    if (undefined === worker[message.task]) {
+                        alert('invalid worker - no function for ' + message.task + ' exist');
+                    } else if (undefined === worker[message.task][(message.step * 2) + 1]){
                         alert('invalid worker - function for ' + message.task + ' step ' + message.step + ' does not exist');
-                    } else if ('function' !== typeof worker[message.task][(message.step * 2) + 1]){
-                        if ('function' === typeof worker[message.task][(message.step * 2) + 1][0]){
-                            env.params =  worker[message.task][(message.step * 2) + 1][1];
-                            worker[message.task][(message.step * 2) + 1][0](highlightedElement, env);
-                        } else {
-                            alert('invalid worker - function for ' + message.task + ' step ' + message.step + ' is not a function');
-                        }
                     } else {
-                        worker[message.task][(message.step * 2) + 1](highlightedElement, env);
+                        var workerFn = worker[message.task][(message.step * 2) + 1];
+                        if ('function' !== typeof workerFn){
+                            if ('function' === typeof workerFn[0]){
+                                env.params = workerFn[1];
+                                workerFn = workerFn[0];
+                            } else {
+                                alert('invalid worker - function for ' + message.task + ' step ' + message.step + ' is not a function');
+                                return;
+                            }
+                        }
+                        if (message.debug) {
+                            /* jshint ignore:start */
+                            debugger;
+                            /* jshint ignore:end */
+                        }
+                        workerFn(highlightedElement, env);
                     }
                 } catch (err){
                     console.log(err);
@@ -926,7 +1073,7 @@
                 return taskSteps;
             };
             workerCurrentTask = {};
-            worker = cb(me.modules.ui.mainFrameWindow, undefined, api, workerCurrentTask);
+            worker = cb(me.modules.ui.mainFrameWindow, undefined, api, workerCurrentTask, jobDetailsCache);
             var list = {};
             for (var taskName in worker){
                 if (worker.hasOwnProperty(taskName)){
@@ -942,6 +1089,16 @@
                 }
             }
             this.postMessageToWorker('workerRegistered', {jobTaskDescriptions: list, src: workerSrcPretendent});
+        },
+        /**
+         * Remembers directions for task flow to be passed to worker (job progress)
+         * frame
+         * @function CartFiller.Dispatcher#manageTaskFlow
+         * @param {string} action
+         * @access public
+         */
+        manageTaskFlow: function(action) {
+            nextTaskFlow = action;
         },
         /**
          * Passes step result from worker to worker (job progress) frame
@@ -967,7 +1124,8 @@
                     status: status, 
                     message: message,
                     response: response,
-                    nop: recoverable === 'nop'
+                    nop: recoverable === 'nop',
+                    nextTaskFlow: nextTaskFlow
                 }
             );
             workerCurrentStepIndex = workerOnLoadHandler = false;
@@ -1339,18 +1497,18 @@
                 left = Math.round(rect.left - 5);
                 height = Math.round(rect.height + 9);
                 width = Math.round(rect.width + 9);
-                if ((top !== element.top) ||
-                    (left !== element.left) ||
-                    (height !== element.height) ||
-                    (width !== element.width)){
-                    rebuild = true;
-                    element.top = top;
-                    element.left = left;
-                    element.height = height;
-                    element.width = width;
-                }
             } else {
                 element.left = element.right = element.top = element.bottom = undefined;
+            }
+            if ((top !== element.top) ||
+                (left !== element.left) ||
+                (height !== element.height) ||
+                (width !== element.width)){
+                rebuild = true;
+                element.top = top;
+                element.left = left;
+                element.height = height;
+                element.width = width;
             }
         }
         return rebuild;
@@ -1695,7 +1853,7 @@
             body.style.paddingBottom = this.mainFrameWindow.innerHeight + 'px';
 
             highlightedElements = [];
-            if ('object' === typeof element && 'string' === typeof element.jquery && undefined !== element.length && 'function' === typeof element.each){
+            if (null !== element && 'object' === typeof element && 'string' === typeof element.jquery && undefined !== element.length && 'function' === typeof element.each){
                 element.each(function(i,el){
                     highlightedElements.push({element: el}); 
                     if (!allElements) {
@@ -1726,7 +1884,7 @@
          */
         arrowTo: function(element, allElements){
             arrowToElements = [];
-            if ('object' === typeof element && 'string' === typeof element.jquery && undefined !== element.length && 'function' === typeof element.each){
+            if (null !== element && 'object' === typeof element && 'string' === typeof element.jquery && undefined !== element.length && 'function' === typeof element.each){
                 element.each(function(i,el){
                     arrowToElements.push({element: el}); 
                     if (!allElements) {
@@ -1745,6 +1903,11 @@
             } else {
                 arrowToElements = [];
                 removeOverlay(true);
+            }
+            if (arrowToElements.length > 0) {
+                setTimeout(function(){
+                    scrollTo(arrowToElements);
+                },0);
             }
         },
         /**

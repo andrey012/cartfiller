@@ -35,6 +35,10 @@ define('controller', ['app', 'scroll'], function(app){
         $scope.debugEnabled = parseInt(cfDebug.debugEnabled);
         $scope.workerSrc = false;
         $scope.finishReached = false;
+        var mouseDownTime;
+        var scrollCurrentTaskIntoView = function(useTop) {
+            cfScroll(jQuery('#jobDetails > div:nth-child(' + ($scope.currentTask + 1) + ')')[0], useTop);
+        };
         cfMessage.register(function(cmd, details){
             if (cmd === 'jobDetails'){
                 $scope.$apply(function(){
@@ -46,7 +50,7 @@ define('controller', ['app', 'scroll'], function(app){
                     $scope.jobTaskStepProgress = [];
                     $scope.currentTask = 0;
                     $scope.currentStep = 0;
-                    cfScroll(jQuery('#jobDetails')[0], true);
+                    scrollCurrentTaskIntoView(true);
 
                     angular.forEach(details.details, function(){
                         $scope.jobTaskProgress.push({complete: false, step: 0, stepsInProgress: {}, stepResults: {}});
@@ -77,14 +81,14 @@ define('controller', ['app', 'scroll'], function(app){
             } else if (cmd === 'workerStepResult'){
                 $scope.jobTaskProgress[details.index].stepsInProgress[details.step] = false;
                 $scope.jobTaskProgress[details.index].stepResults[details.step] = {status: details.status, message: details.message, response: details.response};
-                $scope.jobTaskProgress[details.index].complete = $scope.updateTaskCompleteMark(details.index);
+                $scope.jobTaskProgress[details.index].complete = details.nextTaskFlow === 'skipTask' || $scope.updateTaskCompleteMark(details.index);
                 cfMessage.send('sendStatus', {result: $scope.jobTaskProgress, tasks: $scope.jobDetails, currentTaskIndex: details.index, currentTaskStepIndex: details.step});
                 var proceed;
                 if ('ok' === details.status){
-                    $scope.incrementCurrentStep();
+                    $scope.incrementCurrentStep(false, details.nextTaskFlow);
                     proceed = true;
                 } else if ('skip' === details.status){
-                    $scope.incrementCurrentStep(true);
+                    $scope.incrementCurrentStep(true, details.nextTaskFlow);
                     proceed = true;
                 } else {
                     proceed = false;
@@ -105,11 +109,13 @@ define('controller', ['app', 'scroll'], function(app){
                 digestButtonPanel();
             }
         });
-        $scope.incrementCurrentStep = function(skip){
+        $scope.incrementCurrentStep = function(skip, nextTaskFlow){
             $scope.currentStep ++;
-            if (skip || $scope.jobTaskDescriptions[$scope.jobDetails[$scope.currentTask].task].length <= $scope.currentStep){
+            if (skip || nextTaskFlow === 'skipTask' || nextTaskFlow === 'repeatTask' || $scope.jobTaskDescriptions[$scope.jobDetails[$scope.currentTask].task].length <= $scope.currentStep){
                 $scope.currentStep = 0;
-                $scope.currentTask ++;
+                if (nextTaskFlow !== 'repeatTask') {
+                    $scope.currentTask ++;
+                }
                 if ($scope.currentTask >= $scope.jobDetails.length){
                     $scope.finishReached = true;
                     digestFinishReached();
@@ -153,17 +159,18 @@ define('controller', ['app', 'scroll'], function(app){
             var stepIndex = parseInt(s[2]);
             $scope.currentTask = taskIndex;
             $scope.currentStep = stepIndex;
-            $scope.invokeWorker(taskIndex, stepIndex);
+            var debug = ((new Date()).getTime() - mouseDownTime) > 1000;
+            $scope.invokeWorker(taskIndex, stepIndex, debug);
             $event.stopPropagation();
             cfMessage.send('focusMainFrameWindow');
             return false;
         };
-        $scope.invokeWorker = function(taskIndex, stepIndex){
+        $scope.invokeWorker = function(taskIndex, stepIndex, debug){
             $scope.jobTaskProgress[taskIndex].stepsInProgress[stepIndex] = true;
             var details = $scope.jobDetails[taskIndex];
             var taskName = details.task;
             $scope.workerInProgress = true;
-            cfMessage.send('invokeWorker', {index: taskIndex, task: taskName, step: stepIndex, details: details});
+            cfMessage.send('invokeWorker', {index: taskIndex, task: taskName, step: stepIndex, details: details, debug: debug});
             digestButtonPanel();
             digestTask($scope.currentTask);
         };
@@ -203,8 +210,7 @@ define('controller', ['app', 'scroll'], function(app){
         };
         $scope.doNextStep = function(){
             if ($scope.currentTask < $scope.jobDetails.length){
-                var taskDiv = jQuery('#jobDetails > div:nth-child(' + ($scope.currentTask + 1) + ')');
-                cfScroll(taskDiv[0]);
+                scrollCurrentTaskIntoView();
                 $scope.invokeWorker($scope.currentTask, $scope.currentStep);
             } else {
                 $scope.running = false;
@@ -216,6 +222,7 @@ define('controller', ['app', 'scroll'], function(app){
             $scope.workerInProgress = false;
             $scope.running = false;
             digestButtonPanel();
+            setTimeout(function() {scrollCurrentTaskIntoView();}, 100);
         };
         $scope.clickOnNextStepNoWatch = function($event){
             $scope.doNextStep(); 
@@ -270,6 +277,9 @@ define('controller', ['app', 'scroll'], function(app){
                     $scope.indexTitles[task].push(r);
                 }
             });
+        };
+        $scope.stepMouseDown = function() {
+            mouseDownTime = (new Date()).getTime();
         };
     }]);
 });
