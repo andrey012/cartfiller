@@ -153,7 +153,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1456218517487';
+    config.gruntBuildTimeStamp='1456381533594';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -162,8 +162,9 @@
         var i;
         for (i = 0 ; i < scripts.length; i ++) {
             var me = scripts[i];
+            // let's identify our script by set of attributes for <script> element
             if (me.getAttribute('data-type') !== null &&
-               me.getAttribute('data-base-url') !== null && 
+               me.getAttribute('data-base-url') !== null &&
                me.getAttribute('data-choose-job') !== null) {
                 var attrs = me.attributes;
                 for (var j = attrs.length - 1 ; j >= 0; j --){
@@ -529,7 +530,7 @@
                     }
                 }
             }
-            if (! breaked) {
+            if (! breaked && otherwise instanceof Function) {
                 otherwise();
             }
         },
@@ -722,6 +723,7 @@
      * @access private
      */
     var getLibUrl = function() {
+        //// TBD sort out paths
         return me.baseUrl.replace(/(src|dist)\/?$/, 'lib/');
     };
     /**
@@ -907,6 +909,17 @@
             }
         },
         /**
+         * Updates task property value when it was edited from worker frame
+         * @function CartFiller.Dispatcher#onMessage_updateProperty
+         * @param {Object} message {index: job task index, name: property name, value: property value}
+         * @access public
+         */
+        onMessage_updateProperty: function(message) {
+            if (parseInt(message.index) === parseInt(workerCurrentTaskIndex)) {
+                workerCurrentTask[message.name] = message.value;
+            }
+        },
+        /**
          * Makes next worker step
          * @function CartFiller.Dispatcher#onMessage_invokeWorker
          * @param {Object} message {index: job task index, step: step index,
@@ -1060,6 +1073,7 @@
          * @function CartFiller.Dispatcher#postMessageToChooseJob
          * @param {String} cmd command
          * @param {Object} details
+         * @param {String} messageName Optional, by default == cmd
          * @access public
          */
         postMessageToChooseJob: function(cmd, details, messageName){
@@ -1072,7 +1086,6 @@
          */
         bootstrapCartFiller: function(){
             bootstrapped = true;
-            //// TBD sort out paths
             this.postMessageToWorker('bootstrap', {lib: getLibUrl(), debug: me['data-debug']});
         },
         /**
@@ -1335,6 +1348,12 @@
      * @access private
      */
     var messageToSay = '';
+    /**
+     * Keeps current message that is already on the screen to trigger refresh
+     * @member {String} CartFiller.UI~currentMessageOnScreen
+     * @access private
+     */
+    var currentMessageOnScreen = '';
     /**
      * Keeps current remaining attempts to adjust message div to fit whole message 
      * on current viewport
@@ -1669,6 +1688,7 @@
             overlayWindow().document.getElementsByTagName('body')[0].appendChild(messageDiv);
             messageAdjustmentRemainingAttempts = 100;
             me.modules.ui.adjustMessageDiv(messageDiv);
+            currentMessageOnScreen = messageToSay;
         }
     };
     /**
@@ -1680,7 +1700,8 @@
         try {
             var rebuildArrows = findChanges(arrowToElements);
             var rebuildHighlights = findChanges(highlightedElements);
-            if (rebuildArrows || rebuildHighlights){
+            var rebuildMessage = currentMessageOnScreen !== messageToSay;
+            if (rebuildArrows || rebuildHighlights || rebuildMessage){
                 removeOverlay();
                 drawArrows();
                 drawHighlights();

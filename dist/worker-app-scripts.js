@@ -185,6 +185,13 @@ define('controller', ['app', 'scroll'], function(app){
             $event.target.select();
             $event.stopPropagation();
         };
+        $scope.doubleClickTaskInput = function(index, name, value) {
+            var val = prompt('Enter new value for [' + name + ']', value);
+            if (null !== val) {
+                $scope.jobDetails[index][name] = val;
+                cfMessage.send('updateProperty', {index: index, name: name, value: val});
+            }
+        };
         $scope.clickOnStepNoWatch = function(element, $event){
             var s = element.getAttribute('id').split('_');
             var taskIndex = parseInt(s[1]);

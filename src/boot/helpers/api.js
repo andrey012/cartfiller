@@ -333,7 +333,7 @@
                     }
                 }
             }
-            if (! breaked) {
+            if (! breaked && otherwise instanceof Function) {
                 otherwise();
             }
         },

@@ -83,6 +83,12 @@
      */
     var messageToSay = '';
     /**
+     * Keeps current message that is already on the screen to trigger refresh
+     * @member {String} CartFiller.UI~currentMessageOnScreen
+     * @access private
+     */
+    var currentMessageOnScreen = '';
+    /**
      * Keeps current remaining attempts to adjust message div to fit whole message 
      * on current viewport
      * @member {String} CartFiller.UI~messageAdjustmentRemainingAttempts
@@ -416,6 +422,7 @@
             overlayWindow().document.getElementsByTagName('body')[0].appendChild(messageDiv);
             messageAdjustmentRemainingAttempts = 100;
             me.modules.ui.adjustMessageDiv(messageDiv);
+            currentMessageOnScreen = messageToSay;
         }
     };
     /**
@@ -427,7 +434,8 @@
         try {
             var rebuildArrows = findChanges(arrowToElements);
             var rebuildHighlights = findChanges(highlightedElements);
-            if (rebuildArrows || rebuildHighlights){
+            var rebuildMessage = currentMessageOnScreen !== messageToSay;
+            if (rebuildArrows || rebuildHighlights || rebuildMessage){
                 removeOverlay();
                 drawArrows();
                 drawHighlights();

@@ -344,6 +344,17 @@
             }
         },
         /**
+         * Updates task property value when it was edited from worker frame
+         * @function CartFiller.Dispatcher#onMessage_updateProperty
+         * @param {Object} message {index: job task index, name: property name, value: property value}
+         * @access public
+         */
+        onMessage_updateProperty: function(message) {
+            if (parseInt(message.index) === parseInt(workerCurrentTaskIndex)) {
+                workerCurrentTask[message.name] = message.value;
+            }
+        },
+        /**
          * Makes next worker step
          * @function CartFiller.Dispatcher#onMessage_invokeWorker
          * @param {Object} message {index: job task index, step: step index,

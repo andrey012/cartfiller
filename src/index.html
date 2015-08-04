@@ -82,7 +82,7 @@
         <div ng-if="chooseJobState" id="cartFillerOverlay" style="z-index: 100; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); position: absolute; top: 0px; left: 0px;">
 
         </div>
-        <a class="btn btn-info btn-xs" style="width: 100%; margin-top: 75px; margin-bottom: 5px;" onclick="alert('Long click on step = debug, long click on Run (fast and slow) = Run until');">help</a>
+        <a class="btn btn-info btn-xs" style="width: 100%; margin-top: 75px; margin-bottom: 5px;" onclick="alert('Long click on step = debug, long click on Run (fast and slow) = Run until particular step, double click on property value = change property value');">help</a>
         <div id="jobDetails">
             <div id="{{'taskDiv_' + jobTaskIndex}}"
                  class="alert"
@@ -91,9 +91,9 @@
                  ng-click="toggleTaskProgress(jobTaskIndex)"
             >
                 <span><strong>{{jobTaskIndex + 1}}. {{jobTitleMap[jobTask.task] ? jobTitleMap[jobTask.task] : jobTask.task}}</strong></span>
-                <div ng-repeat="(propertyName, propertyValue) in jobTask" ng-if="propertyName != 'task' && propertyValue.toString().length">
+                <div ng-repeat="(propertyName, propertyValue) in jobTask" ng-if="propertyName != 'task'">
                     <span>{{jobTitleMap[propertyName] ? jobTitleMap[propertyName] : propertyName}}</span>
-                    <input type="text" readonly="readonly" value="{{propertyValue}}" ng-click="selectTaskInput(jobTaskIndex, $event);" title="{{propertyName}}"/>
+                    <input type="text" readonly="readonly" value="{{propertyValue}}" ng-click="selectTaskInput(jobTaskIndex, $event);" ng-dblclick="doubleClickTaskInput(jobTaskIndex, propertyName, propertyValue)" title="{{propertyName}}"/>
                 </div>
                 <div>
                     <span
