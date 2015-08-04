@@ -146,15 +146,24 @@
     // parameters from data-* attributes of <script> tag
     if (!evaled){
         var scripts = document.getElementsByTagName('head')[0].getElementsByTagName('script');
-        var me = scripts[scripts.length - 1];
-        var attrs = me.attributes;
-        for (var j = attrs.length - 1 ; j >= 0; j --){
-            if (/^data-/.test(attrs[j].name)){
-                if (attrs[j].name === 'data-base-url'){
-                    config.baseUrl = attrs[j].value;
-                } else {
-                    config[attrs[j].name] = attrs[j].value;
+        var i;
+        for (i = 0 ; i < scripts.length; i ++) {
+            var me = scripts[i];
+            // let's identify our script by set of attributes for <script> element
+            if (me.getAttribute('data-type') !== null &&
+               me.getAttribute('data-base-url') !== null &&
+               me.getAttribute('data-choose-job') !== null) {
+                var attrs = me.attributes;
+                for (var j = attrs.length - 1 ; j >= 0; j --){
+                    if (/^data-/.test(attrs[j].name)){
+                        if (attrs[j].name === 'data-base-url'){
+                            config.baseUrl = attrs[j].value;
+                        } else {
+                            config[attrs[j].name] = attrs[j].value;
+                        }
+                    }
                 }
+                break;
             }
         }
     } else {

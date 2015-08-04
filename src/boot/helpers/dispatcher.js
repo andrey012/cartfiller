@@ -153,6 +153,15 @@
         }
     };
     /**
+     * Returns URL for lib folder
+     * @function CartFiller.Dispatcher~getLibUrl
+     * @access private
+     */
+    var getLibUrl = function() {
+        //// TBD sort out paths
+        return me.baseUrl.replace(/(src|dist)\/?$/, 'lib/');
+    };
+    /**
      * Keeps directions on next task flow
      * @var {string} CartFiller.Dispatcher~nextTaskFlow
      * @access private
@@ -183,7 +192,7 @@
                     var message = JSON.parse(match[1]);
                     var fn = 'onMessage_' + message.cmd;
                     if (undefined !== dispatcher[fn] && dispatcher[fn] instanceof Function){
-                        dispatcher[fn](message);
+                        dispatcher[fn](message, event.source);
                     } else {
                         console.log('unknown message: ' + fn + ':' + event.data);
                     }
@@ -194,12 +203,22 @@
          * Handles event "worker (job progress) frame loaded". If 
          * main frame is loaded too, then bootstraps worker (job progress) frame
          * @function CartFiller.Dispatcher#onMessage_register
+         * @param {Object} message
+         * @param Window source
          * @access public
          */
-        onMessage_register: function(){
-            workerFrameLoaded = true;
-            if (mainFrameLoaded && !bootstrapped){
-                this.bootstrapCartFiller();
+        onMessage_register: function(message, source){
+            if (source === me.modules.ui.workerFrameWindow) {
+                // skip other requests
+                workerFrameLoaded = true;
+                if (mainFrameLoaded && !bootstrapped){
+                    this.bootstrapCartFiller();
+                }
+            } else if (source === me.modules.ui.chooseJobFrameWindow) {
+                this.postMessageToChooseJob('bootstrap', {
+                    lib: getLibUrl(),
+                    testSuite: true
+                }, 'cartFillerMessage');
             }
         },
         /**
@@ -478,10 +497,11 @@
          * @function CartFiller.Dispatcher#postMessageToChooseJob
          * @param {String} cmd command
          * @param {Object} details
+         * @param {String} messageName Optional, by default == cmd
          * @access public
          */
-        postMessageToChooseJob: function(cmd, details){
-            postMessage(me.modules.ui.chooseJobFrameWindow, cmd, details, cmd);
+        postMessageToChooseJob: function(cmd, details, messageName){
+            postMessage(me.modules.ui.chooseJobFrameWindow, cmd, details, messageName ? messageName : cmd);
         },
         /**
          * Launches worker (job progress frame)
@@ -490,8 +510,7 @@
          */
         bootstrapCartFiller: function(){
             bootstrapped = true;
-            //// TBD sort out paths
-            this.postMessageToWorker('bootstrap', {lib: me.baseUrl.replace(/(src|dist)\/?$/, 'lib/'), debug: me['data-debug']});
+            this.postMessageToWorker('bootstrap', {lib: getLibUrl(), debug: me['data-debug']});
         },
         /**
          * Negotiates with worker, fetches its task-handing code

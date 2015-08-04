@@ -21,7 +21,13 @@ module.exports = function(grunt) {
             options: {
                 banner: "<%= meta.banner %>",
                 process: function(content, path){
-                    return content.replace(/config.gruntBuildTimeStamp=\'\'\;/, 'config.gruntBuildTimeStamp=\'' + (new Date()).getTime() + '\';');
+                    return content
+                        .replace(
+                            /config.gruntBuildTimeStamp=\'\'\;/,
+                            'config.gruntBuildTimeStamp=\'' + (new Date()).getTime() + '\';')
+                        .replace(
+                            /var isDist = false\;/,
+                            'var isDist = true;');
                 }
             },
             inject: {
@@ -38,7 +44,12 @@ module.exports = function(grunt) {
                 dest: "dist/jquery-cartFiller.js"
             },
             workerAngularApp: {
-                src: ["src/scripts/*.js"],
+                src: [
+                    "src/scripts/*.js",
+                    "src/jquery-cartFiller-require-prepend.js",
+                    "src/jquery-cartFiller.js",
+                    "src/jquery-cartFiller-require-append.js"
+                ],
                 dest: "dist/worker-app-scripts.js"
             }
 		},

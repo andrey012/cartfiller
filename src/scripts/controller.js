@@ -2,6 +2,9 @@ define('controller', ['app', 'scroll'], function(app){
     'use strict';
     app
     .controller('indexController', ['$scope', 'cfMessage', '$timeout', 'cfDebug', 'cfScroll', function ($scope, cfMessage, $timeout, cfDebug, cfScroll){
+        if (cfMessage.testSuite) {
+            return;
+        }
         var digestButtonPanel = function(){
             angular.element(document.getElementById('buttonPanel')).scope().$digest();
         };
