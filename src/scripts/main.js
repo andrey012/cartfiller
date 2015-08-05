@@ -65,9 +65,9 @@
                         var settings = {
                             type: 'framed',
                             minified: false,
-                            chooseJob: window.location.href,
+                            chooseJob: window.location.href.split('?')[0],
                             debug: true,
-                            baseUrl: window.location.href.replace(/\/[^\/]*$/, ''),
+                            baseUrl: window.location.href.split('?')[0].replace(/\/[^\/]*$/, ''),
                             inject: 'script',
                             traceStartup: false,
                             logLength: false,
@@ -101,10 +101,10 @@
             'cartFillerMessage:' + 
             JSON.stringify({
                 cmd: 'bootstrap', 
-                lib: window.location.href.replace(/\/[^\/]+\/[^\/]*$/, '/lib/'),
+                lib: window.location.href.split('?')[0].replace(/\/[^\/]+\/[^\/]*$/, '/lib/'),
                 debug: true,
                 tests: true,
-                src: window.location.href.replace(/[^\/]+$/, '')
+                src: window.location.href.split('?')[0].replace(/[^\/]+$/, '')
             }),
             '*'
         );

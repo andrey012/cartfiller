@@ -306,7 +306,8 @@
          * Just another for-each implementation, jQuery style
          * @function CartFiller.Api#each
          * @param {Array} array Array to iterate through
-         * @param {CartFiller.Api.eachCallback} Called for each item
+         * @param {CartFiller.Api.eachCallback} fn Called for each item, if result === false
+         *          then iteration will be interrupted
          * @param {CartFillerApi.eachOtherwiseCallback} otherwise Called if iteration was
          * not interrupted
          * @return {CartFiller.Api} for chaining
