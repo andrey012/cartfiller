@@ -40,7 +40,8 @@
                             /choose-job.html(\?.*)?(\#.*)?$/, 
                             'worker.js'
                         ),
-                        autorun: autorun
+                        autorun: autorun,
+                        timeout: 4000
                     },
                     function(data){
                         document.getElementById('result').innerText = 'Job result: ' + JSON.stringify(data);

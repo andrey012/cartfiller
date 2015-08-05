@@ -47,5 +47,11 @@
   },
   "scripts": {
     "test": "grunt travis --verbose"
+  },
+  "dependencies": {
+    "crypto": "0.0.3",
+    "express": "^4.13.4",
+    "open": "0.0.5",
+    "yargs": "^4.2.0"
   }
 }

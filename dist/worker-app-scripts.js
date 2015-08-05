@@ -904,6 +904,13 @@ define('jquery-cartFiller', ['jquery'], function() {
      * object with mandatory task property which specifies the task alias, and any 
      * set of other properties which will be transferred to worker. 
      */
+    /** 
+     * @member {integer} CartFillerPlugin~jobDetails#timeout Time (ms) to wait 
+     * for result of each step. If api.result() or api.nop() is not called 
+     * within specified timeout - then api.result() will be called by 
+     * cartfiller itself, with error message saying that timeout occured. 
+     * 0 or undefined means no timeout will be ever triggered
+     */
     /**
      *  @member {Object} CartFillerPlugin~jobDetails#titleMap Map of human readable titles 
      * of tasks. Property name = task alias, value = title. 

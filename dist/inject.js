@@ -153,7 +153,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1456381533594';
+    config.gruntBuildTimeStamp='1456508573332';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -439,13 +439,13 @@
                 } else {
                     counter --;
                     if (counter > 0){
-                        setTimeout(fn, period);
+                        me.modules.api.setTimeout(fn, period);
                     } else {
                         resultCallback(false);
                     }
                 }
             };
-            setTimeout(fn, period);
+            me.modules.api.setTimeout(fn, period);
             return this;
         },
         /**
@@ -559,6 +559,32 @@
                 }
             }
             return r;
+        },
+        /**
+         * Safe setTimeout, that registers handler in cartFiller, so, if 
+         * timeout will happen earlier then this handler will be invoked
+         * this handler will be cleared automatically
+         * @function CartFiller.Api#setTimeout
+         * @param {Function} fn same as normal JavaScript setTimeout
+         * @param {integer} timeout  same as normal JavaScript setTimeout
+         * @return {integer} same as normal JavaScript setTimeout
+         * @access public
+         */
+        setTimeout: function(fn, timeout) {
+            me.modules.dispatcher.registerWorkerSetTimeout(setTimeout(fn, timeout));
+        },
+        /**
+         * Safe setInterval, that registers handler in cartFiller, so, if 
+         * timeout will happen earlier then this handler will be invoked
+         * this handler will be cleared automatically
+         * @function CartFiller.Api#setTimeout
+         * @param {Function} fn same as normal JavaScript setInterval
+         * @param {integer} timeout  same as normal JavaScript setInterval
+         * @return {integer} same as normal JavaScript setInterval
+         * @access public
+         */
+        setInterval: function(fn, timeout) {
+            me.modules.dispatcher.registerWorkerSetInterval(setInterval(fn, timeout));
         }
 
     });
@@ -608,6 +634,33 @@
      * @access private
      */
     var workerOnLoadHandler = false;
+    /**
+     * @var {integer} CartFiller.Dispatcher~workerTimeout Specifies time to wait 
+     * for worker step to call api.result() or api.nop(). 
+     * @access private
+     */
+    var workerTimeout = 0;
+    /**
+     * @var {Array} CartFiller.Dispatcher~workerSetTimeoutIds Keeps list of ids
+     * of setTimeout, which were initiated from within the worker step function. 
+     * In case Watchdog kills the step - these timers will be cleared 
+     * @access private
+     */
+    var workerSetTimeoutIds = [];
+    /**
+     * @var {Array} CartFiller.Dispatcher~workerSetIntervalIds Keeps list of ids
+     * of setInterval, which were initiated from within the worker step function. 
+     * In case Watchdog kills the step - these timers will be cleared 
+     * @access private
+     */
+    var workerSetIntervalIds = [];
+    /**
+     * @var {integer} CartFiller.Dispatcher~workerWatchdogId setTimeoutId of 
+     * watchdog handler. When step function calls api.result() we should cancel
+     * this watchdog. 
+     * @access private
+     */
+    var workerWatchdogId = false;
     /**
      * Keeps message result name, used to deliver job results to
      * Choose Job page opened in separate frame, if that is necessary at all
@@ -732,6 +785,41 @@
      * @access private
      */
     var nextTaskFlow;
+    /**
+     * Register watchdog handler
+     * @function CartFiller.Dispatcher~registerWorkerWatchdog
+     * @access private
+     */
+    var registerWorkerWatchdog = function() {
+        if (workerWatchdogId) {
+            removeWatchdogHandler();
+        }
+        if (workerTimeout) {
+            workerWatchdogId = setTimeout(function(){
+                var i;
+                for (i = 0 ; i < workerSetTimeoutIds; i ++) {
+                    clearTimeout(workerSetTimeoutIds[i]);
+                }
+                for (i = 0 ; i < workerSetIntervalIds; i ++) {
+                    clearInterval(workerSetIntervalIds[i]);
+                }
+                workerWatchdogId = false;
+                workerOnLoadHandler = false;
+                me.modules.api.result('Timeout happened, worker step cancelled');
+            }, workerTimeout);
+        }
+    };
+    /**
+     * Removes watchdog handler if api.result is called earlier then timeout
+     * @function CartFiller.Dispatcher~removeWatchdogHandler
+     * @access private
+     */
+    var removeWatchdogHandler = function(){
+        if (workerWatchdogId) {
+            clearTimeout(workerWatchdogId);
+            workerWatchdogId = false;
+        }
+    };
 
     this.cartFillerConfiguration.scripts.push({
         /** 
@@ -846,6 +934,7 @@
             }
             me.modules.ui.showHideChooseJobFrame(false);
             message.overrideWorkerSrc = me['data-worker'];
+            workerTimeout = message.timeout;
             resetWorker();
             var i;
             for (i in jobDetailsCache) {
@@ -990,10 +1079,19 @@
                             debugger;
                             /* jshint ignore:end */
                         }
+                        // register watchdog
+                        registerWorkerWatchdog();
                         workerFn(highlightedElement, env);
                     }
                 } catch (err){
                     console.log(err);
+                    if (workerWatchdogId) { // api.result was not called
+                        var msg = String(err);
+                        if (! msg) {
+                            msg = 'unknown exception';
+                        }
+                        me.modules.api.result(msg, false);
+                    }
                     throw err;
                 }
             }
@@ -1147,6 +1245,7 @@
          * @access public
          */
         submitWorkerResult: function(message, recoverable, response){
+            removeWatchdogHandler();
             var status;
             if ((undefined === message) || ('' === message)) {
                 status = 'ok';
@@ -1195,8 +1294,25 @@
          */
         setHighlightedElement: function(element){
             highlightedElement = element;
+        },
+        /**
+         * Registers setTimeout id to be called if step will experience timeout
+         * @function CartFiller.Dispatcher#registerWorkerSetTimeout
+         * @param {integer} id setTimeout result
+         * @access public
+         */
+        registerWorkerSetTimeout: function(id){
+            workerSetTimeoutIds.push(id);
+        },
+        /**
+         * Registers setTimeout id to be called if step will experience timeout
+         * @function CartFiller.Dispatcher#registerWorkerSetTimeout
+         * @param {integer} id setTimeout result
+         * @access public
+         */
+        registerWorkerSetInterval: function(id){
+            workerSetIntervalIds.push(id);
         }
-
     });
 }).call(this, document, window);
 /**

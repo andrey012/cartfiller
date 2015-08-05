@@ -242,13 +242,13 @@
                 } else {
                     counter --;
                     if (counter > 0){
-                        setTimeout(fn, period);
+                        me.modules.api.setTimeout(fn, period);
                     } else {
                         resultCallback(false);
                     }
                 }
             };
-            setTimeout(fn, period);
+            me.modules.api.setTimeout(fn, period);
             return this;
         },
         /**
@@ -362,6 +362,32 @@
                 }
             }
             return r;
+        },
+        /**
+         * Safe setTimeout, that registers handler in cartFiller, so, if 
+         * timeout will happen earlier then this handler will be invoked
+         * this handler will be cleared automatically
+         * @function CartFiller.Api#setTimeout
+         * @param {Function} fn same as normal JavaScript setTimeout
+         * @param {integer} timeout  same as normal JavaScript setTimeout
+         * @return {integer} same as normal JavaScript setTimeout
+         * @access public
+         */
+        setTimeout: function(fn, timeout) {
+            me.modules.dispatcher.registerWorkerSetTimeout(setTimeout(fn, timeout));
+        },
+        /**
+         * Safe setInterval, that registers handler in cartFiller, so, if 
+         * timeout will happen earlier then this handler will be invoked
+         * this handler will be cleared automatically
+         * @function CartFiller.Api#setTimeout
+         * @param {Function} fn same as normal JavaScript setInterval
+         * @param {integer} timeout  same as normal JavaScript setInterval
+         * @return {integer} same as normal JavaScript setInterval
+         * @access public
+         */
+        setInterval: function(fn, timeout) {
+            me.modules.dispatcher.registerWorkerSetInterval(setInterval(fn, timeout));
         }
 
     });
