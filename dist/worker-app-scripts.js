@@ -690,6 +690,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             var test = $scope.discovery.scripts.contents[index];
             test.workerSrc = $scope.discovery.workerSrc;
             test.autorun = 1;
+            test.rootCartfillerPath = $scope.discovery.currentRootPath;
             $.cartFillerPlugin(
                 test,
                 function(data) {
