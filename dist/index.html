@@ -12,7 +12,48 @@
 </head>
 <body>
     <div id="testSuiteManager" style="display: none;" ng-controller="testSuiteController">
+        <div class="col-xs-9">
+            <div class="alert alert-danger" ng-if="discovery.state == -1">
+                Error discovering cartfiller.json:<br/>
+                <span ng-if="discovery.errorURL"><a href="{{discovery.errorURL}}">{{discovery.errorURL}}</a><br/></span>
+                {{discovery.error}}
+            </div>
+            <div class="alert alert-info" ng-if="discovery.state == 0">
+                Looking for cartfiller.json at <a href="{{discovery.currentRootPath}}">{{discovery.currentRootPath</a>
+            </div>
+            <div class="alert alert-info" ng-if="discovery.state == 1">
+                Downloading test scripts
+            </div>
+        </div>
+        <div class="col-xs-3">
+            <button class="btn btn-info" ng-click="discovery.state = 0; discover()">
+                Reload
+            </button>
+            <button class="btn btn-success" ng-click="runAll()" ng-if="discovery.state == 2 && ! runningAll">
+                Run all
+            </button>
+            <button class="btn btn-danger" ng-click="stopRunningAll()" ng-if="discovery.state == 2 && runningAll">
+                Stop
+            </button>
+        </div>
+        <div class="col-xs-12">
+            <table class="table table-bordered">
+                <tbody>
+                    <tr ng-repeat="(index, testPath) in discovery.scripts.flat" ng-class="['danger', '', 'success'][1 + (discovery.scripts.success[index] || 0)] ">
+                        <td>
+                            {{testPath.join('/')}}
+                        </td>
+                        <td>
+                            <button class="btn btn-xs btn-success" ng-click="runTest(index)">
+                                Run
+                            </button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
         Hello
+
+        </div>
     </div>
     <div id="workerContainer" style="display: none;" ng-controller="indexController">
         <div id="buttonPanel"
@@ -24,14 +65,14 @@
                ng-if="running"
                class="btn btn-xs btn-danger"
                onclick="var event = arguments[0] || window.event; return angular.element(this).scope().stopNoWatch(event);"
-               ng-disabled="!workerSrc"
+               ng-disabled="workersLoaded != workersCounter"
                >Stop</a>
             <a href="#"
                id="runButton"
                ng-if="!running"
                class="btn btn-xs btn-success"
                title="Run"
-               ng-disabled="workerInProgress || !workerSrc"
+               ng-disabled="workerInProgress || (workersLoaded != workersCounter)"
                onclick="var event = arguments[0] || window.event; return angular.element(this).scope().runNoWatch(false, event);"
                disabled="disabled"
                onmousedown="angular.element(this).scope().mouseDown();"
@@ -40,14 +81,14 @@
                ng-if="!running"
                class="btn btn-xs btn-info"
                title="Slow"
-               ng-disabled="workerInProgress || !workerSrc"
+               ng-disabled="workerInProgress || (workersLoaded != workersCounter)"
                onclick="var event = arguments[0] || window.event; return angular.element(this).scope().runNoWatch(true, event);"
                onmousedown="angular.element(this).scope().mouseDown();"
                >&gt;..&gt;</a>
             <a href="#"
                class="btn btn-xs btn-info"
                title="Step"
-               ng-disabled="workerInProgress || !workerSrc"
+               ng-disabled="workerInProgress || (workersLoaded != workersCounter)"
                onclick="var event = arguments[0] || window.event; return angular.element(this).scope().clickOnNextStepNoWatch(event);"
                >&gt;</a>
             <a href="#" 

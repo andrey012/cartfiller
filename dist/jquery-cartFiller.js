@@ -483,6 +483,34 @@
         resultCallback = newResultCallback;
         statusCallback = newStatusCallback;
     };
+    /**
+     * Global plugin function - shows chooseJob frame from within
+     * chooseJob frame
+     * @function external:"jQuery".cartFillerPlugin.showChooseJobFrame
+     * @global
+     * @name "jQuery.cartFillerPlugin.showChooseJobFrame"
+     * @access public
+     */
+    $.cartFillerPlugin.showChooseJobFrame = function() {
+        window.parent.postMessage(
+            'cartFillerMessage:' + JSON.stringify({cmd: 'chooseJob'}),
+            '*'
+        );
+    };
+    /**
+     * Global plugin function - hides chooseJob frame from within
+     * chooseJob frame
+     * @function external:"jQuery".cartFillerPlugin.hideChooseJobFrame
+     * @global
+     * @name "jQuery.cartFillerPlugin.hideChooseJobFrame"
+     * @access public
+     */
+    $.cartFillerPlugin.hideChooseJobFrame = function() {
+        window.parent.postMessage(
+            'cartFillerMessage:' + JSON.stringify({cmd: 'chooseJobCancel'}),
+            '*'
+        );
+    };
 
     window.addEventListener('message', messageEventListener,false);
     if (window.parent !== window){

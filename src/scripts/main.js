@@ -18,7 +18,7 @@
                     'bootstraptw': ['jquery']
                 };
                 var deps = ['bootstrap'];
-                if (message.tests) {
+                if (message.tests || message.testSuite) {
                     paths['jquery-cartFiller'] = message.src + 'jquery-cartFiller';
                     shim['jquery-cartFiller'] = ['jquery'];
                     deps.push('jquery-cartFiller');
@@ -65,7 +65,7 @@
                         var settings = {
                             type: 'framed',
                             minified: false,
-                            chooseJob: window.location.href.split('?')[0],
+                            chooseJob: window.location.href,
                             debug: true,
                             baseUrl: window.location.href.split('?')[0].replace(/\/[^\/]*$/, ''),
                             inject: 'script',

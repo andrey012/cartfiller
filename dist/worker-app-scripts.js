@@ -50,6 +50,8 @@ define('controller', ['app', 'scroll'], function(app){
         $scope.currentStep = 0;
         $timeout(function(){$scope.chooseJob();}, 0);
         $scope.debugEnabled = parseInt(cfDebug.debugEnabled);
+        $scope.workersCounter = 1;
+        $scope.workersLoaded = 0;
         $scope.workerSrc = false;
         $scope.finishReached = false;
         $scope.awaitingForFinish = false;
@@ -66,6 +68,14 @@ define('controller', ['app', 'scroll'], function(app){
         };
         var scrollCurrentTaskIntoView = function(useTop) {
             cfScroll(jQuery('#jobDetails > div:nth-child(' + ($scope.currentTask + 1) + ')')[0], useTop);
+        };
+        var autorun = function() {
+            if ($scope.workersLoaded === $scope.workersCounter) {
+                $scope.runNoWatch(false, null, true);
+            } else {
+                // wait some more time
+                setTimeout(autorun, 1000);
+            }
         };
         cfMessage.register(function(cmd, details){
             if (cmd === 'jobDetails'){
@@ -85,32 +95,42 @@ define('controller', ['app', 'scroll'], function(app){
                     });
                     var workerSrc = '';
                     if (('string' === typeof details.workerSrc) && (details.workerSrc.length > 0)) {
+                        $scope.workersCounter = 1;
+                        workerSrc = details.workerSrc;
+                    } else if (('object' === typeof details.workerSrc) && (details.workerSrc.length)) {
+                        $scope.workersCounter = details.workerSrc.length;
                         workerSrc = details.workerSrc;
                     }
                     if (('string' === typeof details.overrideWorkerSrc) && (details.overrideWorkerSrc.length > 0)){
+                        $scope.workersCounter = 1;
                         workerSrc = details.overrideWorkerSrc;
                     }
-                    $scope.workerSrc = '';
+                    if (('object' === typeof details.overrideWorkerSrc) && (details.overrideWorkerSrc.length)){
+                        $scope.workersCounter = details.workerSrc.length;
+                        workerSrc = details.overrideWorkerSrc;
+                    }
+                    $scope.workersLoaded = 0;
+                    $scope.workerSrc = workerSrc;
                     if (workerSrc){
                         $scope.loadWorker(workerSrc);
                     } else {
                         alert('Worker script not specified in job description');
                     }
                     if (details.autorun) {
-                        setTimeout(function() { $scope.runNoWatch(false, null, true); }, details.autorun);
+                        setTimeout(autorun, details.autorun);
                     }
+                    $scope.finishReached = false;
                 });
             } else if (cmd === 'workerRegistered'){
                 $scope.$apply(function(){
+                    $scope.workersLoaded ++;
                     $scope.jobTaskDescriptions = details.jobTaskDescriptions;
-                    $scope.workerSrc = details.src;
                     $scope.updateIndexTitles();
                 });
             } else if (cmd === 'workerStepResult'){
                 $scope.jobTaskProgress[details.index].stepsInProgress[details.step] = false;
                 $scope.jobTaskProgress[details.index].stepResults[details.step] = {status: details.status, message: details.message, response: details.response};
                 $scope.jobTaskProgress[details.index].complete = details.nextTaskFlow === 'skipTask' || $scope.updateTaskCompleteMark(details.index);
-                cfMessage.send('sendStatus', {result: $scope.jobTaskProgress, tasks: $scope.jobDetails, currentTaskIndex: details.index, currentTaskStepIndex: details.step});
                 var proceed;
                 if ('ok' === details.status){
                     $scope.incrementCurrentStep(false, details.nextTaskFlow);
@@ -134,10 +154,26 @@ define('controller', ['app', 'scroll'], function(app){
                         $scope.running = false;
                     }
                 }
+                cfMessage.send(
+                    'sendStatus', 
+                    {
+                        result: $scope.jobTaskProgress, 
+                        tasks: $scope.jobDetails,
+                        currentTaskIndex: details.index, 
+                        currentTaskStepIndex: details.step,
+                        running: $scope.running,
+                        completed: ! proceed
+                    });
                 $scope.workerInProgress = false;
                 if (!proceed){
                     digestTask($scope.currentTask);
                 }
+                digestButtonPanel();
+            } else if (cmd === 'chooseJobShown') {
+                $scope.chooseJobState = true;
+                digestButtonPanel();
+            } else if (cmd === 'chooseJobHidden') {
+                $scope.chooseJobState = false;
                 digestButtonPanel();
             }
         });
@@ -150,6 +186,16 @@ define('controller', ['app', 'scroll'], function(app){
                 }
                 if ($scope.currentTask >= $scope.jobDetails.length){
                     $scope.finishReached = true;
+                    cfMessage.send(
+                        'sendStatus', 
+                        {
+                            result: $scope.jobTaskProgress, 
+                            tasks: $scope.jobDetails,
+                            currentTaskIndex: false, 
+                            currentTaskStepIndex: false,
+                            running: $scope.running,
+                            completed: true
+                        });
                     digestFinishReached();
                     setTimeout(function(){
                         cfScroll(jQuery('#finishReached')[0]);
@@ -299,23 +345,30 @@ define('controller', ['app', 'scroll'], function(app){
             if (undefined === url) {
                 url = $scope.workerSrc;
             }
-            if (/\?/.test(url)){
-                url += '&';
+            var urls;
+            if ('string' === typeof url) {
+                urls = [url];
             } else {
-                url += '?';
+                urls = url;
             }
-            url += (new Date()).getTime();
-            var xhr = new XMLHttpRequest();
-            xhr.onload = function(){
-                cfMessage.send('loadWorker', {code: xhr.response, src: url});
+            angular.forEach(urls, function(url) {
+                if (/\?/.test(url)){
+                    url += '&';
+                } else {
+                    url += '?';
+                }
+                url += (new Date()).getTime();
+                var xhr = new XMLHttpRequest();
+                xhr.onload = function(){
+                    cfMessage.send('loadWorker', {code: xhr.response, src: url});
 
-            };
-            xhr.open('GET', url, true);
-            xhr.send();
-
-
+                };
+                xhr.open('GET', url, true);
+                xhr.send();
+            });
         };
         $scope.reloadWorker = function($event){
+            $scope.workersLoaded = 0;
             $scope.loadWorker();
             $event.stopPropagation();
         };
@@ -367,7 +420,7 @@ define('controller', ['app', 'scroll'], function(app){
                     'bootstraptw': ['jquery']
                 };
                 var deps = ['bootstrap'];
-                if (message.tests) {
+                if (message.tests || message.testSuite) {
                     paths['jquery-cartFiller'] = message.src + 'jquery-cartFiller';
                     shim['jquery-cartFiller'] = ['jquery'];
                     deps.push('jquery-cartFiller');
@@ -416,7 +469,7 @@ define('controller', ['app', 'scroll'], function(app){
                             minified: false,
                             chooseJob: window.location.href,
                             debug: true,
-                            baseUrl: window.location.href.replace(/\/[^\/]*$/, ''),
+                            baseUrl: window.location.href.split('?')[0].replace(/\/[^\/]*$/, ''),
                             inject: 'script',
                             traceStartup: false,
                             logLength: false,
@@ -450,10 +503,10 @@ define('controller', ['app', 'scroll'], function(app){
             'cartFillerMessage:' + 
             JSON.stringify({
                 cmd: 'bootstrap', 
-                lib: window.location.href.replace(/\/[^\/]+\/[^\/]*$/, '/lib/'),
+                lib: window.location.href.split('?')[0].replace(/\/[^\/]+\/[^\/]*$/, '/lib/'),
                 debug: true,
                 tests: true,
-                src: window.location.href.replace(/[^\/]+$/, '')
+                src: window.location.href.split('?')[0].replace(/[^\/]+$/, '')
             }),
             '*'
         );
@@ -474,12 +527,192 @@ define('scroll', ['app', 'scroll'], function(app){
 define('testSuiteController', ['app', 'scroll'], function(app){
     'use strict';
     app
-    .controller('testSuiteController', ['$scope', 'cfMessage', '$timeout', 'cfDebug', 'cfScroll', function ($scope, cfMessage, $timeout, cfDebug, cfScroll){
-        cfScroll;
+    .controller('testSuiteController', ['$scope', 'cfMessage', '$timeout', 'cfDebug', '$location', function ($scope, cfMessage, $timeout, cfDebug, $location){
+        $location;
         cfDebug;
-        cfMessage;
         $timeout;
-        $scope;
+
+        if (! cfMessage.testSuite) {
+            return;
+        }
+        $scope.params = {};
+        angular.forEach((window.location.href.split('?')[1] || '').split('#')[0].split('&'), function(v) {
+            var pc = v.split('=');
+            $scope.params[decodeURIComponent(pc[0])] = decodeURIComponent(pc[1]);
+        });
+        console.log($scope.params);
+        $scope.discovery = {
+            state: 0,
+            currentRootPath: $scope.params.root ? $scope.params.root : window.location.href.split('?')[0].replace(/\/[^\/]*/, '/'),
+            visitedRootPaths: [],
+            rootCartfillerJson: {},
+            scripts: {
+                flat: [],
+                currentDownloadingIndex: false,
+                contents: [],
+                enabled: [],
+                success: []
+            }
+        };
+        $scope.runningAll = false;
+        $scope.runAll = function () {
+            $scope.runningAll = true;
+            if ($scope.discovery.scripts.contents.length) {
+                $scope.runTest(0);
+            }
+        };
+        $scope.stopRunningAll = function() {
+            $scope.runningAll = false;
+        };
+        var flattenCartfillerJson = function(json, r) {
+            var i;
+            var pc;
+            var rr;
+            r = r || [];
+            for (i in json) {
+                rr = r.filter(function(){return 1;});
+                rr.push(i);
+                if ('object' === typeof json[i]) {
+                    pc = flattenCartfillerJson(json[i], rr);
+                } else {
+                    $scope.discovery.scripts.flat.push(rr);
+                    $scope.discovery.scripts.enabled.push(json[i]);
+                }
+            }
+        };
+        var discoverNextRootURL = function(){
+            $.ajax({
+                url: $scope.discovery.currentRootFile = $scope.discovery.currentRootPath.replace(/\/$/, '') + '/cartfiller.json', 
+                complete: function(xhr) {
+                    if ($scope.discovery.state === 0) {
+                        $scope.errorURL = false;
+                        if (xhr.status === 200) {
+                            try {
+                                $scope.discovery.rootCartfillerJson = JSON.parse(xhr.responseText);
+                                $scope.discovery.workerSrc = normalizeWorkerURLs($scope.discovery.rootCartfillerJson.worker, $scope.discovery.currentRootPath);
+                                $scope.discovery.state = 1;
+                                $scope.discovery.scripts.flat = [];
+                                flattenCartfillerJson($scope.discovery.rootCartfillerJson.tests);
+                                $scope.discovery.scripts.currentDownloadingIndex = false;
+                            } catch (e) {
+                                $scope.discovery.state = -1;
+                                $scope.errorURL = $scope.currentRootFile;
+                                $scope.discovery.error = 'Invalid JSON file: ' + String(e);
+                            }
+                        } else {
+                            var pc = $scope.discovery.currentRootPath.split('/');
+                            pc.pop();
+                            $scope.discovery.visitedRootPaths
+                                .push($scope.discovery.currentRootpath);
+                            if (pc.length < 3) {
+                                $scope.discovery.state = -1;
+                                $scope.discovery.error = 'cartfiller.json was not found, visited: ' + $scope.discovery.visitedRootPaths.join(', ');
+                                $scope.discovery.currentRootFile = false;
+                            } else {
+                                $scope.discovery.currentRootPath = pc.join('/');
+                            }
+                        }
+                        $scope.$digest();
+                        if ($scope.discovery.state >= 0) {
+                            $scope.discover();
+                        }
+                    }
+                }
+            });
+        };
+        var normalizeWorkerURLs = function(urls, root) {
+            if ('string' === typeof urls) {
+                urls = [urls];
+            }
+            return urls.map(function(url) {
+                var pre = root.replace(/\/$/, '') + '/';
+                while (/^\.\.\//.test(url)) {
+                    pre = pre.replace(/\/[^\/]+\/$/, '/');
+                    url = url.replace(/^\.\.\//, '');
+                }
+                return pre + url;
+            });
+        };
+        var downloadNextScriptFile = function() {
+            if ($scope.discovery.scripts.currentDownloadingIndex === false) {
+                $scope.discovery.scripts.currentDownloadingIndex = 0;
+            } else {
+                $scope.discovery.scripts.currentDownloadingIndex++;
+            }
+            if ($scope.discovery.scripts.currentDownloadingIndex >= $scope.discovery.scripts.flat.length) {
+                // we are done
+                $scope.discovery.state = 2;
+                $scope.$digest();
+            } else {
+                // let's download next file
+                $.ajax({
+                    url: $scope.discovery.currentDownloadedTestURL = $scope.discovery.currentRootPath.replace(/\/$/, '') + '/' + $scope.discovery.scripts.flat[$scope.discovery.scripts.currentDownloadingIndex].join('/').replace(/\.json$/, '') + '.json',
+                    complete: function(xhr) {
+                        $scope.errorURL = false;
+                        if (xhr.status === 200) {
+                            try {
+                                $scope.discovery.scripts.contents[$scope.discovery.scripts.currentDownloadingIndex] = JSON.parse(xhr.responseText);
+                                downloadNextScriptFile();
+                            } catch (e) {
+                                $scope.discovery.state = -1;
+                                $scope.discovery.error = 'Unable to parse test script: ' + String(e);
+                                $scope.discovery.errorURL = $scope.discovery.currentDownloadedTestURL;
+                            }
+                        } else {
+                            $scope.discovery.state = -1;
+                            $scope.discovery.error = 'Error downloading test script:';
+                            $scope.discovery.errorURL = $scope.discovery.currentDownloadedTestURL;
+                        }
+                        $scope.$digest();
+                    }
+                });
+            }
+        };
+        $scope.discover = function() {
+            switch ($scope.discovery.state) {
+                case -1:
+                    $scope.discovery.state = 0;
+                    $scope.discover();
+                    break;
+                case 0:
+                    discoverNextRootURL();
+                    break;
+                case 1: // download all test scripts and make sure that they are ok
+                    downloadNextScriptFile($scope.discovery.rootCartfillerJson, $scope.discovery.currentScriptPath);
+                    break;
+                case -1:
+                    break;
+
+            }
+        };
+        $scope.discover();
+        $scope.runTest = function(index) {
+            var test = $scope.discovery.scripts.contents[index];
+            test.workerSrc = $scope.discovery.workerSrc;
+            test.autorun = 1;
+            $.cartFillerPlugin(
+                test,
+                function(data) {
+                    data;
+                    console.log(1);
+                },
+                function(data) {
+                    if (data.completed) {
+                        $scope.discovery.scripts.success[index] = 0 === data.result.filter(function(r){return ! r.complete;}).length ? 1 : -1;
+                        if ($scope.runningAll && index + 1 < $scope.discovery.scripts.contents.length) {
+                            $scope.runTest(index + 1);
+                        } else {
+                            $scope.runningAll = false;
+                            $.cartFillerPlugin.showChooseJobFrame();
+                        }
+                        $scope.$digest();
+                    } else if (! data.running) {
+                        $scope.runningAll = false;
+                        $scope.$digest();
+                    }
+                }
+            );
+        };
     }]);
 });
 /* jshint ignore:start */
@@ -961,6 +1194,34 @@ define('jquery-cartFiller', ['jquery'], function() {
         );
         resultCallback = newResultCallback;
         statusCallback = newStatusCallback;
+    };
+    /**
+     * Global plugin function - shows chooseJob frame from within
+     * chooseJob frame
+     * @function external:"jQuery".cartFillerPlugin.showChooseJobFrame
+     * @global
+     * @name "jQuery.cartFillerPlugin.showChooseJobFrame"
+     * @access public
+     */
+    $.cartFillerPlugin.showChooseJobFrame = function() {
+        window.parent.postMessage(
+            'cartFillerMessage:' + JSON.stringify({cmd: 'chooseJob'}),
+            '*'
+        );
+    };
+    /**
+     * Global plugin function - hides chooseJob frame from within
+     * chooseJob frame
+     * @function external:"jQuery".cartFillerPlugin.hideChooseJobFrame
+     * @global
+     * @name "jQuery.cartFillerPlugin.hideChooseJobFrame"
+     * @access public
+     */
+    $.cartFillerPlugin.hideChooseJobFrame = function() {
+        window.parent.postMessage(
+            'cartFillerMessage:' + JSON.stringify({cmd: 'chooseJobCancel'}),
+            '*'
+        );
     };
 
     window.addEventListener('message', messageEventListener,false);

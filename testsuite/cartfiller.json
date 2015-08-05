@@ -1,0 +1,15 @@
+{
+    "worker": [
+        "worker.js",
+        "../samples/worker.js"
+    ],
+    "tests": {
+        "suite1": {
+            "test11": true,
+            "test12": true
+        },
+        "suite2": {
+            "test22": true
+        }
+    }
+}

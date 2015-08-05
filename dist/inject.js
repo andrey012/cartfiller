@@ -153,7 +153,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1456508573332';
+    config.gruntBuildTimeStamp='1456660228177';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -503,7 +503,8 @@
          * Just another for-each implementation, jQuery style
          * @function CartFiller.Api#each
          * @param {Array} array Array to iterate through
-         * @param {CartFiller.Api.eachCallback} Called for each item
+         * @param {CartFiller.Api.eachCallback} fn Called for each item, if result === false
+         *          then iteration will be interrupted
          * @param {CartFillerApi.eachOtherwiseCallback} otherwise Called if iteration was
          * not interrupted
          * @return {CartFiller.Api} for chaining
@@ -870,7 +871,8 @@
             } else if (source === me.modules.ui.chooseJobFrameWindow) {
                 this.postMessageToChooseJob('bootstrap', {
                     lib: getLibUrl(),
-                    testSuite: true
+                    testSuite: true,
+                    src: me.baseUrl.replace(/\/$/, '') + '/'
                 }, 'cartFillerMessage');
             }
         },
@@ -905,6 +907,7 @@
          */
         onMessage_chooseJob: function(){
             me.modules.ui.showHideChooseJobFrame(true);
+            this.postMessageToWorker('chooseJobShown');
         },
         /**
          * Hides Choose Job frame
@@ -913,6 +916,7 @@
          */
         onMessage_chooseJobCancel: function(){
             me.modules.ui.showHideChooseJobFrame(false);
+            this.postMessageToWorker('chooseJobHidden');
         },
         /**
          * Passes job details from Choose Job frame to worker (job progress)
@@ -952,6 +956,7 @@
                 }
                 message.details = newDetails;
             }
+            worker = {};
             this.postMessageToWorker('jobDetails', message);
         },
         /**
@@ -1210,20 +1215,22 @@
                 return taskSteps;
             };
             workerCurrentTask = {};
-            worker = cb(me.modules.ui.mainFrameWindow, undefined, api, workerCurrentTask, jobDetailsCache);
+            var thisWorker = cb(me.modules.ui.mainFrameWindow, undefined, api, workerCurrentTask, jobDetailsCache);
             var list = {};
-            for (var taskName in worker){
-                if (worker.hasOwnProperty(taskName)){
-                    worker[taskName] = recursivelyCollectSteps(worker[taskName]);
-                    var taskSteps = [];
-                    for (var i = 0 ; i < worker[taskName].length; i++){
-                        // this is step name/comment
-                        if ('string' === typeof worker[taskName][i]){
-                            taskSteps.push(worker[taskName][i]);
-                        }
-                    }
-                    list[taskName] = taskSteps;
+            for (var taskName in thisWorker){
+                if (thisWorker.hasOwnProperty(taskName)){
+                    worker[taskName] = thisWorker[taskName] = recursivelyCollectSteps(thisWorker[taskName]);
                 }
+            }
+            for (taskName in worker) {
+                var taskSteps = [];
+                for (var i = 0 ; i < worker[taskName].length; i++){
+                    // this is step name/comment
+                    if ('string' === typeof worker[taskName][i]){
+                        taskSteps.push(worker[taskName][i]);
+                    }
+                }
+                list[taskName] = taskSteps;
             }
             this.postMessageToWorker('workerRegistered', {jobTaskDescriptions: list, src: workerSrcPretendent});
         },

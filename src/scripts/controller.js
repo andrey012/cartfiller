@@ -36,6 +36,8 @@ define('controller', ['app', 'scroll'], function(app){
         $scope.currentStep = 0;
         $timeout(function(){$scope.chooseJob();}, 0);
         $scope.debugEnabled = parseInt(cfDebug.debugEnabled);
+        $scope.workersCounter = 1;
+        $scope.workersLoaded = 0;
         $scope.workerSrc = false;
         $scope.finishReached = false;
         $scope.awaitingForFinish = false;
@@ -52,6 +54,14 @@ define('controller', ['app', 'scroll'], function(app){
         };
         var scrollCurrentTaskIntoView = function(useTop) {
             cfScroll(jQuery('#jobDetails > div:nth-child(' + ($scope.currentTask + 1) + ')')[0], useTop);
+        };
+        var autorun = function() {
+            if ($scope.workersLoaded === $scope.workersCounter) {
+                $scope.runNoWatch(false, null, true);
+            } else {
+                // wait some more time
+                setTimeout(autorun, 1000);
+            }
         };
         cfMessage.register(function(cmd, details){
             if (cmd === 'jobDetails'){
@@ -71,32 +81,42 @@ define('controller', ['app', 'scroll'], function(app){
                     });
                     var workerSrc = '';
                     if (('string' === typeof details.workerSrc) && (details.workerSrc.length > 0)) {
+                        $scope.workersCounter = 1;
+                        workerSrc = details.workerSrc;
+                    } else if (('object' === typeof details.workerSrc) && (details.workerSrc.length)) {
+                        $scope.workersCounter = details.workerSrc.length;
                         workerSrc = details.workerSrc;
                     }
                     if (('string' === typeof details.overrideWorkerSrc) && (details.overrideWorkerSrc.length > 0)){
+                        $scope.workersCounter = 1;
                         workerSrc = details.overrideWorkerSrc;
                     }
-                    $scope.workerSrc = '';
+                    if (('object' === typeof details.overrideWorkerSrc) && (details.overrideWorkerSrc.length)){
+                        $scope.workersCounter = details.workerSrc.length;
+                        workerSrc = details.overrideWorkerSrc;
+                    }
+                    $scope.workersLoaded = 0;
+                    $scope.workerSrc = workerSrc;
                     if (workerSrc){
                         $scope.loadWorker(workerSrc);
                     } else {
                         alert('Worker script not specified in job description');
                     }
                     if (details.autorun) {
-                        setTimeout(function() { $scope.runNoWatch(false, null, true); }, details.autorun);
+                        setTimeout(autorun, details.autorun);
                     }
+                    $scope.finishReached = false;
                 });
             } else if (cmd === 'workerRegistered'){
                 $scope.$apply(function(){
+                    $scope.workersLoaded ++;
                     $scope.jobTaskDescriptions = details.jobTaskDescriptions;
-                    $scope.workerSrc = details.src;
                     $scope.updateIndexTitles();
                 });
             } else if (cmd === 'workerStepResult'){
                 $scope.jobTaskProgress[details.index].stepsInProgress[details.step] = false;
                 $scope.jobTaskProgress[details.index].stepResults[details.step] = {status: details.status, message: details.message, response: details.response};
                 $scope.jobTaskProgress[details.index].complete = details.nextTaskFlow === 'skipTask' || $scope.updateTaskCompleteMark(details.index);
-                cfMessage.send('sendStatus', {result: $scope.jobTaskProgress, tasks: $scope.jobDetails, currentTaskIndex: details.index, currentTaskStepIndex: details.step});
                 var proceed;
                 if ('ok' === details.status){
                     $scope.incrementCurrentStep(false, details.nextTaskFlow);
@@ -120,10 +140,26 @@ define('controller', ['app', 'scroll'], function(app){
                         $scope.running = false;
                     }
                 }
+                cfMessage.send(
+                    'sendStatus', 
+                    {
+                        result: $scope.jobTaskProgress, 
+                        tasks: $scope.jobDetails,
+                        currentTaskIndex: details.index, 
+                        currentTaskStepIndex: details.step,
+                        running: $scope.running,
+                        completed: ! proceed
+                    });
                 $scope.workerInProgress = false;
                 if (!proceed){
                     digestTask($scope.currentTask);
                 }
+                digestButtonPanel();
+            } else if (cmd === 'chooseJobShown') {
+                $scope.chooseJobState = true;
+                digestButtonPanel();
+            } else if (cmd === 'chooseJobHidden') {
+                $scope.chooseJobState = false;
                 digestButtonPanel();
             }
         });
@@ -136,6 +172,16 @@ define('controller', ['app', 'scroll'], function(app){
                 }
                 if ($scope.currentTask >= $scope.jobDetails.length){
                     $scope.finishReached = true;
+                    cfMessage.send(
+                        'sendStatus', 
+                        {
+                            result: $scope.jobTaskProgress, 
+                            tasks: $scope.jobDetails,
+                            currentTaskIndex: false, 
+                            currentTaskStepIndex: false,
+                            running: $scope.running,
+                            completed: true
+                        });
                     digestFinishReached();
                     setTimeout(function(){
                         cfScroll(jQuery('#finishReached')[0]);
@@ -285,23 +331,30 @@ define('controller', ['app', 'scroll'], function(app){
             if (undefined === url) {
                 url = $scope.workerSrc;
             }
-            if (/\?/.test(url)){
-                url += '&';
+            var urls;
+            if ('string' === typeof url) {
+                urls = [url];
             } else {
-                url += '?';
+                urls = url;
             }
-            url += (new Date()).getTime();
-            var xhr = new XMLHttpRequest();
-            xhr.onload = function(){
-                cfMessage.send('loadWorker', {code: xhr.response, src: url});
+            angular.forEach(urls, function(url) {
+                if (/\?/.test(url)){
+                    url += '&';
+                } else {
+                    url += '?';
+                }
+                url += (new Date()).getTime();
+                var xhr = new XMLHttpRequest();
+                xhr.onload = function(){
+                    cfMessage.send('loadWorker', {code: xhr.response, src: url});
 
-            };
-            xhr.open('GET', url, true);
-            xhr.send();
-
-
+                };
+                xhr.open('GET', url, true);
+                xhr.send();
+            });
         };
         $scope.reloadWorker = function($event){
+            $scope.workersLoaded = 0;
             $scope.loadWorker();
             $event.stopPropagation();
         };
