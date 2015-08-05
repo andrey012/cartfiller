@@ -3,8 +3,8 @@
  * @class CartFiller.SampleWorker
  */
 (function(window, document, undefined){
-    var baseUrl = window.location.href.replace(/\/[^\/]+\/[^\/]*$/, '') + '/samples/sample-shop.html';
     var registerCallback = function(window, document, api, task, job){
+        var baseUrl = job.rootCartfillerPath.replace(/\/[^\/]+\/?$/, '') + '/samples/sample-shop.html';
         return {
             sayHello: [
                 'open homepage', function() {

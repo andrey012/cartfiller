@@ -487,13 +487,13 @@
                                 return;
                             }
                         }
+                        // register watchdog
+                        registerWorkerWatchdog();
                         if (message.debug) {
                             /* jshint ignore:start */
                             debugger;
                             /* jshint ignore:end */
                         }
-                        // register watchdog
-                        registerWorkerWatchdog();
                         workerFn(highlightedElement, env);
                     }
                 } catch (err){
