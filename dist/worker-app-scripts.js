@@ -56,6 +56,7 @@ define('controller', ['app', 'scroll'], function(app){
         $scope.finishReached = false;
         $scope.awaitingForFinish = false;
         $scope.runUntilTask = $scope.runUntilStep = false;
+        var autorunSpeed;
         var mouseDownTime;
         var isLongClick = function(){
             return ((new Date()).getTime() - mouseDownTime) > 1000;
@@ -71,7 +72,7 @@ define('controller', ['app', 'scroll'], function(app){
         };
         var autorun = function() {
             if ($scope.workersLoaded === $scope.workersCounter) {
-                $scope.runNoWatch(false, null, true);
+                $scope.runNoWatch(autorunSpeed === 'slow' ? true : false, null, true);
             } else {
                 // wait some more time
                 setTimeout(autorun, 1000);
@@ -118,6 +119,7 @@ define('controller', ['app', 'scroll'], function(app){
                     }
                     if (details.autorun) {
                         setTimeout(autorun, details.autorun);
+                        autorunSpeed = details.autorunSpeed;
                     }
                     $scope.finishReached = false;
                 });
@@ -686,10 +688,11 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             }
         };
         $scope.discover();
-        $scope.runTest = function(index) {
+        $scope.runTest = function(index, how) {
             var test = $scope.discovery.scripts.contents[index];
             test.workerSrc = $scope.discovery.workerSrc;
-            test.autorun = 1;
+            test.autorun = how === 'load' ? 0 : 1;
+            test.autorunSpeed = how === 'slow' ? 'slow' : 'fast';
             test.rootCartfillerPath = $scope.discovery.currentRootPath;
             $.cartFillerPlugin(
                 test,
@@ -1153,6 +1156,10 @@ define('jquery-cartFiller', ['jquery'], function() {
      * @member {integer} CartFillerPlugin~jobDetails#autorun Time (ms) after which 
      * worker will run automatically. If set to null, undefined or 0 -- no autorun will
      * be done
+     */
+    /**
+     * @member {string} CartFillerPlugin~jobDetails#autorunSpeed Autorun speed, can be
+     * 'fast' or 'slow'. Undefined (default) equals to 'fast'
      */
     /**
      * @member {string} CartFillerPlugin~jobDetails#workerSrc URL of worker to 

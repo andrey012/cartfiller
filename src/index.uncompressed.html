@@ -44,8 +44,14 @@
                             {{testPath.join('/')}}
                         </td>
                         <td>
-                            <button class="btn btn-xs btn-success" ng-click="runTest(index)">
+                            <button class="btn btn-xs btn-success" ng-click="runTest(index, 'fast')">
                                 Run
+                            </button>
+                            <button class="btn btn-xs btn-success" ng-click="runTest(index, 'slow')">
+                                Slow
+                            </button>
+                            <button class="btn btn-xs btn-success" ng-click="runTest(index, 'load')">
+                                Load
                             </button>
                         </td>
                     </tr>

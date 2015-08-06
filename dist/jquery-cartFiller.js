@@ -442,6 +442,10 @@
      * be done
      */
     /**
+     * @member {string} CartFillerPlugin~jobDetails#autorunSpeed Autorun speed, can be
+     * 'fast' or 'slow'. Undefined (default) equals to 'fast'
+     */
+    /**
      * @member {string} CartFillerPlugin~jobDetails#workerSrc URL of worker to 
      * be used instead of one given by bookmarklet
      */

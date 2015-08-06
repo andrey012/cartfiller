@@ -160,10 +160,11 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             }
         };
         $scope.discover();
-        $scope.runTest = function(index) {
+        $scope.runTest = function(index, how) {
             var test = $scope.discovery.scripts.contents[index];
             test.workerSrc = $scope.discovery.workerSrc;
-            test.autorun = 1;
+            test.autorun = how === 'load' ? 0 : 1;
+            test.autorunSpeed = how === 'slow' ? 'slow' : 'fast';
             test.rootCartfillerPath = $scope.discovery.currentRootPath;
             $.cartFillerPlugin(
                 test,

@@ -6,7 +6,8 @@
     </head>
     <body>
         <a id="sampleSubmitLink" href="#" onclick="submitJob();">submit sample job</a><br/>
-        <a id="sampleSubmitLink" href="#" onclick="submitJob(2000);">submit sample job with autorun in 2 seconds</a>
+        <a id="sampleSubmitLink" href="#" onclick="submitJob(2000);">submit sample job with autorun in 2 seconds</a><br/>
+        <a id="sampleSubmitLink" href="#" onclick="submitJob(2000, 'slow');">submit sample job with slow autorun in 2 seconds</a>
         <h1>
             Result
         </h1>
@@ -20,7 +21,7 @@
 
         </div>
         <script>
-            function submitJob(autorun){
+            function submitJob(autorun, speed){
                 jQuery.cartFillerPlugin(
                     {
                         details: [
@@ -41,7 +42,8 @@
                             'worker.js'
                         ),
                         autorun: autorun,
-                        timeout: 4000
+                        timeout: 4000,
+                        autorunSpeed: speed
                     },
                     function(data){
                         document.getElementById('result').innerText = 'Job result: ' + JSON.stringify(data);

@@ -42,6 +42,7 @@ define('controller', ['app', 'scroll'], function(app){
         $scope.finishReached = false;
         $scope.awaitingForFinish = false;
         $scope.runUntilTask = $scope.runUntilStep = false;
+        var autorunSpeed;
         var mouseDownTime;
         var isLongClick = function(){
             return ((new Date()).getTime() - mouseDownTime) > 1000;
@@ -57,7 +58,7 @@ define('controller', ['app', 'scroll'], function(app){
         };
         var autorun = function() {
             if ($scope.workersLoaded === $scope.workersCounter) {
-                $scope.runNoWatch(false, null, true);
+                $scope.runNoWatch(autorunSpeed === 'slow' ? true : false, null, true);
             } else {
                 // wait some more time
                 setTimeout(autorun, 1000);
@@ -104,6 +105,7 @@ define('controller', ['app', 'scroll'], function(app){
                     }
                     if (details.autorun) {
                         setTimeout(autorun, details.autorun);
+                        autorunSpeed = details.autorunSpeed;
                     }
                     $scope.finishReached = false;
                 });
