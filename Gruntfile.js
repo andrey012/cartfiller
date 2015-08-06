@@ -74,7 +74,7 @@ module.exports = function(grunt) {
                     }
                 },
                 files : [
-                    {expand: true, cwd: "src/", src: ["index.html", "self.appcache"], dest: "dist/"},
+                    {expand: true, cwd: "src/", src: ["index.uncompressed.html", "self.appcache"], dest: "dist/"},
                 ]
             }
 
@@ -135,8 +135,8 @@ module.exports = function(grunt) {
         // Build one single-file application
         inline: {
             dist: {
-                src: 'dist/index.html',
-                dest: 'dist/index.min.html'
+                src: 'dist/index.uncompressed.html',
+                dest: 'dist/index.html'
             }
         },
         // Generate JSDoc documentation

@@ -3,7 +3,7 @@
  * @class CartFiller.SampleWorker
  */
 (function(window, document, undefined){
-    var registerCallback = function(window, document, api, task, job){
+    cartFillerAPI().registerWorker(function(window, document, api, task, job){
         var baseUrl = job.rootCartfillerPath.replace(/\/[^\/]+\/?$/, '') + '/samples/sample-shop.html';
         return {
             sayHello: [
@@ -16,6 +16,5 @@
                 }
             ]
         };
-    };
-    cartFillerAPI().registerWorker(registerCallback);
+    });
 })(window, document);

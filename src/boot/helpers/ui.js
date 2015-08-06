@@ -619,7 +619,7 @@
      * @access private
      */
     var getWorkerFrameSrc = function(){
-        return me.baseUrl + '/index' + (me.concatenated ? '.min' : '') + '.html' + (me.gruntBuildTimeStamp ? ('?' + me.gruntBuildTimeStamp) : '');        
+        return me.baseUrl + '/index' + (me.concatenated ? '' : '.uncompressed') + '.html' + (me.gruntBuildTimeStamp ? ('?' + me.gruntBuildTimeStamp) : '');        
     };
     /**
      * Vertical position of top of highlighted element

@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html manifest="self.appcache">
+<head>
+    <meta charset="UTF-8">
+    <title>CartFiller</title>
+    <link rel="stylesheet" href="../lib/bootstrap/dist/css/bootstrap.min.css?__inline=true"/>
+    <style>
+        #jobDetails .btn {font-family: monospace; font-size: 12px;} 
+        #jobDetails .btn-xs {margin: 5px 7px;  font-size: 12px;} 
+        #jobDetails .alert {padding: 5px; margin-bottom: 5px;}
+    </style>
+</head>
+<body>
+    <div id="testSuiteManager" style="display: none;" ng-controller="testSuiteController">
+        <div class="col-xs-9">
+            <div class="alert alert-danger" ng-if="discovery.state == -1">
+                Error discovering cartfiller.json:<br/>
+                <span ng-if="discovery.errorURL"><a href="{{discovery.errorURL}}">{{discovery.errorURL}}</a><br/></span>
+                {{discovery.error}}
+            </div>
+            <div class="alert alert-info" ng-if="discovery.state == 0">
+                Looking for cartfiller.json at <a href="{{discovery.currentRootPath}}">{{discovery.currentRootPath</a>
+            </div>
+            <div class="alert alert-info" ng-if="discovery.state == 1">
+                Downloading test scripts
+            </div>
+        </div>
+        <div class="col-xs-3">
+            <button class="btn btn-info" ng-click="discovery.state = 0; discover()">
+                Reload
+            </button>
+            <button class="btn btn-success" ng-click="runAll()" ng-if="discovery.state == 2 && ! runningAll">
+                Run all
+            </button>
+            <button class="btn btn-danger" ng-click="stopRunningAll()" ng-if="discovery.state == 2 && runningAll">
+                Stop
+            </button>
+        </div>
+        <div class="col-xs-12">
+            <table class="table table-bordered">
+                <tbody>
+                    <tr ng-repeat="(index, testPath) in discovery.scripts.flat" ng-class="['danger', '', 'success'][1 + (discovery.scripts.success[index] || 0)] ">
+                        <td>
+                            {{testPath.join('/')}}
+                        </td>
+                        <td>
+                            <button class="btn btn-xs btn-success" ng-click="runTest(index)">
+                                Run
+                            </button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        Hello
+
+        </div>
+    </div>
+    <div id="workerContainer" style="display: none;" ng-controller="indexController">
+        <div id="buttonPanel"
+             style="text-align: right; z-index: 101; position: fixed; top: 0px; width: 100%; padding: 2px;" 
+             class="alert alert-warning"
+             ng-repeat="dummy in [0]">
+            <a href="#" class="btn btn-info btn-xs" ng-click="toggleSize()">[]</a>
+            <a href="#"
+               ng-if="running"
+               class="btn btn-xs btn-danger"
+               onclick="var event = arguments[0] || window.event; return angular.element(this).scope().stopNoWatch(event);"
+               ng-disabled="workersLoaded != workersCounter"
+               >Stop</a>
+            <a href="#"
+               id="runButton"
+               ng-if="!running"
+               class="btn btn-xs btn-success"
+               title="Run"
+               ng-disabled="workerInProgress || (workersLoaded != workersCounter)"
+               onclick="var event = arguments[0] || window.event; return angular.element(this).scope().runNoWatch(false, event);"
+               disabled="disabled"
+               onmousedown="angular.element(this).scope().mouseDown();"
+               >&gt;&gt;&gt;</a>
+            <a href="#"
+               ng-if="!running"
+               class="btn btn-xs btn-info"
+               title="Slow"
+               ng-disabled="workerInProgress || (workersLoaded != workersCounter)"
+               onclick="var event = arguments[0] || window.event; return angular.element(this).scope().runNoWatch(true, event);"
+               onmousedown="angular.element(this).scope().mouseDown();"
+               >&gt;..&gt;</a>
+            <a href="#"
+               class="btn btn-xs btn-info"
+               title="Step"
+               ng-disabled="workerInProgress || (workersLoaded != workersCounter)"
+               onclick="var event = arguments[0] || window.event; return angular.element(this).scope().clickOnNextStepNoWatch(event);"
+               >&gt;</a>
+            <a href="#" 
+               id="chooseJobButton"
+               class="btn btn-info btn-xs"
+               ng-click="chooseJob()"
+               onclick="return false;"
+               >{{chooseJobState ? 'Cancel' : 'Choose Job'}}</a>
+            <a href="#"
+               class="btn btn-info btn-xs"
+               ng-click="clickOnReturnResult($event)"
+               onclick="return false;"
+               ng-if="!chooseJobState"
+               >Result</a>
+            <a href="#"
+               class="btn btn-default btn-active btn-xs"
+               ng-click="reloadWorker($event)"
+               title="Reload worker"
+               ng-if="debugEnabled"
+               onclick="return false;"
+               >R</a>
+            <div ng-style="{opacity: (workerInProgress ? 1 : 0)}">
+                <a href="#"
+                   id="resetWorkerButton"
+                   class="btn btn-danger btn-xs"
+                   onclick="var event = arguments[0] || window.event; return angular.element(this).scope().resetWorkerNoWatch(event);">RESET WORKER</a>
+            </div>
+            <div ng-if="awaitingForFinish">
+                Run until: choose step <a href="#" class="btn btn-xs btn-danger" onclick="var event = arguments[0] || window.event; return angular.element(this).scope().cancelRunUntil(event);">cancel</a>
+            </div>
+        </div>
+        <div ng-if="chooseJobState" id="cartFillerOverlay" style="z-index: 100; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); position: absolute; top: 0px; left: 0px;">
+
+        </div>
+        <a class="btn btn-info btn-xs" style="width: 100%; margin-top: 75px; margin-bottom: 5px;" onclick="alert('Long click on step = debug, long click on Run (fast and slow) = Run until particular step, double click on property value = change property value');">help</a>
+        <div id="jobDetails">
+            <div id="{{'taskDiv_' + jobTaskIndex}}"
+                 class="alert"
+                 ng-class="jobTaskProgress[jobTaskIndex].complete ? 'alert-success' : 'alert-danger'"
+                 ng-repeat="(jobTaskIndex, jobTask) in jobDetails track by $index"
+                 ng-click="toggleTaskProgress(jobTaskIndex)"
+            >
+                <span><strong>{{jobTaskIndex + 1}}. {{jobTitleMap[jobTask.task] ? jobTitleMap[jobTask.task] : jobTask.task}}</strong></span>
+                <div ng-repeat="(propertyName, propertyValue) in jobTask" ng-if="propertyName != 'task'">
+                    <span>{{jobTitleMap[propertyName] ? jobTitleMap[propertyName] : propertyName}}</span>
+                    <input type="text" readonly="readonly" value="{{propertyValue}}" ng-click="selectTaskInput(jobTaskIndex, $event);" ng-dblclick="doubleClickTaskInput(jobTaskIndex, propertyName, propertyValue)" title="{{propertyName}}"/>
+                </div>
+                <div>
+                    <span
+                       ng-repeat="(jobTaskStepIndex, jobTaskStep) in jobTaskDescriptions[jobTask.task] track by $index"
+                    >
+                        <a id="{{'stepButton_' + jobTaskIndex + '_' + jobTaskStepIndex}}"
+                           href="#"
+                           title="{{jobTaskStep + ': ' + jobTaskProgress[jobTaskIndex].stepResults[jobTaskStepIndex].message}}"
+                           class="btn"
+                           ng-class="getStepClass(jobTaskIndex, jobTaskStepIndex)"
+                           onmousedown="angular.element(this).scope().mouseDown();"
+                           onclick="var event = arguments[0] || window.event; return angular.element(this).scope().clickOnStepNoWatch(this, event);"
+                        >{{indexTitles[jobTask.task][jobTaskStepIndex]}}</a>
+                        {{jobTaskProgress[jobTaskIndex].stepResults[jobTaskStepIndex].message}}
+                    </span>
+                </div>
+            </div>
+            <div class="alert alert-warning"
+                 ng-style="{opacity : (finishReached ? 1 : 0)}"
+                 id="finishReached"
+                 >
+                Completed
+            </div>
+        </div>
+    </div>
+    <script src="worker-app-scripts.min.js?__inline=true"></script>
+</body>
+</html>

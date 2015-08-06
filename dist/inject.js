@@ -153,7 +153,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1456666672151';
+    config.gruntBuildTimeStamp='1456685776989';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -2008,7 +2008,7 @@
      * @access private
      */
     var getWorkerFrameSrc = function(){
-        return me.baseUrl + '/index' + (me.concatenated ? '.min' : '') + '.html' + (me.gruntBuildTimeStamp ? ('?' + me.gruntBuildTimeStamp) : '');        
+        return me.baseUrl + '/index' + (me.concatenated ? '' : '.uncompressed') + '.html' + (me.gruntBuildTimeStamp ? ('?' + me.gruntBuildTimeStamp) : '');        
     };
     /**
      * Vertical position of top of highlighted element
