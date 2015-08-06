@@ -10,6 +10,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             return;
         }
         $scope.params = {};
+        $scope.expandedTest = false;
         angular.forEach((window.location.href.split('?')[1] || '').split('#')[0].split('&'), function(v) {
             var pc = v.split('=');
             $scope.params[decodeURIComponent(pc[0])] = decodeURIComponent(pc[1]);
@@ -25,7 +26,8 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                 currentDownloadingIndex: false,
                 contents: [],
                 enabled: [],
-                success: []
+                success: [],
+                errors: {}
             }
         };
         $scope.runningAll = false;
@@ -66,6 +68,9 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                                 $scope.discovery.workerSrc = normalizeWorkerURLs($scope.discovery.rootCartfillerJson.worker, $scope.discovery.currentRootPath);
                                 $scope.discovery.state = 1;
                                 $scope.discovery.scripts.flat = [];
+                                $scope.discovery.scripts.contents = [];
+                                $scope.discovery.scripts.success = [];
+                                $scope.discovery.scripts.errors = {};
                                 flattenCartfillerJson($scope.discovery.rootCartfillerJson.tests);
                                 $scope.discovery.scripts.currentDownloadingIndex = false;
                             } catch (e) {
@@ -160,12 +165,17 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             }
         };
         $scope.discover();
-        $scope.runTest = function(index, how) {
+        $scope.runTest = function(index, how, untilTask) {
+            $scope.discovery.scripts.errors[index] = {};
             var test = $scope.discovery.scripts.contents[index];
             test.workerSrc = $scope.discovery.workerSrc;
             test.autorun = how === 'load' ? 0 : 1;
             test.autorunSpeed = how === 'slow' ? 'slow' : 'fast';
             test.rootCartfillerPath = $scope.discovery.currentRootPath;
+            if (undefined !== untilTask) {
+                test.autorunUntilTask = untilTask;
+                test.autorunUntilStep = 0;
+            }
             $.cartFillerPlugin(
                 test,
                 function(data) {
@@ -173,7 +183,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                     console.log(1);
                 },
                 function(data) {
-                    if (data.completed) {
+                    if (data.completed && undefined === untilTask) {
                         $scope.discovery.scripts.success[index] = 0 === data.result.filter(function(r){return ! r.complete;}).length ? 1 : -1;
                         if ($scope.runningAll && index + 1 < $scope.discovery.scripts.contents.length) {
                             $scope.runTest(index + 1);
@@ -186,8 +196,47 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                         $scope.runningAll = false;
                         $scope.$digest();
                     }
+                    if (false !== data.currentTaskIndex &&
+                        false !== data.currentTaskStepIndex &&
+                        undefined !== data &&
+                       undefined !== data.result &&
+                       undefined !== data.result[data.currentTaskIndex] &&
+                       undefined !== data.result[data.currentTaskIndex].stepResults && 
+                       undefined !== data.result[data.currentTaskIndex].stepResults[data.currentTaskStepIndex]) {
+                        var message = data.result[data.currentTaskIndex].stepResults[data.currentTaskStepIndex].message;
+                        if (undefined !== message && message !== '' && message !== false) {
+                            if (undefined === $scope.discovery.scripts.errors[index]) {
+                                $scope.discovery.scripts.errors[index] = {};
+                            }
+                            if (undefined === $scope.discovery.scripts.errors[index][data.currentTaskIndex]) {
+                                $scope.discovery.scripts.errors[index][data.currentTaskIndex] = {};
+                            }
+                            $scope.discovery.scripts.errors[index][data.currentTaskIndex][data.currentTaskStepIndex] = message;
+                        }
+                    }
                 }
             );
+        };
+        $scope.expandTest = function(index) {
+            $scope.expandedTest = index === $scope.expandedTest ? false : index;
+        };
+        $scope.getTaskErrors = function(testIndex, taskIndex) {
+            if (undefined === $scope.discovery.scripts.errors[testIndex]) {
+                return {};
+            }
+            if (undefined === $scope.discovery.scripts.errors[testIndex][taskIndex]) {
+                return {};
+            }
+            return $scope.discovery.scripts.errors[testIndex][taskIndex];
+        };
+        $scope.getTaskErrorsExist = function(testIndex, taskIndex) {
+            var errors = $scope.getTaskErrors(testIndex, taskIndex);
+            for (var i in errors) {
+                if (errors.hasOwnProperty(i)) {
+                    return true;
+                }
+            }
+            return false;
         };
     }]);
 });

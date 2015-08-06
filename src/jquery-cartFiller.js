@@ -438,6 +438,14 @@
      * 'fast' or 'slow'. Undefined (default) equals to 'fast'
      */
     /**
+     * @member {string} CartFillerPlugin~jobDetails#autorunUntilTask Task index to run until,
+     * used together with autorunUntilStep
+     */
+    /**
+     * @member {string} CartFillerPlugin~jobDetails#autorunUntilStep Step index to run until,
+     * used together with autorunUntilTask
+     */
+    /**
      * @member {string} CartFillerPlugin~jobDetails#workerSrc URL of worker to 
      * be used instead of one given by bookmarklet
      */

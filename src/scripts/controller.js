@@ -58,7 +58,7 @@ define('controller', ['app', 'scroll'], function(app){
         };
         var autorun = function() {
             if ($scope.workersLoaded === $scope.workersCounter) {
-                $scope.runNoWatch(autorunSpeed === 'slow' ? true : false, null, true);
+                $scope.runNoWatch(autorunSpeed === 'slow' ? true : false, null, true, true);
             } else {
                 // wait some more time
                 setTimeout(autorun, 1000);
@@ -106,6 +106,13 @@ define('controller', ['app', 'scroll'], function(app){
                     if (details.autorun) {
                         setTimeout(autorun, details.autorun);
                         autorunSpeed = details.autorunSpeed;
+                        if (undefined !== details.autorunUntilTask &&
+                           undefined !== details.autorunUntilStep) {
+                            $scope.runUntilTask = details.autorunUntilTask;
+                            $scope.runUntilStep = details.autorunUntilStep;
+                        } else {
+                            $scope.runUntilTask = $scope.runUntilStep = false;
+                        }
                     }
                     $scope.finishReached = false;
                 });
@@ -272,13 +279,15 @@ define('controller', ['app', 'scroll'], function(app){
             }
             return size + 'btn-warning';
         };
-        $scope.runNoWatch = function(slow, $event, ignoreMouseDown){
+        $scope.runNoWatch = function(slow, $event, ignoreMouseDown, fromAutorun){
             if (! ignoreMouseDown && isLongClick()) {
                 $scope.awaitingForFinish = slow ? 'slow' : true;
                 digestButtonPanel();
             } else {
                 $scope.awaitingForFinish = false;
-                $scope.runUntilTask = $scope.runUntilStep = false;
+                if (! fromAutorun) {
+                    $scope.runUntilTask = $scope.runUntilStep = false;
+                }
                 run(slow);
             }
             if ($event) {

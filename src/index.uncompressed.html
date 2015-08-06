@@ -39,7 +39,7 @@
         <div class="col-xs-12">
             <table class="table table-bordered">
                 <tbody>
-                    <tr ng-repeat="(index, testPath) in discovery.scripts.flat" ng-class="['danger', '', 'success'][1 + (discovery.scripts.success[index] || 0)] ">
+                    <tr ng-repeat-start="(index, testPath) in discovery.scripts.flat" ng-class="['danger', '', 'success'][1 + (discovery.scripts.success[index] || 0)] ">
                         <td>
                             {{testPath.join('/')}}
                         </td>
@@ -53,8 +53,26 @@
                             <button class="btn btn-xs btn-success" ng-click="runTest(index, 'load')">
                                 Load
                             </button>
+                            <button class="btn btn-xs btn-success" ng-click="expandTest(index)">
+                                {{index === expandedTest ? 'Collapse' : 'Expand'}}
+                            </button>
                         </td>
                     </tr>
+                    <tr ng-if="index === expandedTest" ng-repeat="(taskIndex, task) in discovery.scripts.contents[index].details">
+                        <td colspan="2" ng-class="discovery.scripts.success[index] == -1 && getTaskErrorsExist(index, taskIndex) ? 'danger' : ''">
+                            &nbsp;&nbsp;&nbsp;&nbsp;
+                            <a href="#" ng-click="runTest(index, 'fast', taskIndex)">{{task.task}}</a><span ng-repeat="(name, value) in task | orderBy: 'name'" ng-if="name !== 'task'">,
+                                <strong>
+                                {{name}}:
+                                </strong>
+                                {{value}}
+                            </span>
+                            <div ng-if="discovery.scripts.success[index] == -1" ng-repeat="(stepIndex, errorMessage) in getTaskErrors(index, taskIndex)">
+                                Step {{1 -- stepIndex}}: {{errorMessage}}
+                            </div>
+                        </td>
+                    </tr>
+                    <tr ng-repeat-end></tr>
                 </tbody>
             </table>
         Hello
@@ -96,7 +114,7 @@
                title="Step"
                ng-disabled="workerInProgress || (workersLoaded != workersCounter)"
                onclick="var event = arguments[0] || window.event; return angular.element(this).scope().clickOnNextStepNoWatch(event);"
-               >&gt;</a>
+               >I&nbsp;I&gt;</a>
             <a href="#" 
                id="chooseJobButton"
                class="btn btn-info btn-xs"

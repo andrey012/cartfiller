@@ -884,7 +884,7 @@
             this.chooseJobFrame.style.top = '0px';
             this.chooseJobFrame.style.left = '0px';
             this.chooseJobFrame.style.width = '0px';
-            this.chooseJobFrame.style.zIndex = '1000000';
+            this.chooseJobFrame.style.zIndex = '10000002';
             this.chooseJobFrame.style.background = 'white';
             body.appendChild(this.chooseJobFrame);
             this.chooseJobFrameWindow = window.frames[chooseJobFrameName];
@@ -931,6 +931,7 @@
             this.chooseJobFrame.style.width = '0px';
             this.chooseJobFrame.style.position = 'fixed';
             this.chooseJobFrame.style.background = 'white';
+            this.chooseJobFrame.style.zIndex = '10000002';
             body.appendChild(this.mainFrame);
             this.mainFrameWindow = window.frames[mainFrameName];
 
