@@ -462,6 +462,10 @@
             windowHeight = window.innerHeight,
             outerWidth = isFramed ? false : window.outerWidth,
             outerHeight = isFramed ? false : window.outerHeight;
+
+        if (me.modules.ui.mainFrameWindow && me.modules.ui.mainFrameWindow.location) {
+            me.modules.dispatcher.updateCurrentUrl(me.modules.ui.mainFrameWindow.location.href);
+        }
         if (currentWindowDimensions.width !== windowWidth ||
             currentWindowDimensions.height !== windowHeight ||
             currentWindowDimensions.outerWidth !== outerWidth ||

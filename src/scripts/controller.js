@@ -170,6 +170,8 @@ define('controller', ['app', 'scroll'], function(app){
             } else if (cmd === 'chooseJobHidden') {
                 $scope.chooseJobState = false;
                 digestButtonPanel();
+            } else if (cmd === 'currentUrl') {
+                $('#currentUrl').text(details.url).attr('href', details.url);
             }
         });
         $scope.incrementCurrentStep = function(skip, nextTaskFlow){

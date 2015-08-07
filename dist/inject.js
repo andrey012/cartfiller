@@ -153,7 +153,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1456904315220';
+    config.gruntBuildTimeStamp='1456911583419';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -692,6 +692,12 @@
      * @access private
      */
     var workerFrameLoaded = false;
+    /**
+     * Keeps current URL of worker frame
+     * @var {String} CartFiller.Dispatcher~workerCurrentUrl
+     * @access private
+     */
+    var workerCurrentUrl = false;
     /**
      * Flag, that is set to true after worker (job progress) frame
      * is bootstrapped to avoid sending extra bootstrap message
@@ -1318,6 +1324,18 @@
          */
         registerWorkerSetInterval: function(id){
             workerSetIntervalIds.push(id);
+        },
+        /** 
+         * Update current worker URL
+         * @function CartFiller.Dispatcher#updateCurrentUrl
+         * @param {String} url
+         * @access public
+         */
+        updateCurrentUrl: function(url) {
+            if (workerCurrentUrl !== url) {
+                this.postMessageToWorker('currentUrl', {url: url});
+                workerCurrentUrl = url;
+            }
         }
     });
 }).call(this, document, window);
@@ -1850,6 +1868,10 @@
             windowHeight = window.innerHeight,
             outerWidth = isFramed ? false : window.outerWidth,
             outerHeight = isFramed ? false : window.outerHeight;
+
+        if (me.modules.ui.mainFrameWindow && me.modules.ui.mainFrameWindow.location) {
+            me.modules.dispatcher.updateCurrentUrl(me.modules.ui.mainFrameWindow.location.href);
+        }
         if (currentWindowDimensions.width !== windowWidth ||
             currentWindowDimensions.height !== windowHeight ||
             currentWindowDimensions.outerWidth !== outerWidth ||

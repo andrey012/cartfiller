@@ -101,6 +101,12 @@
      */
     var workerFrameLoaded = false;
     /**
+     * Keeps current URL of worker frame
+     * @var {String} CartFiller.Dispatcher~workerCurrentUrl
+     * @access private
+     */
+    var workerCurrentUrl = false;
+    /**
      * Flag, that is set to true after worker (job progress) frame
      * is bootstrapped to avoid sending extra bootstrap message
      * @var {boolean} CartFiller.Dispatcher~bootstrapped
@@ -726,6 +732,18 @@
          */
         registerWorkerSetInterval: function(id){
             workerSetIntervalIds.push(id);
+        },
+        /** 
+         * Update current worker URL
+         * @function CartFiller.Dispatcher#updateCurrentUrl
+         * @param {String} url
+         * @access public
+         */
+        updateCurrentUrl: function(url) {
+            if (workerCurrentUrl !== url) {
+                this.postMessageToWorker('currentUrl', {url: url});
+                workerCurrentUrl = url;
+            }
         }
     });
 }).call(this, document, window);
