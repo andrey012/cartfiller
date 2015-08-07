@@ -431,50 +431,50 @@
         }
     };
     /** 
-     * @class CartFillerPlugin~jobDetails
      * Used to configure job by chooseJob frame, contains set of pre-defined
      * properties as well as arbitrary properties set by chooseJob which will be 
      * delivered to worker.
+     * @class CartFillerPlugin~JobDetails
      */
     /**
-     * @member {string} CartFillerPlugin~jobDetails#cmd Reserved property used for transport,
+     * @member {string} CartFillerPlugin~JobDetails#cmd Reserved property used for transport,
      * should not be used
      */
     /** 
-     * @member {Object[]} CartFillerPlugin~jobDetails#details Array of tasks, each task is 
+     * @member {Object[]} CartFillerPlugin~JobDetails#details Array of tasks, each task is 
      * object with mandatory task property which specifies the task alias, and any 
      * set of other properties which will be transferred to worker. 
      */
     /** 
-     * @member {integer} CartFillerPlugin~jobDetails#timeout Time (ms) to wait 
+     * @member {integer} CartFillerPlugin~JobDetails#timeout Time (ms) to wait 
      * for result of each step. If api.result() or api.nop() is not called 
      * within specified timeout - then api.result() will be called by 
      * cartfiller itself, with error message saying that timeout occured. 
      * 0 or undefined means no timeout will be ever triggered
      */
     /**
-     *  @member {Object} CartFillerPlugin~jobDetails#titleMap Map of human readable titles 
+     *  @member {Object} CartFillerPlugin~JobDetails#titleMap Map of human readable titles 
      * of tasks. Property name = task alias, value = title. 
      */
     /**
-     * @member {integer} CartFillerPlugin~jobDetails#autorun Time (ms) after which 
+     * @member {integer} CartFillerPlugin~JobDetails#autorun Time (ms) after which 
      * worker will run automatically. If set to null, undefined or 0 -- no autorun will
      * be done
      */
     /**
-     * @member {string} CartFillerPlugin~jobDetails#autorunSpeed Autorun speed, can be
+     * @member {string} CartFillerPlugin~JobDetails#autorunSpeed Autorun speed, can be
      * 'fast' or 'slow'. Undefined (default) equals to 'fast'
      */
     /**
-     * @member {string} CartFillerPlugin~jobDetails#autorunUntilTask Task index to run until,
+     * @member {integer} CartFillerPlugin~JobDetails#autorunUntilTask Task index to run until,
      * used together with autorunUntilStep
      */
     /**
-     * @member {string} CartFillerPlugin~jobDetails#autorunUntilStep Step index to run until,
+     * @member {integer} CartFillerPlugin~JobDetails#autorunUntilStep Step index to run until,
      * used together with autorunUntilTask
      */
     /**
-     * @member {string} CartFillerPlugin~jobDetails#workerSrc URL of worker to 
+     * @member {string} CartFillerPlugin~JobDetails#workerSrc URL of worker to 
      * be used instead of one given by bookmarklet
      */
     /**
@@ -483,7 +483,7 @@
      * @function external:"jQuery".cartFillerPlugin
      * @global
      * @name "jQuery.cartFillerPlugin"
-     * @param {CartFillerPlugin~jobDetails} jobDetails Job details data
+     * @param {CartFillerPlugin~JobDetails} jobDetails Job details data
      * @param {CartFillerPlugin.resultCallback} resultCallback
      * callback, which will receive results. It can be called several times
      * @param {CartFillerPlugin.statusCallback} resultCallback
@@ -570,13 +570,13 @@
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Externals</h3><ul><li><a href="external%2520jQuery.external__jQuery.fn_.html">jQuery.fn</a></li><li><a href="external-jQuery.html">jQuery</a></li></ul><h3>Classes</h3><ul><li><a href="CartFiller.Api.html">Api</a></li><li><a href="CartFiller.Api.StepEnvironment.html">StepEnvironment</a></li><li><a href="CartFiller.Configuration.html">Configuration</a></li><li><a href="CartFiller.Dispatcher.html">Dispatcher</a></li><li><a href="CartFiller.Injector.html">Injector</a></li><li><a href="CartFiller.Loader.html">Loader</a></li><li><a href="CartFiller.SampleWorker.html">SampleWorker</a></li><li><a href="CartFiller.SampleWorker.SampleWorkerTasks.html">SampleWorkerTasks</a></li><li><a href="CartFiller.UI.html">UI</a></li><li><a href="CartFiller.UI.ArrowToElement.html">ArrowToElement</a></li><li><a href="CartFillerPlugin-Plugin.html">Plugin</a></li><li><a href="CartFillerPlugin-Settings.html">Settings</a></li></ul><h3>Namespaces</h3><ul><li><a href="CartFiller.html">CartFiller</a></li><li><a href="CartFillerPlugin.html">CartFillerPlugin</a></li></ul><h3>Global</h3><ul><li><a href="global.html#%2522jQuery.cartFillerPlugin.hideChooseJobFrame%2522">"jQuery.cartFillerPlugin.hideChooseJobFrame"</a></li><li><a href="global.html#%2522jQuery.cartFillerPlugin.showChooseJobFrame%2522">"jQuery.cartFillerPlugin.showChooseJobFrame"</a></li><li><a href="global.html#%2522jQuery.cartFillerPlugin%2522">"jQuery.cartFillerPlugin"</a></li><li><a href="global.html#%2522jQuery.fn.cartFillerPlugin%2522">"jQuery.fn.cartFillerPlugin"</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Externals</h3><ul><li><a href="external%2520jQuery.external__jQuery.fn_.html">jQuery.fn</a></li><li><a href="external-jQuery.html">jQuery</a></li></ul><h3>Classes</h3><ul><li><a href="CartFiller.Api.html">Api</a></li><li><a href="CartFiller.Api.StepEnvironment.html">StepEnvironment</a></li><li><a href="CartFiller.Configuration.html">Configuration</a></li><li><a href="CartFiller.Dispatcher.html">Dispatcher</a></li><li><a href="CartFiller.Injector.html">Injector</a></li><li><a href="CartFiller.Loader.html">Loader</a></li><li><a href="CartFiller.SampleWorker.html">SampleWorker</a></li><li><a href="CartFiller.SampleWorker.SampleWorkerTasks.html">SampleWorkerTasks</a></li><li><a href="CartFiller.UI.html">UI</a></li><li><a href="CartFiller.UI.ArrowToElement.html">ArrowToElement</a></li><li><a href="CartFillerPlugin-JobDetails.html">JobDetails</a></li><li><a href="CartFillerPlugin-Plugin.html">Plugin</a></li><li><a href="CartFillerPlugin-Settings.html">Settings</a></li></ul><h3>Namespaces</h3><ul><li><a href="CartFiller.html">CartFiller</a></li><li><a href="CartFillerPlugin.html">CartFillerPlugin</a></li></ul><h3>Global</h3><ul><li><a href="global.html#%2522jQuery.cartFillerPlugin.hideChooseJobFrame%2522">"jQuery.cartFillerPlugin.hideChooseJobFrame"</a></li><li><a href="global.html#%2522jQuery.cartFillerPlugin.showChooseJobFrame%2522">"jQuery.cartFillerPlugin.showChooseJobFrame"</a></li><li><a href="global.html#%2522jQuery.cartFillerPlugin%2522">"jQuery.cartFillerPlugin"</a></li><li><a href="global.html#%2522jQuery.fn.cartFillerPlugin%2522">"jQuery.fn.cartFillerPlugin"</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.3</a> on Wed Mar 02 2016 20:54:18 GMT+0300 (MSK)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0</a> on Thu Mar 03 2016 01:29:34 GMT+0300 (MSK)
 </footer>
 
 <script> prettyPrint(); </script>

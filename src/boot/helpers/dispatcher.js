@@ -123,7 +123,7 @@
      * Cache job details to give it to worker in full. Purpose is to make it 
      * possible to deliver configuration/environment variables from 
      * chooseJob to worker, and make them accessible by all tasks
-     * @var {CartFillerPlugin~jobDetails} CartFiller.Dispatcher~jobDetailsCache
+     * @var {CartFillerPlugin~JobDetails} CartFiller.Dispatcher~jobDetailsCache
      * @access private
      */
     var jobDetailsCache = {};

@@ -411,50 +411,50 @@
         }
     };
     /** 
-     * @class CartFillerPlugin~jobDetails
      * Used to configure job by chooseJob frame, contains set of pre-defined
      * properties as well as arbitrary properties set by chooseJob which will be 
      * delivered to worker.
+     * @class CartFillerPlugin~JobDetails
      */
     /**
-     * @member {string} CartFillerPlugin~jobDetails#cmd Reserved property used for transport,
+     * @member {string} CartFillerPlugin~JobDetails#cmd Reserved property used for transport,
      * should not be used
      */
     /** 
-     * @member {Object[]} CartFillerPlugin~jobDetails#details Array of tasks, each task is 
+     * @member {Object[]} CartFillerPlugin~JobDetails#details Array of tasks, each task is 
      * object with mandatory task property which specifies the task alias, and any 
      * set of other properties which will be transferred to worker. 
      */
     /** 
-     * @member {integer} CartFillerPlugin~jobDetails#timeout Time (ms) to wait 
+     * @member {integer} CartFillerPlugin~JobDetails#timeout Time (ms) to wait 
      * for result of each step. If api.result() or api.nop() is not called 
      * within specified timeout - then api.result() will be called by 
      * cartfiller itself, with error message saying that timeout occured. 
      * 0 or undefined means no timeout will be ever triggered
      */
     /**
-     *  @member {Object} CartFillerPlugin~jobDetails#titleMap Map of human readable titles 
+     *  @member {Object} CartFillerPlugin~JobDetails#titleMap Map of human readable titles 
      * of tasks. Property name = task alias, value = title. 
      */
     /**
-     * @member {integer} CartFillerPlugin~jobDetails#autorun Time (ms) after which 
+     * @member {integer} CartFillerPlugin~JobDetails#autorun Time (ms) after which 
      * worker will run automatically. If set to null, undefined or 0 -- no autorun will
      * be done
      */
     /**
-     * @member {string} CartFillerPlugin~jobDetails#autorunSpeed Autorun speed, can be
+     * @member {string} CartFillerPlugin~JobDetails#autorunSpeed Autorun speed, can be
      * 'fast' or 'slow'. Undefined (default) equals to 'fast'
      */
     /**
-     * @member {string} CartFillerPlugin~jobDetails#autorunUntilTask Task index to run until,
+     * @member {integer} CartFillerPlugin~JobDetails#autorunUntilTask Task index to run until,
      * used together with autorunUntilStep
      */
     /**
-     * @member {string} CartFillerPlugin~jobDetails#autorunUntilStep Step index to run until,
+     * @member {integer} CartFillerPlugin~JobDetails#autorunUntilStep Step index to run until,
      * used together with autorunUntilTask
      */
     /**
-     * @member {string} CartFillerPlugin~jobDetails#workerSrc URL of worker to 
+     * @member {string} CartFillerPlugin~JobDetails#workerSrc URL of worker to 
      * be used instead of one given by bookmarklet
      */
     /**
@@ -463,7 +463,7 @@
      * @function external:"jQuery".cartFillerPlugin
      * @global
      * @name "jQuery.cartFillerPlugin"
-     * @param {CartFillerPlugin~jobDetails} jobDetails Job details data
+     * @param {CartFillerPlugin~JobDetails} jobDetails Job details data
      * @param {CartFillerPlugin.resultCallback} resultCallback
      * callback, which will receive results. It can be called several times
      * @param {CartFillerPlugin.statusCallback} resultCallback

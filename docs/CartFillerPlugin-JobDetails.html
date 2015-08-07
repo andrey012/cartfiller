@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>JSDoc: Class: SampleWorker</title>
+    <title>JSDoc: Class: JobDetails</title>
 
     <script src="scripts/prettify/prettify.js"> </script>
     <script src="scripts/prettify/lang-css.js"> </script>
@@ -17,7 +17,7 @@
 
 <div id="main">
 
-    <h1 class="page-title">Class: SampleWorker</h1>
+    <h1 class="page-title">Class: JobDetails</h1>
 
     
 
@@ -29,9 +29,9 @@
 <header>
     
         <h2>
-            <span class="ancestors"><a href="CartFiller.html">CartFiller</a>.</span>
+            <span class="ancestors"><a href="CartFillerPlugin.html">CartFillerPlugin</a>~</span>
         
-        SampleWorker
+        JobDetails
         </h2>
         
     
@@ -44,14 +44,14 @@
 
     
 
-    <h4 class="name" id="SampleWorker"><span class="type-signature"></span>new SampleWorker<span class="signature">()</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="JobDetails"><span class="type-signature"></span>new JobDetails<span class="signature">()</span><span class="type-signature"></span></h4>
 
     
 
 
 
 <div class="description">
-    Sample Worker class
+    Used to configure job by chooseJob frame, contains set of pre-definedproperties as well as arbitrary properties set by chooseJob which will be delivered to worker.
 </div>
 
 
@@ -95,7 +95,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="samples_worker.js.html">samples/worker.js</a>, <a href="samples_worker.js.html#line1">line 1</a>
+        <a href="src_jquery-cartFiller.js.html">src/jquery-cartFiller.js</a>, <a href="src_jquery-cartFiller.js.html#line405">line 405</a>
     </li></ul></dd>
     
 
@@ -129,13 +129,6 @@
     
 
     
-        <h3 class="subsection-title">Classes</h3>
-
-        <dl>
-            <dt><a href="CartFiller.SampleWorker.SampleWorkerTasks.html">SampleWorkerTasks</a></dt>
-            <dd></dd>
-        </dl>
-    
 
      
 
@@ -146,85 +139,13 @@
 
         
             
-<h4 class="name" id="~cartIsEmpty"><span class="type-signature">(private, inner) </span>cartIsEmpty<span class="type-signature"> :boolean</span></h4>
+<h4 class="name" id="autorun"><span class="type-signature"></span>autorun<span class="type-signature"> :integer</span></h4>
 
 
 
 
 <div class="description">
-    Indicates, that cart is empty. If set to true, then several steps can be skipped
-</div>
-
-
-
-    <h5>Type:</h5>
-    <ul>
-        <li>
-            
-<span class="param-type">boolean</span>
-
-
-        </li>
-    </ul>
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="samples_worker.js.html">samples/worker.js</a>, <a href="samples_worker.js.html#line14">line 14</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-        
-            
-<h4 class="name" id="~currentCartAmount"><span class="type-signature">(private, inner) </span>currentCartAmount<span class="type-signature"> :integer</span></h4>
-
-
-
-
-<div class="description">
-    Remembers total cart amount before we add new items to the cart. Used to verify, that exactly required number of items was added to the cart
+    Time (ms) after which worker will run automatically. If set to null, undefined or 0 -- no autorun willbe done
 </div>
 
 
@@ -272,7 +193,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="samples_worker.js.html">samples/worker.js</a>, <a href="samples_worker.js.html#line22">line 22</a>
+        <a href="src_jquery-cartFiller.js.html">src/jquery-cartFiller.js</a>, <a href="src_jquery-cartFiller.js.html#line431">line 431</a>
     </li></ul></dd>
     
 
@@ -290,13 +211,13 @@
 
         
             
-<h4 class="name" id="~suitableRow"><span class="type-signature">(private, inner) </span>suitableRow<span class="type-signature"> :tr</span></h4>
+<h4 class="name" id="autorunSpeed"><span class="type-signature"></span>autorunSpeed<span class="type-signature"> :string</span></h4>
 
 
 
 
 <div class="description">
-    Remembers suitable offer row, which will later be used to add items to cart
+    Autorun speed, can be'fast' or 'slow'. Undefined (default) equals to 'fast'
 </div>
 
 
@@ -305,7 +226,7 @@
     <ul>
         <li>
             
-<span class="param-type">tr</span>
+<span class="param-type">string</span>
 
 
         </li>
@@ -344,7 +265,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="samples_worker.js.html">samples/worker.js</a>, <a href="samples_worker.js.html#line31">line 31</a>
+        <a href="src_jquery-cartFiller.js.html">src/jquery-cartFiller.js</a>, <a href="src_jquery-cartFiller.js.html#line436">line 436</a>
     </li></ul></dd>
     
 
@@ -361,33 +282,27 @@
 
 
         
-    
-
-    
-        <h3 class="subsection-title">Methods</h3>
-
-        
             
+<h4 class="name" id="autorunUntilStep"><span class="type-signature"></span>autorunUntilStep<span class="type-signature"> :integer</span></h4>
 
-    
-
-    <h4 class="name" id="~cartAmountElement"><span class="type-signature">(private, inner) </span>cartAmountElement<span class="signature">()</span><span class="type-signature"> &rarr; {jQuery}</span></h4>
-
-    
 
 
 
 <div class="description">
-    Returns total cart amount element in the header
+    Step index to run until,used together with autorunUntilTask
 </div>
 
 
 
+    <h5>Type:</h5>
+    <ul>
+        <li>
+            
+<span class="param-type">integer</span>
 
 
-
-
-
+        </li>
+    </ul>
 
 
 
@@ -422,7 +337,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="samples_worker.js.html">samples/worker.js</a>, <a href="samples_worker.js.html#line38">line 38</a>
+        <a href="src_jquery-cartFiller.js.html">src/jquery-cartFiller.js</a>, <a href="src_jquery-cartFiller.js.html#line444">line 444</a>
     </li></ul></dd>
     
 
@@ -438,105 +353,28 @@
 
 
 
-
-
-
-
-
-
-
-<h5>Returns:</h5>
-
-        
-
-
-<dl>
-    <dt>
-        Type
-    </dt>
-    <dd>
-        
-<span class="param-type">jQuery</span>
-
-
-    </dd>
-</dl>
-
-    
-
-
-
         
             
+<h4 class="name" id="autorunUntilTask"><span class="type-signature"></span>autorunUntilTask<span class="type-signature"> :integer</span></h4>
 
-    
-
-    <h4 class="name" id="~click"><span class="type-signature">(private, inner) </span>click<span class="signature">(el)</span><span class="type-signature"></span></h4>
-
-    
 
 
 
 <div class="description">
-    HtmlElement.click() function for PhantomJS
+    Task index to run until,used together with autorunUntilStep
 </div>
 
 
 
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
+    <h5>Type:</h5>
+    <ul>
+        <li>
             
-                <td class="name"><code>el</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">HtmlElement</span>
+<span class="param-type">integer</span>
 
 
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"></td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
+        </li>
+    </ul>
 
 
 
@@ -571,7 +409,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="samples_worker.js.html">samples/worker.js</a>, <a href="samples_worker.js.html#line66">line 66</a>
+        <a href="src_jquery-cartFiller.js.html">src/jquery-cartFiller.js</a>, <a href="src_jquery-cartFiller.js.html#line440">line 440</a>
     </li></ul></dd>
     
 
@@ -587,123 +425,28 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
         
             
+<h4 class="name" id="cmd"><span class="type-signature"></span>cmd<span class="type-signature"> :string</span></h4>
 
-    
-
-    <h4 class="name" id="~registerCallback"><span class="type-signature">(private, inner) </span>registerCallback<span class="signature">()</span><span class="type-signature"></span></h4>
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="samples_worker.js.html">samples/worker.js</a>, <a href="samples_worker.js.html#line7">line 7</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-    <dt class="tag-see">See:</dt>
-    <dd class="tag-see">
-        <ul>
-            <li><a href="CartFiller.Api.html#.registerCallback">CartFiller.Api.registerCallback</a></li>
-        </ul>
-    </dd>
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        
-            
-
-    
-
-    <h4 class="name" id="~searchBox"><span class="type-signature">(private, inner) </span>searchBox<span class="signature">()</span><span class="type-signature"> &rarr; {jQuery}</span></h4>
-
-    
 
 
 
 <div class="description">
-    Returns search box element
+    Reserved property used for transport,should not be used
 </div>
 
 
 
+    <h5>Type:</h5>
+    <ul>
+        <li>
+            
+<span class="param-type">string</span>
 
 
-
-
-
+        </li>
+    </ul>
 
 
 
@@ -738,7 +481,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="samples_worker.js.html">samples/worker.js</a>, <a href="samples_worker.js.html#line47">line 47</a>
+        <a href="src_jquery-cartFiller.js.html">src/jquery-cartFiller.js</a>, <a href="src_jquery-cartFiller.js.html#line411">line 411</a>
     </li></ul></dd>
     
 
@@ -751,59 +494,31 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-<h5>Returns:</h5>
-
-        
-
-
-<dl>
-    <dt>
-        Type
-    </dt>
-    <dd>
-        
-<span class="param-type">jQuery</span>
-
-
-    </dd>
-</dl>
-
-    
 
 
 
         
             
+<h4 class="name" id="details"><span class="type-signature"></span>details<span class="type-signature"> :Array.&lt;Object></span></h4>
 
-    
-
-    <h4 class="name" id="~searchResultsHeading"><span class="type-signature">(private, inner) </span>searchResultsHeading<span class="signature">()</span><span class="type-signature"> &rarr; {jQuery}</span></h4>
-
-    
 
 
 
 <div class="description">
-    Returns search results heading. Used to detect, that we are onsearch results page
+    Array of tasks, each task is object with mandatory task property which specifies the task alias, and any set of other properties which will be transferred to worker.
 </div>
 
 
 
+    <h5>Type:</h5>
+    <ul>
+        <li>
+            
+<span class="param-type">Array.&lt;Object></span>
 
 
-
-
-
+        </li>
+    </ul>
 
 
 
@@ -838,7 +553,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="samples_worker.js.html">samples/worker.js</a>, <a href="samples_worker.js.html#line56">line 56</a>
+        <a href="src_jquery-cartFiller.js.html">src/jquery-cartFiller.js</a>, <a href="src_jquery-cartFiller.js.html#line415">line 415</a>
     </li></ul></dd>
     
 
@@ -854,35 +569,225 @@
 
 
 
-
-
-
-
-
-
-
-<h5>Returns:</h5>
-
         
+            
+<h4 class="name" id="timeout"><span class="type-signature"></span>timeout<span class="type-signature"> :integer</span></h4>
 
 
-<dl>
-    <dt>
-        Type
-    </dt>
-    <dd>
-        
-<span class="param-type">jQuery</span>
 
 
-    </dd>
-</dl>
+<div class="description">
+    Time (ms) to wait for result of each step. If api.result() or api.nop() is not called within specified timeout - then api.result() will be called by cartfiller itself, with error message saying that timeout occured. 0 or undefined means no timeout will be ever triggered
+</div>
+
+
+
+    <h5>Type:</h5>
+    <ul>
+        <li>
+            
+<span class="param-type">integer</span>
+
+
+        </li>
+    </ul>
+
+
+
+
+
+<dl class="details">
 
     
 
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_jquery-cartFiller.js.html">src/jquery-cartFiller.js</a>, <a href="src_jquery-cartFiller.js.html#line420">line 420</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
 
 
         
+            
+<h4 class="name" id="titleMap"><span class="type-signature"></span>titleMap<span class="type-signature"> :Object</span></h4>
+
+
+
+
+<div class="description">
+    Map of human readable titles of tasks. Property name = task alias, value = title.
+</div>
+
+
+
+    <h5>Type:</h5>
+    <ul>
+        <li>
+            
+<span class="param-type">Object</span>
+
+
+        </li>
+    </ul>
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_jquery-cartFiller.js.html">src/jquery-cartFiller.js</a>, <a href="src_jquery-cartFiller.js.html#line427">line 427</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="workerSrc"><span class="type-signature"></span>workerSrc<span class="type-signature"> :string</span></h4>
+
+
+
+
+<div class="description">
+    URL of worker to be used instead of one given by bookmarklet
+</div>
+
+
+
+    <h5>Type:</h5>
+    <ul>
+        <li>
+            
+<span class="param-type">string</span>
+
+
+        </li>
+    </ul>
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_jquery-cartFiller.js.html">src/jquery-cartFiller.js</a>, <a href="src_jquery-cartFiller.js.html#line448">line 448</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+        
+    
+
     
 
     
@@ -904,7 +809,7 @@
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0</a> on Thu Mar 03 2016 01:29:34 GMT+0300 (MSK)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0</a> on Thu Mar 03 2016 01:29:35 GMT+0300 (MSK)
 </footer>
 
 <script> prettyPrint(); </script>

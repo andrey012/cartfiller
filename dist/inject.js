@@ -153,7 +153,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1456941251451';
+    config.gruntBuildTimeStamp='1456957764837';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -219,7 +219,7 @@
      * When particular step callbacks, this object will each time be
      * reinitialized with next task as provided by 
      * {@link CartFiller.submitJobDetails}
-     * @param {CartFillerPlugin~jobDetails} job contains full copy of job details
+     * @param {CartFillerPlugin~JobDetails} job contains full copy of job details
      * as passed by chooseJob frame
      * @return {Array} where even members are names of steps, and odd members
      * are either step functions or arrays of function + parameters object, e.g.
@@ -715,7 +715,7 @@
      * Cache job details to give it to worker in full. Purpose is to make it 
      * possible to deliver configuration/environment variables from 
      * chooseJob to worker, and make them accessible by all tasks
-     * @var {CartFillerPlugin~jobDetails} CartFiller.Dispatcher~jobDetailsCache
+     * @var {CartFillerPlugin~JobDetails} CartFiller.Dispatcher~jobDetailsCache
      * @access private
      */
     var jobDetailsCache = {};

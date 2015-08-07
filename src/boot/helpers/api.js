@@ -22,7 +22,7 @@
      * When particular step callbacks, this object will each time be
      * reinitialized with next task as provided by 
      * {@link CartFiller.submitJobDetails}
-     * @param {CartFillerPlugin~jobDetails} job contains full copy of job details
+     * @param {CartFillerPlugin~JobDetails} job contains full copy of job details
      * as passed by chooseJob frame
      * @return {Array} where even members are names of steps, and odd members
      * are either step functions or arrays of function + parameters object, e.g.
