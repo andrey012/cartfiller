@@ -41,7 +41,7 @@
                 <tbody>
                     <tr ng-repeat-start="(index, testPath) in discovery.scripts.flat" ng-class="['danger', '', 'success'][1 + (discovery.scripts.success[index] || 0)] ">
                         <td>
-                            {{testPath.join('/')}}
+                            {{discovery.scripts.contents[index].title ? discovery.scripts.contents[index].title : testPath.join('/')}}
                         </td>
                         <td>
                             <button class="btn btn-xs btn-success" ng-click="runTest(index, 'fast')">

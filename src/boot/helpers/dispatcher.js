@@ -432,7 +432,6 @@
             if (false !== workerCurrentStepIndex){
                 var err = 'ERROR: worker task is in still in progress';
                 alert(err);
-                this.postMessage('workerStepResult', {index: message.index, step: message.step, result: err});
             } else {
                 nextTaskFlow = 'normal';
                 if (workerCurrentTaskIndex !== message.index){

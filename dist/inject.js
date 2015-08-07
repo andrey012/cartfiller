@@ -153,7 +153,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1456855119825';
+    config.gruntBuildTimeStamp='1456904315220';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -1024,7 +1024,6 @@
             if (false !== workerCurrentStepIndex){
                 var err = 'ERROR: worker task is in still in progress';
                 alert(err);
-                this.postMessage('workerStepResult', {index: message.index, step: message.step, result: err});
             } else {
                 nextTaskFlow = 'normal';
                 if (workerCurrentTaskIndex !== message.index){
