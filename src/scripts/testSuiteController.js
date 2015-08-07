@@ -58,7 +58,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
         };
         var discoverNextRootURL = function(){
             $.ajax({
-                url: $scope.discovery.currentRootFile = $scope.discovery.currentRootPath.replace(/\/$/, '') + '/cartfiller.json', 
+                url: $scope.discovery.currentRootFile = $scope.discovery.currentRootPath.replace(/\/$/, '') + '/cartfiller.json?' + (new Date()).getTime(), 
                 complete: function(xhr) {
                     if ($scope.discovery.state === 0) {
                         $scope.errorURL = false;
@@ -87,6 +87,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                                 $scope.discovery.state = -1;
                                 $scope.discovery.error = 'cartfiller.json was not found, visited: ' + $scope.discovery.visitedRootPaths.join(', ');
                                 $scope.discovery.currentRootFile = false;
+                                $scope.discovery.currentRootPath = $scope.params.root ? $scope.params.root : window.location.href.split('?')[0].replace(/\/[^\/]*/, '/');
                             } else {
                                 $scope.discovery.currentRootPath = pc.join('/');
                             }
@@ -125,7 +126,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             } else {
                 // let's download next file
                 $.ajax({
-                    url: $scope.discovery.currentDownloadedTestURL = $scope.discovery.currentRootPath.replace(/\/$/, '') + '/' + $scope.discovery.scripts.flat[$scope.discovery.scripts.currentDownloadingIndex].join('/').replace(/\.json$/, '') + '.json',
+                    url: $scope.discovery.currentDownloadedTestURL = $scope.discovery.currentRootPath.replace(/\/$/, '') + '/' + $scope.discovery.scripts.flat[$scope.discovery.scripts.currentDownloadingIndex].join('/').replace(/\.json$/, '') + '.json?' + (new Date()).getTime(),
                     complete: function(xhr) {
                         $scope.errorURL = false;
                         if (xhr.status === 200) {
