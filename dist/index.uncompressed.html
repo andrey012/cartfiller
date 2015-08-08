@@ -41,7 +41,7 @@
                 <tbody>
                     <tr ng-repeat-start="(index, testPath) in discovery.scripts.flat" ng-class="['danger', '', 'success'][1 + (discovery.scripts.success[index] || 0)] ">
                         <td>
-                            {{discovery.scripts.contents[index].title ? discovery.scripts.contents[index].title : testPath.join('/')}}
+                            {{discovery.scripts.contents[index].title ? discovery.scripts.contents[index].title : testPath.join('/')}}<span ng-repeat="(name, value) in discovery.scripts.tweaks[index]">, {{name}}: {{value}}</span>
                         </td>
                         <td>
                             <button class="btn btn-xs btn-success" ng-click="runTest(index, 'fast')">
@@ -183,7 +183,12 @@
                 Completed
             </div>
             <div class="alert alert-info">
-                Current URL: <a href="#" target="_blank" id="currentUrl"></a>
+                Current URL: <a href="#" target="_blank" id="currentUrl" style="word-wrap: break-word;"></a>
+            </div>
+            <div id="globalsDiv" ng-repeat="dummy in [0]">
+                <div class="alert alert-info" ng-repeat="(name, value) in workerGlobals">
+                    {{name}}: {{getWorkerGlobalValue(name)}}
+                </div>
             </div>
         </div>
     </div>

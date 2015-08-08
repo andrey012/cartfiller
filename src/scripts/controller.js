@@ -8,6 +8,9 @@ define('controller', ['app', 'scroll'], function(app){
         var digestButtonPanel = function(){
             angular.element(document.getElementById('buttonPanel')).scope().$digest();
         };
+        var digestGlobals = function() {
+            angular.element(document.getElementById('globalsDiv')).scope().$digest();
+        };
         var digestTask = function(taskIndex){
             var div = document.getElementById('taskDiv_' + taskIndex);
             if (div) {
@@ -38,6 +41,7 @@ define('controller', ['app', 'scroll'], function(app){
         $scope.debugEnabled = parseInt(cfDebug.debugEnabled);
         $scope.workersCounter = 1;
         $scope.workersLoaded = 0;
+        $scope.workerGlobals = {};
         $scope.workerSrc = false;
         $scope.finishReached = false;
         $scope.awaitingForFinish = false;
@@ -115,6 +119,7 @@ define('controller', ['app', 'scroll'], function(app){
                         }
                     }
                     $scope.finishReached = false;
+                    $scope.workerGlobals = {};
                 });
             } else if (cmd === 'workerRegistered'){
                 $scope.$apply(function(){
@@ -164,6 +169,15 @@ define('controller', ['app', 'scroll'], function(app){
                     digestTask($scope.currentTask);
                 }
                 digestButtonPanel();
+                if ('object' === typeof details.globals) {
+                    for (var i in details.globals) {
+                        if (details.globals.hasOwnProperty(i)){
+                            $scope.workerGlobals = details.globals;
+                            digestGlobals();
+                            break;
+                        }
+                    }
+                }
             } else if (cmd === 'chooseJobShown') {
                 $scope.chooseJobState = true;
                 digestButtonPanel();
@@ -396,6 +410,10 @@ define('controller', ['app', 'scroll'], function(app){
         };
         $scope.mouseDown = function() {
             mouseDownTime = (new Date()).getTime();
+        };
+        $scope.getWorkerGlobalValue = function(name) {
+            var v = $scope.workerGlobals[name];
+            return 'object' === typeof v ? JSON.stringify(v) : v;
         };
     }]);
 });

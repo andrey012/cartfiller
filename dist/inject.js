@@ -153,7 +153,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1456957764837';
+    config.gruntBuildTimeStamp='1457081161982';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -221,6 +221,8 @@
      * {@link CartFiller.submitJobDetails}
      * @param {CartFillerPlugin~JobDetails} job contains full copy of job details
      * as passed by chooseJob frame
+     * @param {Object} globals An object, whoes properties can be set at one step
+     * and then reused in the other step
      * @return {Array} where even members are names of steps, and odd members
      * are either step functions or arrays of function + parameters object, e.g.
      * [
@@ -413,7 +415,10 @@
          * once after event or timeout has happened
          * @function CartFiller.Api#waitFor
          * @param {CartFiller.Api.waitForCheckCallback} checkCallback
-         * @param {CartFiller.Api.waitForResultCallback} resultCallback
+         * @param {CartFiller.Api.waitForResultCallback} resultCallback can be string or nothing.
+         * If string is specified, then generic result callback will be there, submitting
+         * string as error result. If nothing is specified, then just "timeout" will be submitted
+         * in case of failure
          * @param {integer} timeout Measured in milliseconds. Default value
          * (if timeout is undefined) 20000 ms
          * @param {integer} period Poll period, measured in milliseconds, 
@@ -429,6 +434,16 @@
                 period = 200;
             }
             var counter = Math.round(timeout / period);
+            if (!resultCallback) {
+                resultCallback = '';
+            }
+            if ('string' === typeof resultCallback) {
+                resultCallback = (function(s){ 
+                    return function(r) {
+                        me.modules.api.result(r?'':(s.length ? s : 'timeout'));
+                    };
+                })(resultCallback);
+            }
             var fn = function(){
                 var result = checkCallback();
                 if (false === me.modules.dispatcher.getWorkerCurrentStepIndex()){
@@ -663,6 +678,12 @@
      */
     var workerWatchdogId = false;
     /**
+     * @var {Object} CartFiller.Dispatcher~workerGlobals Keeps global variables
+     * which can be assigned from within worker and then reused.
+     * @access private
+     */
+    var workerGlobals = {};
+    /**
      * Keeps message result name, used to deliver job results to
      * Choose Job page opened in separate frame, if that is necessary at all
      * If set to false, empty string or undefined - no results will be delivered
@@ -798,8 +819,10 @@
      * @access private
      */
     var registerWorkerWatchdog = function() {
-        if (workerWatchdogId) {
+        if (workerWatchdogId && workerWatchdogId !== true) {
             removeWatchdogHandler();
+        } else {
+            workerWatchdogId = false;
         }
         if (workerTimeout) {
             workerWatchdogId = setTimeout(function(){
@@ -814,6 +837,8 @@
                 workerOnLoadHandler = false;
                 me.modules.api.result('Timeout happened, worker step cancelled');
             }, workerTimeout);
+        } else {
+            workerWatchdogId = true;
         }
     };
     /**
@@ -823,7 +848,9 @@
      */
     var removeWatchdogHandler = function(){
         if (workerWatchdogId) {
-            clearTimeout(workerWatchdogId);
+            if (workerWatchdogId !== true) {
+                clearTimeout(workerWatchdogId);
+            }
             workerWatchdogId = false;
         }
     };
@@ -963,6 +990,7 @@
                 message.details = newDetails;
             }
             worker = {};
+            workerGlobals = message.globals ? message.globals : {};
             this.postMessageToWorker('jobDetails', message);
         },
         /**
@@ -1220,7 +1248,7 @@
                 return taskSteps;
             };
             workerCurrentTask = {};
-            var thisWorker = cb(me.modules.ui.mainFrameWindow, undefined, api, workerCurrentTask, jobDetailsCache);
+            var thisWorker = cb(me.modules.ui.mainFrameWindow, undefined, api, workerCurrentTask, jobDetailsCache, workerGlobals);
             var list = {};
             for (var taskName in thisWorker){
                 if (thisWorker.hasOwnProperty(taskName)){
@@ -1275,7 +1303,8 @@
                     message: message,
                     response: response,
                     nop: recoverable === 'nop',
-                    nextTaskFlow: nextTaskFlow
+                    nextTaskFlow: nextTaskFlow,
+                    globals: workerGlobals
                 }
             );
             workerCurrentStepIndex = workerOnLoadHandler = false;

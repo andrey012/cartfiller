@@ -9,7 +9,7 @@
      * @see CartFiller.Api.registerCallback
      * @access private
      */
-    var registerCallback = function(window, document, api, task, job){
+    var registerCallback = function(window, document, api, task, job, globals){
         // some state variables
         /**
          * Indicates, that cart is empty. If set to true, then several 
@@ -19,15 +19,6 @@
         */
         var cartIsEmpty = false;
 
-        /**
-         * Remembers total cart amount before we add new items to the cart. 
-         * Used to verify, that exactly required number of items was added 
-         * to the cart
-         * @member {integer} CartFiller.SampleWorker~currentCartAmount 
-         * @access private
-         */
-        var currentCartAmount;
-        
         /**
          * Remembers suitable offer row, which will later be used to add 
          * items to cart
@@ -227,8 +218,8 @@
                 },
                 'remember current amount in cart', function(){
                     var cart = cartAmountElement();
-                    currentCartAmount = parseInt(cart.text());
-                    api.highlight(cart).say('We are going to remember current cart amount (' + currentCartAmount + ') and after we\'ll add more items to cart - we are going to check, that cart amount increased accordingly').result();
+                    globals.currentCartAmount = parseInt(cart.text());
+                    api.highlight(cart).say('We are going to remember current cart amount (' + globals.currentCartAmount + ') and after we\'ll add more items to cart - we are going to check, that cart amount increased accordingly').result();
                 },
                 'find Add to cart button', function(){
                     var add = window.jQuery(suitableRow).find('td:nth-child(5) a:visible');
@@ -238,7 +229,7 @@
                     if (!task.quantity) return api.result();
                     add.each(function(i,el){click(el);});
                     api.waitFor(function(){
-                        return currentCartAmount !== parseInt(cartAmountElement().text());
+                        return globals.currentCartAmount !== parseInt(cartAmountElement().text());
                     }, function(r){
                         api.highlight(add).say('Something was added, let\'s check what in the next step').result(r ? "" : "Cant add to cart - total cart amount is not changing");
                     });
@@ -255,7 +246,7 @@
                 'make sure, that cart amount increased properly', function(){
                     var cart = cartAmountElement();
                     api.highlight(cart);
-                    api.say('Let\'s make sure, that total cart amount increased appropriately').result(((currentCartAmount + task.quantity) === parseInt(cart.text())) ? "" : "new total cart amount is incorrect");
+                    api.say('Let\'s make sure, that total cart amount increased appropriately').result(((globals.currentCartAmount + task.quantity) === parseInt(cart.text())) ? "" : "new total cart amount is incorrect");
                 }
             ]
         };

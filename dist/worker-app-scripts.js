@@ -22,6 +22,9 @@ define('controller', ['app', 'scroll'], function(app){
         var digestButtonPanel = function(){
             angular.element(document.getElementById('buttonPanel')).scope().$digest();
         };
+        var digestGlobals = function() {
+            angular.element(document.getElementById('globalsDiv')).scope().$digest();
+        };
         var digestTask = function(taskIndex){
             var div = document.getElementById('taskDiv_' + taskIndex);
             if (div) {
@@ -52,6 +55,7 @@ define('controller', ['app', 'scroll'], function(app){
         $scope.debugEnabled = parseInt(cfDebug.debugEnabled);
         $scope.workersCounter = 1;
         $scope.workersLoaded = 0;
+        $scope.workerGlobals = {};
         $scope.workerSrc = false;
         $scope.finishReached = false;
         $scope.awaitingForFinish = false;
@@ -129,6 +133,7 @@ define('controller', ['app', 'scroll'], function(app){
                         }
                     }
                     $scope.finishReached = false;
+                    $scope.workerGlobals = {};
                 });
             } else if (cmd === 'workerRegistered'){
                 $scope.$apply(function(){
@@ -178,6 +183,15 @@ define('controller', ['app', 'scroll'], function(app){
                     digestTask($scope.currentTask);
                 }
                 digestButtonPanel();
+                if ('object' === typeof details.globals) {
+                    for (var i in details.globals) {
+                        if (details.globals.hasOwnProperty(i)){
+                            $scope.workerGlobals = details.globals;
+                            digestGlobals();
+                            break;
+                        }
+                    }
+                }
             } else if (cmd === 'chooseJobShown') {
                 $scope.chooseJobState = true;
                 digestButtonPanel();
@@ -411,6 +425,10 @@ define('controller', ['app', 'scroll'], function(app){
         $scope.mouseDown = function() {
             mouseDownTime = (new Date()).getTime();
         };
+        $scope.getWorkerGlobalValue = function(name) {
+            var v = $scope.workerGlobals[name];
+            return 'object' === typeof v ? JSON.stringify(v) : v;
+        };
     }]);
 });
 (function(undefined) {
@@ -562,6 +580,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             rootCartfillerJson: {},
             scripts: {
                 flat: [],
+                tweaks: [],
                 currentDownloadingIndex: false,
                 contents: [],
                 enabled: [],
@@ -584,13 +603,30 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             var pc;
             var rr;
             r = r || [];
+            var tweaks;
             for (i in json) {
                 rr = r.filter(function(){return 1;});
                 rr.push(i);
                 if ('object' === typeof json[i]) {
                     pc = flattenCartfillerJson(json[i], rr);
                 } else {
+                    tweaks = {};
+                    rr = rr.map(function(name){
+                        var s = name.split('?');
+                        if (s[1] && s[1].length) {
+                            s[1].split('&').filter(function(tweak) {
+                                var s = tweak.split('=');
+                                if (undefined === s[1]) {
+                                    tweaks[s[0]] = true;
+                                } else {
+                                    tweaks[s[0]] = decodeURIComponent(s[1]);
+                                }
+                            });
+                        }
+                        return s[0];
+                    });
                     $scope.discovery.scripts.flat.push(rr);
+                    $scope.discovery.scripts.tweaks.push(tweaks);
                     $scope.discovery.scripts.enabled.push(json[i]);
                 }
             }
@@ -607,6 +643,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                                 $scope.discovery.workerSrc = normalizeWorkerURLs($scope.discovery.rootCartfillerJson.worker, $scope.discovery.currentRootPath);
                                 $scope.discovery.state = 1;
                                 $scope.discovery.scripts.flat = [];
+                                $scope.discovery.scripts.tweaks = [];
                                 $scope.discovery.scripts.contents = [];
                                 $scope.discovery.scripts.success = [];
                                 $scope.discovery.scripts.errors = {};
@@ -712,6 +749,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             test.autorun = how === 'load' ? 0 : 1;
             test.autorunSpeed = how === 'slow' ? 'slow' : 'fast';
             test.rootCartfillerPath = $scope.discovery.currentRootPath;
+            test.globals = $scope.discovery.scripts.tweaks[index];
             if (undefined !== untilTask) {
                 test.autorunUntilTask = untilTask;
                 test.autorunUntilStep = 0;
@@ -727,7 +765,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                         $scope.discovery.scripts.success[index] = 0 === data.result.filter(function(r){return ! r.complete;}).length ? 1 : -1;
                         if ($scope.runningAll && index + 1 < $scope.discovery.scripts.contents.length) {
                             $scope.runTest(index + 1);
-                        } else {
+                        } else if ($scope.runningAll) {
                             $scope.runningAll = false;
                             $.cartFillerPlugin.showChooseJobFrame();
                         }
@@ -1233,6 +1271,10 @@ define('jquery-cartFiller', ['jquery'], function() {
     /**
      * @member {string} CartFillerPlugin~JobDetails#workerSrc URL of worker to 
      * be used instead of one given by bookmarklet
+     */
+    /**
+     * @member {Object} CartFillerPlugin~JobDetails#globals optional global values which will be
+     * copied into the worker globals object during task load
      */
     /**
      * Global plugin function - sends job details to cartFiller and

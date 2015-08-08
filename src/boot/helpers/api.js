@@ -24,6 +24,8 @@
      * {@link CartFiller.submitJobDetails}
      * @param {CartFillerPlugin~JobDetails} job contains full copy of job details
      * as passed by chooseJob frame
+     * @param {Object} globals An object, whoes properties can be set at one step
+     * and then reused in the other step
      * @return {Array} where even members are names of steps, and odd members
      * are either step functions or arrays of function + parameters object, e.g.
      * [
@@ -216,7 +218,10 @@
          * once after event or timeout has happened
          * @function CartFiller.Api#waitFor
          * @param {CartFiller.Api.waitForCheckCallback} checkCallback
-         * @param {CartFiller.Api.waitForResultCallback} resultCallback
+         * @param {CartFiller.Api.waitForResultCallback} resultCallback can be string or nothing.
+         * If string is specified, then generic result callback will be there, submitting
+         * string as error result. If nothing is specified, then just "timeout" will be submitted
+         * in case of failure
          * @param {integer} timeout Measured in milliseconds. Default value
          * (if timeout is undefined) 20000 ms
          * @param {integer} period Poll period, measured in milliseconds, 
@@ -232,6 +237,16 @@
                 period = 200;
             }
             var counter = Math.round(timeout / period);
+            if (!resultCallback) {
+                resultCallback = '';
+            }
+            if ('string' === typeof resultCallback) {
+                resultCallback = (function(s){ 
+                    return function(r) {
+                        me.modules.api.result(r?'':(s.length ? s : 'timeout'));
+                    };
+                })(resultCallback);
+            }
             var fn = function(){
                 var result = checkCallback();
                 if (false === me.modules.dispatcher.getWorkerCurrentStepIndex()){

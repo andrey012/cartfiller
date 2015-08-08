@@ -71,6 +71,12 @@
      */
     var workerWatchdogId = false;
     /**
+     * @var {Object} CartFiller.Dispatcher~workerGlobals Keeps global variables
+     * which can be assigned from within worker and then reused.
+     * @access private
+     */
+    var workerGlobals = {};
+    /**
      * Keeps message result name, used to deliver job results to
      * Choose Job page opened in separate frame, if that is necessary at all
      * If set to false, empty string or undefined - no results will be delivered
@@ -206,8 +212,10 @@
      * @access private
      */
     var registerWorkerWatchdog = function() {
-        if (workerWatchdogId) {
+        if (workerWatchdogId && workerWatchdogId !== true) {
             removeWatchdogHandler();
+        } else {
+            workerWatchdogId = false;
         }
         if (workerTimeout) {
             workerWatchdogId = setTimeout(function(){
@@ -222,6 +230,8 @@
                 workerOnLoadHandler = false;
                 me.modules.api.result('Timeout happened, worker step cancelled');
             }, workerTimeout);
+        } else {
+            workerWatchdogId = true;
         }
     };
     /**
@@ -231,7 +241,9 @@
      */
     var removeWatchdogHandler = function(){
         if (workerWatchdogId) {
-            clearTimeout(workerWatchdogId);
+            if (workerWatchdogId !== true) {
+                clearTimeout(workerWatchdogId);
+            }
             workerWatchdogId = false;
         }
     };
@@ -371,6 +383,7 @@
                 message.details = newDetails;
             }
             worker = {};
+            workerGlobals = message.globals ? message.globals : {};
             this.postMessageToWorker('jobDetails', message);
         },
         /**
@@ -628,7 +641,7 @@
                 return taskSteps;
             };
             workerCurrentTask = {};
-            var thisWorker = cb(me.modules.ui.mainFrameWindow, undefined, api, workerCurrentTask, jobDetailsCache);
+            var thisWorker = cb(me.modules.ui.mainFrameWindow, undefined, api, workerCurrentTask, jobDetailsCache, workerGlobals);
             var list = {};
             for (var taskName in thisWorker){
                 if (thisWorker.hasOwnProperty(taskName)){
@@ -683,7 +696,8 @@
                     message: message,
                     response: response,
                     nop: recoverable === 'nop',
-                    nextTaskFlow: nextTaskFlow
+                    nextTaskFlow: nextTaskFlow,
+                    globals: workerGlobals
                 }
             );
             workerCurrentStepIndex = workerOnLoadHandler = false;

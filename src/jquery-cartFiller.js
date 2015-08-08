@@ -450,6 +450,10 @@
      * be used instead of one given by bookmarklet
      */
     /**
+     * @member {Object} CartFillerPlugin~JobDetails#globals optional global values which will be
+     * copied into the worker globals object during task load
+     */
+    /**
      * Global plugin function - sends job details to cartFiller and
      * registers optional callback, that will receive results.
      * @function external:"jQuery".cartFillerPlugin
