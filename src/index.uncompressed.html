@@ -61,7 +61,7 @@
                     <tr ng-if="index === expandedTest" ng-repeat="(taskIndex, task) in discovery.scripts.contents[index].details">
                         <td colspan="2" ng-class="discovery.scripts.success[index] == -1 && getTaskErrorsExist(index, taskIndex) ? 'danger' : ''">
                             &nbsp;&nbsp;&nbsp;&nbsp;
-                            <a href="{{getTaskUrl(index, taskIndex, 0)}}" ng-click="runTest(index, 'fast', taskIndex, 0, $event)">{{task.task}}</a><span ng-repeat="(name, value) in task | orderBy: 'name'" ng-if="name !== 'task'">,
+                            <a href="{{getTaskUrl(index, taskIndex, 0)}}" ng-click="runTest(index, 'fast', taskIndex, 0, $event)">{{taskIndex + 1}}. {{task.task}}</a><span ng-repeat="(name, value) in task | orderBy: 'name'" ng-if="name !== 'task'">,
                                 <strong>
                                 {{name}}:
                                 </strong>

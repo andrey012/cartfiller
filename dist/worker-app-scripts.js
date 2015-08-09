@@ -722,7 +722,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                         if (undefined === index) {
                             alert('test not found: ' + $scope.params.goto);
                         } else {
-                            $scope.runTest(index, 'fast', parseInt($scope.params.task), parseInt($scope.params.step));
+                            $scope.runTest(index, 'fast', parseInt($scope.params.task) - 1, parseInt($scope.params.step) - 1);
                         }
                     });
                 }
@@ -884,7 +884,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             return false;
         };
         $scope.getTaskUrl = function(testIndex, taskIndex, stepIndex) {
-            return window.location.href.split('?')[0] + '?goto=' + encodeURIComponent(encodeURIComponent($scope.discovery.scripts.urls[testIndex])) + '&task=' + taskIndex + '&step=' + stepIndex;
+            return window.location.href.split('?')[0] + '?goto=' + encodeURIComponent(encodeURIComponent($scope.discovery.scripts.urls[testIndex])) + '&task=' + (taskIndex + 1) + '&step=' + (stepIndex + 1);
         };
     }]);
 });
