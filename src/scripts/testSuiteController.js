@@ -11,10 +11,16 @@ define('testSuiteController', ['app', 'scroll'], function(app){
         }
         $scope.params = {};
         $scope.expandedTest = false;
-        angular.forEach((window.location.href.split('?')[1] || '').split('#')[0].split('&'), function(v) {
-            var pc = v.split('=');
-            $scope.params[decodeURIComponent(pc[0])] = decodeURIComponent(pc[1]);
-        });
+        var parseParams = function() {
+            var pc = window.location.href.split('?');
+            pc.shift();
+            angular.forEach(pc.join('?').split('#')[0].split('&'), function(v) {
+                var pc = v.split('=');
+                var name = pc.shift();
+                $scope.params[decodeURIComponent(name)] = decodeURIComponent(pc.join('='));
+            });
+        };
+        parseParams();
         console.log($scope.params);
         $scope.discovery = {
             state: 0,
@@ -151,6 +157,16 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                         $scope.runAll();
                     });
                 }
+                if ($scope.params.goto) {
+                    setTimeout(function() {
+                        var index = $scope.getTestIndexByUrl($scope.params.goto);
+                        if (undefined === index) {
+                            alert('test not found: ' + $scope.params.goto);
+                        } else {
+                            $scope.runTest(index, 'fast', parseInt($scope.params.task), parseInt($scope.params.step));
+                        }
+                    });
+                }
             } else {
                 // let's download next file
                 $.ajax({
@@ -176,6 +192,14 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                 });
             }
         };
+        $scope.getTestIndexByUrl = function(url) {
+            var i;
+            for (i = 0; i < $scope.discovery.scripts.urls.length; i++){
+                if ($scope.discovery.scripts.urls[i] === url) {
+                    return i;
+                }
+            }
+        };
         $scope.discover = function() {
             switch ($scope.discovery.state) {
                 case -1:
@@ -194,7 +218,10 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             }
         };
         $scope.discover();
-        $scope.runTest = function(index, how, untilTask) {
+        $scope.runTest = function(index, how, untilTask, untilStep, $event) {
+            if ($event) {
+                $event.stopPropagation();
+            }
             $scope.discovery.scripts.errors[index] = {};
             var test = $scope.discovery.scripts.contents[index];
             test.workerSrc = $scope.discovery.workerSrc;
@@ -204,7 +231,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             test.globals = $scope.discovery.scripts.tweaks[index];
             if (undefined !== untilTask) {
                 test.autorunUntilTask = untilTask;
-                test.autorunUntilStep = 0;
+                test.autorunUntilStep = undefined !== untilStep ? untilStep : 0;
             }
             $.cartFillerPlugin(
                 test,
@@ -296,6 +323,9 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                 }
             }
             return false;
+        };
+        $scope.getTaskUrl = function(testIndex, taskIndex, stepIndex) {
+            return window.location.href.split('?')[0] + '?goto=' + encodeURIComponent(encodeURIComponent($scope.discovery.scripts.urls[testIndex])) + '&task=' + taskIndex + '&step=' + stepIndex;
         };
     }]);
 });
