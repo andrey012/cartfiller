@@ -211,16 +211,18 @@ define('controller', ['app', 'scroll'], function(app){
                 }
                 if ($scope.currentTask >= $scope.jobDetails.length){
                     $scope.finishReached = true;
-                    cfMessage.send(
-                        'sendStatus', 
-                        {
-                            result: $scope.jobTaskProgress, 
-                            tasks: $scope.jobDetails,
-                            currentTaskIndex: false, 
-                            currentTaskStepIndex: false,
-                            running: $scope.running,
-                            completed: true
-                        });
+                    setTimeout(function(){
+                        cfMessage.send(
+                            'sendStatus', 
+                            {
+                                result: $scope.jobTaskProgress, 
+                                tasks: $scope.jobDetails,
+                                currentTaskIndex: false, 
+                                currentTaskStepIndex: false,
+                                running: $scope.running,
+                                completed: true
+                            });
+                    },0);
                     digestFinishReached();
                     setTimeout(function(){
                         cfScroll(jQuery('#finishReached')[0]);
@@ -585,6 +587,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                 contents: [],
                 enabled: [],
                 success: [],
+                urls: [],
                 errors: {}
             }
         };
@@ -611,6 +614,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                     pc = flattenCartfillerJson(json[i], rr);
                 } else {
                     tweaks = {};
+                    $scope.discovery.scripts.urls.push(rr.join('/'));
                     rr = rr.map(function(name){
                         var s = name.split('?');
                         if (s[1] && s[1].length) {
@@ -646,6 +650,8 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                                 $scope.discovery.scripts.tweaks = [];
                                 $scope.discovery.scripts.contents = [];
                                 $scope.discovery.scripts.success = [];
+                                $scope.discovery.scripts.enabled = [];
+                                $scope.discovery.scripts.urls = [];
                                 $scope.discovery.scripts.errors = {};
                                 flattenCartfillerJson($scope.discovery.rootCartfillerJson.tests);
                                 $scope.discovery.scripts.currentDownloadingIndex = false;
@@ -658,7 +664,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                             var pc = $scope.discovery.currentRootPath.split('/');
                             pc.pop();
                             $scope.discovery.visitedRootPaths
-                                .push($scope.discovery.currentRootpath);
+                                .push($scope.discovery.currentRootFile);
                             if (pc.length < 3) {
                                 $scope.discovery.state = -1;
                                 $scope.discovery.error = 'cartfiller.json was not found, visited: ' + $scope.discovery.visitedRootPaths.join(', ');
@@ -699,6 +705,11 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                 // we are done
                 $scope.discovery.state = 2;
                 $scope.$digest();
+                if ($scope.params.backend && ! $scope.params.editor) {
+                    setTimeout(function(){
+                        $scope.runAll();
+                    });
+                }
             } else {
                 // let's download next file
                 $.ajax({
@@ -761,13 +772,42 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                     console.log(1);
                 },
                 function(data) {
+                    if ($scope.params.backend && false !== data.currentTaskIndex && false !== data.currentTaskStepIndex) {
+                        // report progress to backend
+                        $.ajax({
+                            url: $scope.params.backend.replace(/\/+$/, '') + '/progress/' + $scope.params.key,
+                            method: 'POST',
+                            data: {
+                                test: $scope.discovery.scripts.urls[index],
+                                task: data.currentTaskIndex,
+                                taskName: $scope.discovery.scripts.contents[index].details[data.currentTaskIndex].task,
+                                step: data.currentTaskStepIndex,
+                                result: data.result[data.currentTaskIndex].stepResults[data.currentTaskStepIndex].status
+                            }
+                        });
+                    }
                     if (data.completed && undefined === untilTask) {
                         $scope.discovery.scripts.success[index] = 0 === data.result.filter(function(r){return ! r.complete;}).length ? 1 : -1;
+                        if ($scope.params.backend && ! $scope.params.editor) {
+                            while (index < $scope.discovery.scripts.enabled.length && ! $scope.discovery.scripts.enabled[index + 1]) {
+                                $scope.discovery.scripts.success[index + 1] = -2;
+                                index ++;
+                            }
+                        }
                         if ($scope.runningAll && index + 1 < $scope.discovery.scripts.contents.length) {
                             $scope.runTest(index + 1);
                         } else if ($scope.runningAll) {
                             $scope.runningAll = false;
                             $.cartFillerPlugin.showChooseJobFrame();
+                            if ($scope.params.backend && ! $scope.params.editor) {
+                                $.ajax({
+                                    url: $scope.params.backend.replace(/\/+$/, '') + '/finish/' + $scope.params.key + '?' + (new Date()).getTime(),
+                                    complete: function() {
+                                        delete $scope.params.backend;
+                                        delete $scope.params.key;
+                                    }
+                                });
+                            }
                         }
                         $scope.$digest();
                     } else if (! data.running) {

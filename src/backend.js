@@ -16,6 +16,9 @@ var open = require('open');
 var app = express();
 var http = require('http');
 var crypto = require('crypto');
+var bodyParser = require('body-parser');
+app.use( bodyParser.json() );
+app.use(bodyParser.urlencoded({ extended: true }));
 
 var stats = {
     totalTests: 0,
@@ -27,15 +30,40 @@ var stats = {
 };
 
 var sessionKey = crypto.randomBytes(20).toString('hex');
+var failures = [];
 
 app.get('/', function (req, res) {
   res.send('<!DOCTYPE html><html><head></head><body><pre>Hello, this is cartFiller backend, you should not ever interact with it directly, here are current stats: ' + JSON.stringify(stats, null, 4) + '</pre></body></html>');
 });
 
-app.post('/sessionKey/progress', function () {
+app.post('/progress/' + sessionKey, function (req, res) {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    if (req.body.result !== 'ok') {
+        failures.push(req.body);
+    }
+    console.log(req.body.test + ', task ' + (parseInt(req.body.task) + 1) + ': ' + req.body.taskName + ', step ' + (parseInt(req.body.step) + 1) + ': result = ' + req.body.result);
+    res.end();
 });
 
-app.post('/sessionKey/save', function () {
+
+app.get('/finish/' + sessionKey, function (req, res) {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    console.log('finish');
+    if (failures.length) {
+        console.log('failure: ');
+        console.log(failures);
+    } else {
+        console.log('no failures');
+    }
+    setTimeout(function(){
+        var code = failures.length ? 1 : 0;
+        console.log('exitting with return code ' + code);
+        process.exit(code);
+    }, 0);
+    res.end();
+});
+
+app.post('/save/' + sessionKey, function () {
 });
 
 var server;

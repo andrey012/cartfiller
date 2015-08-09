@@ -49,6 +49,7 @@
     "test": "grunt travis --verbose"
   },
   "dependencies": {
+    "body-parser": "^1.15.0",
     "crypto": "0.0.3",
     "express": "^4.13.4",
     "open": "0.0.5",

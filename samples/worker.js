@@ -204,7 +204,7 @@
                         }
                     });
                     if (!found){
-                        api.highlight().say('We could not find any suitable lines').result("Cant find suitable items", true);
+                        api.highlight().say('We could not find any suitable lines').result("Cant find suitable items for " + String(task.partno), true);
                     }
                 },
                 'find quantity box', function(row){

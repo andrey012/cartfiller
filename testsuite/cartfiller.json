@@ -5,8 +5,8 @@
     ],
     "tests": {
         "suite1": {
-            "test11": true,
-            "test12": true
+            "test11?a=b": true,
+            "test12": false
         },
         "suite2": {
             "test22": true

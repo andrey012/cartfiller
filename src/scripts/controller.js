@@ -197,16 +197,18 @@ define('controller', ['app', 'scroll'], function(app){
                 }
                 if ($scope.currentTask >= $scope.jobDetails.length){
                     $scope.finishReached = true;
-                    cfMessage.send(
-                        'sendStatus', 
-                        {
-                            result: $scope.jobTaskProgress, 
-                            tasks: $scope.jobDetails,
-                            currentTaskIndex: false, 
-                            currentTaskStepIndex: false,
-                            running: $scope.running,
-                            completed: true
-                        });
+                    setTimeout(function(){
+                        cfMessage.send(
+                            'sendStatus', 
+                            {
+                                result: $scope.jobTaskProgress, 
+                                tasks: $scope.jobDetails,
+                                currentTaskIndex: false, 
+                                currentTaskStepIndex: false,
+                                running: $scope.running,
+                                completed: true
+                            });
+                    },0);
                     digestFinishReached();
                     setTimeout(function(){
                         cfScroll(jQuery('#finishReached')[0]);

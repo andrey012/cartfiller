@@ -153,7 +153,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1457206636142';
+    config.gruntBuildTimeStamp='1457210153187';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -972,6 +972,7 @@
             me.modules.ui.showHideChooseJobFrame(false);
             message.overrideWorkerSrc = me['data-worker'];
             workerTimeout = message.timeout;
+            workerCurrentTask = {};
             resetWorker();
             var i;
             for (i in jobDetailsCache) {
@@ -1021,7 +1022,7 @@
             }
         },
         /**
-         * Loads worker coder by evaluating it
+         * Loads worker code by evaluating it
          * @function CartFiller.Dispatcher#onMessage_loadWorker
          * @param {Object} message message.code contains source code of worker
          * @access public
@@ -1247,7 +1248,6 @@
                 }
                 return taskSteps;
             };
-            workerCurrentTask = {};
             var thisWorker = cb(me.modules.ui.mainFrameWindow, undefined, api, workerCurrentTask, jobDetailsCache, workerGlobals);
             var list = {};
             for (var taskName in thisWorker){

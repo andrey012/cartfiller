@@ -365,6 +365,7 @@
             me.modules.ui.showHideChooseJobFrame(false);
             message.overrideWorkerSrc = me['data-worker'];
             workerTimeout = message.timeout;
+            workerCurrentTask = {};
             resetWorker();
             var i;
             for (i in jobDetailsCache) {
@@ -414,7 +415,7 @@
             }
         },
         /**
-         * Loads worker coder by evaluating it
+         * Loads worker code by evaluating it
          * @function CartFiller.Dispatcher#onMessage_loadWorker
          * @param {Object} message message.code contains source code of worker
          * @access public
@@ -640,7 +641,6 @@
                 }
                 return taskSteps;
             };
-            workerCurrentTask = {};
             var thisWorker = cb(me.modules.ui.mainFrameWindow, undefined, api, workerCurrentTask, jobDetailsCache, workerGlobals);
             var list = {};
             for (var taskName in thisWorker){
