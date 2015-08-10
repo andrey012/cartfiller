@@ -861,6 +861,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                     }
                 }
             );
+            return false;
         };
         $scope.expandTest = function(index) {
             $scope.expandedTest = index === $scope.expandedTest ? false : index;

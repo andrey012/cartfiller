@@ -153,7 +153,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1457477946758';
+    config.gruntBuildTimeStamp='1457488586667';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -292,7 +292,7 @@
     /**
      * Another callback used by {@link CartFiller.Api#each} -- called when iterating through
      * array items was not interrupted
-     * @callback CartFillerApi.eachOtherwiseCallback
+     * @callback CartFiller.Api.eachOtherwiseCallback
      */
 
     /**
@@ -536,6 +536,14 @@
                         break;
                     }
                 }
+            } else if (null !== array && 'object' === typeof array && 'string' === typeof array.jquery && undefined !== array.length && 'function' === typeof array.each) {
+                array.each(function(i,el){
+                    var r = fn(i,el);
+                    if (false === r) {
+                        breaked = true;
+                    }
+                    return r;
+                });
             } else {
                 for (i in array) {
                     if (array.hasOwnProperty(i)) {
