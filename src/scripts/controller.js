@@ -119,7 +119,7 @@ define('controller', ['app', 'scroll'], function(app){
                         }
                     }
                     $scope.finishReached = false;
-                    $scope.workerGlobals = {};
+                    $scope.workerGlobals = details.globals;
                 });
             } else if (cmd === 'workerRegistered'){
                 $scope.$apply(function(){

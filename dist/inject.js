@@ -153,7 +153,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1457488586667';
+    config.gruntBuildTimeStamp='1457732004639';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -862,7 +862,6 @@
             workerWatchdogId = false;
         }
     };
-
     this.cartFillerConfiguration.scripts.push({
         /** 
          * Returns name of this module, used by loader
@@ -999,7 +998,7 @@
                 message.details = newDetails;
             }
             worker = {};
-            workerGlobals = message.globals ? message.globals : {};
+            workerGlobals = message.globals = message.globals ? message.globals : {};
             this.postMessageToWorker('jobDetails', message);
         },
         /**

@@ -247,7 +247,6 @@
             workerWatchdogId = false;
         }
     };
-
     this.cartFillerConfiguration.scripts.push({
         /** 
          * Returns name of this module, used by loader
@@ -384,7 +383,7 @@
                 message.details = newDetails;
             }
             worker = {};
-            workerGlobals = message.globals ? message.globals : {};
+            workerGlobals = message.globals = message.globals ? message.globals : {};
             this.postMessageToWorker('jobDetails', message);
         },
         /**

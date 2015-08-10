@@ -48,6 +48,38 @@ define('testSuiteController', ['app', 'scroll'], function(app){
         $scope.stopRunningAll = function() {
             $scope.runningAll = false;
         };
+        var processConditionals = function(details, globals) {
+            var result = [];
+            var i, j, match;
+            for (i = 0; i < details.length; i ++) {
+                if ('undefined' === typeof details[i].task) {
+                    if ('undefined' !== typeof details[i].if) {
+                        if ('object' === typeof details[i].if) {
+                            match = true;
+                            for (j in details[i].if) {
+                                if (String(details[i].if[j]) !== String(globals[j])) {
+                                    match = false;
+                                }
+                            }
+                        } else if ('string' === typeof details[i].if) {
+                            match = 'undefined' !== typeof globals[details[i].if];
+                        }
+                        if (match && 'undefined' !== typeof details[i].then) {
+                            for (j = 0 ; j < details[i].then.length; j++) {
+                                result.push(details[i].then[j]);
+                            }
+                        } else if (! match && 'undefined' !== typeof details[i].else) {
+                            for (j = 0 ; j < details[i].else.length; j++) {
+                                result.push(details[i].else[j]);
+                            }
+                        }
+                    }
+                } else {
+                    result.push(details[i]);
+                }
+            }
+            return result;
+        };
         var flattenCartfillerJson = function(json, r) {
             var i;
             var pc;
@@ -175,7 +207,9 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                         $scope.errorURL = false;
                         if (xhr.status === 200) {
                             try {
-                                $scope.discovery.scripts.contents[$scope.discovery.scripts.currentDownloadingIndex] = JSON.parse(xhr.responseText);
+                                var contents = JSON.parse(xhr.responseText);
+                                contents.details = processConditionals(contents.details, $scope.discovery.scripts.tweaks[$scope.discovery.scripts.currentDownloadingIndex]);
+                                $scope.discovery.scripts.contents[$scope.discovery.scripts.currentDownloadingIndex] = contents;
                                 downloadNextScriptFile();
                             } catch (e) {
                                 $scope.discovery.state = -1;
