@@ -155,11 +155,9 @@
                  ng-repeat="(jobTaskIndex, jobTask) in jobDetails track by $index"
                  ng-click="toggleTaskProgress(jobTaskIndex)"
             >
-                <span><strong>{{jobTaskIndex + 1}}. {{jobTitleMap[jobTask.task] ? jobTitleMap[jobTask.task] : jobTask.task}}</strong></span>
-                <div ng-repeat="(propertyName, propertyValue) in jobTask" ng-if="propertyName != 'task'">
+                <span><strong>{{jobTaskIndex + 1}}. {{jobTitleMap[jobTask.task] ? jobTitleMap[jobTask.task] : jobTask.task}}</strong></span><span ng-repeat="(propertyName, propertyValue) in jobTask" ng-if="propertyName != 'task'">, 
                     <span>{{jobTitleMap[propertyName] ? jobTitleMap[propertyName] : propertyName}}</span>
-                    <input type="text" readonly="readonly" value="{{propertyValue}}" ng-click="selectTaskInput(jobTaskIndex, $event);" ng-dblclick="doubleClickTaskInput(jobTaskIndex, propertyName, propertyValue)" title="{{propertyName}}"/>
-                </div>
+                    <span><strong ng-dblclick="doubleClickTaskInput(jobTaskIndex, propertyName, propertyValue)">{{propertyValue | limitTo: 100}}{{('' + propertyValue).length > 100 ? '...' : ''}}</strong></span></span>
                 <div>
                     <span
                        ng-repeat="(jobTaskStepIndex, jobTaskStep) in jobTaskDescriptions[jobTask.task] track by $index"
