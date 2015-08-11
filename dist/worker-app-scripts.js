@@ -629,14 +629,14 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                         } else if ('string' === typeof details[i].if) {
                             match = 'undefined' !== typeof globals[details[i].if];
                         }
+                        var src = [];
                         if (match && 'undefined' !== typeof details[i].then) {
-                            for (j = 0 ; j < details[i].then.length; j++) {
-                                result.push(details[i].then[j]);
-                            }
+                            src = processConditionals(details[i].then, globals);
                         } else if (! match && 'undefined' !== typeof details[i].else) {
-                            for (j = 0 ; j < details[i].else.length; j++) {
-                                result.push(details[i].else[j]);
-                            }
+                            src = processConditionals(details[i].else, globals);
+                        }
+                        for (j = 0 ; j < src.length; j++) {
+                            result.push(src[j]);
                         }
                     }
                 } else {

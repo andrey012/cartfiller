@@ -41,7 +41,7 @@
                 <tbody>
                     <tr ng-repeat-start="(index, testPath) in discovery.scripts.flat" ng-class="['active', 'danger', '', 'success'][2 + (discovery.scripts.success[index] || 0)] ">
                         <td>
-                            {{discovery.scripts.contents[index].title ? discovery.scripts.contents[index].title : testPath.join('/')}}<span ng-repeat="(name, value) in discovery.scripts.tweaks[index]">, {{name}}: {{value}}</span>
+                            <strong>{{discovery.scripts.contents[index].title ? discovery.scripts.contents[index].title : testPath.join('/')}}</strong><span ng-repeat="(name, value) in discovery.scripts.tweaks[index]">, {{name}}: <strong>{{value}}</strong></span>
                         </td>
                         <td>
                             <button class="btn btn-xs btn-success" ng-click="runTest(index, 'fast')">
