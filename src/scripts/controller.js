@@ -240,14 +240,20 @@ define('controller', ['app', 'scroll'], function(app){
             $scope.jobTaskProgress[index].complete = !$scope.jobTaskProgress[index].complete;
             return false;
         };
-        $scope.selectTaskInput = function(index, $event){
-            $event.target.select();
-            $event.stopPropagation();
+        $scope.getPropertyValue = function(value) {
+            if ('object' === typeof value) {
+                value = JSON.stringify(value, null, 1);
+            }
+            value = String(value);
+            if (value.length > 100) {
+                value = value.substr(0, 100) + '...';
+            }
+            return value;
         };
         $scope.doubleClickTaskInput = function(index, name, value) {
-            var val = prompt('Enter new value for [' + name + ']', value);
+            var val = prompt('Enter new value for [' + name + ']', 'object' === typeof value ? JSON.stringify(value) : value);
             if (null !== val) {
-                $scope.jobDetails[index][name] = val;
+                $scope.jobDetails[index][name] = 'object' === typeof value ? JSON.parse(val) : val;
                 cfMessage.send('updateProperty', {index: index, name: name, value: val});
             }
         };
