@@ -884,6 +884,9 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             if (undefined !== untilTask) {
                 test.autorunUntilTask = untilTask;
                 test.autorunUntilStep = undefined !== untilStep ? untilStep : 0;
+            } else {
+                delete test.autorunUntilTask;
+                delete test.autorunUntilStep;
             }
             $.cartFillerPlugin(
                 test,
