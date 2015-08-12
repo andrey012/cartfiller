@@ -116,6 +116,12 @@
      */
     var currentWorkerFrameSize = 'big';
     /**
+     * If set to true then we'll report elements on which mouse pointer is right now
+     * @member {boolean} CartFiller.UI~reportMousePointer
+     * @access private
+     */
+    var reportMousePointer = false;
+    /**
      * Returns window, that will be used to draw overlays
      * @function {Window} CartFiller.UI~overlayWindow
      * @access private
@@ -858,7 +864,6 @@
             while (body.children.length) {
                 body.removeChild(body.children[0]);
             }
-
             this.setSize = function(size){
                 ////
                 if (undefined === size) {
@@ -959,6 +964,58 @@
             };
 
             this.setSize('big');
+        },
+        /**
+         * Refreshes worker page
+         * @function CartFiller.UI#refreshPage
+         * @access public
+         */
+        refreshPage: function() {
+            this.mainFrameWindow.location.reload();
+        },
+        /**
+         * Starts reporting mouse pointer - on each mousemove dispatcher 
+         * will send worker frame a message with details about element
+         * over which mouse is now
+         * @function CartFiller.Dispatcher#startReportingMousePointer
+         * @access public
+         */
+        startReportingMousePointer: function() {
+            if (! reportMousePointer) {
+                var div = document.createElement('div');
+                div.style.height = window.innerHeight + 'px';
+                div.style.width = window.innerWidth + 'px';
+                div.zindex = 1000;
+                div.style.position = 'absolute';
+                div.style.left = '0px';
+                div.style.top = '0px';
+                div.style.backgroundColor = 'transparent';
+                document.getElementsByTagName('body')[0].appendChild(div);
+                reportMousePointer = div;
+                var x,y;
+                div.addEventListener('mousemove', function(event) {
+                    x = event.clientX;
+                    y = event.clientY;
+                },false);
+                div.addEventListener('click', function(event) {
+                    document.getElementsByTagName('body')[0].removeChild(reportMousePointer);
+                    reportMousePointer = false;
+                    var el = me.modules.ui.mainFrameWindow.document.elementFromPoint(x,y);
+                    var stack = [];
+                    var prev;
+                    var i;
+                    while (el && el.nodeName !== 'BODY' && el.nodeName !== 'HTML' && el !== document) {
+                        for (prev = el, i = 0; prev; prev = prev.previousElementSibling) {
+                            if (prev.nodeName === el.nodeName) {
+                                i++;
+                            }
+                        }
+                        stack.unshift({element: el.nodeName.toLowerCase(), classes: el.className.split(' ').filter(function(v){return v;}), id: el.id, index: i, text: String(el.innerText).length < 200 ? String(el.innerText) : ''});
+                        el = el.parentNode;
+                    }
+                    me.modules.dispatcher.postMessageToWorker('mousePointer', {x: event.clientX, y: event.clientY, stack: stack});
+                });
+            }
         }
     });
 }).call(this, document, window);

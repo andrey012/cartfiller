@@ -562,6 +562,34 @@
             this.postMessageToChooseJob(details.message, {});
         },
         /**
+         * Refreshes worker page
+         * @function CartFiller.Dispatcher#onMessage_refreshPage
+         * @access public
+         */
+        onMessage_refreshPage: function() {
+            me.modules.ui.refreshPage();
+        },
+        /**
+         * Starts reporting mouse pointer - on each mousemove dispatcher 
+         * will send worker frame a message with details about element
+         * over which mouse is now
+         * @function CartFiller.Dispatcher#onMessage_startReportingMousePointer
+         * @access public
+         */
+        onMessage_startReportingMousePointer: function() {
+            me.modules.ui.startReportingMousePointer();
+        },
+        /** 
+         * Tries to find all elements that match specified CSS selector and 
+         * returns number of elements matched
+         * @function CartFiller.Dispatcher#onMessage_evaluateCssSelector
+         * @param {Object} details
+         * @access public
+         */
+        onMessage_evaluateCssSelector: function(details) {
+             this.postMessageToWorker('cssSelectorEvaluateResult', {count: eval('(function(j){j.each(function(i,el){(function(o){if (o !== "0") {el.style.opacity=0; setTimeout(function(){el.style.opacity=o;},200);}})(el.style.opacity);}); return j.length;})(me.modules.ui.mainFrameWindow.jQuery' + details.selector + ')')}); // jshint ignore:line
+        },
+        /**
          * Handles "main frame loaded" event. If both main frame and 
          * worker (job progress) frames are loaded then bootstraps 
          * job progress frame

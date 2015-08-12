@@ -34,7 +34,6 @@ define('controller', ['app', 'scroll'], function(app){
         var digestFinishReached = function(){
             angular.element(document.getElementById('finishReached')).scope().$digest();
         };
-
         $scope.chooseJobState = false;
         $scope.toggleSize = function(){
             cfMessage.send('toggleSize');
@@ -200,6 +199,15 @@ define('controller', ['app', 'scroll'], function(app){
                 digestButtonPanel();
             } else if (cmd === 'currentUrl') {
                 $('#currentUrl').text(details.url).attr('href', details.url);
+            } else if (cmd === 'mousePointer') {
+                (function(){
+                    var scope = angular.element(document.getElementById('searchResults')).scope();
+                    scope.searchVisible = true;
+                    scope.stack = details.stack;
+                    scope.$digest();
+                })();
+            } else if (cmd === 'cssSelectorEvaluateResult') {
+                $('#searchButton').text('Search (' + details.count + ')');
             }
         });
         $scope.incrementCurrentStep = function(skip, nextTaskFlow){
@@ -437,6 +445,51 @@ define('controller', ['app', 'scroll'], function(app){
             var v = $scope.workerGlobals[name];
             return 'object' === typeof v ? JSON.stringify(v) : v;
         };
+        $scope.refreshPageNoWatch = function($event) {
+            cfMessage.send('refreshPage');
+            $event.stopPropagation();
+            return false;
+        };
+        $scope.performSearchNoWatch = function() {
+            cfMessage.send('startReportingMousePointer');
+        };
+        setTimeout(function initSearchScope() {
+            var scope = angular.element(document.getElementById('searchResults')).scope();
+            if (! scope) {
+                setTimeout(initSearchScope,1000);
+                return;
+            }
+            scope.toggle = function(what, where, index){
+                if (undefined === index) {
+                    where[what] = ! where[what];
+                } else {
+                    if (undefined === where[what]) {
+                        where[what] = {};
+                    }
+                    where[what][index] = ! where[what][index];
+                }
+            };
+            scope.getCssSelector = function(stack){
+                var r = ('(\'' + stack.map(function(el){
+                    return '' +
+                        (el.selectNodeName ? el.element : '') +
+                        (el.selectId ? ('#' + el.id) : '') +
+                        (el.classes.filter(function(c,i) {
+                            return undefined !== el.selectClass && el.selectClass[i];
+                        }).map(function(v){
+                            return '.' + v;
+                        }).join('')) +
+                        (el.selectIndex ? (':nth-of-type(' + el.index + ')') : '') +
+                        (el.selectText ? ('\').filter(function(i,el){return el.innerText.trim() === ' + JSON.stringify(el.text) + ';}).find(\'') : '')
+                    ;
+                }).join(' ') + '\')').replace(/.find\(\'\s*\'\)$/g, '').replace(/\s+/g, ' ').replace(/\'\s+/g, '\'').replace(/\s+\'/g, '\'');
+                cfMessage.send('evaluateCssSelector', {selector: r});
+                return r;
+            };
+            scope.toggleSearch = function(){
+                scope.searchVisible = ! scope.searchVisible;
+            };
+        },1000);
     }]);
 });
 (function(undefined) {
