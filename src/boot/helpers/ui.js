@@ -651,7 +651,21 @@
     var getZIndexForOverlay = function(){
         return 10000000; // TBD look for max zIndex used in the main frame
     };
-
+    /**
+     * Sets and resets time to time handler for onbeforeunload
+     * @function CartFiller.UI.preventPageReload
+     * @access private
+     */
+    var preventPageReload = function(){
+        setInterval(function() {
+            window.onbeforeunload=function() {
+                setTimeout(function(){
+                    me.modules.ui.mainFrameWindow.location.reload();
+                },0);
+                return 'This will cause CartFiller to reload. Choose not to reload if you want just to refresh the main frame.';
+            };
+        },2000);
+    };
     // Launch arrowToFunction
     setInterval(arrowToFunction, 200);
     // Launch adjustFrameCoordinates
@@ -898,8 +912,7 @@
             body.appendChild(this.chooseJobFrame);
             this.chooseJobFrameWindow = window.frames[chooseJobFrameName];
             this.setSize('big');
-
-
+            preventPageReload();
         },
         /**
          * Starts Framed type UI
@@ -964,6 +977,7 @@
             };
 
             this.setSize('big');
+            preventPageReload();
         },
         /**
          * Refreshes worker page

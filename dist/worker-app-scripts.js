@@ -908,7 +908,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                     }
                     if (data.completed && undefined === untilTask) {
                         $scope.discovery.scripts.success[index] = 0 === data.result.filter(function(r){return ! r.complete;}).length ? 1 : -1;
-                        if ($scope.params.backend && ! $scope.params.editor) {
+                        if ($scope.runningAll) {
                             while (index < $scope.discovery.scripts.enabled.length && ! $scope.discovery.scripts.enabled[index + 1]) {
                                 $scope.discovery.scripts.success[index + 1] = -2;
                                 index ++;
