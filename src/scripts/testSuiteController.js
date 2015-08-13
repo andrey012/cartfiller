@@ -23,6 +23,9 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                 var name = pc.shift();
                 $scope.params[decodeURIComponent(name)] = decodeURIComponent(pc.join('='));
             });
+            if ($scope.params.editor) {
+                $.cartFillerPlugin({'$preventPageReload': true});
+            }
         };
         parseParams();
         console.log($scope.params);

@@ -391,6 +391,9 @@
                 message.details = convertObjectToArray(message.details);
             } else if (undefined !== message.$cartFillerTestUpdate) {
                 message.$cartFillerTestUpdate.details = convertObjectToArray(message.$cartFillerTestUpdate.details);
+            } else if (undefined !== message.$preventPageReload) {
+                me.modules.ui.preventPageReload();
+                return;
             } else {
                 throw('unknown job details package - should have either details or $cartFillerTestUpdate');
             }
