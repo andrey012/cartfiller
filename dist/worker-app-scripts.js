@@ -377,8 +377,10 @@ define('controller', ['app', 'scroll'], function(app){
             return false;
         };
         $scope.clickOnNextStepNoWatch = function($event){
-            $scope.runUntilTask = $scope.runUntilStep = false;
-            $scope.doNextStep(); 
+            if (! $scope.workerInProgress) {
+                $scope.runUntilTask = $scope.runUntilStep = false;
+                $scope.doNextStep(); 
+            }
             $event.stopPropagation();
             cfMessage.send('focusMainFrameWindow');
             digestButtonPanel();
