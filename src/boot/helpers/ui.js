@@ -1017,14 +1017,22 @@
                     var el = me.modules.ui.mainFrameWindow.document.elementFromPoint(x,y);
                     var stack = [];
                     var prev;
-                    var i;
+                    var i, n;
                     while (el && el.nodeName !== 'BODY' && el.nodeName !== 'HTML' && el !== document) {
+                        var attrs = [];
+                        for (i = el.attributes.length - 1 ; i >= 0 ; i -- ) {
+                            n = el.attributes[i].name;
+                            if (n === 'id' || n === 'class') {
+                                continue;
+                            }
+                            attrs.push({n: n, v: el.attributes[i].value});
+                        }
                         for (prev = el, i = 0; prev; prev = prev.previousElementSibling) {
                             if (prev.nodeName === el.nodeName) {
                                 i++;
                             }
                         }
-                        stack.unshift({element: el.nodeName.toLowerCase(), classes: el.className.split(' ').filter(function(v){return v;}), id: el.id, index: i, text: String(el.innerText).length < 200 ? String(el.innerText) : ''});
+                        stack.unshift({element: el.nodeName.toLowerCase(), attrs: attrs, classes: el.className.split(' ').filter(function(v){return v;}), id: el.id, index: i, text: String(el.innerText).length < 200 ? String(el.innerText) : ''});
                         el = el.parentNode;
                     }
                     me.modules.dispatcher.postMessageToWorker('mousePointer', {x: event.clientX, y: event.clientY, stack: stack});

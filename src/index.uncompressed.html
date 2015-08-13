@@ -151,22 +151,27 @@
                         <div>
                             <a class="btn btn-xs btn-success" ng-click="toggleSearch()">Close</a>
                         </div>
-                        <div ng-repeat="element in stack">
-                            <button class="btn btn-xs" ng-class="element.selectNodeName ? 'btn-success' : 'btn-warning'" ng-click="toggle('selectNodeName', element)">
-                                {{element.element}}
-                            </button>
-                            <button class="btn btn-xs" ng-class="element.selectId ? 'btn-success' : 'btn-danger'" ng-click="toggle('selectId', element)" ng-if="element.id">
-                                #{{element.id}}
-                            </button>
-                            <button class="btn btn-xs" ng-class="element.selectClass[index] ? 'btn-success' : 'btn-default'" ng-click="toggle('selectClass', element, index)" ng-repeat="(index, class) in element.classes">
-                                .{{class}}
-                            </button>
-                            <button class="btn btn-xs" ng-class="element.selectIndex ? 'btn-success' : 'btn-default'" ng-click="toggle('selectIndex', element)">
-                                nth({{element.index}})
-                            </button>
-                            <button class="btn btn-xs" ng-class="element.selectText ? 'btn-success' : 'btn-default'" ng-click="toggle('selectText', element)" ng-if="element.text">
-                                text
-                            </button>
+                        <div style="max-height: 70vh; overflow: scroll">
+                            <div ng-repeat="element in stack">
+                                <button class="btn btn-xs" ng-class="element.selectNodeName ? 'btn-success' : 'btn-warning'" ng-click="toggle('selectNodeName', element)">
+                                    {{element.element}}
+                                </button>
+                                <button class="btn btn-xs" ng-class="element.selectId ? 'btn-success' : 'btn-danger'" ng-click="toggle('selectId', element)" ng-if="element.id">
+                                    #{{element.id}}
+                                </button>
+                                <button class="btn btn-xs" ng-class="element.selectClass[index] ? 'btn-success' : 'btn-default'" ng-click="toggle('selectClass', element, index)" ng-repeat="(index, class) in element.classes">
+                                    .{{class}}
+                                </button>
+                                <button class="btn btn-xs" ng-class="element.selectAttribute[index] ? 'btn-success' : 'btn-disabled'" ng-click="toggle('selectAttribute', element, index)" ng-repeat="(index, a) in element.attrs">
+                                    .{{a.n + '="' + a.v + '"'}}
+                                </button>
+                                <button class="btn btn-xs" ng-class="element.selectIndex ? 'btn-success' : 'btn-default'" ng-click="toggle('selectIndex', element)">
+                                    nth({{element.index}})
+                                </button>
+                                <button class="btn btn-xs" ng-class="element.selectText ? 'btn-success' : 'btn-default'" ng-click="toggle('selectText', element)" ng-if="element.text">
+                                    text
+                                </button>
+                            </div>
                         </div>
                         <textarea onclick="this.select()" readonly style="width: 100%">{{getCssSelector(stack)}}</textarea>
 

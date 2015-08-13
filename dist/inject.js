@@ -153,7 +153,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1458171513391';
+    config.gruntBuildTimeStamp='1458253959923';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -609,8 +609,32 @@
          */
         setInterval: function(fn, timeout) {
             me.modules.dispatcher.registerWorkerSetInterval(setInterval(fn, timeout));
+        },
+        /**
+         * Helper function to construct workers - return array ['click', function(el){ el[0].click(); api.result; }]
+         * @function CartFiller.Api#click
+         * @param {Function} what to do after click
+         * @return {Array}
+         * @access public
+         */
+        click: function(whatNext) {
+            return [
+                'click', function(el){
+                    if ('object' === typeof el && 'string' === typeof el.jquery && undefined !== el.length) {
+                        el[0].click();
+                    } else if (el instanceof Array) {
+                        el[0].click();
+                    } else {
+                        el.click();
+                    }
+                    if (undefined === whatNext) {
+                        me.modules.api.result();
+                    } else {
+                        whatNext();
+                    }
+                }
+            ];
         }
-
     });
 }).call(this, document, window);
 /**
@@ -966,39 +990,50 @@
          * @access public
          */
         onMessage_jobDetails: function(message){
-            if (message.resultMessage){
-                resultMessageName = message.resultMessage;
-            } else {
-                resultMessageName = false;
-            }
-            if (message.statusMessage){
-                statusMessageName = message.statusMessage;
-            } else {
-                statusMessageName = false;
-            }
-            me.modules.ui.showHideChooseJobFrame(false);
-            message.overrideWorkerSrc = me['data-worker'];
-            workerTimeout = message.timeout;
-            workerCurrentTask = {};
-            resetWorker();
-            var i;
-            for (i in jobDetailsCache) {
-                if (jobDetailsCache.hasOwnProperty(i)) {
-                    delete jobDetailsCache[i];
+            var convertObjectToArray = function(details) {
+                if (! (details instanceof Array)) {
+                    var newDetails = [];
+                    for (i = 0; 'undefined' !== typeof details[i]; i++ ){
+                        newDetails.push(details[i]);
+                    }
+                    details = newDetails;
                 }
-            }
-            for (i in message) {
-                jobDetailsCache[i] = message[i];
-            }
-            if (! (message.details instanceof Array)) {
-                var newDetails = [];
-                for (i = 0; 'undefined' !== typeof message.details[i]; i++ ){
-                    newDetails.push(message.details[i]);
+                return details;
+            };
+            if (undefined !== message.details) {
+                if (message.resultMessage){
+                    resultMessageName = message.resultMessage;
+                } else {
+                    resultMessageName = false;
                 }
-                message.details = newDetails;
+                if (message.statusMessage){
+                    statusMessageName = message.statusMessage;
+                } else {
+                    statusMessageName = false;
+                }
+                me.modules.ui.showHideChooseJobFrame(false);
+                message.overrideWorkerSrc = me['data-worker'];
+                workerTimeout = message.timeout;
+                workerCurrentTask = {};
+                resetWorker();
+                var i;
+                for (i in jobDetailsCache) {
+                    if (jobDetailsCache.hasOwnProperty(i)) {
+                        delete jobDetailsCache[i];
+                    }
+                }
+                for (i in message) {
+                    jobDetailsCache[i] = message[i];
+                }
+                worker = {};
+                workerGlobals = message.globals = message.globals ? message.globals : {};
+                message.details = convertObjectToArray(message.details);
+            } else if (undefined !== message.$cartFillerTestUpdate) {
+                message.$cartFillerTestUpdate.details = convertObjectToArray(message.$cartFillerTestUpdate.details);
+            } else {
+                throw('unknown job details package - should have either details or $cartFillerTestUpdate');
             }
-            worker = {};
-            workerGlobals = message.globals = message.globals ? message.globals : {};
+
             this.postMessageToWorker('jobDetails', message);
         },
         /**
@@ -1038,7 +1073,6 @@
             try {
                 workerSrcPretendent = message.src;
                 eval(message.code); // jshint ignore:line
-                resetWorker();
             } catch (e){
                 alert(e);
                 throw e;
@@ -2487,14 +2521,22 @@
                     var el = me.modules.ui.mainFrameWindow.document.elementFromPoint(x,y);
                     var stack = [];
                     var prev;
-                    var i;
+                    var i, n;
                     while (el && el.nodeName !== 'BODY' && el.nodeName !== 'HTML' && el !== document) {
+                        var attrs = [];
+                        for (i = el.attributes.length - 1 ; i >= 0 ; i -- ) {
+                            n = el.attributes[i].name;
+                            if (n === 'id' || n === 'class') {
+                                continue;
+                            }
+                            attrs.push({n: n, v: el.attributes[i].value});
+                        }
                         for (prev = el, i = 0; prev; prev = prev.previousElementSibling) {
                             if (prev.nodeName === el.nodeName) {
                                 i++;
                             }
                         }
-                        stack.unshift({element: el.nodeName.toLowerCase(), classes: el.className.split(' ').filter(function(v){return v;}), id: el.id, index: i, text: String(el.innerText).length < 200 ? String(el.innerText) : ''});
+                        stack.unshift({element: el.nodeName.toLowerCase(), attrs: attrs, classes: el.className.split(' ').filter(function(v){return v;}), id: el.id, index: i, text: String(el.innerText).length < 200 ? String(el.innerText) : ''});
                         el = el.parentNode;
                     }
                     me.modules.dispatcher.postMessageToWorker('mousePointer', {x: event.clientX, y: event.clientY, stack: stack});

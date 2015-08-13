@@ -42,6 +42,7 @@ define('controller', ['app', 'scroll'], function(app){
             $scope.chooseJobState = !$scope.chooseJobState;
             cfMessage.send($scope.chooseJobState ? 'chooseJob' : 'chooseJobCancel');
         };
+        $scope.trackWorker = false;
         $scope.jobDetails = [];
         $scope.jobTaskProgress = [];
         $scope.jobTaskDescriptions = {};
@@ -84,55 +85,67 @@ define('controller', ['app', 'scroll'], function(app){
         cfMessage.register(function(cmd, details){
             if (cmd === 'jobDetails'){
                 $scope.$apply(function(){
-                    cfMessage.send('makeSmaller');
-                    $scope.chooseJobState = false;
-                    $scope.jobDetails = details.details;
-                    $scope.jobTitleMap = angular.isUndefined(details.titleMap) ? [] : details.titleMap;
-                    $scope.jobTaskProgress = [];
-                    $scope.jobTaskStepProgress = [];
-                    $scope.currentTask = 0;
-                    $scope.currentStep = 0;
-                    scrollCurrentTaskIntoView(true);
-
-                    angular.forEach(details.details, function(){
-                        $scope.jobTaskProgress.push({complete: false, step: 0, stepsInProgress: {}, stepResults: {}});
-                    });
-                    var workerSrc = '';
-                    if (('string' === typeof details.workerSrc) && (details.workerSrc.length > 0)) {
-                        $scope.workersCounter = 1;
-                        workerSrc = details.workerSrc;
-                    } else if (('object' === typeof details.workerSrc) && (details.workerSrc.length)) {
-                        $scope.workersCounter = details.workerSrc.length;
-                        workerSrc = details.workerSrc;
-                    }
-                    if (('string' === typeof details.overrideWorkerSrc) && (details.overrideWorkerSrc.length > 0)){
-                        $scope.workersCounter = 1;
-                        workerSrc = details.overrideWorkerSrc;
-                    }
-                    if (('object' === typeof details.overrideWorkerSrc) && (details.overrideWorkerSrc.length)){
-                        $scope.workersCounter = details.workerSrc.length;
-                        workerSrc = details.overrideWorkerSrc;
-                    }
-                    $scope.workersLoaded = 0;
-                    $scope.workerSrc = workerSrc;
-                    if (workerSrc){
-                        $scope.loadWorker(workerSrc);
+                    if (undefined !== details.$cartFillerTestUpdate && undefined === details.details) {
+                        // this is just test update
+                        $scope.jobDetails = details.$cartFillerTestUpdate.details;
+                        (function() {
+                            for (var i in $scope.jobDetails[$scope.currentTask]) {
+                                if ($scope.jobDetails[$scope.currentTask].hasOwnProperty(i)) {
+                                    cfMessage.send('updateProperty', {index: $scope.currentTask, name: i, value: $scope.jobDetails[$scope.currentTask][i]});
+                                }
+                            }
+                        })();
                     } else {
-                        alert('Worker script not specified in job description');
-                    }
-                    if (details.autorun) {
-                        setTimeout(autorun, details.autorun);
-                        autorunSpeed = details.autorunSpeed;
-                        if (undefined !== details.autorunUntilTask &&
-                           undefined !== details.autorunUntilStep) {
-                            $scope.runUntilTask = details.autorunUntilTask;
-                            $scope.runUntilStep = details.autorunUntilStep;
-                        } else {
-                            $scope.runUntilTask = $scope.runUntilStep = false;
+                        cfMessage.send('makeSmaller');
+                        $scope.trackWorker = details.trackWorker;
+                        $scope.chooseJobState = false;
+                        $scope.jobDetails = details.details;
+                        $scope.jobTitleMap = angular.isUndefined(details.titleMap) ? [] : details.titleMap;
+                        $scope.jobTaskProgress = [];
+                        $scope.jobTaskStepProgress = [];
+                        $scope.currentTask = 0;
+                        $scope.currentStep = 0;
+                        scrollCurrentTaskIntoView(true);
+                        var workerSrc = '';
+                        if (('string' === typeof details.workerSrc) && (details.workerSrc.length > 0)) {
+                            $scope.workersCounter = 1;
+                            workerSrc = details.workerSrc;
+                        } else if (('object' === typeof details.workerSrc) && (details.workerSrc.length)) {
+                            $scope.workersCounter = details.workerSrc.length;
+                            workerSrc = details.workerSrc;
                         }
+                        if (('string' === typeof details.overrideWorkerSrc) && (details.overrideWorkerSrc.length > 0)){
+                            $scope.workersCounter = 1;
+                            workerSrc = details.overrideWorkerSrc;
+                        }
+                        if (('object' === typeof details.overrideWorkerSrc) && (details.overrideWorkerSrc.length)){
+                            $scope.workersCounter = details.workerSrc.length;
+                            workerSrc = details.overrideWorkerSrc;
+                        }
+                        $scope.workersLoaded = 0;
+                        $scope.workerSrc = workerSrc;
+                        if (workerSrc){
+                            $scope.loadWorker(workerSrc);
+                        } else {
+                            alert('Worker script not specified in job description');
+                        }
+                        if (details.autorun) {
+                            setTimeout(autorun, details.autorun);
+                            autorunSpeed = details.autorunSpeed;
+                            if (undefined !== details.autorunUntilTask &&
+                               undefined !== details.autorunUntilStep) {
+                                $scope.runUntilTask = details.autorunUntilTask;
+                                $scope.runUntilStep = details.autorunUntilStep;
+                            } else {
+                                $scope.runUntilTask = $scope.runUntilStep = false;
+                            }
+                        }
+                        $scope.finishReached = false;
+                        $scope.workerGlobals = details.globals;
                     }
-                    $scope.finishReached = false;
-                    $scope.workerGlobals = details.globals;
+                    while ($scope.jobTaskProgress.length < $scope.jobDetails.length) {
+                        $scope.jobTaskProgress.push({complete: false, step: 0, stepsInProgress: {}, stepResults: {}});
+                    }
                 });
             } else if (cmd === 'workerRegistered'){
                 $scope.$apply(function(){
@@ -386,6 +399,41 @@ define('controller', ['app', 'scroll'], function(app){
             digestButtonPanel();
             return false;
         };
+        var trackWorkerContents = {};
+        var trackWorkerLoaded = {};
+        var trackWorkersAllLoaded = function() {
+            var i; 
+            for (i in trackWorkerLoaded) {
+                if (trackWorkerLoaded.hasOwnProperty[i] && ! trackWorkerLoaded[i]) {
+                    return false;
+                }
+            }
+            return true;
+        };
+        var trackWorker = function() {
+            angular.forEach(trackWorkerContents, function(contents, url) {
+                var originalUrl = url;
+                trackWorkerLoaded[url] = false;
+                if (/\?/.test(url)){
+                    url += '&';
+                } else {
+                    url += '?';
+                }
+                url += (new Date()).getTime();
+                var xhr = new XMLHttpRequest();
+                xhr.onload = function(){
+                    if (xhr.response !== trackWorkerContents[originalUrl]) {
+                        cfMessage.send('loadWorker', {code: xhr.response, src: url});
+                        trackWorkerContents[originalUrl] = xhr.response;
+                    }
+                    if (trackWorkersAllLoaded()) {
+                        setTimeout(trackWorker, 1000);
+                    }
+                };
+                xhr.open('GET', url, true);
+                xhr.send();
+            });
+        };
         $scope.loadWorker = function(url){
             if (undefined === url) {
                 url = $scope.workerSrc;
@@ -396,20 +444,29 @@ define('controller', ['app', 'scroll'], function(app){
             } else {
                 urls = url;
             }
+            trackWorkerContents = {};
+            trackWorkerLoaded = {};
             angular.forEach(urls, function(url) {
-                if (/\?/.test(url)){
-                    url += '&';
-                } else {
-                    url += '?';
-                }
-                url += (new Date()).getTime();
-                var xhr = new XMLHttpRequest();
-                xhr.onload = function(){
-                    cfMessage.send('loadWorker', {code: xhr.response, src: url});
-
-                };
-                xhr.open('GET', url, true);
-                xhr.send();
+                (function(url){
+                    trackWorkerLoaded[url] = false;
+                    var originalUrl = url;
+                    if (/\?/.test(url)){
+                        url += '&';
+                    } else {
+                        url += '?';
+                    }
+                    url += (new Date()).getTime();
+                    var xhr = new XMLHttpRequest();
+                    xhr.onload = function(){
+                        trackWorkerContents[originalUrl] = xhr.response;
+                        cfMessage.send('loadWorker', {code: xhr.response, src: url});
+                        if ($scope.trackWorker && trackWorkersAllLoaded()) {
+                            setTimeout(trackWorker, 1000);
+                        }
+                    };
+                    xhr.open('GET', url, true);
+                    xhr.send();
+                })(url);
             });
         };
         $scope.reloadWorker = function($event){
@@ -480,6 +537,11 @@ define('controller', ['app', 'scroll'], function(app){
                             return undefined !== el.selectClass && el.selectClass[i];
                         }).map(function(v){
                             return '.' + v;
+                        }).join('')) +
+                        (el.attrs.filter(function(a,i) {
+                            return undefined !== el.selectAttribute && el.selectAttribute[i];
+                        }).map(function(a){
+                            return '[' + a.n + '="' + a.v + '"' + ']';
                         }).join('')) +
                         (el.selectIndex ? (':nth-of-type(' + el.index + ')') : '') +
                         (el.selectText ? ('\').filter(function(i,el){return el.innerText.trim() === ' + JSON.stringify(el.text) + ';}).find(\'') : '')
@@ -629,6 +691,10 @@ define('testSuiteController', ['app', 'scroll'], function(app){
         if (! cfMessage.testSuite) {
             return;
         }
+        var parseJson = function(s){
+            return JSON.parse(s.replace(/\,[ \t\n\r]*\]/g, ']').replace(/\,[ \t\n\r]\}/g, '}'));
+        };
+        var testToCheck = false;
         $scope.params = {};
         $scope.expandedTest = false;
         var parseParams = function() {
@@ -652,9 +718,11 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                 tweaks: [],
                 currentDownloadingIndex: false,
                 contents: [],
+                rawContents: [],
                 enabled: [],
                 success: [],
                 urls: [],
+                hrefs: [],
                 errors: {}
             }
         };
@@ -742,16 +810,19 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                         $scope.errorURL = false;
                         if (xhr.status === 200) {
                             try {
-                                $scope.discovery.rootCartfillerJson = JSON.parse(xhr.responseText);
+                                $scope.discovery.rootCartfillerJson = parseJson(xhr.responseText);
                                 $scope.discovery.workerSrc = normalizeWorkerURLs($scope.discovery.rootCartfillerJson.worker, $scope.discovery.currentRootPath);
                                 $scope.discovery.state = 1;
                                 $scope.discovery.scripts.flat = [];
                                 $scope.discovery.scripts.tweaks = [];
                                 $scope.discovery.scripts.contents = [];
+                                $scope.discovery.scripts.rawContents = [];
                                 $scope.discovery.scripts.success = [];
                                 $scope.discovery.scripts.enabled = [];
                                 $scope.discovery.scripts.urls = [];
+                                $scope.discovery.scripts.hrefs = {};
                                 $scope.discovery.scripts.errors = {};
+                                testToCheck = false;
                                 flattenCartfillerJson($scope.discovery.rootCartfillerJson.tests);
                                 $scope.discovery.scripts.currentDownloadingIndex = false;
                             } catch (e) {
@@ -780,6 +851,12 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                     }
                 }
             });
+        };
+        var processDownloadedTest = function(response, index) {
+            $scope.discovery.scripts.rawContents[index] = response;
+            var contents = parseJson(response);
+            contents.details = processConditionals(contents.details, $scope.discovery.scripts.tweaks[index]);
+            $scope.discovery.scripts.contents[index] = contents;
         };
         var normalizeWorkerURLs = function(urls, root) {
             if ('string' === typeof urls) {
@@ -822,14 +899,12 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             } else {
                 // let's download next file
                 $.ajax({
-                    url: $scope.discovery.currentDownloadedTestURL = $scope.discovery.currentRootPath.replace(/\/$/, '') + '/' + $scope.discovery.scripts.flat[$scope.discovery.scripts.currentDownloadingIndex].join('/').replace(/\.json$/, '') + '.json?' + (new Date()).getTime(),
+                    url: $scope.discovery.currentDownloadedTestURL = $scope.discovery.scripts.hrefs[$scope.discovery.scripts.currentDownloadingIndex] =  $scope.discovery.currentRootPath.replace(/\/$/, '') + '/' + $scope.discovery.scripts.flat[$scope.discovery.scripts.currentDownloadingIndex].join('/').replace(/\.json$/, '') + '.json?' + (new Date()).getTime(),
                     complete: function(xhr) {
                         $scope.errorURL = false;
                         if (xhr.status === 200) {
                             try {
-                                var contents = JSON.parse(xhr.responseText);
-                                contents.details = processConditionals(contents.details, $scope.discovery.scripts.tweaks[$scope.discovery.scripts.currentDownloadingIndex]);
-                                $scope.discovery.scripts.contents[$scope.discovery.scripts.currentDownloadingIndex] = contents;
+                                processDownloadedTest(xhr.responseText, $scope.discovery.scripts.currentDownloadingIndex);
                                 downloadNextScriptFile();
                             } catch (e) {
                                 $scope.discovery.state = -1;
@@ -872,17 +947,47 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             }
         };
         $scope.discover();
+        if ($scope.params.editor) {
+            setTimeout(function refreshCurrentTest(){
+                // check whether currently loaded test have changed and we need to replace it
+                if (testToCheck !== false) {
+                    $.ajax({
+                        url: $scope.discovery.scripts.hrefs[testToCheck],
+                        complete: function(xhr) {
+                            if (xhr.status === 200) {
+                                var oldContents = $scope.discovery.scripts.rawContents[testToCheck];
+                                if (oldContents !== xhr.responseText) {
+                                    processDownloadedTest(xhr.responseText, testToCheck);
+                                    $scope.submitTestUpdate(testToCheck);
+                                    $scope.$digest();
+                                }
+                            }
+                            setTimeout(refreshCurrentTest, 1000);
+                        }
+                    });
+                    ////
+                } else {
+                    setTimeout(refreshCurrentTest, 1000);
+                }
+            }, 1000);
+        }
+        $scope.submitTestUpdate = function(index) {
+            var test = $scope.discovery.scripts.contents[index];
+            $.cartFillerPlugin({'$cartFillerTestUpdate': test});
+        };
         $scope.runTest = function(index, how, untilTask, untilStep, $event) {
             if ($event) {
                 $event.stopPropagation();
             }
             $scope.discovery.scripts.errors[index] = {};
+            testToCheck = index;
             var test = $scope.discovery.scripts.contents[index];
             test.workerSrc = $scope.discovery.workerSrc;
             test.autorun = how === 'load' ? 0 : 1;
             test.autorunSpeed = how === 'slow' ? 'slow' : 'fast';
             test.rootCartfillerPath = $scope.discovery.currentRootPath;
             test.globals = $scope.discovery.scripts.tweaks[index];
+            test.trackWorker = $scope.params.editor;
             if (undefined !== untilTask) {
                 test.autorunUntilTask = untilTask;
                 test.autorunUntilStep = undefined !== untilStep ? untilStep : 0;
@@ -1446,6 +1551,10 @@ define('jquery-cartFiller', ['jquery'], function() {
      * copied into the worker globals object during task load
      */
     /**
+     * @member {Object} CartFillerPlugin~JobDetails#trackWorker optional parameter, when set to true
+     * then cartFiller will ping workers each second and when workers are changed - they will be updated
+     */
+    /**
      * Global plugin function - sends job details to cartFiller and
      * registers optional callback, that will receive results.
      * @function external:"jQuery".cartFillerPlugin
@@ -1460,18 +1569,22 @@ define('jquery-cartFiller', ['jquery'], function() {
      * @access public
      */
     $.cartFillerPlugin = function( jobDetails, newResultCallback, newStatusCallback) {
-        if (newResultCallback && 
-            ((undefined === jobDetails.resultMessage) || (String(jobDetails.resultMessage).length < 1))
-            ){
-            jobDetails.resultMessage = 'cartFillerResultMessage';
+        if (undefined !== jobDetails.details) {
+            if (newResultCallback && 
+                ((undefined === jobDetails.resultMessage) || (String(jobDetails.resultMessage).length < 1))
+                ){
+                jobDetails.resultMessage = 'cartFillerResultMessage';
+            }
+            if (newStatusCallback &&
+                ((undefined === jobDetails.statusMessage) || (String(jobDetails.statusMessage).length < 1)) 
+                ){
+                jobDetails.statusMessage = 'cartFillerStatusMessage';
+            }
+            resultMessageName = jobDetails.resultMessage;
+            statusMessageName = jobDetails.statusMessage;
+            resultCallback = newResultCallback;
+            statusCallback = newStatusCallback;
         }
-        if (newStatusCallback &&
-            ((undefined === jobDetails.statusMessage) || (String(jobDetails.statusMessage).length < 1)) 
-            ){
-            jobDetails.statusMessage = 'cartFillerStatusMessage';
-        }
-        resultMessageName = jobDetails.resultMessage;
-        statusMessageName = jobDetails.statusMessage;
 
         jobDetails.cmd = 'jobDetails';
 
@@ -1480,8 +1593,6 @@ define('jquery-cartFiller', ['jquery'], function() {
             JSON.stringify(jobDetails),
             '*'
         );
-        resultCallback = newResultCallback;
-        statusCallback = newStatusCallback;
     };
     /**
      * Global plugin function - shows chooseJob frame from within

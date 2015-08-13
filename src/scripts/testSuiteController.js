@@ -9,6 +9,10 @@ define('testSuiteController', ['app', 'scroll'], function(app){
         if (! cfMessage.testSuite) {
             return;
         }
+        var parseJson = function(s){
+            return JSON.parse(s.replace(/\,[ \t\n\r]*\]/g, ']').replace(/\,[ \t\n\r]\}/g, '}'));
+        };
+        var testToCheck = false;
         $scope.params = {};
         $scope.expandedTest = false;
         var parseParams = function() {
@@ -32,9 +36,11 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                 tweaks: [],
                 currentDownloadingIndex: false,
                 contents: [],
+                rawContents: [],
                 enabled: [],
                 success: [],
                 urls: [],
+                hrefs: [],
                 errors: {}
             }
         };
@@ -122,16 +128,19 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                         $scope.errorURL = false;
                         if (xhr.status === 200) {
                             try {
-                                $scope.discovery.rootCartfillerJson = JSON.parse(xhr.responseText);
+                                $scope.discovery.rootCartfillerJson = parseJson(xhr.responseText);
                                 $scope.discovery.workerSrc = normalizeWorkerURLs($scope.discovery.rootCartfillerJson.worker, $scope.discovery.currentRootPath);
                                 $scope.discovery.state = 1;
                                 $scope.discovery.scripts.flat = [];
                                 $scope.discovery.scripts.tweaks = [];
                                 $scope.discovery.scripts.contents = [];
+                                $scope.discovery.scripts.rawContents = [];
                                 $scope.discovery.scripts.success = [];
                                 $scope.discovery.scripts.enabled = [];
                                 $scope.discovery.scripts.urls = [];
+                                $scope.discovery.scripts.hrefs = {};
                                 $scope.discovery.scripts.errors = {};
+                                testToCheck = false;
                                 flattenCartfillerJson($scope.discovery.rootCartfillerJson.tests);
                                 $scope.discovery.scripts.currentDownloadingIndex = false;
                             } catch (e) {
@@ -160,6 +169,12 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                     }
                 }
             });
+        };
+        var processDownloadedTest = function(response, index) {
+            $scope.discovery.scripts.rawContents[index] = response;
+            var contents = parseJson(response);
+            contents.details = processConditionals(contents.details, $scope.discovery.scripts.tweaks[index]);
+            $scope.discovery.scripts.contents[index] = contents;
         };
         var normalizeWorkerURLs = function(urls, root) {
             if ('string' === typeof urls) {
@@ -202,14 +217,12 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             } else {
                 // let's download next file
                 $.ajax({
-                    url: $scope.discovery.currentDownloadedTestURL = $scope.discovery.currentRootPath.replace(/\/$/, '') + '/' + $scope.discovery.scripts.flat[$scope.discovery.scripts.currentDownloadingIndex].join('/').replace(/\.json$/, '') + '.json?' + (new Date()).getTime(),
+                    url: $scope.discovery.currentDownloadedTestURL = $scope.discovery.scripts.hrefs[$scope.discovery.scripts.currentDownloadingIndex] =  $scope.discovery.currentRootPath.replace(/\/$/, '') + '/' + $scope.discovery.scripts.flat[$scope.discovery.scripts.currentDownloadingIndex].join('/').replace(/\.json$/, '') + '.json?' + (new Date()).getTime(),
                     complete: function(xhr) {
                         $scope.errorURL = false;
                         if (xhr.status === 200) {
                             try {
-                                var contents = JSON.parse(xhr.responseText);
-                                contents.details = processConditionals(contents.details, $scope.discovery.scripts.tweaks[$scope.discovery.scripts.currentDownloadingIndex]);
-                                $scope.discovery.scripts.contents[$scope.discovery.scripts.currentDownloadingIndex] = contents;
+                                processDownloadedTest(xhr.responseText, $scope.discovery.scripts.currentDownloadingIndex);
                                 downloadNextScriptFile();
                             } catch (e) {
                                 $scope.discovery.state = -1;
@@ -252,17 +265,47 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             }
         };
         $scope.discover();
+        if ($scope.params.editor) {
+            setTimeout(function refreshCurrentTest(){
+                // check whether currently loaded test have changed and we need to replace it
+                if (testToCheck !== false) {
+                    $.ajax({
+                        url: $scope.discovery.scripts.hrefs[testToCheck],
+                        complete: function(xhr) {
+                            if (xhr.status === 200) {
+                                var oldContents = $scope.discovery.scripts.rawContents[testToCheck];
+                                if (oldContents !== xhr.responseText) {
+                                    processDownloadedTest(xhr.responseText, testToCheck);
+                                    $scope.submitTestUpdate(testToCheck);
+                                    $scope.$digest();
+                                }
+                            }
+                            setTimeout(refreshCurrentTest, 1000);
+                        }
+                    });
+                    ////
+                } else {
+                    setTimeout(refreshCurrentTest, 1000);
+                }
+            }, 1000);
+        }
+        $scope.submitTestUpdate = function(index) {
+            var test = $scope.discovery.scripts.contents[index];
+            $.cartFillerPlugin({'$cartFillerTestUpdate': test});
+        };
         $scope.runTest = function(index, how, untilTask, untilStep, $event) {
             if ($event) {
                 $event.stopPropagation();
             }
             $scope.discovery.scripts.errors[index] = {};
+            testToCheck = index;
             var test = $scope.discovery.scripts.contents[index];
             test.workerSrc = $scope.discovery.workerSrc;
             test.autorun = how === 'load' ? 0 : 1;
             test.autorunSpeed = how === 'slow' ? 'slow' : 'fast';
             test.rootCartfillerPath = $scope.discovery.currentRootPath;
             test.globals = $scope.discovery.scripts.tweaks[index];
+            test.trackWorker = $scope.params.editor;
             if (undefined !== untilTask) {
                 test.autorunUntilTask = untilTask;
                 test.autorunUntilStep = undefined !== untilStep ? untilStep : 0;

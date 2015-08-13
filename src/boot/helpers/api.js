@@ -412,7 +412,31 @@
          */
         setInterval: function(fn, timeout) {
             me.modules.dispatcher.registerWorkerSetInterval(setInterval(fn, timeout));
+        },
+        /**
+         * Helper function to construct workers - return array ['click', function(el){ el[0].click(); api.result; }]
+         * @function CartFiller.Api#click
+         * @param {Function} what to do after click
+         * @return {Array}
+         * @access public
+         */
+        click: function(whatNext) {
+            return [
+                'click', function(el){
+                    if ('object' === typeof el && 'string' === typeof el.jquery && undefined !== el.length) {
+                        el[0].click();
+                    } else if (el instanceof Array) {
+                        el[0].click();
+                    } else {
+                        el.click();
+                    }
+                    if (undefined === whatNext) {
+                        me.modules.api.result();
+                    } else {
+                        whatNext();
+                    }
+                }
+            ];
         }
-
     });
 }).call(this, document, window);

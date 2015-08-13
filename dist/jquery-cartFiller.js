@@ -462,6 +462,10 @@
      * copied into the worker globals object during task load
      */
     /**
+     * @member {Object} CartFillerPlugin~JobDetails#trackWorker optional parameter, when set to true
+     * then cartFiller will ping workers each second and when workers are changed - they will be updated
+     */
+    /**
      * Global plugin function - sends job details to cartFiller and
      * registers optional callback, that will receive results.
      * @function external:"jQuery".cartFillerPlugin
@@ -476,18 +480,22 @@
      * @access public
      */
     $.cartFillerPlugin = function( jobDetails, newResultCallback, newStatusCallback) {
-        if (newResultCallback && 
-            ((undefined === jobDetails.resultMessage) || (String(jobDetails.resultMessage).length < 1))
-            ){
-            jobDetails.resultMessage = 'cartFillerResultMessage';
+        if (undefined !== jobDetails.details) {
+            if (newResultCallback && 
+                ((undefined === jobDetails.resultMessage) || (String(jobDetails.resultMessage).length < 1))
+                ){
+                jobDetails.resultMessage = 'cartFillerResultMessage';
+            }
+            if (newStatusCallback &&
+                ((undefined === jobDetails.statusMessage) || (String(jobDetails.statusMessage).length < 1)) 
+                ){
+                jobDetails.statusMessage = 'cartFillerStatusMessage';
+            }
+            resultMessageName = jobDetails.resultMessage;
+            statusMessageName = jobDetails.statusMessage;
+            resultCallback = newResultCallback;
+            statusCallback = newStatusCallback;
         }
-        if (newStatusCallback &&
-            ((undefined === jobDetails.statusMessage) || (String(jobDetails.statusMessage).length < 1)) 
-            ){
-            jobDetails.statusMessage = 'cartFillerStatusMessage';
-        }
-        resultMessageName = jobDetails.resultMessage;
-        statusMessageName = jobDetails.statusMessage;
 
         jobDetails.cmd = 'jobDetails';
 
@@ -496,8 +504,6 @@
             JSON.stringify(jobDetails),
             '*'
         );
-        resultCallback = newResultCallback;
-        statusCallback = newStatusCallback;
     };
     /**
      * Global plugin function - shows chooseJob frame from within
