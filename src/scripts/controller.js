@@ -278,6 +278,9 @@ define('controller', ['app', 'scroll'], function(app){
                 cfMessage.send('updateProperty', {index: index, name: name, value: val});
             }
         };
+        $scope.doubleClickTaskName = function(name) {
+            prompt('This is readonly but you can copy task name here:', name);
+        };
         $scope.clickOnStepNoWatch = function(element, $event){
             var s = element.getAttribute('id').split('_');
             var taskIndex = parseInt(s[1]);

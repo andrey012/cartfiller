@@ -292,6 +292,9 @@ define('controller', ['app', 'scroll'], function(app){
                 cfMessage.send('updateProperty', {index: index, name: name, value: val});
             }
         };
+        $scope.doubleClickTaskName = function(name) {
+            prompt('This is readonly but you can copy task name here:', name);
+        };
         $scope.clickOnStepNoWatch = function(element, $event){
             var s = element.getAttribute('id').split('_');
             var taskIndex = parseInt(s[1]);
@@ -692,7 +695,12 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             return;
         }
         var parseJson = function(s){
-            return JSON.parse(s.replace(/\,[ \t\n\r]*\]/g, ']').replace(/\,[ \t\n\r]*\}/g, '}'));
+            s = s.replace(/\,[ \t\n\r]*\]/g, ']').replace(/\,[ \t\n\r]*\}/g, '}').replace(/\t/g, '\\t').replace(/\r/g, '');
+            var m;
+            while (m = /(\{\s*\"[^"\n]*)\n/.exec(s)) {
+                s = s.replace(m[0], m[1] + '\\n');
+            }
+            return JSON.parse(s);
         };
         var testToCheck = false;
         $scope.params = {};
@@ -787,6 +795,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                     $scope.discovery.scripts.urls.push(rr.join('/'));
                     rr = rr.map(function(name){
                         var s = name.split('?');
+                        s[1]=s.filter(function(el,i){return i>0;}).join('?');
                         if (s[1] && s[1].length) {
                             s[1].split('&').filter(function(tweak) {
                                 var s = tweak.split('=');
@@ -856,8 +865,8 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             });
         };
         var processDownloadedTest = function(response, index) {
-            $scope.discovery.scripts.rawContents[index] = response;
             var contents = parseJson(response);
+            $scope.discovery.scripts.rawContents[index] = response;
             contents.details = processConditionals(contents.details, $scope.discovery.scripts.tweaks[index]);
             $scope.discovery.scripts.contents[index] = contents;
         };
@@ -955,14 +964,16 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                 // check whether currently loaded test have changed and we need to replace it
                 if (testToCheck !== false) {
                     $.ajax({
-                        url: $scope.discovery.scripts.hrefs[testToCheck],
+                        url: $scope.discovery.scripts.hrefs[testToCheck] + '?' + (new Date()).getTime(),
                         complete: function(xhr) {
                             if (xhr.status === 200) {
                                 var oldContents = $scope.discovery.scripts.rawContents[testToCheck];
                                 if (oldContents !== xhr.responseText) {
-                                    processDownloadedTest(xhr.responseText, testToCheck);
-                                    $scope.submitTestUpdate(testToCheck);
-                                    $scope.$digest();
+                                    try {
+                                        processDownloadedTest(xhr.responseText, testToCheck);
+                                        $scope.submitTestUpdate(testToCheck);
+                                        $scope.$digest();
+                                    } catch (e){}
                                 }
                             }
                             setTimeout(refreshCurrentTest, 1000);
