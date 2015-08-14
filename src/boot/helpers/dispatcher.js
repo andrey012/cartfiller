@@ -13,11 +13,11 @@
      */
     var worker = false;
     /**
-     * Keeps worker URL during load process. If load was successful sends URL back to controller
-     * @var {String} CartFiller.Dispatcher~workerSrcPretendent
+     * Keeps workers URL=>code map, used to initiate relays on the fly
+     * @var {Object} CartFiller.Dispatcher~workerSourceCodes
      * @access private
      */
-    var workerSrcPretendent = '';
+    var workerSourceCodes = {};
     /**
      * Object, that keeps current task details
      * @var {CartFiller.TaskDetails} CartFiller.Dispatcher~workerCurrentTask
@@ -140,6 +140,30 @@
      */
     var me = this.cartFillerConfiguration;
     /**
+     * Keeps details about relay subsystem
+     * @var {Object} CartFiller.Dispatcher~rel
+     */
+    var relay = {
+        isSlave: false,
+        nextRelay: false,
+        nextRelayRegistered: false,
+        nextRelayQueue: [],
+        knownUrls: {},
+        bubbleMessage: function(message) {
+            if (this.isSlave) {
+                postMessage(window.opener, 'bubbleRelayMessage', message);
+            }
+            if (this.nextRelay) {
+                if (this.nextRelayRegistered) {
+                    postMessage(this.nextRelay, 'bubbleRelayMessage', message);
+                } else {
+                    message.cmd = 'bubbleRelayMessage';
+                    this.nextRelayQueue.push(message);
+                }
+            }
+        }
+    };
+    /**
      * Sends message to another frame/window. Puts all data to message text
      * (does not use transferables).
      * @function CartFiller.Dispatcher~postMessage
@@ -247,6 +271,36 @@
             workerWatchdogId = false;
         }
     };
+    /**
+     * Passes message to next relay if message is not undefined and next relay exists, otherwise
+     * create new relay using specified url and puts message if it is not undefined to the queue
+     * @function CartFiller.Dispatcher~openRelay
+     * @param {string} url
+     * @param {Object} message
+     * @param {boolean} noFocus Experimental, looks like it does not work
+     * @access private
+     */
+    var openRelay = function(url, message, noFocus) {
+        relay.knownUrls[url] = true;
+        if (relay.nextRelay && message) {
+            if (relay.nextRelayRegistered) {
+                postMessage(relay.nextRelay, message.cmd, message);
+            } else {
+                relay.nextRelayQueue.push(message);
+            }
+        } else {
+            relay.nextRelay = window.open(url, '_blank', 'toolbar=yes, location=yes, status=yes, menubar=yes, scrollbars=yes');
+            if (noFocus) {
+                setTimeout(function(){
+                    relay.nextRelay.blur();
+                    window.focus();
+                },0);
+            }
+            if (message) {
+                relay.nextRelayQueue.push(message);
+            }
+        }
+    };
     this.cartFillerConfiguration.scripts.push({
         /** 
          * Returns name of this module, used by loader
@@ -269,11 +323,15 @@
                 if (pattern.test(event.data)){
                     var match = pattern.exec(event.data);
                     var message = JSON.parse(match[1]);
-                    var fn = 'onMessage_' + message.cmd;
-                    if (undefined !== dispatcher[fn] && dispatcher[fn] instanceof Function){
-                        dispatcher[fn](message, event.source);
+                    if (event.source === relay.nextRelay && message.cmd !== 'register') {
+                        postMessage(relay.isSlave ? window.opener : me.modules.ui.workerFrameWindow, message.cmd, message);
                     } else {
-                        console.log('unknown message: ' + fn + ':' + event.data);
+                        var fn = 'onMessage_' + message.cmd;
+                        if (undefined !== dispatcher[fn] && dispatcher[fn] instanceof Function){
+                            dispatcher[fn](message, event.source);
+                        } else {
+                            console.log('unknown message: ' + fn + ':' + event.data);
+                        }
                     }
                 }
             }, false);
@@ -299,6 +357,20 @@
                     testSuite: true,
                     src: me.baseUrl.replace(/\/$/, '') + '/'
                 }, 'cartFillerMessage');
+            } else if (source === relay.nextRelay) {
+                relay.nextRelayRegistered = true;
+                var url;
+                for (url in workerSourceCodes) {
+                    if (workerSourceCodes.hasOwnProperty(url)) {
+                        relay.nextRelayQueue.push({cmd: 'loadWorker', url: url, code: workerSourceCodes[url]});
+                    }
+                }
+                // now we can send all queued messages to relay
+                var msg;
+                while (relay.nextRelayQueue.length) {
+                    msg = relay.nextRelayQueue.shift();
+                    postMessage(relay.nextRelay, msg.cmd, msg);
+                }
             }
         },
         /**
@@ -362,6 +434,7 @@
                 return details;
             };
             if (undefined !== message.details) {
+                workerSourceCodes = {};
                 if (message.resultMessage){
                     resultMessageName = message.resultMessage;
                 } else {
@@ -435,8 +508,12 @@
          */
         onMessage_loadWorker: function(message){
             try {
-                workerSrcPretendent = message.src;
+                workerSourceCodes[message.src] = message.code;
                 eval(message.code); // jshint ignore:line
+                if (relay.nextRelay) {
+                    postMessage(relay.nextRelay, message.cmd, message);
+                }
+
             } catch (e){
                 alert(e);
                 throw e;
@@ -461,6 +538,9 @@
          * @access public
          */
         onMessage_invokeWorker: function(message){
+            if (this.reflectMessage(message)) {
+                return;
+            }
             if (false !== workerCurrentStepIndex){
                 var err = 'ERROR: worker task is in still in progress';
                 alert(err);
@@ -603,6 +683,34 @@
              this.postMessageToWorker('cssSelectorEvaluateResult', {count: eval('(function(j){j.each(function(i,el){(function(o){if (o !== "0") {el.style.opacity=0; setTimeout(function(){el.style.opacity=o;},200);}})(el.style.opacity);}); return j.length;})(me.modules.ui.mainFrameWindow.jQuery' + details.selector + ')')}); // jshint ignore:line
         },
         /**
+         * Processes message exchange between relays
+         * @function CartFiller.Dispatcher#onMessage_bubbleRelayMessage
+         * @param {Object} details
+         * @param {Window} source
+         * @access public
+         */
+        onMessage_bubbleRelayMessage: function(details, source) {
+            if (relay.isSlave && source !== window.opener && ! details.notToParents) {
+                postMessage(window.opener, details.cmd, details);
+            }
+            if (relay.nextRelay && source !== relay.nextRelay && ! details.notToChildren) {
+                if (relay.nextRelayRegistered) {
+                    postMessage(relay.nextRelay, details.cmd, details);
+                } else {
+                    relay.nextRelayQueue.push(details);
+                }
+            }
+            if (details.message === 'onMainFrameLoaded') {
+                me.modules.dispatcher.onMainFrameLoaded(details.args[0]);
+            } else if (details.message === 'openRelayOnHead' && ! relay.isSlave) {
+                if (! relay.knownUrls[details.args[0]]) {
+                    me.modules.dispatcher.onMessage_bubbleRelayMessage({message: 'openRelayOnTail', args: details.args, notToParents: true});
+                }
+            } else if (details.message === 'openRelayOnTail' && ! relay.nextRelay) {
+                openRelay(details.args[0], undefined, details.args[1]);
+            }
+        },
+        /**
          * Handles "main frame loaded" event. If both main frame and 
          * worker (job progress) frames are loaded then bootstraps 
          * job progress frame
@@ -622,6 +730,8 @@
             mainFrameLoaded = true;
             if (workerFrameLoaded && !bootstrapped){
                 this.bootstrapCartFiller();
+            } else {
+                relay.bubbleMessage({message: 'onMainFrameLoaded', args: [watchdog]});
             }
             if (workerOnLoadHandler) {
                 workerOnLoadHandler(watchdog);
@@ -685,7 +795,7 @@
             var list = {};
             for (var taskName in thisWorker){
                 if (thisWorker.hasOwnProperty(taskName)){
-                    worker[taskName] = thisWorker[taskName] = recursivelyCollectSteps(thisWorker[taskName]);
+                    worker[taskName] = recursivelyCollectSteps(thisWorker[taskName]);
                 }
             }
             for (taskName in worker) {
@@ -698,7 +808,7 @@
                 }
                 list[taskName] = taskSteps;
             }
-            this.postMessageToWorker('workerRegistered', {jobTaskDescriptions: list, src: workerSrcPretendent});
+            this.postMessageToWorker('workerRegistered', {jobTaskDescriptions: list});
         },
         /**
          * Remembers directions for task flow to be passed to worker (job progress)
@@ -798,6 +908,76 @@
                 this.postMessageToWorker('currentUrl', {url: url});
                 workerCurrentUrl = url;
             }
+        },
+        /**
+         * Pass message to next dispatcher if this one does not have access.
+         * If there is no next dispatcher - then open new popup for dispatcher
+         * @function CartFiller.Dispatcher#reflectMessage
+         * @param {Object} message
+         * @return bool
+         * @access public
+         */
+        reflectMessage: function(message) {
+            // check whether we can access the target window at all
+            var haveAccess = true;
+            try {
+                me.modules.ui.mainFrameWindow.location.href;
+            } catch (e){
+                haveAccess = false;
+            }
+            if (haveAccess) {
+                return false;
+            }
+            openRelay('about:blank', message);
+            return true;
+        },
+        /**
+         * Starts whole piece in slave mode
+         * @function CartFiller.Dispatcher~startSlaveMode
+         * @access public
+         */
+        startSlaveMode: function() {
+            // operating in slave mode, show message to user
+            var body = document.getElementsByTagName('body')[0];
+            while (body.children.length) {
+                body.removeChild(body.children[0]);
+            }
+            var span = document.createElement('span');
+            span.innerText = 'this frame is used by cartFiller as slave, do not close it';
+            body.appendChild(span);
+            // initialize
+            worker = {};
+            me.modules.dispatcher.init();
+            window.opener.postMessage('cartFillerMessage:{"cmd":"register"}', '*');
+            me.modules.ui.chooseJobFrameWindow = me.modules.ui.workerFrameWindow = window.opener;
+            for (var opener = window.opener; opener && opener !== opener.opener; opener = opener.opener) {
+                if (opener.frames.cartFillerMainFrame) {
+                    me.modules.ui.mainFrameWindow = opener.frames.cartFillerMainFrame;
+                }
+            }
+            if (! me.modules.ui.mainFrameWindow) {
+                alert('could not find mainFrameWindow in slave mode');
+            }
+            setTimeout(function loadWatcher(){
+                try {
+                    if (me.modules.ui.mainFrameWindow.document && 
+                        (me.modules.ui.mainFrameWindow.document.readyState === 'complete')){
+                        me.modules.dispatcher.onMainFrameLoaded(true);
+                    }
+                } catch (e){}
+                setTimeout(loadWatcher, 100);
+            }, 100);
+            relay.isSlave = true;
+        },
+        /**
+         * Opens relay window. If url points to the cartFiller distribution
+         * @function CartFiller.Dispatcher~openRelayOnTheTail
+         * @param {string} url
+         * @param {boolean} noFocus
+         * @access public
+         */
+        openRelayOnTheTail: function(url, noFocus) {
+            me.modules.dispatcher.onMessage_bubbleRelayMessage({message: 'openRelayOnHead', args: [url, noFocus], notToChildren: true});
         }
     });
 }).call(this, document, window);

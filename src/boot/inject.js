@@ -77,12 +77,16 @@
      * @access public
      */
     config.launch = function(){
-        if (String(config['data-type']) === '0') {
-            this.modules.ui.framed(document, window);
-        } else if (String(config['data-type']) === '1'){
-            this.modules.ui.popup(document, window);
+        if (window.opener && window.opener !== window) {
+            this.modules.dispatcher.startSlaveMode();
         } else {
-            alert('Type not specified, should be 0 for framed, 1 for popup');
+            if (String(config['data-type']) === '0') {
+                this.modules.ui.framed(document, window);
+            } else if (String(config['data-type']) === '1'){
+                this.modules.ui.popup(document, window);
+            } else {
+                alert('Type not specified, should be 0 for framed, 1 for popup');
+            }
         }
     };
 

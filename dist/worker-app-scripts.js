@@ -652,7 +652,7 @@ define('controller', ['app', 'scroll'], function(app){
         }
     }, false);
 
-    if (window.parent !== window) {
+    if (window.parent && window.parent !== window) {
         window.parent.postMessage('cartFillerMessage:{"cmd":"register"}', '*');
     } else {
         window.postMessage(
@@ -692,7 +692,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             return;
         }
         var parseJson = function(s){
-            return JSON.parse(s.replace(/\,[ \t\n\r]*\]/g, ']').replace(/\,[ \t\n\r]\}/g, '}'));
+            return JSON.parse(s.replace(/\,[ \t\n\r]*\]/g, ']').replace(/\,[ \t\n\r]*\}/g, '}'));
         };
         var testToCheck = false;
         $scope.params = {};
@@ -968,7 +968,6 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                             setTimeout(refreshCurrentTest, 1000);
                         }
                     });
-                    ////
                 } else {
                     setTimeout(refreshCurrentTest, 1000);
                 }
@@ -1000,10 +999,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             }
             $.cartFillerPlugin(
                 test,
-                function(data) {
-                    data;
-                    console.log(1);
-                },
+                false,
                 function(data) {
                     if ($scope.params.backend && false !== data.currentTaskIndex && false !== data.currentTaskStepIndex) {
                         // report progress to backend

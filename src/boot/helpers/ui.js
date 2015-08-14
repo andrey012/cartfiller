@@ -127,7 +127,7 @@
      * @access private
      */
     var overlayWindow = function(){
-        return isFramed ? window : me.modules.ui.mainFrameWindow;
+        return isFramed && 0 ? window : me.modules.ui.mainFrameWindow;
     };
     /**
      * Returns color for red overlay arrows
@@ -225,7 +225,10 @@
      */
     var shiftRectWithFrames = function(rect, el){
         if (undefined !== el.ownerDocument && undefined !== el.ownerDocument.defaultView && undefined !== el.ownerDocument.defaultView.parent && el.ownerDocument.defaultView.parent !== el.ownerDocument.defaultView) {
-            var frames = el.ownerDocument.defaultView.parent.document.getElementsByTagName('iframe');
+            var frames = [];
+            try {
+                frames = el.ownerDocument.defaultView.parent.document.getElementsByTagName('iframe');
+            } catch (e) {}
             for (var i = frames.length - 1 ; i >= 0 ;i --){
                 var frameDocument;
                 try {
@@ -415,7 +418,7 @@
             messageDiv.style.border = '#bbb solid 10px';
             messageDiv.style.borderRadius = '20px';
             messageDiv.style.overflow = 'auto';
-            messageDiv.style.visibility = 'hidden';
+            messageDiv.style.opacity = '0';
             messageDiv.style.top = (rect.bottom + 5) + 'px';
             messageDiv.style.left = Math.max(0, (Math.round((rect.left + rect.right) / 2) - currentMessageDivWidth)) + 'px';
             messageDiv.style.width = currentMessageDivWidth + 'px';
@@ -470,7 +473,14 @@
             outerHeight = isFramed ? false : window.outerHeight;
 
         if (me.modules.ui.mainFrameWindow && me.modules.ui.mainFrameWindow.location) {
-            me.modules.dispatcher.updateCurrentUrl(me.modules.ui.mainFrameWindow.location.href);
+            var url = false;
+            try {
+                url = me.modules.ui.mainFrameWindow.location.href;
+            } catch (e) {
+            }
+            if (url) {
+                me.modules.dispatcher.updateCurrentUrl(url);
+            }
         }
         if (currentWindowDimensions.width !== windowWidth ||
             currentWindowDimensions.height !== windowHeight ||
@@ -489,7 +499,7 @@
                     chooseJobFrameHeight = 0.96 * windowHeight;
 
                     if (isFramed) {
-                        me.modules.ui.mainFrame.style.height = framesHeight + 'px';////
+                        me.modules.ui.mainFrame.style.height = framesHeight + 'px';
                     }
                     me.modules.ui.workerFrame.style.height = framesHeight + 'px';
                     me.modules.ui.chooseJobFrame.style.height = chooseJobFrameHeight + 'px';
@@ -524,7 +534,6 @@
             currentWindowDimensions.outerHeight = outerHeight;
             currentWindowDimensions.workerFrameSize = currentWorkerFrameSize;
         }
-        ////
     };
     /**
      * Returns main frame document
@@ -653,8 +662,6 @@
     };
     // Launch arrowToFunction
     setInterval(arrowToFunction, 200);
-    // Launch adjustFrameCoordinates
-    setInterval(adjustFrameCoordinates, 2000);
 
     me.scripts.push({
 
@@ -817,7 +824,12 @@
                         ok = true;
                     }
                     if (ok){
-                        div.style.visibility = 'visible';
+                        div.style.opacity = '1';
+                        var p = div.parentNode;
+                        if (p) {
+                            p.removeChild(div);
+                        }
+                        overlayWindow().document.getElementsByTagName('body')[0].appendChild(div);
                         messageAdjustmentRemainingAttempts = 0;
                     } else {
                         messageAdjustmentRemainingAttempts --;
@@ -864,7 +876,6 @@
                 body.removeChild(body.children[0]);
             }
             this.setSize = function(size){
-                ////
                 if (undefined === size) {
                     size = (currentWorkerFrameSize === 'big') ? 'small' : 'big';
                 }
@@ -897,6 +908,8 @@
             body.appendChild(this.chooseJobFrame);
             this.chooseJobFrameWindow = window.frames[chooseJobFrameName];
             this.setSize('big');
+            // Launch adjustFrameCoordinates
+            setInterval(adjustFrameCoordinates, 2000);
         },
         /**
          * Starts Framed type UI
@@ -941,9 +954,9 @@
             body.appendChild(this.mainFrame);
             this.mainFrameWindow = window.frames[mainFrameName];
 
-            this.mainFrame.onload = function(){
+            this.mainFrame.addEventListener('load', function(){
                 me.modules.dispatcher.onMainFrameLoaded();
-            };
+            }, false);
 
             this.mainFrameWindow.location.href=mainFrameSrc;
             body.appendChild(this.workerFrame);
@@ -961,6 +974,8 @@
             };
 
             this.setSize('big');
+            // Launch adjustFrameCoordinates
+            setInterval(adjustFrameCoordinates, 2000);
         },
         /**
          * Refreshes worker page

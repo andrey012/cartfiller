@@ -559,7 +559,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line203">line 203</a>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line227">line 227</a>
     </li></ul></dd>
     
 
@@ -577,13 +577,13 @@
 
         
             
-<h4 class="name" id="~resultMessageName"><span class="type-signature">(private, inner) </span>resultMessageName<span class="type-signature"> :String</span></h4>
+<h4 class="name" id="~rel"><span class="type-signature">(inner) </span>rel<span class="type-signature"> :Object</span></h4>
 
 
 
 
 <div class="description">
-    Keeps message name, used to deliver intermediate job status toChoose Job page opened in separate frame, if that is necessary at allIf set to false, empty string or undefined - no results will be delivered
+    Keeps details about relay subsystem
 </div>
 
 
@@ -592,7 +592,7 @@
     <ul>
         <li>
             
-<span class="param-type">String</span>
+<span class="param-type">Object</span>
 
 
         </li>
@@ -631,7 +631,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line87">line 87</a>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line142">line 142</a>
     </li></ul></dd>
     
 
@@ -704,6 +704,78 @@
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
         <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line79">line 79</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="~resultMessageName"><span class="type-signature">(private, inner) </span>resultMessageName<span class="type-signature"> :String</span></h4>
+
+
+
+
+<div class="description">
+    Keeps message name, used to deliver intermediate job status toChoose Job page opened in separate frame, if that is necessary at allIf set to false, empty string or undefined - no results will be delivered
+</div>
+
+
+
+    <h5>Type:</h5>
+    <ul>
+        <li>
+            
+<span class="param-type">String</span>
+
+
+        </li>
+    </ul>
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line87">line 87</a>
     </li></ul></dd>
     
 
@@ -1441,13 +1513,13 @@
 
         
             
-<h4 class="name" id="~workerSrcPretendent"><span class="type-signature">(private, inner) </span>workerSrcPretendent<span class="type-signature"> :String</span></h4>
+<h4 class="name" id="~workerSourceCodes"><span class="type-signature">(private, inner) </span>workerSourceCodes<span class="type-signature"> :Object</span></h4>
 
 
 
 
 <div class="description">
-    Keeps worker URL during load process. If load was successful sends URL back to controller
+    Keeps workers URL=>code map, used to initiate relays on the fly
 </div>
 
 
@@ -1456,7 +1528,7 @@
     <ul>
         <li>
             
-<span class="param-type">String</span>
+<span class="param-type">Object</span>
 
 
         </li>
@@ -1717,7 +1789,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line251">line 251</a>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line305">line 305</a>
     </li></ul></dd>
     
 
@@ -1817,7 +1889,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line754">line 754</a>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line864">line 864</a>
     </li></ul></dd>
     
 
@@ -1917,7 +1989,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line258">line 258</a>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line312">line 312</a>
     </li></ul></dd>
     
 
@@ -2048,7 +2120,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line703">line 703</a>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line813">line 813</a>
     </li></ul></dd>
     
 
@@ -2179,7 +2251,161 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line605">line 605</a>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line713">line 713</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="onMessage_bubbleRelayMessage"><span class="type-signature"></span>onMessage_bubbleRelayMessage<span class="signature">(details, source)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    Processes message exchange between relays
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>details</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>source</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Window</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line685">line 685</a>
     </li></ul></dd>
     
 
@@ -2261,7 +2487,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line328">line 328</a>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line400">line 400</a>
     </li></ul></dd>
     
 
@@ -2343,7 +2569,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line337">line 337</a>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line409">line 409</a>
     </li></ul></dd>
     
 
@@ -2425,7 +2651,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line559">line 559</a>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line639">line 639</a>
     </li></ul></dd>
     
 
@@ -2556,7 +2782,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line595">line 595</a>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line675">line 675</a>
     </li></ul></dd>
     
 
@@ -2638,7 +2864,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line543">line 543</a>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line623">line 623</a>
     </li></ul></dd>
     
 
@@ -2720,7 +2946,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_ui.js.html">src/boot/helpers/ui.js</a>, <a href="src_boot_helpers_ui.js.html#line699">line 699</a>
+        <a href="src_boot_helpers_ui.js.html">src/boot/helpers/ui.js</a>, <a href="src_boot_helpers_ui.js.html#line706">line 706</a>
     </li></ul></dd>
     
 
@@ -2851,7 +3077,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line567">line 567</a>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line647">line 647</a>
     </li></ul></dd>
     
 
@@ -2982,7 +3208,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line456">line 456</a>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line533">line 533</a>
     </li></ul></dd>
     
 
@@ -3113,7 +3339,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line346">line 346</a>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line418">line 418</a>
     </li></ul></dd>
     
 
@@ -3244,7 +3470,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line430">line 430</a>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line503">line 503</a>
     </li></ul></dd>
     
 
@@ -3326,7 +3552,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line312">line 312</a>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line384">line 384</a>
     </li></ul></dd>
     
 
@@ -3408,7 +3634,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line304">line 304</a>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line376">line 376</a>
     </li></ul></dd>
     
 
@@ -3490,7 +3716,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line577">line 577</a>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line657">line 657</a>
     </li></ul></dd>
     
 
@@ -3639,7 +3865,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line281">line 281</a>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line339">line 339</a>
     </li></ul></dd>
     
 
@@ -3721,7 +3947,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line551">line 551</a>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line631">line 631</a>
     </li></ul></dd>
     
 
@@ -3852,7 +4078,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line403">line 403</a>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line476">line 476</a>
     </li></ul></dd>
     
 
@@ -3983,7 +4209,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line417">line 417</a>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line490">line 490</a>
     </li></ul></dd>
     
 
@@ -4065,7 +4291,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line585">line 585</a>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line665">line 665</a>
     </li></ul></dd>
     
 
@@ -4147,7 +4373,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line320">line 320</a>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line392">line 392</a>
     </li></ul></dd>
     
 
@@ -4278,7 +4504,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line445">line 445</a>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line522">line 522</a>
     </li></ul></dd>
     
 
@@ -4455,7 +4681,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line641">line 641</a>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line751">line 751</a>
     </li></ul></dd>
     
 
@@ -4609,7 +4835,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line631">line 631</a>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line741">line 741</a>
     </li></ul></dd>
     
 
@@ -4632,6 +4858,147 @@
 
 
 
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="reflectMessage"><span class="type-signature"></span>reflectMessage<span class="signature">(message)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    Pass message to next dispatcher if this one does not have access.If there is no next dispatcher - then open new popup for dispatcher
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>message</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line912">line 912</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    bool
+</div>
+
+
+
+    
 
 
 
@@ -4763,7 +5130,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line661">line 661</a>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line771">line 771</a>
     </li></ul></dd>
     
 
@@ -4894,7 +5261,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line745">line 745</a>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line855">line 855</a>
     </li></ul></dd>
     
 
@@ -5025,7 +5392,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line781">line 781</a>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line882">line 882</a>
     </li></ul></dd>
     
 
@@ -5156,7 +5523,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line772">line 772</a>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line891">line 891</a>
     </li></ul></dd>
     
 
@@ -5290,7 +5657,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line763">line 763</a>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line873">line 873</a>
     </li></ul></dd>
     
 
@@ -5372,7 +5739,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line713">line 713</a>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line823">line 823</a>
     </li></ul></dd>
     
 
@@ -5512,7 +5879,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line790">line 790</a>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line900">line 900</a>
     </li></ul></dd>
     
 
@@ -5594,7 +5961,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line176">line 176</a>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line200">line 200</a>
     </li></ul></dd>
     
 
@@ -5676,7 +6043,492 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line194">line 194</a>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line218">line 218</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="~openRelay"><span class="type-signature">(private, inner) </span>openRelay<span class="signature">(url, message, noFocus)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    Passes message to next relay if message is not undefined and next relay exists, otherwisecreate new relay using specified url and puts message if it is not undefined to the queue
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>url</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>message</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>noFocus</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">boolean</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">Experimental, looks like it does not work</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line274">line 274</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="~openRelayOnTheTail"><span class="type-signature">(inner) </span>openRelayOnTheTail<span class="signature">(url, noFocus)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    Opens relay window. If url points to the cartFiller distribution
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>url</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>noFocus</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">boolean</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line972">line 972</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="~openRelayOnTheTail"><span class="type-signature">(inner) </span>openRelayOnTheTail<span class="signature">(url, noFocus)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    Opens relay window. If url points to the cartFiller distribution
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>url</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>noFocus</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">boolean</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">Experimental, looks like it does not work</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_api.js.html">src/boot/helpers/api.js</a>, <a href="src_boot_helpers_api.js.html#line445">line 445</a>
     </li></ul></dd>
     
 
@@ -5876,7 +6728,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line142">line 142</a>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line166">line 166</a>
     </li></ul></dd>
     
 
@@ -5958,7 +6810,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line209">line 209</a>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line233">line 233</a>
     </li></ul></dd>
     
 
@@ -6040,7 +6892,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line237">line 237</a>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line261">line 261</a>
     </li></ul></dd>
     
 
@@ -6122,7 +6974,89 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line167">line 167</a>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line191">line 191</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="~startSlaveMode"><span class="type-signature">(inner) </span>startSlaveMode<span class="signature">()</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    Starts whole piece in slave mode
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line934">line 934</a>
     </li></ul></dd>
     
 
@@ -6170,7 +7104,7 @@
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.3</a> on Fri Mar 18 2016 02:00:55 GMT+0300 (MSK)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0</a> on Sat Mar 19 2016 18:25:01 GMT+0300 (MSK)
 </footer>
 
 <script> prettyPrint(); </script>

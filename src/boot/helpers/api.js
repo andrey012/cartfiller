@@ -285,8 +285,10 @@
          * @access public
          */
         highlight: function(element, allElements){
-            me.modules.ui.highlight(element, allElements);
-            me.modules.dispatcher.setHighlightedElement(element);
+            try {
+                me.modules.ui.highlight(element, allElements);
+                me.modules.dispatcher.setHighlightedElement(element);
+            } catch (e) {}
             return this;
         },
         /**
@@ -302,8 +304,10 @@
          * @access public
          */
         arrow: function(element, allElements){
-            me.modules.ui.arrowTo(element, allElements);
-            me.modules.dispatcher.setHighlightedElement(element);
+            try {
+                me.modules.ui.arrowTo(element, allElements);
+                me.modules.dispatcher.setHighlightedElement(element);
+            } catch (e){}
             return this;
         },
         /**
@@ -437,6 +441,16 @@
                     }
                 }
             ];
+        },
+        /**
+         * Opens relay window. If url points to the cartFiller distribution
+         * @function CartFiller.Dispatcher~openRelayOnTheTail
+         * @param {string} url
+         * @param {boolean} noFocus Experimental, looks like it does not work
+         * @access public
+         */
+        openRelay: function(url, noFocus) {
+            me.modules.dispatcher.openRelayOnTheTail(url, noFocus);
         }
     });
 }).call(this, document, window);
