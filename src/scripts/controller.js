@@ -47,6 +47,7 @@ define('controller', ['app', 'scroll'], function(app){
         $scope.awaitingForFinish = false;
         $scope.runUntilTask = $scope.runUntilStep = false;
         $scope.repeatedTaskCounter = [];
+        $scope.doingOneStep = true;
         var autorunSpeed;
         var mouseDownTime;
         var isLongClick = function(){
@@ -159,13 +160,13 @@ define('controller', ['app', 'scroll'], function(app){
                     $scope.runUntilTask = $scope.runUntilStep = false;
                     proceed = false;
                 }
-                if ($scope.running){
+                if ($scope.running || ($scope.doingOneStep && true === details.nop)){
                     if (proceed){
                         setTimeout(function(){
                             $scope.doNextStep();
                         }, (($scope.running === 'slow') && (true !== details.nop)) ? 2000 : 0);
                     } else {
-                        $scope.running = false;
+                        $scope.running = $scope.doingOneStep = false;
                     }
                 }
                 cfMessage.send(
@@ -290,6 +291,7 @@ define('controller', ['app', 'scroll'], function(app){
             prompt('This is readonly but you can copy task name here:', name);
         };
         $scope.clickOnStepNoWatch = function(element, $event){
+            $scope.doingOneStep = false;
             var s = element.getAttribute('id').split('_');
             var taskIndex = parseInt(s[1]);
             var stepIndex = parseInt(s[2]);
@@ -336,6 +338,7 @@ define('controller', ['app', 'scroll'], function(app){
             return size + 'btn-warning';
         };
         $scope.runNoWatch = function(slow, $event, ignoreMouseDown, fromAutorun){
+            $scope.doingOneStep = false;
             if (! ignoreMouseDown && isLongClick()) {
                 $scope.awaitingForFinish = slow ? 'slow' : true;
                 digestButtonPanel();
@@ -360,7 +363,7 @@ define('controller', ['app', 'scroll'], function(app){
             return false;
         };
         $scope.stopNoWatch = function($event){
-            $scope.runUntilTask = $scope.runUntilStep = false;
+            $scope.runUntilTask = $scope.runUntilStep = $scope.doingOneStep = false;
             $event.stopPropagation();
             $scope.running = false;
             digestButtonPanel();
@@ -389,7 +392,8 @@ define('controller', ['app', 'scroll'], function(app){
         $scope.clickOnNextStepNoWatch = function($event){
             if (! $scope.workerInProgress) {
                 $scope.runUntilTask = $scope.runUntilStep = false;
-                $scope.doNextStep(); 
+                $scope.doingOneStep = true;
+                $scope.doNextStep();
             }
             $event.stopPropagation();
             cfMessage.send('focusMainFrameWindow');
