@@ -51,6 +51,13 @@ module.exports = function(grunt) {
                     "src/jquery-cartFiller-require-append.js"
                 ],
                 dest: "dist/worker-app-scripts.js"
+            },
+            appCache: {
+                options: {
+                    banner: ''
+                },
+                src: ["src/self.appcache"],
+                dest: "dist/self.appcache"
             }
 		},
         copy: {
@@ -74,7 +81,7 @@ module.exports = function(grunt) {
                     }
                 },
                 files : [
-                    {expand: true, cwd: "src/", src: ["index.uncompressed.html", "self.appcache"], dest: "dist/"},
+                    {expand: true, cwd: "src/", src: ["index.uncompressed.html"], dest: "dist/"},
                 ]
             }
 

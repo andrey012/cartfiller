@@ -26,7 +26,7 @@
                 {{discovery.error}}
             </div>
             <div class="alert alert-info" ng-if="discovery.state == 0">
-                Looking for cartfiller.json at <a href="{{discovery.currentRootPath}}">{{discovery.currentRootPath</a>
+                Looking for cartfiller.json at <a href="{{discovery.currentRootPath}}">{{discovery.currentRootPath}}</a>
             </div>
             <div class="alert alert-info" ng-if="discovery.state == 1">
                 Downloading test scripts
@@ -91,17 +91,16 @@
              style="text-align: right; z-index: 101; position: fixed; top: 0px; width: 100%; padding: 2px;" 
              class="alert alert-warning"
              ng-repeat="dummy in [0]">
-            <a href="#" class="btn btn-info btn-xs" ng-click="toggleSize()">[]</a>
             <a href="#"
                ng-if="running"
-               class="btn btn-xs btn-danger"
+               class="btn btn-xl btn-danger"
                onclick="var event = arguments[0] || window.event; return angular.element(this).scope().stopNoWatch(event);"
                ng-disabled="workersLoaded < workersCounter"
                >Stop</a>
             <a href="#"
                id="runButton"
                ng-if="!running"
-               class="btn btn-xs btn-success"
+               class="btn btn-xl btn-success"
                title="Run"
                ng-disabled="workerInProgress || (workersLoaded < workersCounter)"
                onclick="var event = arguments[0] || window.event; return angular.element(this).scope().runNoWatch(false, event);"
@@ -110,24 +109,26 @@
                >&gt;&gt;&gt;</a>
             <a href="#"
                ng-if="!running"
-               class="btn btn-xs btn-info"
+               class="btn btn-xl btn-info"
                title="Slow"
                ng-disabled="workerInProgress || (workersLoaded < workersCounter)"
                onclick="var event = arguments[0] || window.event; return angular.element(this).scope().runNoWatch(true, event);"
                onmousedown="angular.element(this).scope().mouseDown();"
                >&gt;..&gt;</a>
             <a href="#"
-               class="btn btn-xs btn-info"
+               class="btn btn-xl btn-info"
                title="Step"
                ng-disabled="workerInProgress || (workersLoaded < workersCounter)"
                onclick="var event = arguments[0] || window.event; return angular.element(this).scope().clickOnNextStepNoWatch(event);"
                >I&nbsp;I&gt;</a>
             <a href="#" 
                id="chooseJobButton"
-               class="btn btn-info btn-xs"
+               class="btn btn-info btn-xl"
                ng-click="chooseJob()"
                onclick="return false;"
-               >{{chooseJobState ? 'Cancel' : 'Choose Job'}}</a>
+               >{{chooseJobState ? 'Close' : 'Open'}}</a>
+            <br/>
+            <a href="#" class="btn btn-info btn-xs" ng-click="toggleSize()">[]</a>
             <a href="#"
                class="btn btn-info btn-xs"
                ng-click="clickOnReturnResult($event)"
@@ -189,7 +190,7 @@
         <div ng-if="chooseJobState" id="cartFillerOverlay" style="z-index: 100; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); position: absolute; top: 0px; left: 0px;">
 
         </div>
-        <a class="btn btn-info btn-xs" style="width: 100%; margin-top: 100px; margin-bottom: 5px;" onclick="alert('Long click on step = debug, long click on Run (fast and slow) = Run until particular step, double click on property value = change property value');">help</a>
+        <a class="btn btn-info btn-xs" style="width: 100%; margin-top: 110px; margin-bottom: 5px;" onclick="alert('Long click on step = debug, long click on Run (fast and slow) = Run until particular step, double click on property value = change property value');">help</a>
         <div id="jobDetails">
             <div id="{{'taskDiv_' + jobTaskIndex}}"
                  class="alert"
