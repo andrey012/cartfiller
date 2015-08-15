@@ -56,6 +56,9 @@
                             <button class="btn btn-xs btn-success" ng-click="expandTest(index)">
                                 {{index === expandedTest ? 'Collapse' : 'Expand'}}
                             </button>
+                            <button class="btn btn-xs btn-success" ng-click="runAll(index)">
+                                Run all from here
+                            </button>
                         </td>
                     </tr>
                     <tr ng-if="index === expandedTest" ng-repeat="(taskIndex, task) in discovery.scripts.contents[index].details">

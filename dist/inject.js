@@ -157,7 +157,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1458493927826';
+    config.gruntBuildTimeStamp='1458507135495';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -1233,6 +1233,12 @@
                      * @access public
                      */
                     task: message.details,
+                    /**
+                     * @member {integer} CartFiller.Api.StepEnvironment#repeatCounter If task is 
+                     * repeated then this value will get increased each step
+                     * access public
+                     */
+                    repeatCounter: message.repeatCounter,
                     /**
                      * @member {Object} CartFiller.Api.StepEnvironment#params Task parameters as submitted by
                      * {@link CartFiller.Api.registerCallback}

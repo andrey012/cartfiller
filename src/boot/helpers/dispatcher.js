@@ -577,6 +577,12 @@
                      */
                     task: message.details,
                     /**
+                     * @member {integer} CartFiller.Api.StepEnvironment#repeatCounter If task is 
+                     * repeated then this value will get increased each step
+                     * access public
+                     */
+                    repeatCounter: message.repeatCounter,
+                    /**
                      * @member {Object} CartFiller.Api.StepEnvironment#params Task parameters as submitted by
                      * {@link CartFiller.Api.registerCallback}
                      */

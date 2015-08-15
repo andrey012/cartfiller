@@ -12,7 +12,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
         var parseJson = function(s){
             s = s.replace(/\,[ \t\n\r]*\]/g, ']').replace(/\,[ \t\n\r]*\}/g, '}').replace(/\t/g, '\\t').replace(/\r/g, '');
             var m;
-            while (m = /(\{\s*\"[^"\n]*)\n/.exec(s)) {
+            while (m = /([\{,]\s*\"(\\\"|[^"\n])*)\n/.exec(s)) {
                 s = s.replace(m[0], m[1] + '\\n');
             }
             return JSON.parse(s);
@@ -53,10 +53,10 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             }
         };
         $scope.runningAll = false;
-        $scope.runAll = function () {
+        $scope.runAll = function (index) {
             $scope.runningAll = true;
             if ($scope.discovery.scripts.contents.length) {
-                $scope.runTest(0);
+                $scope.runTest(index ? index : 0);
             }
         };
         $scope.stopRunningAll = function() {
@@ -117,7 +117,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                                 if (undefined === s[1]) {
                                     tweaks[s[0]] = true;
                                 } else {
-                                    tweaks[s[0]] = decodeURIComponent(s[1]);
+                                    tweaks[s[0]] = decodeURIComponent(s[1].split('"').join('%22'));
                                 }
                             });
                         }

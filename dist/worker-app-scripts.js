@@ -60,6 +60,7 @@ define('controller', ['app', 'scroll'], function(app){
         $scope.finishReached = false;
         $scope.awaitingForFinish = false;
         $scope.runUntilTask = $scope.runUntilStep = false;
+        $scope.repeatedTaskCounter = [];
         var autorunSpeed;
         var mouseDownTime;
         var isLongClick = function(){
@@ -103,6 +104,7 @@ define('controller', ['app', 'scroll'], function(app){
                         $scope.jobTitleMap = angular.isUndefined(details.titleMap) ? [] : details.titleMap;
                         $scope.jobTaskProgress = [];
                         $scope.jobTaskStepProgress = [];
+                        $scope.repeatedTaskCounter = [];
                         $scope.currentTask = 0;
                         $scope.currentStep = 0;
                         scrollCurrentTaskIntoView(true);
@@ -227,8 +229,14 @@ define('controller', ['app', 'scroll'], function(app){
             $scope.currentStep ++;
             if (skip || nextTaskFlow === 'skipTask' || nextTaskFlow === 'repeatTask' || $scope.jobTaskDescriptions[$scope.jobDetails[$scope.currentTask].task].length <= $scope.currentStep){
                 $scope.currentStep = 0;
-                if (nextTaskFlow !== 'repeatTask') {
+                if (nextTaskFlow === 'repeatTask') {
+                    if (undefined === $scope.repeatedTaskCounter[$scope.currentTask]) {
+                        $scope.repeatedTaskCounter[$scope.currentTask] = 0;
+                    }
+                    $scope.repeatedTaskCounter[$scope.currentTask] ++;
+                } else {
                     $scope.currentTask ++;
+                    $scope.repeatedTaskCounter[$scope.currentTask] = 0;
                 }
                 if ($scope.currentTask >= $scope.jobDetails.length){
                     $scope.finishReached = true;
@@ -320,7 +328,7 @@ define('controller', ['app', 'scroll'], function(app){
             var details = $scope.jobDetails[taskIndex];
             var taskName = details.task;
             $scope.workerInProgress = true;
-            cfMessage.send('invokeWorker', {index: taskIndex, task: taskName, step: stepIndex, details: details, debug: debug});
+            cfMessage.send('invokeWorker', {index: taskIndex, task: taskName, step: stepIndex, details: details, debug: debug, repeatCounter: $scope.repeatedTaskCounter[taskIndex] || 0});
             digestButtonPanel();
             digestTask($scope.currentTask);
         };
@@ -697,7 +705,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
         var parseJson = function(s){
             s = s.replace(/\,[ \t\n\r]*\]/g, ']').replace(/\,[ \t\n\r]*\}/g, '}').replace(/\t/g, '\\t').replace(/\r/g, '');
             var m;
-            while (m = /(\{\s*\"[^"\n]*)\n/.exec(s)) {
+            while (m = /([\{,]\s*\"(\\\"|[^"\n])*)\n/.exec(s)) {
                 s = s.replace(m[0], m[1] + '\\n');
             }
             return JSON.parse(s);
@@ -738,10 +746,10 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             }
         };
         $scope.runningAll = false;
-        $scope.runAll = function () {
+        $scope.runAll = function (index) {
             $scope.runningAll = true;
             if ($scope.discovery.scripts.contents.length) {
-                $scope.runTest(0);
+                $scope.runTest(index ? index : 0);
             }
         };
         $scope.stopRunningAll = function() {
@@ -802,7 +810,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                                 if (undefined === s[1]) {
                                     tweaks[s[0]] = true;
                                 } else {
-                                    tweaks[s[0]] = decodeURIComponent(s[1]);
+                                    tweaks[s[0]] = decodeURIComponent(s[1].split('"').join('%22'));
                                 }
                             });
                         }
