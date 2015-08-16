@@ -85,7 +85,7 @@
                                 var loaded = "complete" === testFrame.jQuery('iframe[name="cartFillerChooseJobFrame"]')[0].contentDocument.readyState;
                                 var link = testFrame.frames['cartFillerChooseJobFrame'].document.getElementById('sampleSubmitLink');
                                 var chooseJobButton = testFrame.frames['cartFillerWorkerFrame'].jQuery ? testFrame.frames['cartFillerWorkerFrame'].jQuery('#chooseJobButton') : false
-                                if (link && loaded && chooseJobButton && chooseJobButton.text() === 'Cancel') {
+                                if (link && loaded && chooseJobButton && chooseJobButton.text() === 'Close') {
                                     console.log('submit link found');
                                     click(link);
                                     console.log('submit link clicked');
