@@ -864,7 +864,8 @@
             setTimeout(function loadWatcher(){
                 try {
                     if (ui.mainFrameWindow.document && 
-                        (ui.mainFrameWindow.document.readyState === 'complete')){
+                        (ui.mainFrameWindow.document.readyState === 'complete') &&
+                        ! ui.mainFrameWindow.document.getElementsByTagname('html')[0].getAttribute('data-cartfiller-reload-tracker')){
                         me.modules.dispatcher.onMainFrameLoaded(true);
                     }
                 } catch (e){}
@@ -957,6 +958,17 @@
             this.mainFrame.addEventListener('load', function(){
                 me.modules.dispatcher.onMainFrameLoaded();
             }, false);
+            
+            setTimeout(function loadWatcher(){
+                try {
+                    if (ui.mainFrameWindow.document && 
+                        (ui.mainFrameWindow.document.readyState === 'complete') &&
+                        ! ui.mainFrameWindow.document.getElementsByTagname('html')[0].getAttribute('data-cartfiller-reload-tracker')){
+                        me.modules.dispatcher.onMainFrameLoaded(true);
+                    }
+                } catch (e){}
+                setTimeout(loadWatcher, 100);
+            }, 100);
 
             this.mainFrameWindow.location.href=mainFrameSrc;
             body.appendChild(this.workerFrame);

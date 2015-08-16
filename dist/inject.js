@@ -157,7 +157,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1458522929910';
+    config.gruntBuildTimeStamp='1458583013908';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -1202,6 +1202,9 @@
                 var err = 'ERROR: worker task is in still in progress';
                 alert(err);
             } else {
+                try {
+                    me.modules.ui.mainFrameWindow.document.getElementsByTagName('html')[0].setAttribute('data-cartfiller-reload-tracker', 1);
+                } catch (e) {}
                 nextTaskFlow = 'normal';
                 if (workerCurrentTaskIndex !== message.index){
                     fillWorkerCurrentTask(message.details);
@@ -1399,6 +1402,9 @@
             if (workerOnLoadHandler) {
                 workerOnLoadHandler(watchdog);
                 workerOnLoadHandler = false;
+                try {
+                    me.modules.ui.mainFrameWindow.document.getElementsByTagName('html')[0].setAttribute('data-cartfiller-reload-tracker', 1);
+                } catch (e) {}
             }
         },
         /**
@@ -1522,6 +1528,22 @@
          * @access public
          */
         registerWorkerOnloadCallback: function(cb){
+            var already = false;
+            try {
+                if (! me.modules.ui.mainFrameWindow.document.getElementsByTagName('html')[0].getAttribute('data-cartfiller-reload-tracker')) {
+                    already = true;
+                }
+            } catch (e) {}
+            if (already) {
+                try {
+                    cb(true);
+                } catch (e) {}
+                try {
+                    me.modules.ui.mainFrameWindow.document.getElementsByTagName('html')[0].setAttribute('data-cartfiller-reload-tracker', 1);
+                } catch (e) {}
+                workerOnLoadHandler = false;
+                return;
+            }
             workerOnLoadHandler = cb;
         },
         /**
@@ -2575,7 +2597,8 @@
             setTimeout(function loadWatcher(){
                 try {
                     if (ui.mainFrameWindow.document && 
-                        (ui.mainFrameWindow.document.readyState === 'complete')){
+                        (ui.mainFrameWindow.document.readyState === 'complete') &&
+                        ! ui.mainFrameWindow.document.getElementsByTagname('html')[0].getAttribute('data-cartfiller-reload-tracker')){
                         me.modules.dispatcher.onMainFrameLoaded(true);
                     }
                 } catch (e){}
@@ -2668,6 +2691,17 @@
             this.mainFrame.addEventListener('load', function(){
                 me.modules.dispatcher.onMainFrameLoaded();
             }, false);
+            
+            setTimeout(function loadWatcher(){
+                try {
+                    if (ui.mainFrameWindow.document && 
+                        (ui.mainFrameWindow.document.readyState === 'complete') &&
+                        ! ui.mainFrameWindow.document.getElementsByTagname('html')[0].getAttribute('data-cartfiller-reload-tracker')){
+                        me.modules.dispatcher.onMainFrameLoaded(true);
+                    }
+                } catch (e){}
+                setTimeout(loadWatcher, 100);
+            }, 100);
 
             this.mainFrameWindow.location.href=mainFrameSrc;
             body.appendChild(this.workerFrame);

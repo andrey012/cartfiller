@@ -77,7 +77,7 @@ define('controller', ['app', 'scroll'], function(app){
             cfScroll(jQuery('#jobDetails > div:nth-child(' + ($scope.currentTask + 1) + ')')[0], useTop);
         };
         var autorun = function() {
-            if ($scope.workersLoaded === $scope.workersCounter) {
+            if ($scope.workersLoaded >= $scope.workersCounter) {
                 $scope.runNoWatch(autorunSpeed === 'slow' ? true : false, null, true, true);
             } else {
                 // wait some more time
