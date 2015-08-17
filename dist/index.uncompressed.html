@@ -75,6 +75,12 @@
                             </div>
                         </td>
                     </tr>
+                    <tr ng-if="index === expandedTest">
+                        <td colspan="2">
+                            &nbsp;&nbsp;&nbsp;&nbsp;
+                            <a href="{{getTaskUrl(index, -1, 0)}}" ng-click="runTest(index, 'fast', -1, 0, $event)" onclick="return false;">fin</a>
+                        </td>
+                    </tr>
                     <tr ng-repeat-end></tr>
                 </tbody>
             </table>

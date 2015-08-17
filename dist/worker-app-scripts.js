@@ -916,7 +916,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                         if (undefined === index) {
                             alert('test not found: ' + $scope.params.goto);
                         } else {
-                            $scope.runTest(index, 'fast', parseInt($scope.params.task) - 1, parseInt($scope.params.step) - 1);
+                            $scope.runTest(index, $scope.params.slow ? 'slow' : 'fast', parseInt($scope.params.task) - 1, parseInt($scope.params.step) - 1);
                         }
                     });
                 }
@@ -1001,6 +1001,9 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             $.cartFillerPlugin({'$cartFillerTestUpdate': test});
         };
         $scope.runTest = function(index, how, untilTask, untilStep, $event) {
+            if (untilTask === -1 || untilTask === '-1') {
+                untilTask = untilStep = undefined;
+            }
             if ($event) {
                 $event.stopPropagation();
             }
