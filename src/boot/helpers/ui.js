@@ -855,22 +855,7 @@
             this.focusMainFrameWindow = function(){
                 this.mainFrameWindow.focus();
             };
-            try {
-                this.mainFrameWindow.addEventListener('load', function(){
-                    me.modules.dispatcher.onMainFrameLoaded();
-                }, true);
-            } catch (e){}
-            var ui = this;
-            setTimeout(function loadWatcher(){
-                try {
-                    if (ui.mainFrameWindow.document && 
-                        (ui.mainFrameWindow.document.readyState === 'complete') &&
-                        ! ui.mainFrameWindow.document.getElementsByTagname('html')[0].getAttribute('data-cartfiller-reload-tracker')){
-                        me.modules.dispatcher.onMainFrameLoaded(true);
-                    }
-                } catch (e){}
-                setTimeout(loadWatcher, 100);
-            }, 100);
+            me.modules.dispatcher.registerLoadWatcher();
 
             var body = window.document.getElementsByTagName('body')[0];
             while (body.children.length) {
@@ -955,21 +940,7 @@
             body.appendChild(this.mainFrame);
             this.mainFrameWindow = window.frames[mainFrameName];
 
-            this.mainFrame.addEventListener('load', function(){
-                me.modules.dispatcher.onMainFrameLoaded();
-            }, false);
-            
-            setTimeout(function loadWatcher(){
-                try {
-                    if (ui.mainFrameWindow.document && 
-                        (ui.mainFrameWindow.document.readyState === 'complete') &&
-                        ! ui.mainFrameWindow.document.getElementsByTagname('html')[0].getAttribute('data-cartfiller-reload-tracker')){
-                        me.modules.dispatcher.onMainFrameLoaded(true);
-                    }
-                } catch (e){}
-                setTimeout(loadWatcher, 100);
-            }, 100);
-
+            me.modules.dispatcher.registerLoadWatcher();
             this.mainFrameWindow.location.href=mainFrameSrc;
             body.appendChild(this.workerFrame);
             this.workerFrameWindow = window.frames[workerFrameName];

@@ -157,7 +157,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1458598161226';
+    config.gruntBuildTimeStamp='1458606347691';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -701,6 +701,13 @@
      */
     var workerOnLoadHandler = false;
     /**
+     * flag, that mainWorkerFrame was loaded after worker step was started, but before
+     * worker installed onload hook. This happens sometimes when network is really fast.
+     * @var {boolean} CartFiller.Dispatcher~onLoadHappened
+     * @access private
+     */
+    var onLoadHappened = false;
+    /**
      * @var {integer} CartFiller.Dispatcher~workerTimeout Specifies time to wait 
      * for worker step to call api.result() or api.nop(). 
      * @access private
@@ -980,7 +987,7 @@
                 if (pattern.test(event.data)){
                     var match = pattern.exec(event.data);
                     var message = JSON.parse(match[1]);
-                    if (event.source === relay.nextRelay && message.cmd !== 'register') {
+                    if (event.source === relay.nextRelay && message.cmd !== 'register' && message.cmd !== 'bubbleRelayMessage') {
                         postMessage(relay.isSlave ? window.opener : me.modules.ui.workerFrameWindow, message.cmd, message);
                     } else {
                         var fn = 'onMessage_' + message.cmd;
@@ -1205,9 +1212,7 @@
                 var err = 'ERROR: worker task is in still in progress';
                 alert(err);
             } else {
-                try {
-                    me.modules.ui.mainFrameWindow.document.getElementsByTagName('html')[0].setAttribute('data-cartfiller-reload-tracker', 1);
-                } catch (e) {}
+                onLoadHappened = false;
                 nextTaskFlow = 'normal';
                 if (workerCurrentTaskIndex !== message.index){
                     fillWorkerCurrentTask(message.details);
@@ -1302,7 +1307,10 @@
          * @function CartFiller.Dispatcher#onMessage_resetWorker
          * @access public
          */
-        onMessage_resetWorker: function(){
+        onMessage_resetWorker: function(message){
+            if (this.reflectMessage(message)) {
+                return;
+            }
             resetWorker();
         },
         /**
@@ -1370,7 +1378,7 @@
                 }
             }
             if (details.message === 'onMainFrameLoaded') {
-                me.modules.dispatcher.onMainFrameLoaded(details.args[0]);
+                me.modules.dispatcher.onMainFrameLoaded(details.args[0], true);
             } else if (details.message === 'openRelayOnHead' && ! relay.isSlave) {
                 if (! relay.knownUrls[details.args[0]]) {
                     me.modules.dispatcher.onMessage_bubbleRelayMessage({message: 'openRelayOnTail', args: details.args, notToParents: true});
@@ -1393,21 +1401,23 @@
          * if yes calls this function with watchdog = true. NOTE: 
          * as a result this function can be called several times (once)
          * after each ping.
+         * @param {boolean} bubbling Means that we received this message from
+         * another dispatcher and we should not bubble it
          * @access public
          */
-        onMainFrameLoaded: function(watchdog) {
+        onMainFrameLoaded: function(watchdog, bubbling) {
             mainFrameLoaded = true;
             if (workerFrameLoaded && !bootstrapped){
                 this.bootstrapCartFiller();
-            } else {
+            } else if (! bubbling) {
                 relay.bubbleMessage({message: 'onMainFrameLoaded', args: [watchdog]});
             }
             if (workerOnLoadHandler) {
                 workerOnLoadHandler(watchdog);
                 workerOnLoadHandler = false;
-                try {
-                    me.modules.ui.mainFrameWindow.document.getElementsByTagName('html')[0].setAttribute('data-cartfiller-reload-tracker', 1);
-                } catch (e) {}
+                onLoadHappened = false;
+            } else {
+                onLoadHappened = true;
             }
         },
         /**
@@ -1500,7 +1510,6 @@
          * @access public
          */
         submitWorkerResult: function(message, recoverable, response){
-            removeWatchdogHandler();
             var status;
             if ((undefined === message) || ('' === message)) {
                 status = 'ok';
@@ -1509,6 +1518,7 @@
             } else {
                 throw 'invalid message type ' + typeof(message);
             }
+            removeWatchdogHandler();
             this.postMessageToWorker(
                 'workerStepResult', 
                 {
@@ -1531,23 +1541,14 @@
          * @access public
          */
         registerWorkerOnloadCallback: function(cb){
-            var already = false;
-            try {
-                if (! me.modules.ui.mainFrameWindow.document.getElementsByTagName('html')[0].getAttribute('data-cartfiller-reload-tracker')) {
-                    already = true;
-                }
-            } catch (e) {}
-            if (already) {
+            if (onLoadHappened) {
                 try {
                     cb(true);
                 } catch (e) {}
-                try {
-                    me.modules.ui.mainFrameWindow.document.getElementsByTagName('html')[0].setAttribute('data-cartfiller-reload-tracker', 1);
-                } catch (e) {}
                 workerOnLoadHandler = false;
-                return;
+            } else {
+                workerOnLoadHandler = cb;
             }
-            workerOnLoadHandler = cb;
         },
         /**
          * Returns current step indx
@@ -1646,16 +1647,26 @@
             if (! me.modules.ui.mainFrameWindow) {
                 alert('could not find mainFrameWindow in slave mode');
             }
+            me.modules.dispatcher.registerLoadWatcher();
+            relay.isSlave = true;
+        },
+        /**
+         * Registers watcher that tracks onload events of main frame
+         * @function CartFiller.Dispatcher~registerLoadWatcher
+         * @access public
+         */
+        registerLoadWatcher: function() {
             setTimeout(function loadWatcher(){
                 try {
-                    if (me.modules.ui.mainFrameWindow.document && 
-                        (me.modules.ui.mainFrameWindow.document.readyState === 'complete')){
+                    if (me.modules.ui.mainFrameWindow.document &&
+                        (me.modules.ui.mainFrameWindow.document.readyState === 'complete') &&
+                        ! me.modules.ui.mainFrameWindow.document.getElementsByTagName('html')[0].getAttribute('data-cartfiller-reload-tracker')){
+                        me.modules.ui.mainFrameWindow.document.getElementsByTagName('html')[0].setAttribute('data-cartfiller-reload-tracker', 0);
                         me.modules.dispatcher.onMainFrameLoaded(true);
                     }
                 } catch (e){}
                 setTimeout(loadWatcher, 100);
             }, 100);
-            relay.isSlave = true;
         },
         /**
          * Opens relay window. If url points to the cartFiller distribution
@@ -1669,6 +1680,7 @@
         }
     });
 }).call(this, document, window);
+
 /**
  * Manages loading of pieces of code
  * @class CartFiller.Loader
@@ -2591,22 +2603,7 @@
             this.focusMainFrameWindow = function(){
                 this.mainFrameWindow.focus();
             };
-            try {
-                this.mainFrameWindow.addEventListener('load', function(){
-                    me.modules.dispatcher.onMainFrameLoaded();
-                }, true);
-            } catch (e){}
-            var ui = this;
-            setTimeout(function loadWatcher(){
-                try {
-                    if (ui.mainFrameWindow.document && 
-                        (ui.mainFrameWindow.document.readyState === 'complete') &&
-                        ! ui.mainFrameWindow.document.getElementsByTagname('html')[0].getAttribute('data-cartfiller-reload-tracker')){
-                        me.modules.dispatcher.onMainFrameLoaded(true);
-                    }
-                } catch (e){}
-                setTimeout(loadWatcher, 100);
-            }, 100);
+            me.modules.dispatcher.registerLoadWatcher();
 
             var body = window.document.getElementsByTagName('body')[0];
             while (body.children.length) {
@@ -2691,21 +2688,7 @@
             body.appendChild(this.mainFrame);
             this.mainFrameWindow = window.frames[mainFrameName];
 
-            this.mainFrame.addEventListener('load', function(){
-                me.modules.dispatcher.onMainFrameLoaded();
-            }, false);
-            
-            setTimeout(function loadWatcher(){
-                try {
-                    if (ui.mainFrameWindow.document && 
-                        (ui.mainFrameWindow.document.readyState === 'complete') &&
-                        ! ui.mainFrameWindow.document.getElementsByTagname('html')[0].getAttribute('data-cartfiller-reload-tracker')){
-                        me.modules.dispatcher.onMainFrameLoaded(true);
-                    }
-                } catch (e){}
-                setTimeout(loadWatcher, 100);
-            }, 100);
-
+            me.modules.dispatcher.registerLoadWatcher();
             this.mainFrameWindow.location.href=mainFrameSrc;
             body.appendChild(this.workerFrame);
             this.workerFrameWindow = window.frames[workerFrameName];
@@ -2802,6 +2785,7 @@
         }
     });
 }).call(this, document, window);
+
 // this file is used as a footer when concatenating inject scripts. It is not valid as standalone.
 /* jshint ignore:start */
 }).call({
