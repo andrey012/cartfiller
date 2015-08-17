@@ -157,7 +157,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1458583013908';
+    config.gruntBuildTimeStamp='1458586882839';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -1195,6 +1195,9 @@
          * @access public
          */
         onMessage_invokeWorker: function(message){
+            try {
+                me.modules.ui.say();
+            } catch (e){}
             if (this.reflectMessage(message)) {
                 return;
             }

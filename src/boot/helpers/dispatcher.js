@@ -538,6 +538,9 @@
          * @access public
          */
         onMessage_invokeWorker: function(message){
+            try {
+                me.modules.ui.say();
+            } catch (e){}
             if (this.reflectMessage(message)) {
                 return;
             }
