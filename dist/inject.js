@@ -157,7 +157,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1458606347691';
+    config.gruntBuildTimeStamp='1458688890506';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -449,18 +449,34 @@
                 })(resultCallback);
             }
             var fn = function(){
-                var result = checkCallback();
+                var result;
+                try {
+                    result = checkCallback();
+                } catch (e) {
+                    me.modules.dispatcher.reportErrorResult(e);
+                    return;
+                }
                 if (false === me.modules.dispatcher.getWorkerCurrentStepIndex()){
                     return;
                 } 
                 if (result) {
-                    resultCallback(result);
+                    try {
+                        resultCallback(result);
+                    } catch (e) {
+                        me.modules.dispatcher.reportErrorResult(e);
+                        return;
+                    }
                 } else {
                     counter --;
                     if (counter > 0){
                         me.modules.api.setTimeout(fn, period);
                     } else {
-                        resultCallback(false);
+                        try {
+                            resultCallback(false);
+                        } catch (e) {
+                            me.modules.dispatcher.reportErrorResult(e);
+                            return;
+                        }
                     }
                 }
             };
@@ -655,6 +671,7 @@
         }
     });
 }).call(this, document, window);
+
 /**
  * Coordinates activity of worker (via API), UI, and progress frame
  * 
@@ -895,6 +912,19 @@
      */
     var nextTaskFlow;
     /**
+     * removes setTimeout's and setInterval's registered by worker earlier
+     * @function CartFiller.Dispatcher~clearRegisteredTimeoutsAndIntervals
+     * @access private 
+     */
+    var clearRegisteredTimeoutsAndIntervals = function() {
+        while (workerSetTimeoutIds.length) {
+            clearTimeout(workerSetTimeoutIds.pop());
+        }
+        while (workerSetIntervalIds.length) {
+            clearInterval(workerSetIntervalIds.pop());
+        }
+    };
+    /**
      * Register watchdog handler
      * @function CartFiller.Dispatcher~registerWorkerWatchdog
      * @access private
@@ -907,13 +937,6 @@
         }
         if (workerTimeout) {
             workerWatchdogId = setTimeout(function(){
-                var i;
-                for (i = 0 ; i < workerSetTimeoutIds; i ++) {
-                    clearTimeout(workerSetTimeoutIds[i]);
-                }
-                for (i = 0 ; i < workerSetIntervalIds; i ++) {
-                    clearInterval(workerSetIntervalIds[i]);
-                }
                 workerWatchdogId = false;
                 workerOnLoadHandler = false;
                 me.modules.api.result('Timeout happened, worker step cancelled');
@@ -1282,16 +1305,27 @@
                         workerFn(highlightedElement, env);
                     }
                 } catch (err){
-                    console.log(err);
-                    if (workerWatchdogId) { // api.result was not called
-                        var msg = String(err);
-                        if (! msg) {
-                            msg = 'unknown exception';
-                        }
-                        me.modules.api.result(msg, false);
-                    }
+                    this.reportErrorResult(err);
                     throw err;
                 }
+            }
+        },
+        /**
+         * Exception handler for worker code. If exception handles inside worker
+         * then this handler will report error back to progress frame and stop
+         * all worker activity
+         * @function CartFiller.Dispatcher#reportErrorResult:
+	 * @param {Exception} err
+	 * @access public
+         */
+        reportErrorResult: function(err) {
+            console.log(err);
+            if (workerWatchdogId) { // api.result was not called
+                var msg = String(err);
+                if (! msg) {
+                    msg = 'unknown exception';
+                }
+                me.modules.api.result(msg, false);
             }
         },
         /**
@@ -1413,7 +1447,11 @@
                 relay.bubbleMessage({message: 'onMainFrameLoaded', args: [watchdog]});
             }
             if (workerOnLoadHandler) {
-                workerOnLoadHandler(watchdog);
+                try {
+                    workerOnLoadHandler(watchdog);
+                } catch (e) {
+                    this.reportErrorResult(e);
+                }
                 workerOnLoadHandler = false;
                 onLoadHappened = false;
             } else {
@@ -1519,6 +1557,7 @@
                 throw 'invalid message type ' + typeof(message);
             }
             removeWatchdogHandler();
+            clearRegisteredTimeoutsAndIntervals();
             this.postMessageToWorker(
                 'workerStepResult', 
                 {
@@ -1544,7 +1583,9 @@
             if (onLoadHappened) {
                 try {
                     cb(true);
-                } catch (e) {}
+                } catch (e) {
+                    this.reportErrorResult(e);
+                }
                 workerOnLoadHandler = false;
             } else {
                 workerOnLoadHandler = cb;

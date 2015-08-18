@@ -248,18 +248,34 @@
                 })(resultCallback);
             }
             var fn = function(){
-                var result = checkCallback();
+                var result;
+                try {
+                    result = checkCallback();
+                } catch (e) {
+                    me.modules.dispatcher.reportErrorResult(e);
+                    return;
+                }
                 if (false === me.modules.dispatcher.getWorkerCurrentStepIndex()){
                     return;
                 } 
                 if (result) {
-                    resultCallback(result);
+                    try {
+                        resultCallback(result);
+                    } catch (e) {
+                        me.modules.dispatcher.reportErrorResult(e);
+                        return;
+                    }
                 } else {
                     counter --;
                     if (counter > 0){
                         me.modules.api.setTimeout(fn, period);
                     } else {
-                        resultCallback(false);
+                        try {
+                            resultCallback(false);
+                        } catch (e) {
+                            me.modules.dispatcher.reportErrorResult(e);
+                            return;
+                        }
                     }
                 }
             };
