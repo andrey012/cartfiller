@@ -559,7 +559,7 @@ define('controller', ['app', 'scroll'], function(app){
                             return '[' + a.n + '="' + a.v + '"' + ']';
                         }).join('')) +
                         (el.selectIndex ? (':nth-of-type(' + el.index + ')') : '') +
-                        (el.selectText ? ('\').filter(function(i,el){return el.innerText.trim() === ' + JSON.stringify(el.text) + ';}).find(\'') : '')
+                        (el.selectText ? ('\').filter(function(i,el){return el.textContent.trim() === ' + JSON.stringify(el.text) + ';}).find(\'') : '')
                     ;
                 }).join(' ') + '\')').replace(/.find\(\'\s*\'\)$/g, '').replace(/\s+/g, ' ').replace(/\'\s+/g, '\'').replace(/\s+\'/g, '\'');
                 cfMessage.send('evaluateCssSelector', {selector: r});
