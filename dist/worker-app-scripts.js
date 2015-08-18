@@ -34,6 +34,12 @@ define('controller', ['app', 'scroll'], function(app){
         var digestFinishReached = function(){
             angular.element(document.getElementById('finishReached')).scope().$digest();
         };
+        var skipHeadings = function() {
+            while ($scope.jobDetails[$scope.currentTask] && undefined === $scope.jobDetails[$scope.currentTask].task && undefined !== $scope.jobDetails[$scope.currentTask].heading) {
+                $scope.jobTaskProgress[$scope.currentTask].complete = true;
+                $scope.currentTask ++;
+            }
+        };
         $scope.chooseJobState = false;
         $scope.toggleSize = function(){
             cfMessage.send('toggleSize');
@@ -149,6 +155,7 @@ define('controller', ['app', 'scroll'], function(app){
                     while ($scope.jobTaskProgress.length < $scope.jobDetails.length) {
                         $scope.jobTaskProgress.push({complete: false, step: 0, stepsInProgress: {}, stepResults: {}});
                     }
+                    skipHeadings();
                 });
             } else if (cmd === 'workerRegistered'){
                 $scope.$apply(function(){
@@ -228,6 +235,7 @@ define('controller', ['app', 'scroll'], function(app){
         });
         $scope.incrementCurrentStep = function(skip, nextTaskFlow){
             $scope.currentStep ++;
+            var oldCurrentTask = $scope.currentTask;
             if (skip || nextTaskFlow === 'skipTask' || nextTaskFlow === 'repeatTask' || $scope.jobTaskDescriptions[$scope.jobDetails[$scope.currentTask].task].length <= $scope.currentStep){
                 $scope.currentStep = 0;
                 if (nextTaskFlow === 'repeatTask') {
@@ -239,6 +247,7 @@ define('controller', ['app', 'scroll'], function(app){
                     $scope.currentTask ++;
                     $scope.repeatedTaskCounter[$scope.currentTask] = 0;
                 }
+                skipHeadings();
                 if ($scope.currentTask >= $scope.jobDetails.length){
                     $scope.finishReached = true;
                     setTimeout(function(){
@@ -258,7 +267,7 @@ define('controller', ['app', 'scroll'], function(app){
                         cfScroll(jQuery('#finishReached')[0]);
                     },0);
                 }
-                digestTask($scope.currentTask - 1);
+                digestTask(oldCurrentTask);
             }
             digestTask($scope.currentTask);
         };
@@ -759,12 +768,52 @@ define('testSuiteController', ['app', 'scroll'], function(app){
         $scope.stopRunningAll = function() {
             $scope.runningAll = false;
         };
+        var processHeadings = function(result) {
+            var headingLevelCounters = [];
+            var i, j;
+            for (i = 0; i < result.length; i++) {
+                headingLevelCounters[result[i].level - 1] = 0;
+            }
+            for (i = 0; i < result.length; i++) {
+                if ('undefined' === typeof result[i].task && result[i].heading) {
+                    headingLevelCounters[result[i].level - 1] ++;
+                    for (j = 0; j < headingLevelCounters.length; j++) {
+                        if (j < result[i].level - 1) {
+                            if (headingLevelCounters[j] === 0) {
+                                headingLevelCounters[j] = 1;
+                            }
+                        } else if (j > result[i].level - 1) {
+                            if (undefined !== headingLevelCounters[j]) {
+                                headingLevelCounters[j] = 0;
+                            }
+                        }
+                    }
+                    result[i].heading = headingLevelCounters.slice(0, result[i].level).filter(function(v){return v;}).join('.') + '. ' + result[i].heading;
+                }
+            }
+            return result;
+        };
         var processConditionals = function(details, globals) {
             var result = [];
             var i, j, match;
             for (i = 0; i < details.length; i ++) {
+                if ('string' === typeof details[i]) {
+                    details[i] = {'heading': details[i]};
+                } 
                 if ('undefined' === typeof details[i].task) {
-                    if ('undefined' !== typeof details[i].if) {
+                    if ('undefined' !== typeof details[i].heading) {
+                        if ('undefined' === typeof details[i].level) {
+                            if (details[i].heading.indexOf('## ') === 0){
+                                details[i].level = 2;
+                            } else if (details[i].heading.indexOf('### ') === 0){
+                                details[i].level = 3;
+                            } else {
+                                details[i].level = 1;
+                            }
+                        }
+                        details[i].heading = details[i].heading.replace(/^#+\s*/, '');
+                        result.push(details[i]);
+                    } else if ('undefined' !== typeof details[i].if) {
                         if ('object' === typeof details[i].if) {
                             match = true;
                             for (j in details[i].if) {
@@ -879,7 +928,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
         var processDownloadedTest = function(response, index) {
             var contents = parseJson(response);
             $scope.discovery.scripts.rawContents[index] = response;
-            contents.details = processConditionals(contents.details, $scope.discovery.scripts.tweaks[index]);
+            contents.details = processHeadings(processConditionals(contents.details, $scope.discovery.scripts.tweaks[index]));
             $scope.discovery.scripts.contents[index] = contents;
         };
         var normalizeWorkerURLs = function(urls, root) {

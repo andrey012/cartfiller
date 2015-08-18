@@ -20,6 +20,12 @@ define('controller', ['app', 'scroll'], function(app){
         var digestFinishReached = function(){
             angular.element(document.getElementById('finishReached')).scope().$digest();
         };
+        var skipHeadings = function() {
+            while ($scope.jobDetails[$scope.currentTask] && undefined === $scope.jobDetails[$scope.currentTask].task && undefined !== $scope.jobDetails[$scope.currentTask].heading) {
+                $scope.jobTaskProgress[$scope.currentTask].complete = true;
+                $scope.currentTask ++;
+            }
+        };
         $scope.chooseJobState = false;
         $scope.toggleSize = function(){
             cfMessage.send('toggleSize');
@@ -135,6 +141,7 @@ define('controller', ['app', 'scroll'], function(app){
                     while ($scope.jobTaskProgress.length < $scope.jobDetails.length) {
                         $scope.jobTaskProgress.push({complete: false, step: 0, stepsInProgress: {}, stepResults: {}});
                     }
+                    skipHeadings();
                 });
             } else if (cmd === 'workerRegistered'){
                 $scope.$apply(function(){
@@ -214,6 +221,7 @@ define('controller', ['app', 'scroll'], function(app){
         });
         $scope.incrementCurrentStep = function(skip, nextTaskFlow){
             $scope.currentStep ++;
+            var oldCurrentTask = $scope.currentTask;
             if (skip || nextTaskFlow === 'skipTask' || nextTaskFlow === 'repeatTask' || $scope.jobTaskDescriptions[$scope.jobDetails[$scope.currentTask].task].length <= $scope.currentStep){
                 $scope.currentStep = 0;
                 if (nextTaskFlow === 'repeatTask') {
@@ -225,6 +233,7 @@ define('controller', ['app', 'scroll'], function(app){
                     $scope.currentTask ++;
                     $scope.repeatedTaskCounter[$scope.currentTask] = 0;
                 }
+                skipHeadings();
                 if ($scope.currentTask >= $scope.jobDetails.length){
                     $scope.finishReached = true;
                     setTimeout(function(){
@@ -244,7 +253,7 @@ define('controller', ['app', 'scroll'], function(app){
                         cfScroll(jQuery('#finishReached')[0]);
                     },0);
                 }
-                digestTask($scope.currentTask - 1);
+                digestTask(oldCurrentTask);
             }
             digestTask($scope.currentTask);
         };

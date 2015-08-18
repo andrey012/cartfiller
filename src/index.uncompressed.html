@@ -62,7 +62,8 @@
                         </td>
                     </tr>
                     <tr ng-if="index === expandedTest" ng-repeat="(taskIndex, task) in discovery.scripts.contents[index].details">
-                        <td colspan="2" ng-class="discovery.scripts.success[index] == -1 && getTaskErrorsExist(index, taskIndex) ? 'danger' : ''">
+                        <td colspan="2" ng-if="task.heading"><h1 ng-if="task.level == 1">&nbsp;&nbsp;&nbsp;&nbsp;{{task.heading}}</h1><h2 ng-if="task.level == 2">&nbsp;&nbsp;&nbsp;&nbsp;{{task.heading}}</h2><h3 ng-if="task.level == 3">&nbsp;&nbsp;&nbsp;&nbsp;{{task.heading}}</h3></td>
+                        <td colspan="2" ng-if="task.task" ng-class="discovery.scripts.success[index] == -1 && getTaskErrorsExist(index, taskIndex) ? 'danger' : ''">
                             &nbsp;&nbsp;&nbsp;&nbsp;
                             <a href="{{getTaskUrl(index, taskIndex, 0)}}" ng-click="runTest(index, 'fast', taskIndex, 0, $event)" onclick="return false;">{{taskIndex + 1}}. {{task.task}}</a><span ng-repeat="(name, value) in task | orderBy: 'name'" ng-if="name !== 'task'">,
                                 <strong>
@@ -196,11 +197,14 @@
         <div id="jobDetails">
             <div id="{{'taskDiv_' + jobTaskIndex}}"
                  class="alert"
-                 ng-class="jobTaskProgress[jobTaskIndex].complete ? 'alert-success' : 'alert-danger'"
+                 ng-class="(! jobTask.task && jobTask.heading) ? '' : (jobTaskProgress[jobTaskIndex].complete ? 'alert-success' : 'alert-danger')"
                  ng-repeat="(jobTaskIndex, jobTask) in jobDetails track by $index"
                  ng-click="toggleTaskProgress(jobTaskIndex)"
             >
-                <span ng-dblclick="doubleClickTaskName(jobTask.task)"><strong>{{jobTaskIndex + 1}}. {{jobTitleMap[jobTask.task] ? jobTitleMap[jobTask.task] : jobTask.task}}</strong></span><span ng-repeat="(propertyName, propertyValue) in jobTask" ng-if="propertyName != 'task'" ng-dblclick="doubleClickTaskInput(jobTaskIndex, propertyName, propertyValue)">, 
+                <h1 ng-if="! jobTask.task && jobTask.heading && jobTask.level == 1">{{jobTask.heading}}</h1>
+                <h2 ng-if="! jobTask.task && jobTask.heading && jobTask.level == 2">{{jobTask.heading}}</h2>
+                <h3 ng-if="! jobTask.task && jobTask.heading && jobTask.level == 3">{{jobTask.heading}}</h3>
+                <span ng-if="jobTask.task" ng-dblclick="doubleClickTaskName(jobTask.task)"><strong>{{jobTaskIndex + 1}}. {{jobTitleMap[jobTask.task] ? jobTitleMap[jobTask.task] : jobTask.task}}</strong></span><span ng-repeat="(propertyName, propertyValue) in jobTask" ng-if="propertyName != 'task' && jobTask.task" ng-dblclick="doubleClickTaskInput(jobTaskIndex, propertyName, propertyValue)">, 
                     <span>{{jobTitleMap[propertyName] ? jobTitleMap[propertyName] : propertyName}}</span>
                     <span><strong>{{getPropertyValue(propertyValue)}}</strong></span></span>
                 <div>

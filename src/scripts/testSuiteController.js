@@ -62,12 +62,52 @@ define('testSuiteController', ['app', 'scroll'], function(app){
         $scope.stopRunningAll = function() {
             $scope.runningAll = false;
         };
+        var processHeadings = function(result) {
+            var headingLevelCounters = [];
+            var i, j;
+            for (i = 0; i < result.length; i++) {
+                headingLevelCounters[result[i].level - 1] = 0;
+            }
+            for (i = 0; i < result.length; i++) {
+                if ('undefined' === typeof result[i].task && result[i].heading) {
+                    headingLevelCounters[result[i].level - 1] ++;
+                    for (j = 0; j < headingLevelCounters.length; j++) {
+                        if (j < result[i].level - 1) {
+                            if (headingLevelCounters[j] === 0) {
+                                headingLevelCounters[j] = 1;
+                            }
+                        } else if (j > result[i].level - 1) {
+                            if (undefined !== headingLevelCounters[j]) {
+                                headingLevelCounters[j] = 0;
+                            }
+                        }
+                    }
+                    result[i].heading = headingLevelCounters.slice(0, result[i].level).filter(function(v){return v;}).join('.') + '. ' + result[i].heading;
+                }
+            }
+            return result;
+        };
         var processConditionals = function(details, globals) {
             var result = [];
             var i, j, match;
             for (i = 0; i < details.length; i ++) {
+                if ('string' === typeof details[i]) {
+                    details[i] = {'heading': details[i]};
+                } 
                 if ('undefined' === typeof details[i].task) {
-                    if ('undefined' !== typeof details[i].if) {
+                    if ('undefined' !== typeof details[i].heading) {
+                        if ('undefined' === typeof details[i].level) {
+                            if (details[i].heading.indexOf('## ') === 0){
+                                details[i].level = 2;
+                            } else if (details[i].heading.indexOf('### ') === 0){
+                                details[i].level = 3;
+                            } else {
+                                details[i].level = 1;
+                            }
+                        }
+                        details[i].heading = details[i].heading.replace(/^#+\s*/, '');
+                        result.push(details[i]);
+                    } else if ('undefined' !== typeof details[i].if) {
                         if ('object' === typeof details[i].if) {
                             match = true;
                             for (j in details[i].if) {
@@ -182,7 +222,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
         var processDownloadedTest = function(response, index) {
             var contents = parseJson(response);
             $scope.discovery.scripts.rawContents[index] = response;
-            contents.details = processConditionals(contents.details, $scope.discovery.scripts.tweaks[index]);
+            contents.details = processHeadings(processConditionals(contents.details, $scope.discovery.scripts.tweaks[index]));
             $scope.discovery.scripts.contents[index] = contents;
         };
         var normalizeWorkerURLs = function(urls, root) {
