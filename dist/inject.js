@@ -157,7 +157,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1458774326620';
+    config.gruntBuildTimeStamp='1458932832663';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -2192,7 +2192,7 @@
     var drawMessage = function(){
         var rect = findMaxRect(arrowToElements, highlightedElements);
         if (rect.left === undefined) {
-            return;
+            rect = {top: 0, bottom: 0, left: 0, right: 0};
         }
         if (
             (('string' === typeof messageToSay) && (messageToSay.length > 0)) ||

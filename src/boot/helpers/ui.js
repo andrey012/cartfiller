@@ -403,7 +403,7 @@
     var drawMessage = function(){
         var rect = findMaxRect(arrowToElements, highlightedElements);
         if (rect.left === undefined) {
-            return;
+            rect = {top: 0, bottom: 0, left: 0, right: 0};
         }
         if (
             (('string' === typeof messageToSay) && (messageToSay.length > 0)) ||
