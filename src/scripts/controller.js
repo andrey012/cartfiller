@@ -35,6 +35,7 @@ define('controller', ['app', 'scroll'], function(app){
             cfMessage.send($scope.chooseJobState ? 'chooseJob' : 'chooseJobCancel');
         };
         $scope.trackWorker = false;
+        $scope.trackWorkerId = 0;
         $scope.jobDetails = [];
         $scope.jobTaskProgress = [];
         $scope.jobTaskDescriptions = {};
@@ -420,7 +421,10 @@ define('controller', ['app', 'scroll'], function(app){
             }
             return true;
         };
-        var trackWorker = function() {
+        var trackWorker = function(trackWorkerId) {
+            if ($scope.trackWorkerId !== trackWorkerId) {
+                return;
+            }
             angular.forEach(trackWorkerContents, function(contents, url) {
                 var originalUrl = url;
                 trackWorkerLoaded[url] = false;
@@ -432,12 +436,15 @@ define('controller', ['app', 'scroll'], function(app){
                 url += (new Date()).getTime();
                 var xhr = new XMLHttpRequest();
                 xhr.onload = function(){
+                    if ($scope.trackWorkerId !== trackWorkerId) {
+                        return;
+                    }
                     if (xhr.response !== trackWorkerContents[originalUrl]) {
                         cfMessage.send('loadWorker', {code: xhr.response, src: url});
                         trackWorkerContents[originalUrl] = xhr.response;
                     }
                     if (trackWorkersAllLoaded()) {
-                        setTimeout(trackWorker, 1000);
+                        setTimeout(function() { trackWorker(trackWorkerId); }, 1000);
                     }
                 };
                 xhr.open('GET', url, true);
@@ -445,6 +452,7 @@ define('controller', ['app', 'scroll'], function(app){
             });
         };
         $scope.loadWorker = function(url){
+            $scope.trackWorkerId ++;
             if (undefined === url) {
                 url = $scope.workerSrc;
             }
@@ -471,7 +479,7 @@ define('controller', ['app', 'scroll'], function(app){
                         trackWorkerContents[originalUrl] = xhr.response;
                         cfMessage.send('loadWorker', {code: xhr.response, src: url});
                         if ($scope.trackWorker && trackWorkersAllLoaded()) {
-                            setTimeout(trackWorker, 1000);
+                            setTimeout(function() { trackWorker($scope.trackWorkerId); }, 1000);
                         }
                     };
                     xhr.open('GET', url, true);
