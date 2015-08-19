@@ -112,6 +112,12 @@
      */
     var workerGlobals = {};
     /**
+     * @var {Object} workerEventListeners Registered event listeners, see
+     * {@link CartFiller.Dispatcher#registerEventCallback}
+     * @access private
+     */
+    var workerEventListeners = {};
+    /**
      * Keeps message result name, used to deliver job results to
      * Choose Job page opened in separate frame, if that is necessary at all
      * If set to false, empty string or undefined - no results will be delivered
@@ -195,6 +201,18 @@
                     message.cmd = 'bubbleRelayMessage';
                     this.nextRelayQueue.push(message);
                 }
+            }
+        }
+    };
+    /**
+     * Calls registered event callbacks
+     * @function CartFiller.Dispatcher~callEventCallbacks
+     * @param {string} event event alias
+     */
+    var callEventCallbacks = function(event) {
+        if (undefined !== workerEventListeners[event]) {
+            for (var i in workerEventListeners[event]) {
+                workerEventListeners[event][i]();
             }
         }
     };
@@ -503,6 +521,7 @@
                 worker = {};
                 workerGlobals = message.globals = message.globals ? message.globals : {};
                 message.details = convertObjectToArray(message.details);
+                workerEventListeners = {};
             } else if (undefined !== message.$cartFillerTestUpdate) {
                 message.$cartFillerTestUpdate.details = convertObjectToArray(message.$cartFillerTestUpdate.details);
             } else if (undefined !== message.$preventPageReload) {
@@ -802,6 +821,7 @@
             }
             if (workerOnLoadHandler) {
                 try {
+                    callEventCallbacks('onload');
                     workerOnLoadHandler(watchdog);
                 } catch (e) {
                     this.reportErrorResult(e);
@@ -936,6 +956,7 @@
         registerWorkerOnloadCallback: function(cb){
             if (onLoadHappened) {
                 try {
+                    callEventCallbacks('onload');
                     cb(true);
                 } catch (e) {
                     this.reportErrorResult(e);
@@ -1072,6 +1093,20 @@
          */
         openRelayOnTheTail: function(url, noFocus) {
             me.modules.dispatcher.onMessage_bubbleRelayMessage({message: 'openRelayOnHead', args: [url, noFocus], notToChildren: true});
+        },
+        /**
+         * See {@link CartFiller.Api#registerOnloadCallback}
+         * @function CartFiller.Dispatcher#registerEventCallback
+         * @param {string} event event alias
+         * @param {string} alias callback alias, '' by default
+         * @param {CartFiller.Api.onloadEventCallback} callback callback
+         * @access public
+         */
+        registerEventCallback: function(event, alias, callback){
+            if (undefined === workerEventListeners[event]) {
+                workerEventListeners[event] = {};
+            }
+            workerEventListeners[event][alias] = callback;
         }
     });
 }).call(this, document, window);
@@ -1085,13 +1120,13 @@
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Externals</h3><ul><li><a href="external%2520jQuery.external__jQuery.fn_.html">jQuery.fn</a></li><li><a href="external-jQuery.html">jQuery</a></li></ul><h3>Classes</h3><ul><li><a href="CartFiller.Api.html">Api</a></li><li><a href="CartFiller.Api.StepEnvironment.html">StepEnvironment</a></li><li><a href="CartFiller.Configuration.html">Configuration</a></li><li><a href="CartFiller.Dispatcher.html">Dispatcher</a></li><li><a href="CartFiller.Injector.html">Injector</a></li><li><a href="CartFiller.Loader.html">Loader</a></li><li><a href="CartFiller.SampleWorker.html">SampleWorker</a></li><li><a href="CartFiller.SampleWorker.SampleWorkerTasks.html">SampleWorkerTasks</a></li><li><a href="CartFiller.UI.html">UI</a></li><li><a href="CartFiller.UI.ArrowToElement.html">ArrowToElement</a></li><li><a href="CartFillerPlugin-JobDetails.html">JobDetails</a></li><li><a href="CartFillerPlugin-Plugin.html">Plugin</a></li><li><a href="CartFillerPlugin-Settings.html">Settings</a></li></ul><h3>Namespaces</h3><ul><li><a href="CartFiller.html">CartFiller</a></li><li><a href="CartFillerPlugin.html">CartFillerPlugin</a></li></ul><h3>Global</h3><ul><li><a href="global.html#%2522jQuery.cartFillerPlugin.hideChooseJobFrame%2522">"jQuery.cartFillerPlugin.hideChooseJobFrame"</a></li><li><a href="global.html#%2522jQuery.cartFillerPlugin.showChooseJobFrame%2522">"jQuery.cartFillerPlugin.showChooseJobFrame"</a></li><li><a href="global.html#%2522jQuery.cartFillerPlugin%2522">"jQuery.cartFillerPlugin"</a></li><li><a href="global.html#%2522jQuery.fn.cartFillerPlugin%2522">"jQuery.fn.cartFillerPlugin"</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Externals</h3><ul><li><a href="external%2520jQuery.external__jQuery.fn_.html">jQuery.fn</a></li><li><a href="external-jQuery.html">jQuery</a></li></ul><h3>Classes</h3><ul><li><a href="CartFiller.Api.html">Api</a></li><li><a href="CartFiller.Api.StepEnvironment.html">StepEnvironment</a></li><li><a href="CartFiller.Configuration.html">Configuration</a></li><li><a href="CartFiller.Dispatcher.html">Dispatcher</a></li><li><a href="CartFiller.Injector.html">Injector</a></li><li><a href="CartFiller.Loader.html">Loader</a></li><li><a href="CartFiller.SampleWorker.html">SampleWorker</a></li><li><a href="CartFiller.SampleWorker.SampleWorkerTasks.html">SampleWorkerTasks</a></li><li><a href="CartFiller.UI.html">UI</a></li><li><a href="CartFiller.UI.ArrowToElement.html">ArrowToElement</a></li><li><a href="CartFillerPlugin-JobDetails.html">JobDetails</a></li><li><a href="CartFillerPlugin-Plugin.html">Plugin</a></li><li><a href="CartFillerPlugin-Settings.html">Settings</a></li></ul><h3>Namespaces</h3><ul><li><a href="CartFiller.html">CartFiller</a></li><li><a href="CartFillerPlugin.html">CartFillerPlugin</a></li></ul><h3>Global</h3><ul><li><a href="global.html#%2522jQuery.cartFillerPlugin.hideChooseJobFrame%2522">"jQuery.cartFillerPlugin.hideChooseJobFrame"</a></li><li><a href="global.html#%2522jQuery.cartFillerPlugin.showChooseJobFrame%2522">"jQuery.cartFillerPlugin.showChooseJobFrame"</a></li><li><a href="global.html#%2522jQuery.cartFillerPlugin%2522">"jQuery.cartFillerPlugin"</a></li><li><a href="global.html#%2522jQuery.fn.cartFillerPlugin%2522">"jQuery.fn.cartFillerPlugin"</a></li><li><a href="global.html#workerEventListeners">workerEventListeners</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.3</a> on Sun Mar 27 2016 18:37:44 GMT+0300 (MSK)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.3</a> on Mon Mar 28 2016 22:07:06 GMT+0300 (MSK)
 </footer>
 
 <script> prettyPrint(); </script>

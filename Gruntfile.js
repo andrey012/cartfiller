@@ -97,7 +97,10 @@ module.exports = function(grunt) {
 		// Minify definitions
 		uglify: {
 			options: {
-				banner: "<%= meta.banner %>"
+				banner: "<%= meta.banner %>",
+                compress: {
+                    drop_debugger: false
+                }
 			},
 			inject: {
 				src: ["dist/inject.js"],

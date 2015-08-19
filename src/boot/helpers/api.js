@@ -99,6 +99,13 @@
      */
 
     /**
+     * Callback, that can be registered using api.registerOnloadCallback, and will be 
+     * called after each page reload is detected. Result is ignored, but this function
+     * may throw exception which is same as error result.
+     * @callback CartFiller.Api.onloadEventCallback
+     */
+
+    /**
      * @var {CartFiller.Configuration} CartFiller.Api~me Shortcut to cartFiller configuration
      * @access private
      */
@@ -352,7 +359,7 @@
         each: function(array, fn, otherwise){
             var i;
             var breaked = false;
-            if (array instanceof Array) {
+            if (array instanceof Array || array.constructor && array.constructor.name === 'HTMLCollection') {
                 for (i = 0 ; i < array.length; i++ ) {
                     if (false === fn(i, array[i])) {
                         breaked = true;
@@ -460,13 +467,25 @@
         },
         /**
          * Opens relay window. If url points to the cartFiller distribution
-         * @function CartFiller.Dispatcher~openRelayOnTheTail
+         * @function CartFiller.Api#openRelay
          * @param {string} url
          * @param {boolean} noFocus Experimental, looks like it does not work
          * @access public
          */
         openRelay: function(url, noFocus) {
             me.modules.dispatcher.openRelayOnTheTail(url, noFocus);
+        },
+        /**
+         * Registers onload callback, that is called each time when new page
+         * is loaded. Idea is that this function can verify if new page contains
+         * critical application error, exception description, etc
+         * @function CartFiller.Api#registerOnloadCallback
+         * @param {string|CartFiller.Api.onloadEventCallback} aliasOrCallback alias or method if alias is not used
+         * @param {CartFiller.Api.onloadEventCallback|undefined} callbackIfAliasIsUsed method if alias is used
+         * @access public
+         */
+        registerOnloadCallback: function(aliasOrCallback, callbackIfAliasIsUsed){
+            me.modules.dispatcher.registerEventCallback('onload', callbackIfAliasIsUsed ? aliasOrCallback : '', callbackIfAliasIsUsed ? callbackIfAliasIsUsed : aliasOrCallback);
         }
     });
 }).call(this, document, window);

@@ -157,7 +157,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1459093050548';
+    config.gruntBuildTimeStamp='1459192015259';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -297,6 +297,13 @@
      * Another callback used by {@link CartFiller.Api#each} -- called when iterating through
      * array items was not interrupted
      * @callback CartFiller.Api.eachOtherwiseCallback
+     */
+
+    /**
+     * Callback, that can be registered using api.registerOnloadCallback, and will be 
+     * called after each page reload is detected. Result is ignored, but this function
+     * may throw exception which is same as error result.
+     * @callback CartFiller.Api.onloadEventCallback
      */
 
     /**
@@ -553,7 +560,7 @@
         each: function(array, fn, otherwise){
             var i;
             var breaked = false;
-            if (array instanceof Array) {
+            if (array instanceof Array || array.constructor && array.constructor.name === 'HTMLCollection') {
                 for (i = 0 ; i < array.length; i++ ) {
                     if (false === fn(i, array[i])) {
                         breaked = true;
@@ -661,13 +668,25 @@
         },
         /**
          * Opens relay window. If url points to the cartFiller distribution
-         * @function CartFiller.Dispatcher~openRelayOnTheTail
+         * @function CartFiller.Api#openRelay
          * @param {string} url
          * @param {boolean} noFocus Experimental, looks like it does not work
          * @access public
          */
         openRelay: function(url, noFocus) {
             me.modules.dispatcher.openRelayOnTheTail(url, noFocus);
+        },
+        /**
+         * Registers onload callback, that is called each time when new page
+         * is loaded. Idea is that this function can verify if new page contains
+         * critical application error, exception description, etc
+         * @function CartFiller.Api#registerOnloadCallback
+         * @param {string|CartFiller.Api.onloadEventCallback} aliasOrCallback alias or method if alias is not used
+         * @param {CartFiller.Api.onloadEventCallback|undefined} callbackIfAliasIsUsed method if alias is used
+         * @access public
+         */
+        registerOnloadCallback: function(aliasOrCallback, callbackIfAliasIsUsed){
+            me.modules.dispatcher.registerEventCallback('onload', callbackIfAliasIsUsed ? aliasOrCallback : '', callbackIfAliasIsUsed ? callbackIfAliasIsUsed : aliasOrCallback);
         }
     });
 }).call(this, document, window);
@@ -758,6 +777,12 @@
      */
     var workerGlobals = {};
     /**
+     * @var {Object} workerEventListeners Registered event listeners, see
+     * {@link CartFiller.Dispatcher#registerEventCallback}
+     * @access private
+     */
+    var workerEventListeners = {};
+    /**
      * Keeps message result name, used to deliver job results to
      * Choose Job page opened in separate frame, if that is necessary at all
      * If set to false, empty string or undefined - no results will be delivered
@@ -841,6 +866,18 @@
                     message.cmd = 'bubbleRelayMessage';
                     this.nextRelayQueue.push(message);
                 }
+            }
+        }
+    };
+    /**
+     * Calls registered event callbacks
+     * @function CartFiller.Dispatcher~callEventCallbacks
+     * @param {string} event event alias
+     */
+    var callEventCallbacks = function(event) {
+        if (undefined !== workerEventListeners[event]) {
+            for (var i in workerEventListeners[event]) {
+                workerEventListeners[event][i]();
             }
         }
     };
@@ -1149,6 +1186,7 @@
                 worker = {};
                 workerGlobals = message.globals = message.globals ? message.globals : {};
                 message.details = convertObjectToArray(message.details);
+                workerEventListeners = {};
             } else if (undefined !== message.$cartFillerTestUpdate) {
                 message.$cartFillerTestUpdate.details = convertObjectToArray(message.$cartFillerTestUpdate.details);
             } else if (undefined !== message.$preventPageReload) {
@@ -1448,6 +1486,7 @@
             }
             if (workerOnLoadHandler) {
                 try {
+                    callEventCallbacks('onload');
                     workerOnLoadHandler(watchdog);
                 } catch (e) {
                     this.reportErrorResult(e);
@@ -1582,6 +1621,7 @@
         registerWorkerOnloadCallback: function(cb){
             if (onLoadHappened) {
                 try {
+                    callEventCallbacks('onload');
                     cb(true);
                 } catch (e) {
                     this.reportErrorResult(e);
@@ -1718,6 +1758,20 @@
          */
         openRelayOnTheTail: function(url, noFocus) {
             me.modules.dispatcher.onMessage_bubbleRelayMessage({message: 'openRelayOnHead', args: [url, noFocus], notToChildren: true});
+        },
+        /**
+         * See {@link CartFiller.Api#registerOnloadCallback}
+         * @function CartFiller.Dispatcher#registerEventCallback
+         * @param {string} event event alias
+         * @param {string} alias callback alias, '' by default
+         * @param {CartFiller.Api.onloadEventCallback} callback callback
+         * @access public
+         */
+        registerEventCallback: function(event, alias, callback){
+            if (undefined === workerEventListeners[event]) {
+                workerEventListeners[event] = {};
+            }
+            workerEventListeners[event][alias] = callback;
         }
     });
 }).call(this, document, window);

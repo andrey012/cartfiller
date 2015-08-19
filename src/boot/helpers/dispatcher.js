@@ -84,6 +84,12 @@
      */
     var workerGlobals = {};
     /**
+     * @var {Object} workerEventListeners Registered event listeners, see
+     * {@link CartFiller.Dispatcher#registerEventCallback}
+     * @access private
+     */
+    var workerEventListeners = {};
+    /**
      * Keeps message result name, used to deliver job results to
      * Choose Job page opened in separate frame, if that is necessary at all
      * If set to false, empty string or undefined - no results will be delivered
@@ -167,6 +173,18 @@
                     message.cmd = 'bubbleRelayMessage';
                     this.nextRelayQueue.push(message);
                 }
+            }
+        }
+    };
+    /**
+     * Calls registered event callbacks
+     * @function CartFiller.Dispatcher~callEventCallbacks
+     * @param {string} event event alias
+     */
+    var callEventCallbacks = function(event) {
+        if (undefined !== workerEventListeners[event]) {
+            for (var i in workerEventListeners[event]) {
+                workerEventListeners[event][i]();
             }
         }
     };
@@ -475,6 +493,7 @@
                 worker = {};
                 workerGlobals = message.globals = message.globals ? message.globals : {};
                 message.details = convertObjectToArray(message.details);
+                workerEventListeners = {};
             } else if (undefined !== message.$cartFillerTestUpdate) {
                 message.$cartFillerTestUpdate.details = convertObjectToArray(message.$cartFillerTestUpdate.details);
             } else if (undefined !== message.$preventPageReload) {
@@ -774,6 +793,7 @@
             }
             if (workerOnLoadHandler) {
                 try {
+                    callEventCallbacks('onload');
                     workerOnLoadHandler(watchdog);
                 } catch (e) {
                     this.reportErrorResult(e);
@@ -908,6 +928,7 @@
         registerWorkerOnloadCallback: function(cb){
             if (onLoadHappened) {
                 try {
+                    callEventCallbacks('onload');
                     cb(true);
                 } catch (e) {
                     this.reportErrorResult(e);
@@ -1044,6 +1065,20 @@
          */
         openRelayOnTheTail: function(url, noFocus) {
             me.modules.dispatcher.onMessage_bubbleRelayMessage({message: 'openRelayOnHead', args: [url, noFocus], notToChildren: true});
+        },
+        /**
+         * See {@link CartFiller.Api#registerOnloadCallback}
+         * @function CartFiller.Dispatcher#registerEventCallback
+         * @param {string} event event alias
+         * @param {string} alias callback alias, '' by default
+         * @param {CartFiller.Api.onloadEventCallback} callback callback
+         * @access public
+         */
+        registerEventCallback: function(event, alias, callback){
+            if (undefined === workerEventListeners[event]) {
+                workerEventListeners[event] = {};
+            }
+            workerEventListeners[event][alias] = callback;
         }
     });
 }).call(this, document, window);
