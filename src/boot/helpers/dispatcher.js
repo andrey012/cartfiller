@@ -1079,6 +1079,24 @@
                 workerEventListeners[event] = {};
             }
             workerEventListeners[event][alias] = callback;
+        },
+        /** 
+         * Return current worker task properties
+         * @function CartFiller.Dispatcher#getWorkerTask
+         * @return {CartFiller.TaskDetails}
+         * @access public
+         */
+        getWorkerTask: function() {
+            return workerCurrentTask;
+        },
+        /** 
+         * Return current worker task properties
+         * @function CartFiller.Dispatcher#getWorkerGlobals
+         * @return {Object}
+         * @access public
+         */
+        getWorkerGlobals: function() {
+            return workerGlobals;
         }
     });
 }).call(this, document, window);

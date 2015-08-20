@@ -486,6 +486,76 @@
          */
         registerOnloadCallback: function(aliasOrCallback, callbackIfAliasIsUsed){
             me.modules.dispatcher.registerEventCallback('onload', callbackIfAliasIsUsed ? aliasOrCallback : '', callbackIfAliasIsUsed ? callbackIfAliasIsUsed : aliasOrCallback);
+        },
+        /**
+         * Types a string into currently highlighted/arrowed element by issuing multiple keydown/keypress/keyup events
+         * @function CartFiller.Api#type
+         * @param {string|Function} value or callback to get value
+         * @param {Function} whatNext callback after this task is done
+         * @access public
+         */
+        type: function(value, whatNext) {
+            return [
+                'type key sequence',
+                function(el) {
+                    var elementNode;
+                    if ('object' === typeof el && 'string' === typeof el.jquery && undefined !== el.length) {
+                        elementNode = el[0];
+                    } else if (el instanceof Array) {
+                        elementNode = el[0];
+                    } else {
+                        elementNode = el;
+                    }
+                    elementNode.focus();
+                    var text;
+                    if (value instanceof Function) {
+                        text = value();
+                    } else if (undefined !== me.modules.dispatcher.getWorkerTask()[value]) {
+                        text = me.modules.dispatcher.getWorkerTask()[value];
+                    } else if (undefined !== me.modules.dispatcher.getWorkerGlobals()[value]) {
+                        text = me.modules.dispatcher.getWorkerGlobals()[value];
+                    } else {
+                        me.modules.api.result('Value ty type [' + value + '] not found neither in the task properties nor in globals');
+                        return;
+                    }
+                    var document = me.modules.ui.mainFrameWindow.document;
+                    me.modules.api.each(text.split(''), function(i,char) {
+                        var charCode = char.charCodeAt(0);
+                        var charCodeGetter = {get : function() { return charCode; }};
+                        var metaKeyGetter = {get : function() { return false; }};
+                        for (var eventName in {keydown: 0, keypress: 0, keyup: 0}) {
+                            var e = document.createEvent('KeyboardEvent');
+                            Object.defineProperty(e, 'keyCode', charCodeGetter);
+                            Object.defineProperty(e, 'charCode', charCodeGetter);
+                            Object.defineProperty(e, 'metaKey', metaKeyGetter);
+                            Object.defineProperty(e, 'which', charCodeGetter);
+                            if (e.initKeyboardEvent) {
+                                e.initKeyboardEvent(eventName, true, true, document.defaultView, false, false, false, false, charCode, charCode);
+                            } else {
+                                e.initKeyEvent(eventName, true, true, document.defaultView, false, false, false, false, charCode, charCode);
+                            }
+                            if (e.keyCode !== charCode || e.charCode !== charCode) {
+                                me.modules.api.result('could not set correct keyCode or charCode for ' + eventName + ': keyCode returns [' + e.keyCode + '] , charCode returns [' + e.charCode + '] instead of [' + charCode + ']');
+                                return false;
+                            }
+                            if (e.metaKey) {
+                                me.modules.api.result('could not set metaKey to false');
+                                return false;
+                            }
+                            if (elementNode.dispatchEvent(e) && 'keypress' === eventName) {
+                                elementNode.value = elementNode.value + char;
+                            }
+                        }
+                    }, function() {
+                        me.modules.api.arrow(el);
+                        if (undefined === whatNext) {
+                            me.modules.api.result('');
+                        } else {
+                            whatNext(el);
+                        }
+                    });
+                }
+            ];
         }
     });
 }).call(this, document, window);
