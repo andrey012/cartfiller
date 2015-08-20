@@ -747,7 +747,6 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             }
         };
         parseParams();
-        console.log($scope.params);
         $scope.discovery = {
             state: 0,
             currentRootPath: $scope.params.root ? $scope.params.root : window.location.href.split('?')[0].replace(/\/[^\/]*/, '/'),
@@ -769,8 +768,13 @@ define('testSuiteController', ['app', 'scroll'], function(app){
         $scope.runningAll = false;
         $scope.runAll = function (index) {
             $scope.runningAll = true;
+            index = index ? index : 0;
+            while (index < $scope.discovery.scripts.enabled.length && ! $scope.discovery.scripts.enabled[index]) {
+                $scope.discovery.scripts.success[index] = -2;
+                index ++;
+            }
             if ($scope.discovery.scripts.contents.length) {
-                $scope.runTest(index ? index : 0);
+                $scope.runTest(index);
             }
         };
         $scope.stopRunningAll = function() {
@@ -1085,17 +1089,21 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                 false,
                 function(data) {
                     if ($scope.params.backend && false !== data.currentTaskIndex && false !== data.currentTaskStepIndex) {
+                        var json = {
+                            test: $scope.discovery.scripts.urls[index],
+                            task: data.currentTaskIndex,
+                            taskName: $scope.discovery.scripts.contents[index].details[data.currentTaskIndex].task,
+                            step: data.currentTaskStepIndex,
+                            result: data.result[data.currentTaskIndex].stepResults[data.currentTaskStepIndex].status
+                        };
+                        if (json.result !== 'ok') {
+                            json.message = data.result[data.currentTaskIndex].stepResults[data.currentTaskStepIndex].message;
+                        }
                         // report progress to backend
                         $.ajax({
                             url: $scope.params.backend.replace(/\/+$/, '') + '/progress/' + $scope.params.key,
                             method: 'POST',
-                            data: {
-                                test: $scope.discovery.scripts.urls[index],
-                                task: data.currentTaskIndex,
-                                taskName: $scope.discovery.scripts.contents[index].details[data.currentTaskIndex].task,
-                                step: data.currentTaskStepIndex,
-                                result: data.result[data.currentTaskIndex].stepResults[data.currentTaskStepIndex].status
-                            }
+                            data: json
                         });
                     }
                     if (data.completed && undefined === untilTask) {

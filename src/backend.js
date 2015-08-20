@@ -63,26 +63,27 @@ var tearDownFn = function(code) {
         } else {
             cmds = [argv['tear-down']];
         }
-        for (var i = 0; i < cmds.length; i++){
-            (function(cmd){
-                waterfall.push(function(){
-                    console.log('teardown: ' + cmd);
-                    var cp = childProcess.spawn(cmd.split(' ')[0], cmd.split(' ').slice(1), {cwd: argv.cwd, shell: true})
-                    cp.stdout.on('data', function(data) { console.log('teardown stdout: ' + data); });
-                    cp.stderr.on('data', function(data) { console.log('teardown stderr: ' + data); });
-                    cp.on('close', function() {
-                        waterfall.shift();
-                        waterfall[0]();
-                    });
+        var tearDownStepFn = function(cmd){
+            waterfall.push(function(){
+                console.log('teardown: ' + cmd);
+                var cp = childProcess.spawn(cmd.split(' ')[0], cmd.split(' ').slice(1), {cwd: argv.cwd, shell: true});
+                cp.stdout.on('data', function(data) { console.log('teardown stdout: ' + data); });
+                cp.stderr.on('data', function(data) { console.log('teardown stderr: ' + data); });
+                cp.on('close', function() {
+                    waterfall.shift();
+                    waterfall[0]();
                 });
-            })(cmds[i]);
+            });
+        };
+        for (var i = 0; i < cmds.length; i++){
+            tearDownStepFn(cmds[i]);
         }
     }
     waterfall.push(function(){
         process.exit(code);
     });
     waterfall[0]();
-}
+};
 
 
 app.get('/finish/' + sessionKey, function (req, res) {
