@@ -168,6 +168,7 @@ define('controller', ['app', 'scroll'], function(app){
                     $scope.runUntilTask = $scope.runUntilStep = false;
                     proceed = false;
                 }
+                var wasRunning = $scope.running;
                 if ($scope.running || ($scope.doingOneStep && true === details.nop)){
                     if (proceed){
                         setTimeout(function(){
@@ -184,7 +185,7 @@ define('controller', ['app', 'scroll'], function(app){
                         tasks: $scope.jobDetails,
                         currentTaskIndex: details.index, 
                         currentTaskStepIndex: details.step,
-                        running: $scope.running,
+                        running: wasRunning,
                         completed: ! proceed
                     });
                 $scope.workerInProgress = false;
