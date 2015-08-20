@@ -10,6 +10,14 @@ var argv = require('yargs')
     .alias('e', 'editor')
     .describe('root', 'root URL to discover cartfiller.json')
     .alias('r', 'root')
+    .describe('app', 'run child application during running testsuite')
+    .alias('a', 'app')
+    .describe('cwd', 'cwd for child application')
+    .alias('c', 'cwd')
+    .describe('port', 'find nearest port starting with this one, default = 3000')
+    .alias('p', 'port')
+    .describe('tear-down', 'commands to be executed on exit - for example to kill browser process, can be used several times - one for each command')
+    .alias('t', 'tear-down')
     .argv;
 var express = require('express');
 var open = require('open');
@@ -17,6 +25,7 @@ var app = express();
 var http = require('http');
 var crypto = require('crypto');
 var bodyParser = require('body-parser');
+var childProcess = require('child_process');
 app.use( bodyParser.json() );
 app.use(bodyParser.urlencoded({ extended: true }));
 
@@ -45,6 +54,36 @@ app.post('/progress/' + sessionKey, function (req, res) {
     res.end();
 });
 
+var tearDownFn = function(code) {
+    var cmds;
+    var waterfall = [];
+    if (argv['tear-down']) {
+        if (argv['tear-down'] instanceof Array) {
+            cmds = argv['tear-down'];
+        } else {
+            cmds = [argv['tear-down']];
+        }
+        for (var i = 0; i < cmds.length; i++){
+            (function(cmd){
+                waterfall.push(function(){
+                    console.log('teardown: ' + cmd);
+                    var cp = childProcess.spawn(cmd.split(' ')[0], cmd.split(' ').slice(1), {cwd: argv.cwd, shell: true})
+                    cp.stdout.on('data', function(data) { console.log('teardown stdout: ' + data); });
+                    cp.stderr.on('data', function(data) { console.log('teardown stderr: ' + data); });
+                    cp.on('close', function() {
+                        waterfall.shift();
+                        waterfall[0]();
+                    });
+                });
+            })(cmds[i]);
+        }
+    }
+    waterfall.push(function(){
+        process.exit(code);
+    });
+    waterfall[0]();
+}
+
 
 app.get('/finish/' + sessionKey, function (req, res) {
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -55,11 +94,20 @@ app.get('/finish/' + sessionKey, function (req, res) {
     } else {
         console.log('no failures');
     }
-    setTimeout(function(){
-        var code = failures.length ? 1 : 0;
-        console.log('exitting with return code ' + code);
-        process.exit(code);
-    }, 0);
+    var exitFn = function(){
+        setTimeout(function() {
+            var code = failures.length ? 1 : 0;
+            console.log('exitting with return code ' + code);
+            tearDownFn(code);
+        }, 0);
+    };
+    if (childApp) {
+        childApp.removeAllListeners('close');
+        childApp.on('close', exitFn);
+        childApp.kill();
+    } else {
+        exitFn();
+    }
     res.end();
 });
 
@@ -67,15 +115,36 @@ app.post('/save/' + sessionKey, function () {
 });
 
 var server;
-var port = 3000;
+var port = argv.port ? argv.port : 3000;
 var browserProcess = false;
+var childApp = false;
+
 var launchServer = function() {
     server = http.createServer(app);
     server
         .listen(port, '127.0.0.1', function(err){
             if (! err) {
                 console.log('Launched successfully on port ' + port);
-                launchBrowser(argv._[0], argv.browser, 'http://localhost:' + port, argv.editor, argv.root);
+                var launchBrowserFn = function() {
+                    launchBrowser(argv._[0], argv.browser, 'http://localhost:' + port, argv.editor, argv.root);
+                };
+                if (argv.app) {
+                    console.log('Launching application: ' + argv.app);
+                    childApp = childProcess.spawn(argv.app.split(' ')[0], argv.app.split(' ').slice(1), {cwd: argv.cwd});
+                    childApp.stdout.on('data', function(data) {
+                        console.log('app stdout: ' + data);
+                    });
+                    childApp.stderr.on('data', function(data) {
+                        console.log('app stderr: ' + data);
+                    });
+                    childApp.on('close', function(code) {
+                        console.log('exitting, because child process exitted with code ' + code);
+                        tearDownFn(code ? code : 1);
+                    });
+                    setTimeout(launchBrowserFn, 4000); //// TBD make this more predictable
+                } else {
+                    launchBrowserFn();
+                }
             }
         })
         .on('error', function() {
