@@ -530,8 +530,8 @@ define('controller', ['app', 'scroll'], function(app){
                 }
             });
         };
-        $scope.mouseDown = function() {
-            mouseDownTime = (new Date()).getTime();
+        $scope.mouseDown = function(event) {
+            mouseDownTime = event.timeStamp || (new Date()).getTime();
         };
         $scope.getWorkerGlobalValue = function(name) {
             var v = $scope.workerGlobals[name];
@@ -591,6 +591,8 @@ define('controller', ['app', 'scroll'], function(app){
 });
 (function(undefined) {
     var injector;
+    var config = {};
+    config.gruntBuildTimeStamp='1459712920815';
     window.addEventListener('message', function(event){
         var test = /^cartFillerMessage:(.*)$/.exec(event.data);
         var isDist = true;
@@ -656,7 +658,9 @@ define('controller', ['app', 'scroll'], function(app){
                         var settings = {
                             type: 'framed',
                             minified: false,
-                            chooseJob: window.location.href,
+                            chooseJob: window.location.href.split('?')[0] + (
+    config.gruntBuildTimeStamp ? ('?' + 
+    config.gruntBuildTimeStamp) : ''),
                             debug: true,
                             baseUrl: window.location.href.split('?')[0].replace(/\/[^\/]*$/, ''),
                             inject: 'script',

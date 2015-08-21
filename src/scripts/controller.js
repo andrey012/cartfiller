@@ -516,8 +516,8 @@ define('controller', ['app', 'scroll'], function(app){
                 }
             });
         };
-        $scope.mouseDown = function() {
-            mouseDownTime = (new Date()).getTime();
+        $scope.mouseDown = function(event) {
+            mouseDownTime = event.timeStamp || (new Date()).getTime();
         };
         $scope.getWorkerGlobalValue = function(name) {
             var v = $scope.workerGlobals[name];

@@ -1,5 +1,7 @@
 (function(undefined) {
     var injector;
+    var config = {};
+    config.gruntBuildTimeStamp='';
     window.addEventListener('message', function(event){
         var test = /^cartFillerMessage:(.*)$/.exec(event.data);
         var isDist = false;
@@ -65,7 +67,9 @@
                         var settings = {
                             type: 'framed',
                             minified: false,
-                            chooseJob: window.location.href,
+                            chooseJob: window.location.href.split('?')[0] + (
+    config.gruntBuildTimeStamp ? ('?' + 
+    config.gruntBuildTimeStamp) : ''),
                             debug: true,
                             baseUrl: window.location.href.split('?')[0].replace(/\/[^\/]*$/, ''),
                             inject: 'script',

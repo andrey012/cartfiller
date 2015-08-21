@@ -216,7 +216,7 @@
                            title="{{jobTaskStep + ': ' + jobTaskProgress[jobTaskIndex].stepResults[jobTaskStepIndex].message}}"
                            class="btn"
                            ng-class="getStepClass(jobTaskIndex, jobTaskStepIndex)"
-                           onmousedown="angular.element(this).scope().mouseDown();"
+                           onmousedown="var event = arguments[0] || window.event; angular.element(this).scope().mouseDown(event);"
                            onclick="var event = arguments[0] || window.event; return angular.element(this).scope().clickOnStepNoWatch(this, event);"
                         >{{indexTitles[jobTask.task][jobTaskStepIndex]}}</a>
                         {{jobTaskProgress[jobTaskIndex].stepResults[jobTaskStepIndex].message}}
