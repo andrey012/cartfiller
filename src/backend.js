@@ -40,12 +40,14 @@ var stats = {
 
 var sessionKey = crypto.randomBytes(20).toString('hex');
 var failures = [];
+var pulseTime = (new Date()).getTime();
 
 app.get('/', function (req, res) {
   res.send('<!DOCTYPE html><html><head></head><body><pre>Hello, this is cartFiller backend, you should not ever interact with it directly, here are current stats: ' + JSON.stringify(stats, null, 4) + '</pre></body></html>');
 });
 
 app.post('/progress/' + sessionKey, function (req, res) {
+    pulseTime = (new Date()).getTime();
     res.setHeader('Access-Control-Allow-Origin', '*');
     if (req.body.result !== 'ok') {
         failures.push(req.body);
@@ -86,7 +88,16 @@ var tearDownFn = function(code) {
 };
 
 
+setInterval(function() {
+    if (pulseTime < ((new Date()).getTime() - 60000)) {
+        console.log('exitting with code 1 because there was no activity over recent 60 seconds');
+        tearDownFn(1);
+    }
+}, 1000);
+
+
 app.get('/finish/' + sessionKey, function (req, res) {
+    pulseTime = (new Date()).getTime();
     res.setHeader('Access-Control-Allow-Origin', '*');
     console.log('finish');
     if (failures.length) {
