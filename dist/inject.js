@@ -157,7 +157,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1459709913612';
+    config.gruntBuildTimeStamp='1459710807094';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -560,7 +560,19 @@
         each: function(array, fn, otherwise){
             var i;
             var breaked = false;
-            if (array instanceof Array || (array.constructor && (array.constructor.name === 'HTMLCollection' || array.constructor.name === 'NodeListConstructor'))) {
+            if (
+                array instanceof Array || 
+                (
+                    array.constructor && 
+                    (
+                        array.constructor.name === 'HTMLCollection' ||
+                        String(array.constructor) === '[object HTMLCollection]' ||
+                        array.constructor.name === 'NodeListConstructor' ||
+                        String(array.constructor) === '[object NodeListConstructor]'
+                    )
+                ) ||
+                String(array) === '[object NodeList]'
+            ) {
                 for (i = 0 ; i < array.length; i++ ) {
                     if (false === fn(i, array[i])) {
                         breaked = true;
