@@ -359,7 +359,7 @@
         each: function(array, fn, otherwise){
             var i;
             var breaked = false;
-            if (array instanceof Array || array.constructor && array.constructor.name === 'HTMLCollection') {
+            if (array instanceof Array || (array.constructor && (array.constructor.name === 'HTMLCollection' || array.constructor.name === 'NodeListConstructor'))) {
                 for (i = 0 ; i < array.length; i++ ) {
                     if (false === fn(i, array[i])) {
                         breaked = true;
