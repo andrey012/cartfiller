@@ -67,8 +67,8 @@
                         var settings = {
                             type: 'framed',
                             minified: false,
-                            chooseJob: window.location.href.split('?')[0] + (
-    config.gruntBuildTimeStamp ? ('?' + 
+                            chooseJob: window.location.href + (
+    config.gruntBuildTimeStamp ? ((window.location.href.indexOf('?') === -1 ? '?' : '&') + 
     config.gruntBuildTimeStamp) : ''),
                             debug: true,
                             baseUrl: window.location.href.split('?')[0].replace(/\/[^\/]*$/, ''),

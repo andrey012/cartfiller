@@ -592,7 +592,7 @@ define('controller', ['app', 'scroll'], function(app){
 (function(undefined) {
     var injector;
     var config = {};
-    config.gruntBuildTimeStamp='1459712920815';
+    config.gruntBuildTimeStamp='1459713426848';
     window.addEventListener('message', function(event){
         var test = /^cartFillerMessage:(.*)$/.exec(event.data);
         var isDist = true;
@@ -658,8 +658,8 @@ define('controller', ['app', 'scroll'], function(app){
                         var settings = {
                             type: 'framed',
                             minified: false,
-                            chooseJob: window.location.href.split('?')[0] + (
-    config.gruntBuildTimeStamp ? ('?' + 
+                            chooseJob: window.location.href + (
+    config.gruntBuildTimeStamp ? ((window.location.href.indexOf('?') === -1 ? '?' : '&') + 
     config.gruntBuildTimeStamp) : ''),
                             debug: true,
                             baseUrl: window.location.href.split('?')[0].replace(/\/[^\/]*$/, ''),
