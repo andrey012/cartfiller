@@ -501,30 +501,50 @@
                     if (isFramed) {
                         me.modules.ui.mainFrame.style.height = framesHeight + 'px';
                     }
-                    me.modules.ui.workerFrame.style.height = framesHeight + 'px';
-                    me.modules.ui.chooseJobFrame.style.height = chooseJobFrameHeight + 'px';
-                    me.modules.ui.chooseJobFrame.style.top = chooseJobFrameTop + 'px';
-                    me.modules.ui.chooseJobFrame.style.left = chooseJobFrameLeft + 'px';
-                    me.modules.ui.chooseJobFrame.style.width = chooseJobFrameWidth + 'px';
+                    try {
+                        me.modules.ui.workerFrame.style.height = framesHeight + 'px';
+                    } catch (e) {}
+                    try {
+                        me.modules.ui.chooseJobFrame.style.height = chooseJobFrameHeight + 'px';
+                        me.modules.ui.chooseJobFrame.style.top = chooseJobFrameTop + 'px';
+                        me.modules.ui.chooseJobFrame.style.left = chooseJobFrameLeft + 'px';
+                        me.modules.ui.chooseJobFrame.style.width = chooseJobFrameWidth + 'px';
+                    } catch (e) {}
                     if (currentWorkerFrameSize === 'big') {
                         if (isFramed) {
-                            me.modules.ui.workerFrame.style.width = workerFrameWidthBig + 'px';
-                            me.modules.ui.mainFrame.style.width = mainFrameWidthSmall + 'px';
-                            me.modules.ui.workerFrame.style.left = mainFrameWidthSmall + 'px';
+                            try {
+                                me.modules.ui.workerFrame.style.width = workerFrameWidthBig + 'px';
+                                me.modules.ui.workerFrame.style.left = mainFrameWidthSmall + 'px';
+                            } catch (e) {}
+                            try {
+                                me.modules.ui.mainFrame.style.width = mainFrameWidthSmall + 'px';
+                            } catch (e) {}
                         } else {
-                            me.modules.ui.mainFrameWindow.resizeTo(1,1);
-                            me.modules.ui.workerFrame.style.width = workerFrameWidthBig + 'px';
-                            me.modules.ui.workerFrame.style.left = (windowWidth - workerFrameWidthBig - 5) + 'px';
+                            try {
+                                me.modules.ui.mainFrameWindow.resizeTo(1,1);
+                            } catch (e) {}
+                            try {
+                                me.modules.ui.workerFrame.style.width = workerFrameWidthBig + 'px';
+                                me.modules.ui.workerFrame.style.left = (windowWidth - workerFrameWidthBig - 5) + 'px';
+                            } catch (e) {}
                         }
                     } else if (currentWorkerFrameSize === 'small') {
                         if (isFramed) {
-                            me.modules.ui.workerFrame.style.width = workerFrameWidthSmall + 'px';
-                            me.modules.ui.mainFrame.style.width = mainFrameWidthBig + 'px';
-                            me.modules.ui.workerFrame.style.left = mainFrameWidthBig + 'px';
+                            try {
+                                me.modules.ui.workerFrame.style.width = workerFrameWidthSmall + 'px';
+                                me.modules.ui.workerFrame.style.left = mainFrameWidthBig + 'px';
+                            } catch (e) {}
+                            try {
+                                me.modules.ui.mainFrame.style.width = mainFrameWidthBig + 'px';
+                            } catch (e) {}
                         } else {
-                            me.modules.ui.mainFrameWindow.resizeTo(Math.round(outerWidth*0.8 - 10), Math.round(outerHeight));
-                            me.modules.ui.workerFrame.style.width = workerFrameWidthSmall + 'px';
-                            me.modules.ui.workerFrame.style.left = (windowWidth - workerFrameWidthSmall - 5) + 'px';
+                            try {
+                                me.modules.ui.mainFrameWindow.resizeTo(Math.round(outerWidth*0.8 - 10), Math.round(outerHeight));
+                            } catch (e) {}
+                            try {
+                                me.modules.ui.workerFrame.style.width = workerFrameWidthSmall + 'px';
+                                me.modules.ui.workerFrame.style.left = (windowWidth - workerFrameWidthSmall - 5) + 'px';
+                            } catch (e) {}
                         }
                     }
             })();

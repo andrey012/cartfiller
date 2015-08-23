@@ -8,6 +8,7 @@
         #jobDetails .btn {font-family: monospace; font-size: 12px;} 
         #jobDetails .btn-xs {margin: 5px 7px;  font-size: 12px;} 
         #jobDetails .alert {padding: 5px; margin-bottom: 5px;}
+        .pause-active {background-color: red;}
     </style>
 </head>
 <body>
@@ -211,14 +212,21 @@
                     <span
                        ng-repeat="(jobTaskStepIndex, jobTaskStep) in jobTaskDescriptions[jobTask.task] track by $index"
                     >
-                        <a id="{{'stepButton_' + jobTaskIndex + '_' + jobTaskStepIndex}}"
-                           href="#"
-                           title="{{jobTaskStep + ': ' + jobTaskProgress[jobTaskIndex].stepResults[jobTaskStepIndex].message}}"
-                           class="btn"
-                           ng-class="getStepClass(jobTaskIndex, jobTaskStepIndex)"
-                           onmousedown="var event = arguments[0] || window.event; angular.element(this).scope().mouseDown(event);"
-                           onclick="var event = arguments[0] || window.event; return angular.element(this).scope().clickOnStepNoWatch(this, event);"
-                        >{{indexTitles[jobTask.task][jobTaskStepIndex]}}</a>
+                        <nobr>
+                            <a id="{{'pauseButton_' + jobTaskIndex + '_' + jobTaskStepIndex}}" 
+                               href="#" ng-class="pausePoints[jobTaskIndex][jobTaskStepIndex] ? 'pause-active' : ''"
+                               onclick="var event = arguments[0] || window.event; return angular.element(this).scope().togglePause(this, event);"
+                               title="click to toggle pause at this point"
+                            >||</a>
+                            <a id="{{'stepButton_' + jobTaskIndex + '_' + jobTaskStepIndex}}"
+                               href="#"
+                               title="{{jobTaskStep + ': ' + jobTaskProgress[jobTaskIndex].stepResults[jobTaskStepIndex].message}}"
+                               class="btn"
+                               ng-class="getStepClass(jobTaskIndex, jobTaskStepIndex)"
+                               onmousedown="var event = arguments[0] || window.event; angular.element(this).scope().mouseDown(event);"
+                               onclick="var event = arguments[0] || window.event; return angular.element(this).scope().clickOnStepNoWatch(this, event);"
+                            >{{indexTitles[jobTask.task][jobTaskStepIndex]}}</a>
+                        </nobr>
                         {{jobTaskProgress[jobTaskIndex].stepResults[jobTaskStepIndex].message}}
                     </span>
                 </div>

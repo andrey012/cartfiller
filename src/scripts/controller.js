@@ -53,6 +53,7 @@ define('controller', ['app', 'scroll'], function(app){
         $scope.finishReached = false;
         $scope.awaitingForFinish = false;
         $scope.runUntilTask = $scope.runUntilStep = false;
+        $scope.pausePoints = {};
         $scope.repeatedTaskCounter = [];
         $scope.doingOneStep = true;
         var autorunSpeed;
@@ -99,6 +100,7 @@ define('controller', ['app', 'scroll'], function(app){
                         $scope.jobTaskProgress = [];
                         $scope.jobTaskStepProgress = [];
                         $scope.repeatedTaskCounter = [];
+                        $scope.pausePoints = {};
                         $scope.currentTask = 0;
                         $scope.currentStep = 0;
                         scrollCurrentTaskIntoView(true);
@@ -166,6 +168,9 @@ define('controller', ['app', 'scroll'], function(app){
                 }
                 if ($scope.runUntilTask !== false && $scope.runUntilStep !== false && ($scope.runUntilTask < $scope.currentTask || ($scope.runUntilStep <= $scope.currentStep && $scope.runUntilTask === $scope.currentTask))) {
                     $scope.runUntilTask = $scope.runUntilStep = false;
+                    proceed = false;
+                }
+                if ($scope.pausePoints[$scope.currentTask] && $scope.pausePoints[$scope.currentTask][$scope.currentStep]) {
                     proceed = false;
                 }
                 var wasRunning = $scope.running;
@@ -569,9 +574,21 @@ define('controller', ['app', 'scroll'], function(app){
                 cfMessage.send('evaluateCssSelector', {selector: r});
                 return r;
             };
-            scope.toggleSearch = function(){
+            scope.toggleSearch = function() {
                 scope.searchVisible = ! scope.searchVisible;
             };
         },1000);
+        $scope.togglePause = function(element, event) {
+            var s = element.getAttribute('id').split('_');
+            var taskIndex = parseInt(s[1]);
+            var stepIndex = parseInt(s[2]);
+            if (undefined === $scope.pausePoints[taskIndex]) {
+                $scope.pausePoints[taskIndex] = {};
+            }
+            $scope.pausePoints[taskIndex][stepIndex] = $scope.pausePoints[taskIndex][stepIndex] ? 0 : 1;
+            digestTask(taskIndex);
+            event.stopPropagation();
+            return false;
+        };
     }]);
 });

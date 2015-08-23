@@ -157,7 +157,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1459727804024';
+    config.gruntBuildTimeStamp='1459795174165';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -1001,6 +1001,7 @@
      * Fills workerCurrentTask object with current task parameters.
      * See {@link CartFiller.Dispatcher~workerCurrentTask}
      * @function CartFiller.Dispatcher~fillWorkerCurrentTask
+     * @param {Object} src
      * @access private
      */
     var fillWorkerCurrentTask = function(src){
@@ -1015,6 +1016,25 @@
             }
         }
     };
+    /**
+     * Fills workerGlobals object with new values
+     * @function CartFiller.Dispatcher~fillWorkerGlobals
+     * @param {Object} src
+     * @access private
+     */
+    var fillWorkerGlobals = function(src) {
+        for (var oldKey in workerGlobals){
+            if (workerGlobals.hasOwnProperty(oldKey)){
+                delete workerGlobals[oldKey];
+            }
+        }
+        for (var newKey in src){
+            if (src.hasOwnProperty(newKey)){
+                workerGlobals[newKey] = src[newKey];
+            }
+        }
+    };
+
     /**
      * Returns URL for lib folder
      * @function CartFiller.Dispatcher~getLibUrl
@@ -1130,6 +1150,9 @@
                     var match = pattern.exec(event.data);
                     var message = JSON.parse(match[1]);
                     if (event.source === relay.nextRelay && message.cmd !== 'register' && message.cmd !== 'bubbleRelayMessage') {
+                        if (message.cmd === 'workerStepResult') {
+                            fillWorkerGlobals(message.globals);
+                        }
                         postMessage(relay.isSlave ? window.opener : me.modules.ui.workerFrameWindow, message.cmd, message);
                     } else {
                         var fn = 'onMessage_' + message.cmd;
@@ -1345,6 +1368,9 @@
          * @access public
          */
         onMessage_invokeWorker: function(message){
+            if (message.globals) {
+                fillWorkerGlobals(message.globals);
+            }
             try {
                 me.modules.ui.say();
             } catch (e){}
@@ -1488,9 +1514,13 @@
         /**
          * Refreshes worker page
          * @function CartFiller.Dispatcher#onMessage_refreshPage
+         * @param {Object} message
          * @access public
          */
-        onMessage_refreshPage: function() {
+        onMessage_refreshPage: function(message) {
+            if (this.reflectMessage(message)) {
+                return;
+            }
             me.modules.ui.refreshPage();
         },
         /**
@@ -1783,6 +1813,9 @@
             }
             if (haveAccess) {
                 return false;
+            }
+            if (message.cmd === 'invokeWorker') {
+                message.globals = workerGlobals;
             }
             openRelay('about:blank', message);
             return true;
@@ -2448,30 +2481,50 @@
                     if (isFramed) {
                         me.modules.ui.mainFrame.style.height = framesHeight + 'px';
                     }
-                    me.modules.ui.workerFrame.style.height = framesHeight + 'px';
-                    me.modules.ui.chooseJobFrame.style.height = chooseJobFrameHeight + 'px';
-                    me.modules.ui.chooseJobFrame.style.top = chooseJobFrameTop + 'px';
-                    me.modules.ui.chooseJobFrame.style.left = chooseJobFrameLeft + 'px';
-                    me.modules.ui.chooseJobFrame.style.width = chooseJobFrameWidth + 'px';
+                    try {
+                        me.modules.ui.workerFrame.style.height = framesHeight + 'px';
+                    } catch (e) {}
+                    try {
+                        me.modules.ui.chooseJobFrame.style.height = chooseJobFrameHeight + 'px';
+                        me.modules.ui.chooseJobFrame.style.top = chooseJobFrameTop + 'px';
+                        me.modules.ui.chooseJobFrame.style.left = chooseJobFrameLeft + 'px';
+                        me.modules.ui.chooseJobFrame.style.width = chooseJobFrameWidth + 'px';
+                    } catch (e) {}
                     if (currentWorkerFrameSize === 'big') {
                         if (isFramed) {
-                            me.modules.ui.workerFrame.style.width = workerFrameWidthBig + 'px';
-                            me.modules.ui.mainFrame.style.width = mainFrameWidthSmall + 'px';
-                            me.modules.ui.workerFrame.style.left = mainFrameWidthSmall + 'px';
+                            try {
+                                me.modules.ui.workerFrame.style.width = workerFrameWidthBig + 'px';
+                                me.modules.ui.workerFrame.style.left = mainFrameWidthSmall + 'px';
+                            } catch (e) {}
+                            try {
+                                me.modules.ui.mainFrame.style.width = mainFrameWidthSmall + 'px';
+                            } catch (e) {}
                         } else {
-                            me.modules.ui.mainFrameWindow.resizeTo(1,1);
-                            me.modules.ui.workerFrame.style.width = workerFrameWidthBig + 'px';
-                            me.modules.ui.workerFrame.style.left = (windowWidth - workerFrameWidthBig - 5) + 'px';
+                            try {
+                                me.modules.ui.mainFrameWindow.resizeTo(1,1);
+                            } catch (e) {}
+                            try {
+                                me.modules.ui.workerFrame.style.width = workerFrameWidthBig + 'px';
+                                me.modules.ui.workerFrame.style.left = (windowWidth - workerFrameWidthBig - 5) + 'px';
+                            } catch (e) {}
                         }
                     } else if (currentWorkerFrameSize === 'small') {
                         if (isFramed) {
-                            me.modules.ui.workerFrame.style.width = workerFrameWidthSmall + 'px';
-                            me.modules.ui.mainFrame.style.width = mainFrameWidthBig + 'px';
-                            me.modules.ui.workerFrame.style.left = mainFrameWidthBig + 'px';
+                            try {
+                                me.modules.ui.workerFrame.style.width = workerFrameWidthSmall + 'px';
+                                me.modules.ui.workerFrame.style.left = mainFrameWidthBig + 'px';
+                            } catch (e) {}
+                            try {
+                                me.modules.ui.mainFrame.style.width = mainFrameWidthBig + 'px';
+                            } catch (e) {}
                         } else {
-                            me.modules.ui.mainFrameWindow.resizeTo(Math.round(outerWidth*0.8 - 10), Math.round(outerHeight));
-                            me.modules.ui.workerFrame.style.width = workerFrameWidthSmall + 'px';
-                            me.modules.ui.workerFrame.style.left = (windowWidth - workerFrameWidthSmall - 5) + 'px';
+                            try {
+                                me.modules.ui.mainFrameWindow.resizeTo(Math.round(outerWidth*0.8 - 10), Math.round(outerHeight));
+                            } catch (e) {}
+                            try {
+                                me.modules.ui.workerFrame.style.width = workerFrameWidthSmall + 'px';
+                                me.modules.ui.workerFrame.style.left = (windowWidth - workerFrameWidthSmall - 5) + 'px';
+                            } catch (e) {}
                         }
                     }
             })();

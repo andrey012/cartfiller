@@ -226,6 +226,7 @@
      * Fills workerCurrentTask object with current task parameters.
      * See {@link CartFiller.Dispatcher~workerCurrentTask}
      * @function CartFiller.Dispatcher~fillWorkerCurrentTask
+     * @param {Object} src
      * @access private
      */
     var fillWorkerCurrentTask = function(src){
@@ -240,6 +241,25 @@
             }
         }
     };
+    /**
+     * Fills workerGlobals object with new values
+     * @function CartFiller.Dispatcher~fillWorkerGlobals
+     * @param {Object} src
+     * @access private
+     */
+    var fillWorkerGlobals = function(src) {
+        for (var oldKey in workerGlobals){
+            if (workerGlobals.hasOwnProperty(oldKey)){
+                delete workerGlobals[oldKey];
+            }
+        }
+        for (var newKey in src){
+            if (src.hasOwnProperty(newKey)){
+                workerGlobals[newKey] = src[newKey];
+            }
+        }
+    };
+
     /**
      * Returns URL for lib folder
      * @function CartFiller.Dispatcher~getLibUrl
@@ -355,6 +375,9 @@
                     var match = pattern.exec(event.data);
                     var message = JSON.parse(match[1]);
                     if (event.source === relay.nextRelay && message.cmd !== 'register' && message.cmd !== 'bubbleRelayMessage') {
+                        if (message.cmd === 'workerStepResult') {
+                            fillWorkerGlobals(message.globals);
+                        }
                         postMessage(relay.isSlave ? window.opener : me.modules.ui.workerFrameWindow, message.cmd, message);
                     } else {
                         var fn = 'onMessage_' + message.cmd;
@@ -570,6 +593,9 @@
          * @access public
          */
         onMessage_invokeWorker: function(message){
+            if (message.globals) {
+                fillWorkerGlobals(message.globals);
+            }
             try {
                 me.modules.ui.say();
             } catch (e){}
@@ -713,9 +739,13 @@
         /**
          * Refreshes worker page
          * @function CartFiller.Dispatcher#onMessage_refreshPage
+         * @param {Object} message
          * @access public
          */
-        onMessage_refreshPage: function() {
+        onMessage_refreshPage: function(message) {
+            if (this.reflectMessage(message)) {
+                return;
+            }
             me.modules.ui.refreshPage();
         },
         /**
@@ -1008,6 +1038,9 @@
             }
             if (haveAccess) {
                 return false;
+            }
+            if (message.cmd === 'invokeWorker') {
+                message.globals = workerGlobals;
             }
             openRelay('about:blank', message);
             return true;
