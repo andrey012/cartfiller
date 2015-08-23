@@ -58,8 +58,9 @@ define('controller', ['app', 'scroll'], function(app){
         $scope.doingOneStep = true;
         var autorunSpeed;
         var mouseDownTime;
-        var isLongClick = function(){
-            return ((new Date()).getTime() - mouseDownTime) > 1000;
+        var isLongClick = function($event){
+            var now = $event.timeStamp ? $event.timeStamp : (new Date()).getTime();
+            return (now - mouseDownTime) > 1000;
         };
         var run = function(slow) {
             $scope.running = slow ? 'slow' : true;
@@ -320,7 +321,7 @@ define('controller', ['app', 'scroll'], function(app){
                 $scope.runUntilTask = $scope.runUntilStep = false;
                 $scope.currentTask = taskIndex;
                 $scope.currentStep = stepIndex;
-                var debug = isLongClick();
+                var debug = isLongClick($event);
                 $scope.invokeWorker(taskIndex, stepIndex, debug);
             }
             $event.stopPropagation();
@@ -355,7 +356,7 @@ define('controller', ['app', 'scroll'], function(app){
         };
         $scope.runNoWatch = function(slow, $event, ignoreMouseDown, fromAutorun){
             $scope.doingOneStep = false;
-            if (! ignoreMouseDown && isLongClick()) {
+            if (! ignoreMouseDown && isLongClick($event)) {
                 $scope.awaitingForFinish = slow ? 'slow' : true;
                 digestButtonPanel();
             } else {
@@ -521,8 +522,8 @@ define('controller', ['app', 'scroll'], function(app){
                 }
             });
         };
-        $scope.mouseDown = function(event) {
-            mouseDownTime = event.timeStamp || (new Date()).getTime();
+        $scope.mouseDown = function($event) {
+            mouseDownTime = $event.timeStamp || (new Date()).getTime();
         };
         $scope.getWorkerGlobalValue = function(name) {
             var v = $scope.workerGlobals[name];
