@@ -894,6 +894,10 @@
          * @access public
          */
         submitWorkerResult: function(message, recoverable, response){
+            if (workerCurrentStepIndex === false) {
+                alert('You have invalid worker, result is submitted twice, please fix');
+                return;
+            }
             var status;
             if ((undefined === message) || ('' === message)) {
                 status = 'ok';

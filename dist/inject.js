@@ -157,7 +157,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1459721487799';
+    config.gruntBuildTimeStamp='1459727804024';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -1669,6 +1669,10 @@
          * @access public
          */
         submitWorkerResult: function(message, recoverable, response){
+            if (workerCurrentStepIndex === false) {
+                alert('You have invalid worker, result is submitted twice, please fix');
+                return;
+            }
             var status;
             if ((undefined === message) || ('' === message)) {
                 status = 'ok';
