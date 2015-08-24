@@ -147,6 +147,22 @@
      */
     var jobDetailsCache = {};
     /**
+     * Counts repetitions of steps, declared with repeatXX modifier
+     * @var {integer} CartFiller.Dispatcher~stepRepeatCounter
+     * @access private
+     */
+    var stepRepeatCounter = 0;
+    /**
+     * @var {CartFiller.Api.StepEnvironment} CartFiller.Dispatcher~currentStepEnv
+     * @access private
+     */
+    var currentStepEnv = {};
+    /**
+     * @var {Function} CartFiller.Dispatcher~currentStepWorkerFn
+     * @access private
+     */
+    var currentStepWorkerFn;
+    /**
      * Just to make code shorter
      * @var {CartFiller.Configuration} CartFiller.Dispatcher~me
      * @access private
@@ -606,6 +622,7 @@
                 var err = 'ERROR: worker task is in still in progress';
                 alert(err);
             } else {
+                stepRepeatCounter = 0;
                 onLoadHappened = false;
                 nextTaskFlow = 'normal';
                 if (workerCurrentTaskIndex !== message.index){
@@ -621,7 +638,7 @@
                  *
                  * @class CartFiller.Api.StepEnvironment
                  */
-                var env = {
+                currentStepEnv = {
                     /**
                      * @member {integer} CartFiller.Api.StepEnvironment#taskIndex 0-based index of current task
                      * @access public
@@ -673,7 +690,8 @@
                             debugger;
                             /* jshint ignore:end */
                         }
-                        workerFn(highlightedElement, env);
+                        currentStepWorkerFn = workerFn;
+                        workerFn(highlightedElement, currentStepEnv);
                     }
                 } catch (err){
                     this.reportErrorResult(err);
@@ -938,6 +956,17 @@
             }
             removeWatchdogHandler();
             clearRegisteredTimeoutsAndIntervals();
+            // now let's see, if status is not ok, and method is repeatable - then repeat it
+            if (status !== 'ok') {
+                stepRepeatCounter ++;
+                var m = /repeat(\d+)/.exec(currentStepWorkerFn.toString());
+                if (m && m[1] > stepRepeatCounter) {
+                    setTimeout(function() {
+                        currentStepWorkerFn(highlightedElement, currentStepEnv);
+                    }, 1000);
+                    return;
+                }
+            }
             this.postMessageToWorker(
                 'workerStepResult', 
                 {

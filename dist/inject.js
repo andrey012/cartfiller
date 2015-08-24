@@ -157,7 +157,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1459884453233';
+    config.gruntBuildTimeStamp='1459891814021';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -231,10 +231,18 @@
      * are either step functions or arrays of function + parameters object, e.g.
      * [
      *  'step 1',
-     *  function(task,env){ ... },
+     *  function(el,env){ ... },
      *  'step 2',
-     *  [function(task,env){.. env.params.theParam ...}, {theParam: 2}],
+     *  [function(el,env){.. env.params.theParam ...}, {theParam: 2}],
      * ]
+     * where el is any value set using api.highlight or api.arrow in previous step
+     * Funny thing about these functions is that their parameter names are sometimes
+     * meaningful and result in some magic. For example having any parameter named 
+     * repeatN where N is integer (e.g. function(repeat10) {... or 
+     * function(el, env, repeat15) { ... ) will result in repeating this step N times 
+     * if it fails, until it succeeds, with interval of 1 second.
+     * Array can contain subarrays itself, in this case of course number of non-array
+     * elements should be even.
      * @see CartFiller.SampleWorker~registerCallback
      */
     
@@ -924,6 +932,22 @@
      */
     var jobDetailsCache = {};
     /**
+     * Counts repetitions of steps, declared with repeatXX modifier
+     * @var {integer} CartFiller.Dispatcher~stepRepeatCounter
+     * @access private
+     */
+    var stepRepeatCounter = 0;
+    /**
+     * @var {CartFiller.Api.StepEnvironment} CartFiller.Dispatcher~currentStepEnv
+     * @access private
+     */
+    var currentStepEnv = {};
+    /**
+     * @var {Function} CartFiller.Dispatcher~currentStepWorkerFn
+     * @access private
+     */
+    var currentStepWorkerFn;
+    /**
      * Just to make code shorter
      * @var {CartFiller.Configuration} CartFiller.Dispatcher~me
      * @access private
@@ -1383,6 +1407,7 @@
                 var err = 'ERROR: worker task is in still in progress';
                 alert(err);
             } else {
+                stepRepeatCounter = 0;
                 onLoadHappened = false;
                 nextTaskFlow = 'normal';
                 if (workerCurrentTaskIndex !== message.index){
@@ -1398,7 +1423,7 @@
                  *
                  * @class CartFiller.Api.StepEnvironment
                  */
-                var env = {
+                currentStepEnv = {
                     /**
                      * @member {integer} CartFiller.Api.StepEnvironment#taskIndex 0-based index of current task
                      * @access public
@@ -1450,7 +1475,8 @@
                             debugger;
                             /* jshint ignore:end */
                         }
-                        workerFn(highlightedElement, env);
+                        currentStepWorkerFn = workerFn;
+                        workerFn(highlightedElement, currentStepEnv);
                     }
                 } catch (err){
                     this.reportErrorResult(err);
@@ -1715,6 +1741,17 @@
             }
             removeWatchdogHandler();
             clearRegisteredTimeoutsAndIntervals();
+            // now let's see, if status is not ok, and method is repeatable - then repeat it
+            if (status !== 'ok') {
+                stepRepeatCounter ++;
+                var m = /repeat(\d+)/.exec(currentStepWorkerFn.toString());
+                if (m && m[1] > stepRepeatCounter) {
+                    setTimeout(function() {
+                        currentStepWorkerFn(highlightedElement, currentStepEnv);
+                    }, 1000);
+                    return;
+                }
+            }
             this.postMessageToWorker(
                 'workerStepResult', 
                 {

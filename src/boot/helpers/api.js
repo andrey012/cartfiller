@@ -30,10 +30,18 @@
      * are either step functions or arrays of function + parameters object, e.g.
      * [
      *  'step 1',
-     *  function(task,env){ ... },
+     *  function(el,env){ ... },
      *  'step 2',
-     *  [function(task,env){.. env.params.theParam ...}, {theParam: 2}],
+     *  [function(el,env){.. env.params.theParam ...}, {theParam: 2}],
      * ]
+     * where el is any value set using api.highlight or api.arrow in previous step
+     * Funny thing about these functions is that their parameter names are sometimes
+     * meaningful and result in some magic. For example having any parameter named 
+     * repeatN where N is integer (e.g. function(repeat10) {... or 
+     * function(el, env, repeat15) { ... ) will result in repeating this step N times 
+     * if it fails, until it succeeds, with interval of 1 second.
+     * Array can contain subarrays itself, in this case of course number of non-array
+     * elements should be even.
      * @see CartFiller.SampleWorker~registerCallback
      */
     

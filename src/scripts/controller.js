@@ -432,6 +432,9 @@ define('controller', ['app', 'scroll'], function(app){
                         setTimeout(function() { trackWorker(trackWorkerId); }, 1000);
                     }
                 };
+                xhr.onerror = function(){
+                    setTimeout(function() { trackWorker(trackWorkerId); }, 1000);
+                };
                 xhr.open('GET', url, true);
                 xhr.send();
             });

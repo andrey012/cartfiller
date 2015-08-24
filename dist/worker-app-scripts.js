@@ -446,6 +446,9 @@ define('controller', ['app', 'scroll'], function(app){
                         setTimeout(function() { trackWorker(trackWorkerId); }, 1000);
                     }
                 };
+                xhr.onerror = function(){
+                    setTimeout(function() { trackWorker(trackWorkerId); }, 1000);
+                };
                 xhr.open('GET', url, true);
                 xhr.send();
             });
@@ -588,7 +591,7 @@ define('controller', ['app', 'scroll'], function(app){
 (function(undefined) {
     var injector;
     var config = {};
-    config.gruntBuildTimeStamp='1459884453255';
+    config.gruntBuildTimeStamp='1459891814163';
     window.addEventListener('message', function(event){
         var test = /^cartFillerMessage:(.*)$/.exec(event.data);
         var isDist = true;
