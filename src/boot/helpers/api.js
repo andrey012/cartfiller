@@ -559,6 +559,8 @@
                             }
                         }
                     }, function() {
+                        var event = new Event('change');
+                        elementNode.dispatchEvent(event);
                         me.modules.api.arrow(el);
                         if (undefined === whatNext) {
                             me.modules.api.result('');
