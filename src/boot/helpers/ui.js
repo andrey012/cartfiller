@@ -637,13 +637,17 @@
      * @access private
      */
     var removeOverlay = function(forever){
-        var i, divs = getDocument().getElementsByClassName(overlayClassName);
+        var i, divs = getDocument().getElementsByTagName('div');
         for (i = divs.length - 1; i >= 0 ; i--){
-            divs[i].parentNode.removeChild(divs[i]);
+            if (divs[i].className === overlayClassName) {
+                divs[i].parentNode.removeChild(divs[i]);
+            }
         }
-        divs = overlayWindow().document.getElementsByClassName(overlayClassName);
+        divs = overlayWindow().document.getElementsByTagName('div');
         for (i = divs.length - 1; i >= 0 ; i--){
-            divs[i].parentNode.removeChild(divs[i]);
+            if (divs[i].className === overlayClassName) {
+                divs[i].parentNode.removeChild(divs[i]);
+            }
         }
         if (true === forever) {
             arrowToElements = highlightedElements = [];

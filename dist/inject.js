@@ -157,7 +157,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1459843479358';
+    config.gruntBuildTimeStamp='1459847159523';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -2617,13 +2617,17 @@
      * @access private
      */
     var removeOverlay = function(forever){
-        var i, divs = getDocument().getElementsByClassName(overlayClassName);
+        var i, divs = getDocument().getElementsByTagName('div');
         for (i = divs.length - 1; i >= 0 ; i--){
-            divs[i].parentNode.removeChild(divs[i]);
+            if (divs[i].className === overlayClassName) {
+                divs[i].parentNode.removeChild(divs[i]);
+            }
         }
-        divs = overlayWindow().document.getElementsByClassName(overlayClassName);
+        divs = overlayWindow().document.getElementsByTagName('div');
         for (i = divs.length - 1; i >= 0 ; i--){
-            divs[i].parentNode.removeChild(divs[i]);
+            if (divs[i].className === overlayClassName) {
+                divs[i].parentNode.removeChild(divs[i]);
+            }
         }
         if (true === forever) {
             arrowToElements = highlightedElements = [];
