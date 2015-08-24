@@ -65,7 +65,6 @@ define('controller', ['app', 'scroll'], function(app){
         $scope.workerGlobals = {};
         $scope.workerSrc = false;
         $scope.finishReached = false;
-        $scope.awaitingForFinish = false;
         $scope.runUntilTask = $scope.runUntilStep = false;
         $scope.pausePoints = {};
         $scope.repeatedTaskCounter = [];
@@ -87,7 +86,7 @@ define('controller', ['app', 'scroll'], function(app){
         };
         var autorun = function() {
             if ($scope.workersLoaded >= $scope.workersCounter) {
-                $scope.runNoWatch(autorunSpeed === 'slow' ? true : false, null, true, true);
+                $scope.runNoWatch(autorunSpeed === 'slow' ? true : false, null, true);
             } else {
                 // wait some more time
                 setTimeout(autorun, 1000);
@@ -326,18 +325,11 @@ define('controller', ['app', 'scroll'], function(app){
             var s = element.getAttribute('id').split('_');
             var taskIndex = parseInt(s[1]);
             var stepIndex = parseInt(s[2]);
-            if ($scope.awaitingForFinish) {
-                $scope.runUntilTask = taskIndex;
-                $scope.runUntilStep = stepIndex;
-                run($scope.awaitingForFinish === 'slow');
-                $scope.awaitingForFinish = false;
-            } else {
-                $scope.runUntilTask = $scope.runUntilStep = false;
-                $scope.currentTask = taskIndex;
-                $scope.currentStep = stepIndex;
-                var debug = isLongClick($event);
-                $scope.invokeWorker(taskIndex, stepIndex, debug);
-            }
+            $scope.runUntilTask = $scope.runUntilStep = false;
+            $scope.currentTask = taskIndex;
+            $scope.currentStep = stepIndex;
+            var debug = isLongClick($event);
+            $scope.invokeWorker(taskIndex, stepIndex, debug);
             $event.stopPropagation();
             cfMessage.send('focusMainFrameWindow');
             return false;
@@ -368,26 +360,12 @@ define('controller', ['app', 'scroll'], function(app){
             }
             return size + 'btn-warning';
         };
-        $scope.runNoWatch = function(slow, $event, ignoreMouseDown, fromAutorun){
+        $scope.runNoWatch = function(slow, $event, fromAutorun){
             $scope.doingOneStep = false;
-            if (! ignoreMouseDown && isLongClick($event)) {
-                $scope.awaitingForFinish = slow ? 'slow' : true;
-                digestButtonPanel();
-            } else {
-                $scope.awaitingForFinish = false;
-                if (! fromAutorun) {
-                    $scope.runUntilTask = $scope.runUntilStep = false;
-                }
-                run(slow);
+            if (! fromAutorun) {
+                $scope.runUntilTask = $scope.runUntilStep = false;
             }
-            if ($event) {
-                $event.stopPropagation();
-            }
-            return false;
-        };
-        $scope.cancelRunUntil = function($event) {
-            $scope.awaitingForFinish = false;
-            digestButtonPanel();
+            run(slow);
             if ($event) {
                 $event.stopPropagation();
             }
@@ -610,7 +588,7 @@ define('controller', ['app', 'scroll'], function(app){
 (function(undefined) {
     var injector;
     var config = {};
-    config.gruntBuildTimeStamp='1459797476977';
+    config.gruntBuildTimeStamp='1459843479385';
     window.addEventListener('message', function(event){
         var test = /^cartFillerMessage:(.*)$/.exec(event.data);
         var isDist = true;
