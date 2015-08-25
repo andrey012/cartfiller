@@ -157,7 +157,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1459891814021';
+    config.gruntBuildTimeStamp='1460056407510';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -1489,8 +1489,8 @@
          * then this handler will report error back to progress frame and stop
          * all worker activity
          * @function CartFiller.Dispatcher#reportErrorResult:
-	 * @param {Exception} err
-	 * @access public
+         * @param {Exception} err
+         * @access public
          */
         reportErrorResult: function(err) {
             console.log(err);
@@ -1569,7 +1569,10 @@
          * @access public
          */
         onMessage_evaluateCssSelector: function(details) {
-             this.postMessageToWorker('cssSelectorEvaluateResult', {count: eval('(function(j){j.each(function(i,el){(function(o){if (o !== "0") {el.style.opacity=0; setTimeout(function(){el.style.opacity=o;},200);}})(el.style.opacity);}); return j.length;})(me.modules.ui.mainFrameWindow.jQuery' + details.selector + ')')}); // jshint ignore:line
+            if (me.modules.dispatcher.reflectMessage(details)) {
+                return;
+            }
+            this.postMessageToWorker('cssSelectorEvaluateResult', {count: eval('(function(j){j.each(function(i,el){(function(o){if (o !== "0") {el.style.opacity=0; setTimeout(function(){el.style.opacity=o;},200);}})(el.style.opacity);}); return j.length;})(me.modules.ui.mainFrameWindow.jQuery' + details.selector + ')')}); // jshint ignore:line
         },
         /**
          * Processes message exchange between relays
@@ -1598,6 +1601,15 @@
             } else if (details.message === 'openRelayOnTail' && ! relay.nextRelay) {
                 openRelay(details.args[0], undefined, details.args[1]);
             }
+        },
+        /**
+         * ////
+         */
+        onMessage_reportingMousePointerClick: function(details) {
+            if (me.modules.dispatcher.reflectMessage(details)) {
+                return;
+            }
+            me.modules.ui.reportingMousePointerClick(details.x, details.y);
         },
         /**
          * Handles "main frame loaded" event. If both main frame and 
@@ -1888,6 +1900,18 @@
             }
             me.modules.dispatcher.registerLoadWatcher();
             relay.isSlave = true;
+            setInterval(function(){
+                var url = false;
+                try {
+                    if (me.modules.ui.mainFrameWindow && me.modules.ui.mainFrameWindow.location) {
+                        url = me.modules.ui.mainFrameWindow.location.href;
+                    }
+                } catch (e) {
+                }
+                if (url) {
+                    me.modules.dispatcher.updateCurrentUrl(url);
+                }
+            },100);
         },
         /**
          * Registers watcher that tracks onload events of main frame
@@ -3012,6 +3036,33 @@
             this.mainFrameWindow.location.reload();
         },
         /**
+         * ////
+         */
+        reportingMousePointerClick: function(x, y) {
+            var el = me.modules.ui.mainFrameWindow.document.elementFromPoint(x,y);
+            var stack = [];
+            var prev;
+            var i, n;
+            while (el && el.nodeName !== 'BODY' && el.nodeName !== 'HTML' && el !== document) {
+                var attrs = [];
+                for (i = el.attributes.length - 1 ; i >= 0 ; i -- ) {
+                    n = el.attributes[i].name;
+                    if (n === 'id' || n === 'class') {
+                        continue;
+                    }
+                    attrs.push({n: n, v: el.attributes[i].value});
+                }
+                for (prev = el, i = 0; prev; prev = prev.previousElementSibling) {
+                    if (prev.nodeName === el.nodeName) {
+                        i++;
+                    }
+                }
+                stack.unshift({element: el.nodeName.toLowerCase(), attrs: attrs, classes: el.className.split(' ').filter(function(v){return v;}), id: el.id, index: i, text: String(el.innerText).length < 200 ? String(el.innerText) : ''});
+                el = el.parentNode;
+            }
+            me.modules.dispatcher.postMessageToWorker('mousePointer', {x: x, y: y, stack: stack});
+        },
+        /**
          * Starts reporting mouse pointer - on each mousemove dispatcher 
          * will send worker frame a message with details about element
          * over which mouse is now
@@ -3035,31 +3086,13 @@
                     x = event.clientX;
                     y = event.clientY;
                 },false);
-                div.addEventListener('click', function(event) {
+                div.addEventListener('click', function() {
                     document.getElementsByTagName('body')[0].removeChild(reportMousePointer);
                     reportMousePointer = false;
-                    var el = me.modules.ui.mainFrameWindow.document.elementFromPoint(x,y);
-                    var stack = [];
-                    var prev;
-                    var i, n;
-                    while (el && el.nodeName !== 'BODY' && el.nodeName !== 'HTML' && el !== document) {
-                        var attrs = [];
-                        for (i = el.attributes.length - 1 ; i >= 0 ; i -- ) {
-                            n = el.attributes[i].name;
-                            if (n === 'id' || n === 'class') {
-                                continue;
-                            }
-                            attrs.push({n: n, v: el.attributes[i].value});
-                        }
-                        for (prev = el, i = 0; prev; prev = prev.previousElementSibling) {
-                            if (prev.nodeName === el.nodeName) {
-                                i++;
-                            }
-                        }
-                        stack.unshift({element: el.nodeName.toLowerCase(), attrs: attrs, classes: el.className.split(' ').filter(function(v){return v;}), id: el.id, index: i, text: String(el.innerText).length < 200 ? String(el.innerText) : ''});
-                        el = el.parentNode;
+                    if (me.modules.dispatcher.reflectMessage({cmd: 'reportingMousePointerClick', x: x, y: y})) {
+                        return;
                     }
-                    me.modules.dispatcher.postMessageToWorker('mousePointer', {x: event.clientX, y: event.clientY, stack: stack});
+                    me.modules.ui.reportingMousePointerClick(x, y);
                 });
             }
         },

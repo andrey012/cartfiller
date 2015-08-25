@@ -704,8 +704,8 @@
          * then this handler will report error back to progress frame and stop
          * all worker activity
          * @function CartFiller.Dispatcher#reportErrorResult:
-	 * @param {Exception} err
-	 * @access public
+         * @param {Exception} err
+         * @access public
          */
         reportErrorResult: function(err) {
             console.log(err);
@@ -784,7 +784,10 @@
          * @access public
          */
         onMessage_evaluateCssSelector: function(details) {
-             this.postMessageToWorker('cssSelectorEvaluateResult', {count: eval('(function(j){j.each(function(i,el){(function(o){if (o !== "0") {el.style.opacity=0; setTimeout(function(){el.style.opacity=o;},200);}})(el.style.opacity);}); return j.length;})(me.modules.ui.mainFrameWindow.jQuery' + details.selector + ')')}); // jshint ignore:line
+            if (me.modules.dispatcher.reflectMessage(details)) {
+                return;
+            }
+            this.postMessageToWorker('cssSelectorEvaluateResult', {count: eval('(function(j){j.each(function(i,el){(function(o){if (o !== "0") {el.style.opacity=0; setTimeout(function(){el.style.opacity=o;},200);}})(el.style.opacity);}); return j.length;})(me.modules.ui.mainFrameWindow.jQuery' + details.selector + ')')}); // jshint ignore:line
         },
         /**
          * Processes message exchange between relays
@@ -813,6 +816,15 @@
             } else if (details.message === 'openRelayOnTail' && ! relay.nextRelay) {
                 openRelay(details.args[0], undefined, details.args[1]);
             }
+        },
+        /**
+         * ////
+         */
+        onMessage_reportingMousePointerClick: function(details) {
+            if (me.modules.dispatcher.reflectMessage(details)) {
+                return;
+            }
+            me.modules.ui.reportingMousePointerClick(details.x, details.y);
         },
         /**
          * Handles "main frame loaded" event. If both main frame and 
@@ -1103,6 +1115,18 @@
             }
             me.modules.dispatcher.registerLoadWatcher();
             relay.isSlave = true;
+            setInterval(function(){
+                var url = false;
+                try {
+                    if (me.modules.ui.mainFrameWindow && me.modules.ui.mainFrameWindow.location) {
+                        url = me.modules.ui.mainFrameWindow.location.href;
+                    }
+                } catch (e) {
+                }
+                if (url) {
+                    me.modules.dispatcher.updateCurrentUrl(url);
+                }
+            },100);
         },
         /**
          * Registers watcher that tracks onload events of main frame

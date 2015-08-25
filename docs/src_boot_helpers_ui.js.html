@@ -1021,6 +1021,33 @@
             this.mainFrameWindow.location.reload();
         },
         /**
+         * ////
+         */
+        reportingMousePointerClick: function(x, y) {
+            var el = me.modules.ui.mainFrameWindow.document.elementFromPoint(x,y);
+            var stack = [];
+            var prev;
+            var i, n;
+            while (el &amp;&amp; el.nodeName !== 'BODY' &amp;&amp; el.nodeName !== 'HTML' &amp;&amp; el !== document) {
+                var attrs = [];
+                for (i = el.attributes.length - 1 ; i >= 0 ; i -- ) {
+                    n = el.attributes[i].name;
+                    if (n === 'id' || n === 'class') {
+                        continue;
+                    }
+                    attrs.push({n: n, v: el.attributes[i].value});
+                }
+                for (prev = el, i = 0; prev; prev = prev.previousElementSibling) {
+                    if (prev.nodeName === el.nodeName) {
+                        i++;
+                    }
+                }
+                stack.unshift({element: el.nodeName.toLowerCase(), attrs: attrs, classes: el.className.split(' ').filter(function(v){return v;}), id: el.id, index: i, text: String(el.innerText).length &lt; 200 ? String(el.innerText) : ''});
+                el = el.parentNode;
+            }
+            me.modules.dispatcher.postMessageToWorker('mousePointer', {x: x, y: y, stack: stack});
+        },
+        /**
          * Starts reporting mouse pointer - on each mousemove dispatcher 
          * will send worker frame a message with details about element
          * over which mouse is now
@@ -1044,31 +1071,13 @@
                     x = event.clientX;
                     y = event.clientY;
                 },false);
-                div.addEventListener('click', function(event) {
+                div.addEventListener('click', function() {
                     document.getElementsByTagName('body')[0].removeChild(reportMousePointer);
                     reportMousePointer = false;
-                    var el = me.modules.ui.mainFrameWindow.document.elementFromPoint(x,y);
-                    var stack = [];
-                    var prev;
-                    var i, n;
-                    while (el &amp;&amp; el.nodeName !== 'BODY' &amp;&amp; el.nodeName !== 'HTML' &amp;&amp; el !== document) {
-                        var attrs = [];
-                        for (i = el.attributes.length - 1 ; i >= 0 ; i -- ) {
-                            n = el.attributes[i].name;
-                            if (n === 'id' || n === 'class') {
-                                continue;
-                            }
-                            attrs.push({n: n, v: el.attributes[i].value});
-                        }
-                        for (prev = el, i = 0; prev; prev = prev.previousElementSibling) {
-                            if (prev.nodeName === el.nodeName) {
-                                i++;
-                            }
-                        }
-                        stack.unshift({element: el.nodeName.toLowerCase(), attrs: attrs, classes: el.className.split(' ').filter(function(v){return v;}), id: el.id, index: i, text: String(el.innerText).length &lt; 200 ? String(el.innerText) : ''});
-                        el = el.parentNode;
+                    if (me.modules.dispatcher.reflectMessage({cmd: 'reportingMousePointerClick', x: x, y: y})) {
+                        return;
                     }
-                    me.modules.dispatcher.postMessageToWorker('mousePointer', {x: event.clientX, y: event.clientY, stack: stack});
+                    me.modules.ui.reportingMousePointerClick(x, y);
                 });
             }
         },
@@ -1099,13 +1108,13 @@
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Externals</h3><ul><li><a href="external%2520jQuery.external__jQuery.fn_.html">jQuery.fn</a></li><li><a href="external-jQuery.html">jQuery</a></li></ul><h3>Classes</h3><ul><li><a href="CartFiller.Api.html">Api</a></li><li><a href="CartFiller.Api.StepEnvironment.html">StepEnvironment</a></li><li><a href="CartFiller.Configuration.html">Configuration</a></li><li><a href="CartFiller.Dispatcher.html">Dispatcher</a></li><li><a href="CartFiller.Injector.html">Injector</a></li><li><a href="CartFiller.Loader.html">Loader</a></li><li><a href="CartFiller.SampleWorker.html">SampleWorker</a></li><li><a href="CartFiller.SampleWorker.SampleWorkerTasks.html">SampleWorkerTasks</a></li><li><a href="CartFiller.UI.html">UI</a></li><li><a href="CartFiller.UI.ArrowToElement.html">ArrowToElement</a></li><li><a href="CartFillerPlugin-JobDetails.html">JobDetails</a></li><li><a href="CartFillerPlugin-Plugin.html">Plugin</a></li><li><a href="CartFillerPlugin-Settings.html">Settings</a></li></ul><h3>Namespaces</h3><ul><li><a href="CartFiller.html">CartFiller</a></li><li><a href="CartFillerPlugin.html">CartFillerPlugin</a></li></ul><h3>Global</h3><ul><li><a href="global.html#%2522jQuery.cartFillerPlugin.hideChooseJobFrame%2522">"jQuery.cartFillerPlugin.hideChooseJobFrame"</a></li><li><a href="global.html#%2522jQuery.cartFillerPlugin.showChooseJobFrame%2522">"jQuery.cartFillerPlugin.showChooseJobFrame"</a></li><li><a href="global.html#%2522jQuery.cartFillerPlugin%2522">"jQuery.cartFillerPlugin"</a></li><li><a href="global.html#%2522jQuery.fn.cartFillerPlugin%2522">"jQuery.fn.cartFillerPlugin"</a></li><li><a href="global.html#workerEventListeners">workerEventListeners</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Externals</h3><ul><li><a href="external%2520jQuery.external__jQuery.fn_.html">jQuery.fn</a></li><li><a href="external-jQuery.html">jQuery</a></li></ul><h3>Classes</h3><ul><li><a href="CartFiller.Api.html">Api</a></li><li><a href="CartFiller.Api.StepEnvironment.html">StepEnvironment</a></li><li><a href="CartFiller.Configuration.html">Configuration</a></li><li><a href="CartFiller.Dispatcher.html">Dispatcher</a></li><li><a href="CartFiller.Injector.html">Injector</a></li><li><a href="CartFiller.Loader.html">Loader</a></li><li><a href="CartFiller.SampleWorker.html">SampleWorker</a></li><li><a href="CartFiller.SampleWorker.SampleWorkerTasks.html">SampleWorkerTasks</a></li><li><a href="CartFiller.UI.html">UI</a></li><li><a href="CartFiller.UI.ArrowToElement.html">ArrowToElement</a></li><li><a href="CartFillerPlugin-JobDetails.html">JobDetails</a></li><li><a href="CartFillerPlugin-Plugin.html">Plugin</a></li><li><a href="CartFillerPlugin-Settings.html">Settings</a></li></ul><h3>Namespaces</h3><ul><li><a href="CartFiller.html">CartFiller</a></li><li><a href="CartFillerPlugin.html">CartFillerPlugin</a></li></ul><h3>Global</h3><ul><li><a href="global.html#%2522jQuery.cartFillerPlugin.hideChooseJobFrame%2522">"jQuery.cartFillerPlugin.hideChooseJobFrame"</a></li><li><a href="global.html#%2522jQuery.cartFillerPlugin.showChooseJobFrame%2522">"jQuery.cartFillerPlugin.showChooseJobFrame"</a></li><li><a href="global.html#%2522jQuery.cartFillerPlugin%2522">"jQuery.cartFillerPlugin"</a></li><li><a href="global.html#%2522jQuery.fn.cartFillerPlugin%2522">"jQuery.fn.cartFillerPlugin"</a></li><li><a href="global.html#onMessage_reportingMousePointerClick">onMessage_reportingMousePointerClick</a></li><li><a href="global.html#reportingMousePointerClick">reportingMousePointerClick</a></li><li><a href="global.html#workerEventListeners">workerEventListeners</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.3</a> on Wed Apr 06 2016 00:30:25 GMT+0300 (MSK)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0</a> on Thu Apr 07 2016 22:13:32 GMT+0300 (MSK)
 </footer>
 
 <script> prettyPrint(); </script>

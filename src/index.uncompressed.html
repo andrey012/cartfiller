@@ -204,6 +204,7 @@
                     <span>{{jobTitleMap[propertyName] ? jobTitleMap[propertyName] : propertyName}}</span>
                     <span><strong>{{getPropertyValue(propertyValue)}}</strong></span></span>
                 <div>
+                    <textarea readonly onclick="select(this);" ng-if="jobTask.task && noTaskSteps(jobTask.task)" rows="8" style="width: 100%;">{{',\n            \'' + jobTask.task + '\': [\n                \'\', function() {\n                    \n                }, \'\', function(el) {\n                    \n                }\n            ]\n'}}</textarea>
                     <span
                        ng-repeat="(jobTaskStepIndex, jobTaskStep) in jobTaskDescriptions[jobTask.task] track by $index"
                     >

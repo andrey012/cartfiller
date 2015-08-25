@@ -993,6 +993,33 @@
             this.mainFrameWindow.location.reload();
         },
         /**
+         * ////
+         */
+        reportingMousePointerClick: function(x, y) {
+            var el = me.modules.ui.mainFrameWindow.document.elementFromPoint(x,y);
+            var stack = [];
+            var prev;
+            var i, n;
+            while (el && el.nodeName !== 'BODY' && el.nodeName !== 'HTML' && el !== document) {
+                var attrs = [];
+                for (i = el.attributes.length - 1 ; i >= 0 ; i -- ) {
+                    n = el.attributes[i].name;
+                    if (n === 'id' || n === 'class') {
+                        continue;
+                    }
+                    attrs.push({n: n, v: el.attributes[i].value});
+                }
+                for (prev = el, i = 0; prev; prev = prev.previousElementSibling) {
+                    if (prev.nodeName === el.nodeName) {
+                        i++;
+                    }
+                }
+                stack.unshift({element: el.nodeName.toLowerCase(), attrs: attrs, classes: el.className.split(' ').filter(function(v){return v;}), id: el.id, index: i, text: String(el.innerText).length < 200 ? String(el.innerText) : ''});
+                el = el.parentNode;
+            }
+            me.modules.dispatcher.postMessageToWorker('mousePointer', {x: x, y: y, stack: stack});
+        },
+        /**
          * Starts reporting mouse pointer - on each mousemove dispatcher 
          * will send worker frame a message with details about element
          * over which mouse is now
@@ -1016,31 +1043,13 @@
                     x = event.clientX;
                     y = event.clientY;
                 },false);
-                div.addEventListener('click', function(event) {
+                div.addEventListener('click', function() {
                     document.getElementsByTagName('body')[0].removeChild(reportMousePointer);
                     reportMousePointer = false;
-                    var el = me.modules.ui.mainFrameWindow.document.elementFromPoint(x,y);
-                    var stack = [];
-                    var prev;
-                    var i, n;
-                    while (el && el.nodeName !== 'BODY' && el.nodeName !== 'HTML' && el !== document) {
-                        var attrs = [];
-                        for (i = el.attributes.length - 1 ; i >= 0 ; i -- ) {
-                            n = el.attributes[i].name;
-                            if (n === 'id' || n === 'class') {
-                                continue;
-                            }
-                            attrs.push({n: n, v: el.attributes[i].value});
-                        }
-                        for (prev = el, i = 0; prev; prev = prev.previousElementSibling) {
-                            if (prev.nodeName === el.nodeName) {
-                                i++;
-                            }
-                        }
-                        stack.unshift({element: el.nodeName.toLowerCase(), attrs: attrs, classes: el.className.split(' ').filter(function(v){return v;}), id: el.id, index: i, text: String(el.innerText).length < 200 ? String(el.innerText) : ''});
-                        el = el.parentNode;
+                    if (me.modules.dispatcher.reflectMessage({cmd: 'reportingMousePointerClick', x: x, y: y})) {
+                        return;
                     }
-                    me.modules.dispatcher.postMessageToWorker('mousePointer', {x: event.clientX, y: event.clientY, stack: stack});
+                    me.modules.ui.reportingMousePointerClick(x, y);
                 });
             }
         },

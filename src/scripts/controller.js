@@ -572,5 +572,11 @@ define('controller', ['app', 'scroll'], function(app){
             event.stopPropagation();
             return false;
         };
+        $scope.noTaskSteps = function(task) {
+            if (undefined === $scope.jobTaskDescriptions[task]) {
+                return true;
+            }
+            return ! $scope.jobTaskDescriptions[task].length;
+        };
     }]);
 });

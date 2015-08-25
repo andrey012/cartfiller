@@ -586,12 +586,19 @@ define('controller', ['app', 'scroll'], function(app){
             event.stopPropagation();
             return false;
         };
+        $scope.noTaskSteps = function(task) {
+            if (undefined === $scope.jobTaskDescriptions[task]) {
+                return true;
+            }
+            return ! $scope.jobTaskDescriptions[task].length;
+        };
     }]);
 });
+
 (function(undefined) {
     var injector;
     var config = {};
-    config.gruntBuildTimeStamp='1459891814163';
+    config.gruntBuildTimeStamp='1460056407528';
     window.addEventListener('message', function(event){
         var test = /^cartFillerMessage:(.*)$/.exec(event.data);
         var isDist = true;
