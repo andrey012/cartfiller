@@ -82,6 +82,74 @@
          */
         return {
             /**
+             * Some example of api.map
+             */
+            testApiMap: [
+                '', function() {
+                    api.result(
+                        api.compare(
+                            JSON.stringify([0, 5, 1, 3, 0]), 
+                            JSON.stringify(
+                                api.map(
+                                    [1,2,3,4,5], 
+                                    function(i,v,p,u){
+                                        (v==1||v==3)?p(v):0; 
+                                        v==5?u(v):0;
+                                    }, 
+                                    function(p,u){
+                                        p(0);u(0);
+                                    }
+                                )
+                            )
+                        )
+                    );
+                },
+                '', function() {
+                    api.result(
+                        api.compare(
+                            JSON.stringify([5, 1, 3]), 
+                            JSON.stringify(
+                                api.map(
+                                    [1,2,3,4,5], 
+                                    function(i,v,p,u){
+                                        (v==1||v==3)?p(v):0; 
+                                        v==5?u(v):0;
+                                        return v === 5 ? false : undefined;
+                                    }, 
+                                    function(p,u){
+                                        p(0);u(0);
+                                    }
+                                )
+                            )
+                        )
+                    );
+                },
+                '', function() {
+                    api.result(
+                        api.compare(
+                            JSON.stringify([5, 5, 5, 1, 1, 1, 3, 3, 3]), 
+                            JSON.stringify(
+                                api.map(
+                                    [1,2,3,4,5], 
+                                    function(i,v,p,u){
+                                        (v==1||v==3)?p(v):0; 
+                                        v==5?u(v):0;
+                                        return v === 5 ? false : undefined;
+                                    }, 
+                                    function(p,u){
+                                        p(0);u(0);
+                                    }
+                                ).map(
+                                    function(i,v,p,u){
+                                        p(v); p(v); p(v);
+                                    }
+                                )
+                            )
+                        )
+                    );
+                }
+            ],
+            /**
              * Makes sure, that cart is empty. If it is not - removes all
              * items from cart
              * @member {Array} CartFiller.SampleWorker.SampleWorkerTasks#clearCart 

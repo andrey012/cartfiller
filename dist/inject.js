@@ -157,7 +157,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1460056407510';
+    config.gruntBuildTimeStamp='1460056509428';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -302,9 +302,31 @@
      */
 
     /**
+     * Used by {@link CartFiller.Api#each} when iterating through arrays
+     * @callback CartFiller.Api.mapCallback
+     * @param {integer} index
+     * @param {Object} value
+     * @param {Function} push Call this function to output value. Function has one parameter
+     * -- the value for output, and can be called multiple times
+     * @param {Function} unshift Call this function to put value to the beginning of output.
+     * Function has one parameter -- the value for output, and can be called multiple times
+     * @return {boolean} false means stop iteration
+     */
+
+    /**
      * Another callback used by {@link CartFiller.Api#each} -- called when iterating through
      * array items was not interrupted
      * @callback CartFiller.Api.eachOtherwiseCallback
+     */
+
+    /**
+     * Another callback used by {@link CartFiller.Api#each} -- called when iterating through
+     * array items was not interrupted
+     * @callback CartFiller.Api.mapOtherwiseCallback
+     * @param {Function} push Call this function to output value. Function has one parameter
+     * -- the value for output, and can be called multiple times
+     * @param {Function} unshift Call this function to put value to the beginning of output.
+     * Function has one parameter -- the value for output, and can be called multiple times
      */
 
     /**
@@ -556,7 +578,7 @@
         /**
          * Just another for-each implementation, jQuery style
          * @function CartFiller.Api#each
-         * @param {Array} array Array to iterate through
+         * @param {Array|Object|HtmlCollection} array Array to iterate through
          * @param {CartFiller.Api.eachCallback} fn Called for each item, if result === false
          *          then iteration will be interrupted
          * @param {CartFillerApi.eachOtherwiseCallback} otherwise Called if iteration was
@@ -609,6 +631,30 @@
                 otherwise();
             }
         },
+        /**
+         * Unusual combination of map and filter functions, can do both and more of that
+         * can map one input entry to multiple output entries
+         * @function CartFiller.Api#map
+         * @param {Array|Object|HtmlCollection} 
+         * @param {CartFiller.Api.mapCallback} 
+         * @param {CartFillerApi.mapOtherwiseCallback} 
+         * @return {Array} which has same map method as well
+         * @see CartFiller.Api#each for parameter description
+         */
+        map: function(array, fn, otherwise) {
+            var r = [];
+            r.map = function(fn, otherwise) {
+                return me.modules.api.map(r, fn, otherwise);
+            };
+            var p = function(v) { r.push(v); };
+            var u = function(v) { r.unshift(v); };
+            me.modules.api.each(array, function(i,v) {
+                return fn(i, v, p, u);
+            }, otherwise ? function() {
+                return otherwise(p, u);
+            } : undefined);
+            return r;
+        }, 
         /**
          * Compare two strings, if they match return '', if they mismatch return full
          * dump showing exact position where they mismatch

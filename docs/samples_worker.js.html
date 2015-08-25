@@ -110,6 +110,74 @@
          */
         return {
             /**
+             * Some example of api.map
+             */
+            testApiMap: [
+                '', function() {
+                    api.result(
+                        api.compare(
+                            JSON.stringify([0, 5, 1, 3, 0]), 
+                            JSON.stringify(
+                                api.map(
+                                    [1,2,3,4,5], 
+                                    function(i,v,p,u){
+                                        (v==1||v==3)?p(v):0; 
+                                        v==5?u(v):0;
+                                    }, 
+                                    function(p,u){
+                                        p(0);u(0);
+                                    }
+                                )
+                            )
+                        )
+                    );
+                },
+                '', function() {
+                    api.result(
+                        api.compare(
+                            JSON.stringify([5, 1, 3]), 
+                            JSON.stringify(
+                                api.map(
+                                    [1,2,3,4,5], 
+                                    function(i,v,p,u){
+                                        (v==1||v==3)?p(v):0; 
+                                        v==5?u(v):0;
+                                        return v === 5 ? false : undefined;
+                                    }, 
+                                    function(p,u){
+                                        p(0);u(0);
+                                    }
+                                )
+                            )
+                        )
+                    );
+                },
+                '', function() {
+                    api.result(
+                        api.compare(
+                            JSON.stringify([5, 5, 5, 1, 1, 1, 3, 3, 3]), 
+                            JSON.stringify(
+                                api.map(
+                                    [1,2,3,4,5], 
+                                    function(i,v,p,u){
+                                        (v==1||v==3)?p(v):0; 
+                                        v==5?u(v):0;
+                                        return v === 5 ? false : undefined;
+                                    }, 
+                                    function(p,u){
+                                        p(0);u(0);
+                                    }
+                                ).map(
+                                    function(i,v,p,u){
+                                        p(v); p(v); p(v);
+                                    }
+                                )
+                            )
+                        )
+                    );
+                }
+            ],
+            /**
              * Makes sure, that cart is empty. If it is not - removes all
              * items from cart
              * @member {Array} CartFiller.SampleWorker.SampleWorkerTasks#clearCart 
@@ -293,13 +361,13 @@
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Externals</h3><ul><li><a href="external%2520jQuery.external__jQuery.fn_.html">jQuery.fn</a></li><li><a href="external-jQuery.html">jQuery</a></li></ul><h3>Classes</h3><ul><li><a href="CartFiller.Api.html">Api</a></li><li><a href="CartFiller.Api.StepEnvironment.html">StepEnvironment</a></li><li><a href="CartFiller.Configuration.html">Configuration</a></li><li><a href="CartFiller.Dispatcher.html">Dispatcher</a></li><li><a href="CartFiller.Injector.html">Injector</a></li><li><a href="CartFiller.Loader.html">Loader</a></li><li><a href="CartFiller.SampleWorker.html">SampleWorker</a></li><li><a href="CartFiller.SampleWorker.SampleWorkerTasks.html">SampleWorkerTasks</a></li><li><a href="CartFiller.UI.html">UI</a></li><li><a href="CartFiller.UI.ArrowToElement.html">ArrowToElement</a></li><li><a href="CartFillerPlugin-JobDetails.html">JobDetails</a></li><li><a href="CartFillerPlugin-Plugin.html">Plugin</a></li><li><a href="CartFillerPlugin-Settings.html">Settings</a></li></ul><h3>Namespaces</h3><ul><li><a href="CartFiller.html">CartFiller</a></li><li><a href="CartFillerPlugin.html">CartFillerPlugin</a></li></ul><h3>Global</h3><ul><li><a href="global.html#%2522jQuery.cartFillerPlugin.hideChooseJobFrame%2522">"jQuery.cartFillerPlugin.hideChooseJobFrame"</a></li><li><a href="global.html#%2522jQuery.cartFillerPlugin.showChooseJobFrame%2522">"jQuery.cartFillerPlugin.showChooseJobFrame"</a></li><li><a href="global.html#%2522jQuery.cartFillerPlugin%2522">"jQuery.cartFillerPlugin"</a></li><li><a href="global.html#%2522jQuery.fn.cartFillerPlugin%2522">"jQuery.fn.cartFillerPlugin"</a></li><li><a href="global.html#onMessage_reportingMousePointerClick">onMessage_reportingMousePointerClick</a></li><li><a href="global.html#reportingMousePointerClick">reportingMousePointerClick</a></li><li><a href="global.html#workerEventListeners">workerEventListeners</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Externals</h3><ul><li><a href="external%2520jQuery.external__jQuery.fn_.html">jQuery.fn</a></li><li><a href="external-jQuery.html">jQuery</a></li></ul><h3>Classes</h3><ul><li><a href="CartFiller.Api.html">Api</a></li><li><a href="CartFiller.Api.StepEnvironment.html">StepEnvironment</a></li><li><a href="CartFiller.Configuration.html">Configuration</a></li><li><a href="CartFiller.Dispatcher.html">Dispatcher</a></li><li><a href="CartFiller.Injector.html">Injector</a></li><li><a href="CartFiller.Loader.html">Loader</a></li><li><a href="CartFiller.SampleWorker.html">SampleWorker</a></li><li><a href="CartFiller.SampleWorker.SampleWorkerTasks.html">SampleWorkerTasks</a></li><li><a href="CartFiller.UI.html">UI</a></li><li><a href="CartFiller.UI.ArrowToElement.html">ArrowToElement</a></li><li><a href="CartFillerPlugin-JobDetails.html">JobDetails</a></li><li><a href="CartFillerPlugin-Plugin.html">Plugin</a></li><li><a href="CartFillerPlugin-Settings.html">Settings</a></li></ul><h3>Namespaces</h3><ul><li><a href="CartFiller.html">CartFiller</a></li><li><a href="CartFillerPlugin.html">CartFillerPlugin</a></li></ul><h3>Global</h3><ul><li><a href="global.html#%2522jQuery.cartFillerPlugin.hideChooseJobFrame%2522">"jQuery.cartFillerPlugin.hideChooseJobFrame"</a></li><li><a href="global.html#%2522jQuery.cartFillerPlugin.showChooseJobFrame%2522">"jQuery.cartFillerPlugin.showChooseJobFrame"</a></li><li><a href="global.html#%2522jQuery.cartFillerPlugin%2522">"jQuery.cartFillerPlugin"</a></li><li><a href="global.html#%2522jQuery.fn.cartFillerPlugin%2522">"jQuery.fn.cartFillerPlugin"</a></li><li><a href="global.html#onMessage_reportingMousePointerClick">onMessage_reportingMousePointerClick</a></li><li><a href="global.html#reportingMousePointerClick">reportingMousePointerClick</a></li><li><a href="global.html#testApiMap">testApiMap</a></li><li><a href="global.html#workerEventListeners">workerEventListeners</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0</a> on Thu Apr 07 2016 22:13:32 GMT+0300 (MSK)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0</a> on Thu Apr 07 2016 22:15:13 GMT+0300 (MSK)
 </footer>
 
 <script> prettyPrint(); </script>
