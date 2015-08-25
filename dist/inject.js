@@ -157,7 +157,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1460056509428';
+    config.gruntBuildTimeStamp='1460062044988';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -1507,7 +1507,7 @@
                         var workerFn = worker[message.task][(message.step * 2) + 1];
                         if ('function' !== typeof workerFn){
                             if ('function' === typeof workerFn[0]){
-                                env.params = workerFn[1];
+                                currentStepEnv.params = workerFn[1];
                                 workerFn = workerFn[0];
                             } else {
                                 alert('invalid worker - function for ' + message.task + ' step ' + message.step + ' is not a function');
