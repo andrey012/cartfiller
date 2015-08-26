@@ -1,9 +1,5 @@
 CACHE MANIFEST
-<<<<<<< HEAD
-# config.gruntBuildTimeStamp='1460200248517';
-=======
-# config.gruntBuildTimeStamp='1460290521352';
->>>>>>> fix of worker track, dependencies between different workers, fixes, api.apply and api.applier
+# config.gruntBuildTimeStamp='1460290776726';
 
 CACHE:
 index.html

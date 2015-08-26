@@ -157,11 +157,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-<<<<<<< HEAD
-    config.gruntBuildTimeStamp='1460200248466';
-=======
-    config.gruntBuildTimeStamp='1460290521285';
->>>>>>> fix of worker track, dependencies between different workers, fixes, api.apply and api.applier
+    config.gruntBuildTimeStamp='1460290776532';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag

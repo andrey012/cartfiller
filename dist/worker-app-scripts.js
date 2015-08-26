@@ -600,11 +600,7 @@ define('controller', ['app', 'scroll'], function(app){
 (function(undefined) {
     var injector;
     var config = {};
-<<<<<<< HEAD
-    config.gruntBuildTimeStamp='1460200248505';
-=======
-    config.gruntBuildTimeStamp='1460290521344';
->>>>>>> fix of worker track, dependencies between different workers, fixes, api.apply and api.applier
+    config.gruntBuildTimeStamp='1460290776679';
     window.addEventListener('message', function(event){
         var test = /^cartFillerMessage:(.*)$/.exec(event.data);
         var isDist = true;
