@@ -157,7 +157,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1460062044988';
+    config.gruntBuildTimeStamp='1460149812764';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -1516,12 +1516,12 @@
                         }
                         // register watchdog
                         registerWorkerWatchdog();
+                        currentStepWorkerFn = workerFn;
                         if (message.debug) {
                             /* jshint ignore:start */
                             debugger;
                             /* jshint ignore:end */
                         }
-                        currentStepWorkerFn = workerFn;
                         workerFn(highlightedElement, currentStepEnv);
                     }
                 } catch (err){

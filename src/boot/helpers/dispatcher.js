@@ -685,12 +685,12 @@
                         }
                         // register watchdog
                         registerWorkerWatchdog();
+                        currentStepWorkerFn = workerFn;
                         if (message.debug) {
                             /* jshint ignore:start */
                             debugger;
                             /* jshint ignore:end */
                         }
-                        currentStepWorkerFn = workerFn;
                         workerFn(highlightedElement, currentStepEnv);
                     }
                 } catch (err){
