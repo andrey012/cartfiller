@@ -157,7 +157,11 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
+<<<<<<< HEAD
     config.gruntBuildTimeStamp='1460200248466';
+=======
+    config.gruntBuildTimeStamp='1460290521285';
+>>>>>>> fix of worker track, dependencies between different workers, fixes, api.apply and api.applier
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -420,7 +424,7 @@
          * @return {CartFiller.Api} for chaining
          */
         registerWorker: function(cb){
-            me.modules.dispatcher.registerWorker(cb, this);
+            me.modules.dispatcher.registerWorker(cb);
             return this;
         },
         /**
@@ -749,7 +753,7 @@
          * @access public
          */
         setTimeout: function(fn, timeout) {
-            me.modules.dispatcher.registerWorkerSetTimeout(setTimeout(fn, timeout));
+            me.modules.dispatcher.registerWorkerSetTimeout(setTimeout(me.modules.api.applier(fn), timeout));
         },
         /**
          * Safe setInterval, that registers handler in cartFiller, so, if 
@@ -762,7 +766,7 @@
          * @access public
          */
         setInterval: function(fn, timeout) {
-            me.modules.dispatcher.registerWorkerSetInterval(setInterval(fn, timeout));
+            me.modules.dispatcher.registerWorkerSetInterval(setInterval(me.modules.api.applier(fn), timeout));
         },
         /**
          * Helper function to construct workers - return array ['click', function(el){ el[0].click(); api.result; }]
@@ -909,6 +913,64 @@
                     });
                 }
             ];
+        },
+        /**
+         * Wrapper function for asynchronous things - catches exceptions and fires negative result
+         * @function CartFiller.Api#apply
+         * @param {Function} fn
+         * @param {mixed} arbitrary parameters will be passed to fn
+         * @access public
+         */
+        apply: function(fn) {
+            try {
+                var args = [];
+                for (var i = 1; i < arguments.length; i ++) {
+                    args.push(arguments[i]);
+                }
+                fn.apply(me.modules.dispatcher.getWorker(), args);
+            } catch (err) {
+                me.modules.dispatcher.reportErrorResult(err);
+                throw err;
+            }
+        },
+        /**
+         * Returns method, that, when called, will call api.apply against supplied fn
+         * @function CartFiller.Api#applier
+         * @param {Function} fn
+         * @access public
+         */
+        applier: function(fn) {
+            return function() {
+                var args = [fn];
+                for (var i = 0; i < arguments.length; i ++) {
+                    args.push(arguments[i]);
+                }
+                me.modules.api.apply.apply(me.modules.api, args);
+            };
+        },
+        /**
+         * Define shared worker function - which can be used in other workers
+         * @function CartFiller.Api#define
+         * @param {string|Function} name either name of function or function itself, 
+         * then name will be deduced from function code (it should be named function)
+         * @param {Function} fn
+         * @return {CartFiller.Api} for chaining
+         * @access public
+         */
+        define: function(name, fn){
+            if (name instanceof Function) {
+                var p = /^\s*function\s+([^(]+)\(/;
+                if (! p.test(name.toString())) {
+                    var err = 'invalid shared function definition, if name is not specified as first parameter of api.define() call, then function should be named';
+                    alert(err);
+                    throw err;
+                }
+                var m = p.exec(name.toString());
+                fn = name;
+                name = m[1];
+            }
+            me.modules.dispatcher.defineSharedWorkerFunction(name, fn);
+            return this;
         }
     });
 }).call(this, document, window);
@@ -1283,6 +1345,29 @@
             }
         }
     };
+    var workersToEvaluate = [];
+    var sharedWorkerFunctions = {};
+    var evaluateNextWorker = function() {
+        if (! workersToEvaluate.length) {
+            return;
+        }
+        eval(workerSourceCodes[workersToEvaluate.shift()]); // jshint ignore:line
+        evaluateNextWorker();
+    };
+    /**
+     * Evaluate worker code sorting out dependencies
+     * @function CartFiller.Dispatcher~evaluateWorkers
+     * @access private
+     */
+    var evaluateWorkers = function() {
+        workersToEvaluate = [];
+        sharedWorkerFunctions = {};
+        for (var i in workerSourceCodes) {
+            workersToEvaluate.push(i);
+        }
+        evaluateNextWorker();
+    };
+
     this.cartFillerConfiguration.scripts.push({
         /** 
          * Returns name of this module, used by loader
@@ -1495,7 +1580,9 @@
         onMessage_loadWorker: function(message){
             try {
                 workerSourceCodes[message.src] = message.code;
-                eval(message.code); // jshint ignore:line
+                if (message.isFinal) {
+                    evaluateWorkers();
+                }
                 if (relay.nextRelay) {
                     postMessage(relay.nextRelay, message.cmd, message);
                 }
@@ -1815,10 +1902,9 @@
          * frame
          * @function CartFiller.Dispatcher#registerWorker
          * @param {CartFiller.Api.registerCallback} cb
-         * @param {CartFiller.Api} api
          * @access public
          */
-        registerWorker: function(cb, api){
+        registerWorker: function(cb){
             var recursivelyCollectSteps = function(source, taskSteps) {
                 if ('undefined' === typeof taskSteps) {
                     taskSteps = [];
@@ -1832,7 +1918,32 @@
                 }
                 return taskSteps;
             };
-            var thisWorker = cb(me.modules.ui.mainFrameWindow, undefined, api, workerCurrentTask, jobDetailsCache, workerGlobals);
+            var knownArgs = {
+                window: me.modules.ui.mainFrameWindow,
+                document: undefined,
+                api: me.modules.api,
+                task: workerCurrentTask,
+                job: jobDetailsCache,
+                globals: workerGlobals
+            };
+            var args = cb.toString().split('(')[1].split(')')[0].split(',').map(function(arg){
+                arg = arg.trim();
+                if (knownArgs.hasOwnProperty(arg)) {
+                    return knownArgs[arg];
+                }
+                return function() {
+                    while (! sharedWorkerFunctions[arg] && workersToEvaluate.length) {
+                        evaluateNextWorker();
+                    }
+                    if (! sharedWorkerFunctions[arg]) {
+                        var err = 'bad worker - shared function was not defined: [' + arg + ']';
+                        alert(err);
+                        throw err;
+                    }
+                    return sharedWorkerFunctions[arg].apply(worker, arguments);
+                };
+            });
+            var thisWorker = cb.apply(undefined, args);
             var list = {};
             for (var taskName in thisWorker){
                 if (thisWorker.hasOwnProperty(taskName)){
@@ -1886,7 +1997,7 @@
             // now let's see, if status is not ok, and method is repeatable - then repeat it
             if (status !== 'ok') {
                 stepRepeatCounter ++;
-                var m = /repeat(\d+)/.exec(currentStepWorkerFn.toString());
+                var m = /repeat(\d+)/.exec(currentStepWorkerFn.toString().split(')')[0]);
                 if (m && m[1] > stepRepeatCounter) {
                     setTimeout(function() {
                         currentStepWorkerFn(highlightedElement, currentStepEnv);
@@ -2102,6 +2213,21 @@
          */
         getWorkerGlobals: function() {
             return workerGlobals;
+        },
+        /**
+         * Returns worker object
+         * @function CartFiller.Dispatcher#getWorker
+         * @return {CartFiller.WorkerTasks}
+         * @access public
+         */
+        getWorker: function() {
+            return worker;
+        },
+        /**
+         * ////
+         */
+        defineSharedWorkerFunction: function(name, fn){
+            sharedWorkerFunctions[name] = fn;
         }
     });
 }).call(this, document, window);
@@ -2918,7 +3044,6 @@
             var body = this.mainFrameWindow.document.getElementsByTagName('body')[0];
             var i;
 
-            body.style.paddingBottom = this.mainFrameWindow.innerHeight + 'px';
 
             highlightedElements = [];
             if (null !== element && 'object' === typeof element && 'string' === typeof element.jquery && undefined !== element.length && 'function' === typeof element.each){
@@ -2939,6 +3064,7 @@
                 highlightedElements.push({element: element});
             }
             if (highlightedElements.length > 0) {
+                body.style.paddingBottom = this.mainFrameWindow.innerHeight + 'px';
                 setTimeout(function(){
                     scrollTo(highlightedElements);
                 },0);

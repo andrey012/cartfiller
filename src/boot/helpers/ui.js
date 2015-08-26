@@ -745,7 +745,6 @@
             var body = this.mainFrameWindow.document.getElementsByTagName('body')[0];
             var i;
 
-            body.style.paddingBottom = this.mainFrameWindow.innerHeight + 'px';
 
             highlightedElements = [];
             if (null !== element && 'object' === typeof element && 'string' === typeof element.jquery && undefined !== element.length && 'function' === typeof element.each){
@@ -766,6 +765,7 @@
                 highlightedElements.push({element: element});
             }
             if (highlightedElements.length > 0) {
+                body.style.paddingBottom = this.mainFrameWindow.innerHeight + 'px';
                 setTimeout(function(){
                     scrollTo(highlightedElements);
                 },0);

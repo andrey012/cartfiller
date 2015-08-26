@@ -414,7 +414,7 @@ define('controller', ['app', 'scroll'], function(app){
         var trackWorkersAllLoaded = function() {
             var i; 
             for (i in trackWorkerLoaded) {
-                if (trackWorkerLoaded.hasOwnProperty[i] && ! trackWorkerLoaded[i]) {
+                if (trackWorkerLoaded.hasOwnProperty(i) && ! trackWorkerLoaded[i]) {
                     return false;
                 }
             }
@@ -438,8 +438,9 @@ define('controller', ['app', 'scroll'], function(app){
                     if ($scope.trackWorkerId !== trackWorkerId) {
                         return;
                     }
+                    trackWorkerLoaded[originalUrl] = true;
                     if (xhr.response !== trackWorkerContents[originalUrl]) {
-                        cfMessage.send('loadWorker', {code: xhr.response, src: url});
+                        cfMessage.send('loadWorker', {code: xhr.response, src: originalUrl, isFinal: true});
                         trackWorkerContents[originalUrl] = xhr.response;
                     }
                     if (trackWorkersAllLoaded()) {
@@ -478,8 +479,9 @@ define('controller', ['app', 'scroll'], function(app){
                     url += (new Date()).getTime();
                     var xhr = new XMLHttpRequest();
                     xhr.onload = function(){
+                        trackWorkerLoaded[originalUrl] = true;
                         trackWorkerContents[originalUrl] = xhr.response;
-                        cfMessage.send('loadWorker', {code: xhr.response, src: url});
+                        cfMessage.send('loadWorker', {code: xhr.response, src: originalUrl, isFinal: trackWorkersAllLoaded()});
                         if ($scope.trackWorker && trackWorkersAllLoaded()) {
                             setTimeout(function() { trackWorker($scope.trackWorkerId); }, 1000);
                         }
@@ -598,7 +600,11 @@ define('controller', ['app', 'scroll'], function(app){
 (function(undefined) {
     var injector;
     var config = {};
+<<<<<<< HEAD
     config.gruntBuildTimeStamp='1460200248505';
+=======
+    config.gruntBuildTimeStamp='1460290521344';
+>>>>>>> fix of worker track, dependencies between different workers, fixes, api.apply and api.applier
     window.addEventListener('message', function(event){
         var test = /^cartFillerMessage:(.*)$/.exec(event.data);
         var isDist = true;

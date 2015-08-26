@@ -219,7 +219,7 @@
          * @return {CartFiller.Api} for chaining
          */
         registerWorker: function(cb){
-            me.modules.dispatcher.registerWorker(cb, this);
+            me.modules.dispatcher.registerWorker(cb);
             return this;
         },
         /**
@@ -548,7 +548,7 @@
          * @access public
          */
         setTimeout: function(fn, timeout) {
-            me.modules.dispatcher.registerWorkerSetTimeout(setTimeout(fn, timeout));
+            me.modules.dispatcher.registerWorkerSetTimeout(setTimeout(me.modules.api.applier(fn), timeout));
         },
         /**
          * Safe setInterval, that registers handler in cartFiller, so, if 
@@ -561,7 +561,7 @@
          * @access public
          */
         setInterval: function(fn, timeout) {
-            me.modules.dispatcher.registerWorkerSetInterval(setInterval(fn, timeout));
+            me.modules.dispatcher.registerWorkerSetInterval(setInterval(me.modules.api.applier(fn), timeout));
         },
         /**
          * Helper function to construct workers - return array ['click', function(el){ el[0].click(); api.result; }]
@@ -708,6 +708,64 @@
                     });
                 }
             ];
+        },
+        /**
+         * Wrapper function for asynchronous things - catches exceptions and fires negative result
+         * @function CartFiller.Api#apply
+         * @param {Function} fn
+         * @param {mixed} arbitrary parameters will be passed to fn
+         * @access public
+         */
+        apply: function(fn) {
+            try {
+                var args = [];
+                for (var i = 1; i < arguments.length; i ++) {
+                    args.push(arguments[i]);
+                }
+                fn.apply(me.modules.dispatcher.getWorker(), args);
+            } catch (err) {
+                me.modules.dispatcher.reportErrorResult(err);
+                throw err;
+            }
+        },
+        /**
+         * Returns method, that, when called, will call api.apply against supplied fn
+         * @function CartFiller.Api#applier
+         * @param {Function} fn
+         * @access public
+         */
+        applier: function(fn) {
+            return function() {
+                var args = [fn];
+                for (var i = 0; i < arguments.length; i ++) {
+                    args.push(arguments[i]);
+                }
+                me.modules.api.apply.apply(me.modules.api, args);
+            };
+        },
+        /**
+         * Define shared worker function - which can be used in other workers
+         * @function CartFiller.Api#define
+         * @param {string|Function} name either name of function or function itself, 
+         * then name will be deduced from function code (it should be named function)
+         * @param {Function} fn
+         * @return {CartFiller.Api} for chaining
+         * @access public
+         */
+        define: function(name, fn){
+            if (name instanceof Function) {
+                var p = /^\s*function\s+([^(]+)\(/;
+                if (! p.test(name.toString())) {
+                    var err = 'invalid shared function definition, if name is not specified as first parameter of api.define() call, then function should be named';
+                    alert(err);
+                    throw err;
+                }
+                var m = p.exec(name.toString());
+                fn = name;
+                name = m[1];
+            }
+            me.modules.dispatcher.defineSharedWorkerFunction(name, fn);
+            return this;
         }
     });
 }).call(this, document, window);

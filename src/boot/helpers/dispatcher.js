@@ -368,6 +368,29 @@
             }
         }
     };
+    var workersToEvaluate = [];
+    var sharedWorkerFunctions = {};
+    var evaluateNextWorker = function() {
+        if (! workersToEvaluate.length) {
+            return;
+        }
+        eval(workerSourceCodes[workersToEvaluate.shift()]); // jshint ignore:line
+        evaluateNextWorker();
+    };
+    /**
+     * Evaluate worker code sorting out dependencies
+     * @function CartFiller.Dispatcher~evaluateWorkers
+     * @access private
+     */
+    var evaluateWorkers = function() {
+        workersToEvaluate = [];
+        sharedWorkerFunctions = {};
+        for (var i in workerSourceCodes) {
+            workersToEvaluate.push(i);
+        }
+        evaluateNextWorker();
+    };
+
     this.cartFillerConfiguration.scripts.push({
         /** 
          * Returns name of this module, used by loader
@@ -580,7 +603,9 @@
         onMessage_loadWorker: function(message){
             try {
                 workerSourceCodes[message.src] = message.code;
-                eval(message.code); // jshint ignore:line
+                if (message.isFinal) {
+                    evaluateWorkers();
+                }
                 if (relay.nextRelay) {
                     postMessage(relay.nextRelay, message.cmd, message);
                 }
@@ -900,10 +925,9 @@
          * frame
          * @function CartFiller.Dispatcher#registerWorker
          * @param {CartFiller.Api.registerCallback} cb
-         * @param {CartFiller.Api} api
          * @access public
          */
-        registerWorker: function(cb, api){
+        registerWorker: function(cb){
             var recursivelyCollectSteps = function(source, taskSteps) {
                 if ('undefined' === typeof taskSteps) {
                     taskSteps = [];
@@ -917,7 +941,32 @@
                 }
                 return taskSteps;
             };
-            var thisWorker = cb(me.modules.ui.mainFrameWindow, undefined, api, workerCurrentTask, jobDetailsCache, workerGlobals);
+            var knownArgs = {
+                window: me.modules.ui.mainFrameWindow,
+                document: undefined,
+                api: me.modules.api,
+                task: workerCurrentTask,
+                job: jobDetailsCache,
+                globals: workerGlobals
+            };
+            var args = cb.toString().split('(')[1].split(')')[0].split(',').map(function(arg){
+                arg = arg.trim();
+                if (knownArgs.hasOwnProperty(arg)) {
+                    return knownArgs[arg];
+                }
+                return function() {
+                    while (! sharedWorkerFunctions[arg] && workersToEvaluate.length) {
+                        evaluateNextWorker();
+                    }
+                    if (! sharedWorkerFunctions[arg]) {
+                        var err = 'bad worker - shared function was not defined: [' + arg + ']';
+                        alert(err);
+                        throw err;
+                    }
+                    return sharedWorkerFunctions[arg].apply(worker, arguments);
+                };
+            });
+            var thisWorker = cb.apply(undefined, args);
             var list = {};
             for (var taskName in thisWorker){
                 if (thisWorker.hasOwnProperty(taskName)){
@@ -971,7 +1020,7 @@
             // now let's see, if status is not ok, and method is repeatable - then repeat it
             if (status !== 'ok') {
                 stepRepeatCounter ++;
-                var m = /repeat(\d+)/.exec(currentStepWorkerFn.toString());
+                var m = /repeat(\d+)/.exec(currentStepWorkerFn.toString().split(')')[0]);
                 if (m && m[1] > stepRepeatCounter) {
                     setTimeout(function() {
                         currentStepWorkerFn(highlightedElement, currentStepEnv);
@@ -1187,6 +1236,21 @@
          */
         getWorkerGlobals: function() {
             return workerGlobals;
+        },
+        /**
+         * Returns worker object
+         * @function CartFiller.Dispatcher#getWorker
+         * @return {CartFiller.WorkerTasks}
+         * @access public
+         */
+        getWorker: function() {
+            return worker;
+        },
+        /**
+         * ////
+         */
+        defineSharedWorkerFunction: function(name, fn){
+            sharedWorkerFunctions[name] = fn;
         }
     });
 }).call(this, document, window);

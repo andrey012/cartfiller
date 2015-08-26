@@ -247,7 +247,7 @@
          * @return {CartFiller.Api} for chaining
          */
         registerWorker: function(cb){
-            me.modules.dispatcher.registerWorker(cb, this);
+            me.modules.dispatcher.registerWorker(cb);
             return this;
         },
         /**
@@ -576,7 +576,7 @@
          * @access public
          */
         setTimeout: function(fn, timeout) {
-            me.modules.dispatcher.registerWorkerSetTimeout(setTimeout(fn, timeout));
+            me.modules.dispatcher.registerWorkerSetTimeout(setTimeout(me.modules.api.applier(fn), timeout));
         },
         /**
          * Safe setInterval, that registers handler in cartFiller, so, if 
@@ -589,7 +589,7 @@
          * @access public
          */
         setInterval: function(fn, timeout) {
-            me.modules.dispatcher.registerWorkerSetInterval(setInterval(fn, timeout));
+            me.modules.dispatcher.registerWorkerSetInterval(setInterval(me.modules.api.applier(fn), timeout));
         },
         /**
          * Helper function to construct workers - return array ['click', function(el){ el[0].click(); api.result; }]
@@ -736,6 +736,64 @@
                     });
                 }
             ];
+        },
+        /**
+         * Wrapper function for asynchronous things - catches exceptions and fires negative result
+         * @function CartFiller.Api#apply
+         * @param {Function} fn
+         * @param {mixed} arbitrary parameters will be passed to fn
+         * @access public
+         */
+        apply: function(fn) {
+            try {
+                var args = [];
+                for (var i = 1; i &lt; arguments.length; i ++) {
+                    args.push(arguments[i]);
+                }
+                fn.apply(me.modules.dispatcher.getWorker(), args);
+            } catch (err) {
+                me.modules.dispatcher.reportErrorResult(err);
+                throw err;
+            }
+        },
+        /**
+         * Returns method, that, when called, will call api.apply against supplied fn
+         * @function CartFiller.Api#applier
+         * @param {Function} fn
+         * @access public
+         */
+        applier: function(fn) {
+            return function() {
+                var args = [fn];
+                for (var i = 0; i &lt; arguments.length; i ++) {
+                    args.push(arguments[i]);
+                }
+                me.modules.api.apply.apply(me.modules.api, args);
+            };
+        },
+        /**
+         * Define shared worker function - which can be used in other workers
+         * @function CartFiller.Api#define
+         * @param {string|Function} name either name of function or function itself, 
+         * then name will be deduced from function code (it should be named function)
+         * @param {Function} fn
+         * @return {CartFiller.Api} for chaining
+         * @access public
+         */
+        define: function(name, fn){
+            if (name instanceof Function) {
+                var p = /^\s*function\s+([^(]+)\(/;
+                if (! p.test(name.toString())) {
+                    var err = 'invalid shared function definition, if name is not specified as first parameter of api.define() call, then function should be named';
+                    alert(err);
+                    throw err;
+                }
+                var m = p.exec(name.toString());
+                fn = name;
+                name = m[1];
+            }
+            me.modules.dispatcher.defineSharedWorkerFunction(name, fn);
+            return this;
         }
     });
 }).call(this, document, window);
@@ -749,13 +807,21 @@
 </div>
 
 <nav>
+<<<<<<< HEAD
     <h2><a href="index.html">Home</a></h2><h3>Externals</h3><ul><li><a href="external%2520jQuery.external__jQuery.fn_.html">jQuery.fn</a></li><li><a href="external-jQuery.html">jQuery</a></li></ul><h3>Classes</h3><ul><li><a href="CartFiller.Api.html">Api</a></li><li><a href="CartFiller.Api.StepEnvironment.html">StepEnvironment</a></li><li><a href="CartFiller.Api.WorkerTask.html">WorkerTask</a></li><li><a href="CartFiller.Api.WorkerTasks.html">WorkerTasks</a></li><li><a href="CartFiller.Configuration.html">Configuration</a></li><li><a href="CartFiller.Dispatcher.html">Dispatcher</a></li><li><a href="CartFiller.Injector.html">Injector</a></li><li><a href="CartFiller.Loader.html">Loader</a></li><li><a href="CartFiller.SampleWorker.html">SampleWorker</a></li><li><a href="CartFiller.SampleWorker.SampleWorkerTasks.html">SampleWorkerTasks</a></li><li><a href="CartFiller.UI.html">UI</a></li><li><a href="CartFiller.UI.ArrowToElement.html">ArrowToElement</a></li><li><a href="CartFillerPlugin-JobDetails.html">JobDetails</a></li><li><a href="CartFillerPlugin-Plugin.html">Plugin</a></li><li><a href="CartFillerPlugin-Settings.html">Settings</a></li></ul><h3>Namespaces</h3><ul><li><a href="CartFiller.html">CartFiller</a></li><li><a href="CartFillerPlugin.html">CartFillerPlugin</a></li></ul><h3>Global</h3><ul><li><a href="global.html#%2522jQuery.cartFillerPlugin.hideChooseJobFrame%2522">"jQuery.cartFillerPlugin.hideChooseJobFrame"</a></li><li><a href="global.html#%2522jQuery.cartFillerPlugin.showChooseJobFrame%2522">"jQuery.cartFillerPlugin.showChooseJobFrame"</a></li><li><a href="global.html#%2522jQuery.cartFillerPlugin%2522">"jQuery.cartFillerPlugin"</a></li><li><a href="global.html#%2522jQuery.fn.cartFillerPlugin%2522">"jQuery.fn.cartFillerPlugin"</a></li><li><a href="global.html#onMessage_reportingMousePointerClick">onMessage_reportingMousePointerClick</a></li><li><a href="global.html#reportingMousePointerClick">reportingMousePointerClick</a></li><li><a href="global.html#testApiMap">testApiMap</a></li><li><a href="global.html#workerEventListeners">workerEventListeners</a></li></ul>
+=======
+    <h2><a href="index.html">Home</a></h2><h3>Externals</h3><ul><li><a href="external%2520jQuery.external__jQuery.fn_.html">jQuery.fn</a></li><li><a href="external-jQuery.html">jQuery</a></li></ul><h3>Classes</h3><ul><li><a href="CartFiller.Api.html">Api</a></li><li><a href="CartFiller.Api.StepEnvironment.html">StepEnvironment</a></li><li><a href="CartFiller.Configuration.html">Configuration</a></li><li><a href="CartFiller.Dispatcher.html">Dispatcher</a></li><li><a href="CartFiller.Injector.html">Injector</a></li><li><a href="CartFiller.Loader.html">Loader</a></li><li><a href="CartFiller.SampleWorker.html">SampleWorker</a></li><li><a href="CartFiller.SampleWorker.SampleWorkerTasks.html">SampleWorkerTasks</a></li><li><a href="CartFiller.UI.html">UI</a></li><li><a href="CartFiller.UI.ArrowToElement.html">ArrowToElement</a></li><li><a href="CartFillerPlugin-JobDetails.html">JobDetails</a></li><li><a href="CartFillerPlugin-Plugin.html">Plugin</a></li><li><a href="CartFillerPlugin-Settings.html">Settings</a></li></ul><h3>Namespaces</h3><ul><li><a href="CartFiller.html">CartFiller</a></li><li><a href="CartFillerPlugin.html">CartFillerPlugin</a></li></ul><h3>Global</h3><ul><li><a href="global.html#%2522jQuery.cartFillerPlugin.hideChooseJobFrame%2522">"jQuery.cartFillerPlugin.hideChooseJobFrame"</a></li><li><a href="global.html#%2522jQuery.cartFillerPlugin.showChooseJobFrame%2522">"jQuery.cartFillerPlugin.showChooseJobFrame"</a></li><li><a href="global.html#%2522jQuery.cartFillerPlugin%2522">"jQuery.cartFillerPlugin"</a></li><li><a href="global.html#%2522jQuery.fn.cartFillerPlugin%2522">"jQuery.fn.cartFillerPlugin"</a></li><li><a href="global.html#defineSharedWorkerFunction">defineSharedWorkerFunction</a></li><li><a href="global.html#onMessage_reportingMousePointerClick">onMessage_reportingMousePointerClick</a></li><li><a href="global.html#reportingMousePointerClick">reportingMousePointerClick</a></li><li><a href="global.html#testApiMap">testApiMap</a></li><li><a href="global.html#workerEventListeners">workerEventListeners</a></li></ul>
+>>>>>>> fix of worker track, dependencies between different workers, fixes, api.apply and api.applier
 </nav>
 
 <br class="clear">
 
 <footer>
+<<<<<<< HEAD
     Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0</a> on Sat Apr 09 2016 14:10:53 GMT+0300 (MSK)
+=======
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.3</a> on Sun Apr 10 2016 15:15:34 GMT+0300 (MSK)
+>>>>>>> fix of worker track, dependencies between different workers, fixes, api.apply and api.applier
 </footer>
 
 <script> prettyPrint(); </script>
