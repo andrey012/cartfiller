@@ -26,36 +26,92 @@
      * as passed by chooseJob frame
      * @param {Object} globals An object, whoes properties can be set at one step
      * and then reused in the other step
-     * @return {Array} where even members are names of steps, and odd members
-     * are either step functions or arrays of function + parameters object, e.g.
-     * [
-     *  'step 1',
-     *  function(el,env){ ... },
-     *  'step 2',
-     *  [function(el,env){.. env.params.theParam ...}, {theParam: 2}],
-     * ]
+     * @return {CartFiller.Api.WorkerTasks} 
+     * @see CartFiller.SampleWorker~registerCallback
+     */
+
+    /**
+     * Contains worker code, each property is a task, property name is task name, 
+     * and property value is Array of type CartFiller.Api.WorkerTask
+     * @class CartFiller.Api.WorkerTasks
+     * @see CartFiller.Api.WorkerTask
+     * @example
+     *  {
+     *      openHomepage: [
+     *          'open homepage', function() { 
+     *              window.location.href = '...'; api.onload() 
+     *          }
+     *      ],
+     *      navigateToLogin: [
+     *          'find navbar', function() { 
+     *              var navbar = ... ;
+     *              api.arrow(navbar).result(navbar.length?'':'no navbar');
+     *          },
+     *          'find login link', function(navbar) {
+     *              var link = ...';
+     *              api.arrow(link).result(link.length?'':'no login link');
+     *          },
+     *          api.click(),
+     *      ]
+     *  }
+     */
+    /**
+     * @member {CartFiller.Api.WorkerTask} CartFiller.Api.WorkerTasks#openHomepage
+     * This is just an example
+     * @access public
+     */
+    /**
+     * @member {CartFiller.Api.WorkerTask} CartFiller.Api.WorkerTasks#navigateToLogin
+     * This is just an example
+     * @access public
+     */
+    /** 
+     * Contains worker code for particular worker task, as array
+     * where even members are names of steps, and odd members
+     * are either step functions or arrays of function + parameters object, see example below
      * where el is any value set using api.highlight or api.arrow in previous step
+     * Array can contain subarrays itself, in this case of course number of non-array
+     * elements should be even.
+     * Each function must be of {CartFiller.Api.WorkerTask.workerStepFunction} type
+     * @class CartFiller.Api.WorkerTask
+     * @see {CartFiller.Api.WorkerTask.workerStepFunction}
+     * @example
+     *  [
+     *      'step 1', function(el,env){ ... },
+     *      'step 2', [function(el,env){.. env.params.theParam ...}, {theParam: 2}],
+     *      [   
+     *          'step 3', function() { ... },
+     *          'step 4', function() { ... }
+     *      ]
+     *  ]
+     */
+    /**
+     * Performs particular step of the task. Each callback must finally, 
+     * immediately or asynchronously call either {@link CartFiller.Api#result}
+     * or {@link CartFiller.Api#nop} function. You may skip parameters if you don't 
+     * need them. 
      * Funny thing about these functions is that their parameter names are sometimes
      * meaningful and result in some magic. For example having any parameter named 
      * repeatN where N is integer (e.g. function(repeat10) {... or 
      * function(el, env, repeat15) { ... ) will result in repeating this step N times 
      * if it fails, until it succeeds, with interval of 1 second.
-     * Array can contain subarrays itself, in this case of course number of non-array
-     * elements should be even.
-     * @see CartFiller.SampleWorker~registerCallback
-     */
-    
-    /**
-     * Performs particular step of the task. Each callback must finally, 
-     * immediately or asynchronously call either {@link CartFiller.Api#result}
-     * or {@link CartFiller.Api#nop} function.
      * 
-     * @callback CartFiller.Api.workerStepCallback
-     * @param {jQuery|HtmlElement|undefined} highlightedElement Most recently 
-     * highlighted element is passed back to this callback
+     * @callback CartFiller.Api.WorkerTask.workerStepFunction
+     * @param {jQuery|HtmlElement|Array|undefined} highlightedElement Most recently 
+     * highlighted element is passed back to this callback. Value is same as 
+     * was used in most recent call to api.array() or api.highlight()
      * @param {CartFiller.Api.StepEnvironment} env Environment utility object
+     * @param {undefined} repeatN Specifies to repeat call N times if it fails, so
+     * parameter name should be e.g. repeat5 or repeat 10
+     * @example
+     * [
+     *      'step name', function(el, env) { ... },
+     *      'step name', function(el, repeat10) { ... },
+     *      'step name', function(repeat5) { ... },
+     *      'step name', function() { ... },
+     *      'step name', function(el, env, repeat10) { ... }
+     * ]
      */
-
     /** 
      * Called by Api when target site window issues onload event
      * Has no parameters and result of this callback is ignored
@@ -324,7 +380,7 @@
          * the target website page, which has a rectangular hole over
          * this element + some padding around
          * Additionally API remembers this element and passes it back
-         * to [next step handler]{@link CartFiller.Api.workerStepCallback}
+         * to [next step handler]{@link CartFiller.Api.WorkerTask.workerStepFunction}
          * as first parameter
          * 
          * @function CartFiller.Api#highlight
@@ -383,7 +439,7 @@
          * @param {CartFillerApi.eachOtherwiseCallback} otherwise Called if iteration was
          * not interrupted
          * @return {CartFiller.Api} for chaining
-         * @return this for chaining 
+         * @return {CartFiller.Api} for chaining
          * @access public
          */
         each: function(array, fn, otherwise){
@@ -456,25 +512,26 @@
         }, 
         /**
          * Compare two strings, if they match return '', if they mismatch return full
-         * dump showing exact position where they mismatch
+         * dump showing exact position where they mismatch. Usage: 
+         * api.result(api.compare(task.value, el.text().trim()));
          * @function CartFiller.Api#compare
-         * @param {string} ethalon
+         * @param {string} expected
          * @param {string} value
-         * @return {string}
+         * @return {string} '' if values match, error description otherwise
          * @access public
          */
-        compare: function(ethalon, value) {
-            ethalon = String(ethalon);
+        compare: function(expected, value) {
+            expected = String(expected);
             value = String(value);
-            if (ethalon === value) {
+            if (expected === value) {
                 return '';
             }
             var r = '[';
-            for (var i = 0; i < Math.max(ethalon.length, value.length); i++) {
-                if (ethalon.substr(i, 1) === value.substr(i, 1)) {
-                    r += ethalon.substr(i, 1);
+            for (var i = 0; i < Math.max(expected.length, value.length); i++) {
+                if (expected.substr(i, 1) === value.substr(i, 1)) {
+                    r += expected.substr(i, 1);
                 } else {
-                    r += '] <<< expected: [' + ethalon.substr(i) + '], have: [' + value.substr(i) + ']';
+                    r += '] <<< expected: [' + expected.substr(i) + '], have: [' + value.substr(i) + ']';
                     break;
                 }
             }
@@ -509,13 +566,14 @@
         /**
          * Helper function to construct workers - return array ['click', function(el){ el[0].click(); api.result; }]
          * @function CartFiller.Api#click
-         * @param {Function} what to do after click
-         * @return {Array}
+         * @param {Function} what to do after click, gets same parameters as normal
+         *          worker functions////
+         * @return {Array} ready for putting into step list
          * @access public
          */
         click: function(whatNext) {
             return [
-                'click', function(el){
+                'click', function(el, env){
                     if ('object' === typeof el && 'string' === typeof el.jquery && undefined !== el.length) {
                         el[0].click();
                     } else if (el instanceof Array) {
@@ -526,7 +584,7 @@
                     if (undefined === whatNext) {
                         me.modules.api.result();
                     } else {
-                        whatNext();
+                        whatNext(el, env);
                     }
                 }
             ];
@@ -536,10 +594,12 @@
          * @function CartFiller.Api#openRelay
          * @param {string} url
          * @param {boolean} noFocus Experimental, looks like it does not work
+         * @return {CartFiller.Api} for chaining
          * @access public
          */
         openRelay: function(url, noFocus) {
             me.modules.dispatcher.openRelayOnTheTail(url, noFocus);
+            return this;
         },
         /**
          * Registers onload callback, that is called each time when new page
@@ -548,16 +608,40 @@
          * @function CartFiller.Api#registerOnloadCallback
          * @param {string|CartFiller.Api.onloadEventCallback} aliasOrCallback alias or method if alias is not used
          * @param {CartFiller.Api.onloadEventCallback|undefined} callbackIfAliasIsUsed method if alias is used
+         * @return {CartFiller.Api} for chaining
          * @access public
          */
         registerOnloadCallback: function(aliasOrCallback, callbackIfAliasIsUsed){
             me.modules.dispatcher.registerEventCallback('onload', callbackIfAliasIsUsed ? aliasOrCallback : '', callbackIfAliasIsUsed ? callbackIfAliasIsUsed : aliasOrCallback);
+            return this;
         },
         /**
-         * Types a string into currently highlighted/arrowed element by issuing multiple keydown/keypress/keyup events
+         * Types a string into currently highlighted/arrowed element by issuing multiple keydown/keypress/keyup events. See example below.
+         * @example
+         *   'some steps of your worker', function() {
+         *     .... 
+         *     api.arrow(something) // something is the element we're going to
+         *        .result();        // type into
+         *   },
+         *   api.type('name', function(input) { // this means - look for 
+         *                                      // task.name or globals.name 
+         *                                      // and put its value to 
+         *                                      // "something" variable. After
+         *                                      // type will be done our
+         *                                      // callback will be called and 
+         *                                      // "input" parameter will 
+         *                                      // contain "something" element
+         *
+         *      api.result(                 // for example verify, that
+         *          api.compare(            // various onkeypress handlers 
+         *              task.name,          // did not change input value
+         *              input.val().trim()
+         *          )
+         *      );
          * @function CartFiller.Api#type
          * @param {string|Function} value or callback to get value
-         * @param {Function} whatNext callback after this task is done
+         * @param {Function} whatNext callback after this task is 
+         * @return {Array} ready for putting into worker array
          * @access public
          */
         type: function(value, whatNext) {
