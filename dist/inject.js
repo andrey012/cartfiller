@@ -157,7 +157,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1460401076220';
+    config.gruntBuildTimeStamp='1460401420410';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -1408,6 +1408,30 @@
                             console.log('unknown message: ' + fn + ':' + event.data);
                         }
                     }
+                } else {
+                    // this message was received by an accident and we need to resend it to mainFrame where
+                    // real recipient is.
+                    var deepCopy = function(x, k) {
+                        if ('undefined' === typeof k) {
+                            k = [];
+                        }
+                        var known = function(v) { return v === k ; };
+                        var r = {};
+                        for (var i in x) {
+                            if (! (x[i] instanceof Window) && ! (x[i] instanceof Function)) {
+                                if (! k.filter(known).length) {
+                                    k.push(x[i]);
+                                    if ('object' === typeof x[i]) {
+                                        r[i] = deepCopy(x[i], k);
+                                    } else {
+                                        r[i] = x[i];
+                                    }
+                                }
+                            }
+                        }
+                        return r;
+                    };
+                    me.modules.dispatcher.onMessage_postMessage({cmd: 'postMessage', event: deepCopy(event), originalEvent: event});
                 }
             }, false);
         },
@@ -1832,6 +1856,28 @@
                 return;
             }
             me.modules.ui.reportingMousePointerClick(details.x, details.y);
+        },
+        /**
+         * Dispatches event issued by postMessage and captured by Dispatcher by mistake
+         * @param {Object} details
+         * @param {Window} source
+         * @access public
+         */
+        onMessage_postMessage: function(details, source) {
+            if (! me.modules.dispatcher.reflectMessage(details)) {
+                var event;
+                if ('undefined' === typeof source) {
+                    event = details.originalEvent;
+                } else {
+                    event = new me.modules.ui.mainFrameWindow.CustomEvent('message', details.event);
+                    for (var i in details.event) {
+                        try {
+                            event[i] = details.event[i];
+                        } catch (e) {}
+                    }
+                }
+                me.modules.ui.mainFrameWindow.dispatchEvent(event);
+            }
         },
         /**
          * Handles "main frame loaded" event. If both main frame and 
