@@ -600,7 +600,7 @@ define('controller', ['app', 'scroll'], function(app){
 (function(undefined) {
     var injector;
     var config = {};
-    config.gruntBuildTimeStamp='1460401420471';
+    config.gruntBuildTimeStamp='1460406257578';
     window.addEventListener('message', function(event){
         var test = /^cartFillerMessage:(.*)$/.exec(event.data);
         var isDist = true;

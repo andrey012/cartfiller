@@ -590,8 +590,10 @@
                     } else {
                         el.click();
                     }
-                    if (undefined === whatNext) {
+                    if (undefined === whatNext || whatNext === me.modules.api.result) {
                         me.modules.api.result();
+                    } else if (whatNext === me.modules.api.onload) {
+                        me.modules.api.onload();
                     } else {
                         whatNext(el, env);
                     }
@@ -709,10 +711,12 @@
                         var event = new Event('change');
                         elementNode.dispatchEvent(event);
                         me.modules.api.arrow(el);
-                        if (undefined === whatNext) {
-                            me.modules.api.result('');
+                        if (undefined === whatNext || whatNext === me.modules.api.result) {
+                            me.modules.api.result();
+                        } else if (whatNext === me.modules.api.onload) {
+                            me.modules.api.onload();
                         } else {
-                            whatNext(el);
+                            whatNext(el, env);
                         }
                     });
                 }
