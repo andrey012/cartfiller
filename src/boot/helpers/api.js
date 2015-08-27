@@ -1,5 +1,6 @@
 /**
  * Represents the API interface used by worker. 
+ * For worker example see {@link CartFiller.Api#registerWorker}
  * @class CartFiller.Api
  */
 (function(document, window, undefined){
@@ -12,7 +13,7 @@
      * 
      * @callback CartFiller.Api.registerCallback
      * @param {Window} window
-     * @param {Document} document, undefined will be passed here, to prevent
+     * @param {Document} document undefined will be passed here, to prevent
      * worker from accessing document. Instead worker should access
      * window.document. This is because worker is instantiated in the top frame
      * but operates with main frame where target site is opened, and document
@@ -208,6 +209,14 @@
         /**
          * Registers worker object. Worker object can be replaced by new one
          * to make it possible to update code during debugging.
+         * <textarea readonly cols="100" rows="7" onclick="this.select();">
+         * (function(undefined) {
+         *     cartFillerAPI().registerWorker(function(window, document, api, task, job, globals){
+         *         return {
+         *         };
+         *     });
+         * })();
+         * </textarea>
          * @function CartFiller.Api#registerWorker
          * @param {CartFiller.Api.registerCallback} cb A callback, that will
          * will return an object, whoes properties are tasks, and each property
