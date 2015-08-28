@@ -157,7 +157,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1460406257478';
+    config.gruntBuildTimeStamp='1460407047285';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -1463,10 +1463,14 @@
             } else if (source === relay.nextRelay) {
                 relay.nextRelayRegistered = true;
                 var url;
+                var codeToSend = [];
                 for (url in workerSourceCodes) {
                     if (workerSourceCodes.hasOwnProperty(url)) {
-                        relay.nextRelayQueue.push({cmd: 'loadWorker', url: url, code: workerSourceCodes[url]});
+                        codeToSend.push(url);
                     }
+                }
+                for (var i = 0; i < codeToSend.length; i ++) {
+                    relay.nextRelayQueue.push({cmd: 'loadWorker', url: codeToSend[i], code: workerSourceCodes[codeToSend[i]], isFinal: (i === codeToSend.length - 1)});
                 }
                 // now we can send all queued messages to relay
                 var msg;
