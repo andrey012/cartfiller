@@ -6,9 +6,13 @@
     <link rel="stylesheet" href="../lib/bootstrap/dist/css/bootstrap.min.css"/>
     <style>
         #jobDetails .btn {font-family: monospace; font-size: 12px;} 
-        #jobDetails .btn-xs {margin: 5px 7px;  font-size: 12px;} 
+        #jobDetails .btn {margin: 0px -5px; }
+        #jobDetails .btn-xs {margin: 5px 2px;  font-size: 12px;} 
+        #jobDetails .pause {padding: 6px 5px 9px 5px; }
         #jobDetails .alert {padding: 5px; margin-bottom: 5px;}
+        #jobDetails h1, #jobDetails h2, #jobDetails h3 {margin: 0px;}
         .pause-active {background-color: red;}
+        .nobr {display: inline-block; white-space: nowrap;}
     </style>
 </head>
 <body>
@@ -208,8 +212,9 @@
                     <span
                        ng-repeat="(jobTaskStepIndex, jobTaskStep) in jobTaskDescriptions[jobTask.task] track by $index"
                     >
-                        <nobr>
-                            <a id="{{'pauseButton_' + jobTaskIndex + '_' + jobTaskStepIndex}}" 
+                        <div class="nobr">
+                            <a id="{{'pauseButton_' + jobTaskIndex + '_' + jobTaskStepIndex}}"
+                               class="pause"
                                href="#" ng-class="pausePoints[jobTaskIndex][jobTaskStepIndex] ? 'pause-active' : ''"
                                onclick="var event = arguments[0] || window.event; return angular.element(this).scope().togglePause(this, event);"
                                title="click to toggle pause at this point"
@@ -222,7 +227,7 @@
                                onmousedown="var event = arguments[0] || window.event; angular.element(this).scope().mouseDown(event);"
                                onclick="var event = arguments[0] || window.event; return angular.element(this).scope().clickOnStepNoWatch(this, event);"
                             >{{indexTitles[jobTask.task][jobTaskStepIndex]}}</a>
-                        </nobr>
+                        </div>
                         {{jobTaskProgress[jobTaskIndex].stepResults[jobTaskStepIndex].message}}
                     </span>
                 </div>

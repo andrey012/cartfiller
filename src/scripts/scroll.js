@@ -4,7 +4,9 @@ define('scroll', ['app', 'scroll'], function(app){
             var rect = element.getBoundingClientRect();
             var bottom = window.innerHeight;
             var delta = (useTop ? rect.top : rect.bottom) - bottom;
-            window.scrollBy(0, delta);
+            if (delta > 0 && delta < bottom) {
+                window.scrollBy(0, delta);
+            }
         };
     });
 });
