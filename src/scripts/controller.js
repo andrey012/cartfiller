@@ -27,8 +27,15 @@ define('controller', ['app', 'scroll'], function(app){
             }
         };
         $scope.chooseJobState = false;
-        $scope.toggleSize = function(){
+        $scope.toggleSizeNoWatch = function($event){
+            $event.stopPropagation();
             cfMessage.send('toggleSize');
+            return false;
+        };
+        $scope.scrollToCurrentStepNoWatch = function($event) {
+            $event.stopPropagation();
+            scrollCurrentTaskIntoView(false, true);
+            return false;
         };
         $scope.chooseJob = function(){
             $scope.chooseJobState = !$scope.chooseJobState;
@@ -56,6 +63,7 @@ define('controller', ['app', 'scroll'], function(app){
         $scope.repeatedTaskCounter = [];
         $scope.doingOneStep = true;
         $scope.clickedWhileWorkerWasInProgress = false;
+        $scope.noResultButton = false;
         var autorunSpeed;
         var mouseDownTime;
         var isLongClick = function($event){
@@ -68,8 +76,8 @@ define('controller', ['app', 'scroll'], function(app){
             $scope.doNextStep();
             cfMessage.send('focusMainFrameWindow');
         };
-        var scrollCurrentTaskIntoView = function(useTop) {
-            cfScroll(jQuery('#jobDetails > div:nth-child(' + ($scope.currentTask + 1) + ')')[0], useTop);
+        var scrollCurrentTaskIntoView = function(useTop, force) {
+            cfScroll(jQuery('#jobDetails > div:nth-child(' + ($scope.currentTask + 1) + ')')[0], useTop, force);
         };
         var autorun = function() {
             if ($scope.workersLoaded >= $scope.workersCounter) {
@@ -104,6 +112,7 @@ define('controller', ['app', 'scroll'], function(app){
                         $scope.pausePoints = {};
                         $scope.currentTask = 0;
                         $scope.currentStep = 0;
+                        $scope.noResultButton = ! details.resultMessage;
                         scrollCurrentTaskIntoView(true);
                         var workerSrc = '';
                         if (('string' === typeof details.workerSrc) && (details.workerSrc.length > 0)) {

@@ -41,8 +41,15 @@ define('controller', ['app', 'scroll'], function(app){
             }
         };
         $scope.chooseJobState = false;
-        $scope.toggleSize = function(){
+        $scope.toggleSizeNoWatch = function($event){
+            $event.stopPropagation();
             cfMessage.send('toggleSize');
+            return false;
+        };
+        $scope.scrollToCurrentStepNoWatch = function($event) {
+            $event.stopPropagation();
+            scrollCurrentTaskIntoView(false, true);
+            return false;
         };
         $scope.chooseJob = function(){
             $scope.chooseJobState = !$scope.chooseJobState;
@@ -70,6 +77,7 @@ define('controller', ['app', 'scroll'], function(app){
         $scope.repeatedTaskCounter = [];
         $scope.doingOneStep = true;
         $scope.clickedWhileWorkerWasInProgress = false;
+        $scope.noResultButton = false;
         var autorunSpeed;
         var mouseDownTime;
         var isLongClick = function($event){
@@ -82,8 +90,8 @@ define('controller', ['app', 'scroll'], function(app){
             $scope.doNextStep();
             cfMessage.send('focusMainFrameWindow');
         };
-        var scrollCurrentTaskIntoView = function(useTop) {
-            cfScroll(jQuery('#jobDetails > div:nth-child(' + ($scope.currentTask + 1) + ')')[0], useTop);
+        var scrollCurrentTaskIntoView = function(useTop, force) {
+            cfScroll(jQuery('#jobDetails > div:nth-child(' + ($scope.currentTask + 1) + ')')[0], useTop, force);
         };
         var autorun = function() {
             if ($scope.workersLoaded >= $scope.workersCounter) {
@@ -118,6 +126,7 @@ define('controller', ['app', 'scroll'], function(app){
                         $scope.pausePoints = {};
                         $scope.currentTask = 0;
                         $scope.currentStep = 0;
+                        $scope.noResultButton = ! details.resultMessage;
                         scrollCurrentTaskIntoView(true);
                         var workerSrc = '';
                         if (('string' === typeof details.workerSrc) && (details.workerSrc.length > 0)) {
@@ -625,7 +634,7 @@ define('controller', ['app', 'scroll'], function(app){
 (function(undefined) {
     var injector;
     var config = {};
-    config.gruntBuildTimeStamp='1460590913363';
+    config.gruntBuildTimeStamp='1460765296783';
     window.addEventListener('message', function(event){
         var test = /^cartFillerMessage:(.*)$/.exec(event.data);
         var isDist = true;
@@ -741,11 +750,11 @@ define('controller', ['app', 'scroll'], function(app){
 
 define('scroll', ['app', 'scroll'], function(app){
     app.service('cfScroll', function(){
-        return function(element, useTop){
+        return function(element, useTop, force){
             var rect = element.getBoundingClientRect();
             var bottom = window.innerHeight;
             var delta = (useTop ? rect.top : rect.bottom) - bottom;
-            if (delta > 0 && delta < bottom) {
+            if (force || (delta > 0 && delta < bottom)) {
                 window.scrollBy(0, delta);
             }
         };
@@ -1086,7 +1095,10 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                                         processDownloadedTest(xhr.responseText, testToCheck);
                                         $scope.submitTestUpdate(testToCheck);
                                         $scope.$digest();
-                                    } catch (e){}
+                                    } catch (e){
+                                        alert('Something went wrong when processing updated test file - looks like JSON is invalid: ' + String(e));
+                                        $scope.discovery.scripts.rawContents[testToCheck] = xhr.responseText;
+                                    }
                                 }
                             }
                             setTimeout(refreshCurrentTest, 1000);

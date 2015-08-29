@@ -332,7 +332,10 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                                         processDownloadedTest(xhr.responseText, testToCheck);
                                         $scope.submitTestUpdate(testToCheck);
                                         $scope.$digest();
-                                    } catch (e){}
+                                    } catch (e){
+                                        alert('Something went wrong when processing updated test file - looks like JSON is invalid: ' + String(e));
+                                        $scope.discovery.scripts.rawContents[testToCheck] = xhr.responseText;
+                                    }
                                 }
                             }
                             setTimeout(refreshCurrentTest, 1000);
