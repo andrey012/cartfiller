@@ -432,11 +432,13 @@
          * Displays comment message over the overlay in the main frame
          * @function CartFiller.Api#say
          * @param {String} message
+         * @param {boolean} pre Preserve formatting (if set to true then message will be wrapped
+         * with &lt;pre&gt; tag)
          * @return {CartFiller.Api} for chaining
          * @access public
          */
-        say: function(message){
-            me.modules.ui.say(message);
+        say: function(message, pre){
+            me.modules.ui.say(message, pre);
             return this;
         },
         /**
@@ -771,7 +773,7 @@
                 if (! p.test(name.toString())) {
                     var err = 'invalid shared function definition, if name is not specified as first parameter of api.define() call, then function should be named';
                     alert(err);
-                    throw err;
+                    throw new Error(err);
                 }
                 var m = p.exec(name.toString());
                 fn = name;

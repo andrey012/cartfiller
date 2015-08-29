@@ -157,7 +157,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1460590006798';
+    config.gruntBuildTimeStamp='1460590913343';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -633,11 +633,13 @@
          * Displays comment message over the overlay in the main frame
          * @function CartFiller.Api#say
          * @param {String} message
+         * @param {boolean} pre Preserve formatting (if set to true then message will be wrapped
+         * with &lt;pre&gt; tag)
          * @return {CartFiller.Api} for chaining
          * @access public
          */
-        say: function(message){
-            me.modules.ui.say(message);
+        say: function(message, pre){
+            me.modules.ui.say(message, pre);
             return this;
         },
         /**
@@ -972,7 +974,7 @@
                 if (! p.test(name.toString())) {
                     var err = 'invalid shared function definition, if name is not specified as first parameter of api.define() call, then function should be named';
                     alert(err);
-                    throw err;
+                    throw new Error(err);
                 }
                 var m = p.exec(name.toString());
                 fn = name;
@@ -1576,7 +1578,7 @@
                 me.modules.ui.preventPageReload();
                 return;
             } else {
-                throw('unknown job details package - should have either details or $cartFillerTestUpdate');
+                throw new Error('unknown job details package - should have either details or $cartFillerTestUpdate');
             }
 
             this.postMessageToWorker('jobDetails', message);
@@ -1626,6 +1628,7 @@
 
             } catch (e){
                 alert(e);
+                console.log(e);
                 throw e;
             }
         },
@@ -1997,7 +2000,7 @@
                     if (! sharedWorkerFunctions[arg]) {
                         var err = 'bad worker - shared function was not defined: [' + arg + ']';
                         alert(err);
-                        throw err;
+                        throw new Error(err);
                     }
                     return sharedWorkerFunctions[arg].apply(worker, arguments);
                 };
@@ -2049,7 +2052,7 @@
             } else if ('string' === typeof message){
                 status = recoverable ? 'skip' : 'error';
             } else {
-                throw 'invalid message type ' + typeof(message);
+                throw new Error('invalid message type ' + typeof(message));
             }
             removeWatchdogHandler();
             clearRegisteredTimeoutsAndIntervals();
@@ -2441,6 +2444,12 @@
      */
     var messageToSay = '';
     /**
+     * Whether to wrap messageToSay with &lt;pre&gt;
+     * @member {boolean} CartFiller.UI~wrapMessageToSayWithPre
+     * @access private
+     */
+    var wrapMessageToSayWithPre = false;
+    /**
      * Keeps current message that is already on the screen to trigger refresh
      * @member {String} CartFiller.UI~currentMessageOnScreen
      * @access private
@@ -2784,7 +2793,15 @@
             messageDiv.style.position = 'fixed';
             messageDiv.style.fontSize = '20px';
             messageDiv.className = overlayClassName;
-            messageDiv.textContent = messageToSay;
+            if (! wrapMessageToSayWithPre) {
+                messageDiv.textContent = messageToSay;
+            } else {
+                var pre = overlayWindow().document.createElement('pre');
+                messageDiv.appendChild(pre);
+                pre.textContent = messageToSay;
+                pre.style.backgroundColor = '#fff';
+                pre.style.border = 'none';
+            }
             messageDiv.onclick = function(){removeOverlay(true);};
             overlayWindow().document.getElementsByTagName('body')[0].appendChild(messageDiv);
             messageAdjustmentRemainingAttempts = 100;
@@ -3167,10 +3184,12 @@
          * Displays comment message over the overlay in the main frame
          * @function CartFiller.UI#say
          * @param {String} text
+         * @param {boolean} pre
          * @access public
          */
-        say: function(text){
+        say: function(text, pre){
             messageToSay = undefined === text ? '' : text;
+            wrapMessageToSayWithPre = pre;
             currentMessageDivWidth = Math.max(100, Math.round(this.mainFrameWindow.innerWidth * 0.5));
             messageAdjustmentRemainingAttempts = 100;
         },

@@ -83,6 +83,12 @@
      */
     var messageToSay = '';
     /**
+     * Whether to wrap messageToSay with &lt;pre&gt;
+     * @member {boolean} CartFiller.UI~wrapMessageToSayWithPre
+     * @access private
+     */
+    var wrapMessageToSayWithPre = false;
+    /**
      * Keeps current message that is already on the screen to trigger refresh
      * @member {String} CartFiller.UI~currentMessageOnScreen
      * @access private
@@ -426,7 +432,15 @@
             messageDiv.style.position = 'fixed';
             messageDiv.style.fontSize = '20px';
             messageDiv.className = overlayClassName;
-            messageDiv.textContent = messageToSay;
+            if (! wrapMessageToSayWithPre) {
+                messageDiv.textContent = messageToSay;
+            } else {
+                var pre = overlayWindow().document.createElement('pre');
+                messageDiv.appendChild(pre);
+                pre.textContent = messageToSay;
+                pre.style.backgroundColor = '#fff';
+                pre.style.border = 'none';
+            }
             messageDiv.onclick = function(){removeOverlay(true);};
             overlayWindow().document.getElementsByTagName('body')[0].appendChild(messageDiv);
             messageAdjustmentRemainingAttempts = 100;
@@ -809,10 +823,12 @@
          * Displays comment message over the overlay in the main frame
          * @function CartFiller.UI#say
          * @param {String} text
+         * @param {boolean} pre
          * @access public
          */
-        say: function(text){
+        say: function(text, pre){
             messageToSay = undefined === text ? '' : text;
+            wrapMessageToSayWithPre = pre;
             currentMessageDivWidth = Math.max(100, Math.round(this.mainFrameWindow.innerWidth * 0.5));
             messageAdjustmentRemainingAttempts = 100;
         },

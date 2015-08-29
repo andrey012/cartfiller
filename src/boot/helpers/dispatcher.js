@@ -590,7 +590,7 @@
                 me.modules.ui.preventPageReload();
                 return;
             } else {
-                throw('unknown job details package - should have either details or $cartFillerTestUpdate');
+                throw new Error('unknown job details package - should have either details or $cartFillerTestUpdate');
             }
 
             this.postMessageToWorker('jobDetails', message);
@@ -640,6 +640,7 @@
 
             } catch (e){
                 alert(e);
+                console.log(e);
                 throw e;
             }
         },
@@ -1011,7 +1012,7 @@
                     if (! sharedWorkerFunctions[arg]) {
                         var err = 'bad worker - shared function was not defined: [' + arg + ']';
                         alert(err);
-                        throw err;
+                        throw new Error(err);
                     }
                     return sharedWorkerFunctions[arg].apply(worker, arguments);
                 };
@@ -1063,7 +1064,7 @@
             } else if ('string' === typeof message){
                 status = recoverable ? 'skip' : 'error';
             } else {
-                throw 'invalid message type ' + typeof(message);
+                throw new Error('invalid message type ' + typeof(message));
             }
             removeWatchdogHandler();
             clearRegisteredTimeoutsAndIntervals();
