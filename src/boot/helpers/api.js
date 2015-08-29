@@ -660,7 +660,7 @@
         type: function(value, whatNext) {
             return [
                 'type key sequence',
-                function(el) {
+                function(el, env) {
                     var elementNode;
                     if ('object' === typeof el && 'string' === typeof el.jquery && undefined !== el.length) {
                         elementNode = el[0];
@@ -686,7 +686,12 @@
                         var charCode = char.charCodeAt(0);
                         var charCodeGetter = {get : function() { return charCode; }};
                         var metaKeyGetter = {get : function() { return false; }};
+                        var doKeyPress = true;
+                        var dispatchEventResult;
                         for (var eventName in {keydown: 0, keypress: 0, keyup: 0}) {
+                            if ('keypress' === eventName && ! doKeyPress) {
+                                continue;
+                            }
                             var e = document.createEvent('KeyboardEvent');
                             Object.defineProperty(e, 'keyCode', charCodeGetter);
                             Object.defineProperty(e, 'charCode', charCodeGetter);
@@ -705,7 +710,12 @@
                                 me.modules.api.result('could not set metaKey to false');
                                 return false;
                             }
-                            if (elementNode.dispatchEvent(e) && 'keypress' === eventName) {
+                            dispatchEventResult = elementNode.dispatchEvent(e);
+                            if (! dispatchEventResult && 'keydown' === eventName) {
+                                // do not send keypress event if keydown event returned false
+                                doKeyPress = false;
+                            }
+                            if (dispatchEventResult && 'keypress' === eventName) {
                                 elementNode.value = elementNode.value + char;
                             }
                         }
