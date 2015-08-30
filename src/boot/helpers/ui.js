@@ -731,7 +731,6 @@
                 chooseJobFrameLoaded = true;
             }
             this.chooseJobFrame.style.display = show ? 'block' : 'none';
-            this.setSize(show ? 'big' : 'small');
         },
         /**
          * Closes popup window in case of popup UI
@@ -1030,7 +1029,7 @@
                         i++;
                     }
                 }
-                stack.unshift({element: el.nodeName.toLowerCase(), attrs: attrs, classes: el.className.split(' ').filter(function(v){return v;}), id: el.id, index: i, text: String(el.innerText).length < 200 ? String(el.innerText) : ''});
+                stack.unshift({element: el.nodeName.toLowerCase(), attrs: attrs, classes: el.className.split(' ').filter(function(v){return v;}), id: el.id, index: i, text: String(el.textContent).length < 200 ? String(el.innerText) : ''});
                 el = el.parentNode;
             }
             me.modules.dispatcher.postMessageToWorker('mousePointer', {x: x, y: y, stack: stack});

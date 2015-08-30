@@ -82,7 +82,9 @@ define('controller', ['app', 'scroll'], function(app){
         };
         var autorun = function() {
             if ($scope.workersLoaded >= $scope.workersCounter) {
-                $scope.runNoWatch(autorunSpeed === 'slow' ? true : false, null, true);
+                if (! $scope.pausePoints[$scope.currentTask] || ! $scope.pausePoints[$scope.currentTask][$scope.currentStep]) {
+                    $scope.runNoWatch(autorunSpeed === 'slow' ? true : false, null, true);
+                }
             } else {
                 // wait some more time
                 setTimeout(autorun, 1000);
@@ -103,6 +105,7 @@ define('controller', ['app', 'scroll'], function(app){
                         })();
                     } else {
                         cfMessage.send('makeSmaller');
+                        cfScroll();
                         $scope.trackWorker = details.trackWorker;
                         $scope.chooseJobState = false;
                         $scope.jobDetails = details.details;
@@ -251,7 +254,9 @@ define('controller', ['app', 'scroll'], function(app){
             }
         });
         $scope.incrementCurrentStep = function(skip, nextTaskFlow){
-            $scope.currentStep ++;
+            if (nextTaskFlow !== 'repeatStep') {
+                $scope.currentStep ++;
+            }
             var oldCurrentTask = $scope.currentTask;
             if (skip || nextTaskFlow === 'skipTask' || nextTaskFlow === 'repeatTask' || $scope.jobTaskDescriptions[$scope.jobDetails[$scope.currentTask].task].length <= $scope.currentStep){
                 $scope.currentStep = 0;
@@ -530,7 +535,7 @@ define('controller', ['app', 'scroll'], function(app){
             $scope.indexTitles = {};
             var space = String.fromCharCode(0xa0);
             angular.forEach($scope.jobTaskDescriptions, function(details, task){
-                var len = String(details.length+1).length;
+                var len = String(details.length).length;
                 $scope.indexTitles[task] = [];
                 for (var i = 0; i < details.length; i++){
                     var r = String(i+1);

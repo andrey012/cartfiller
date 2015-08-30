@@ -485,7 +485,7 @@
                 if (pattern.test(event.data)){
                     var match = pattern.exec(event.data);
                     var message = JSON.parse(match[1]);
-                    if (event.source === relay.nextRelay &amp;&amp; message.cmd !== 'register' &amp;&amp; message.cmd !== 'bubbleRelayMessage') {
+                    if (event.source === relay.nextRelay &amp;&amp; message.cmd !== 'register' &amp;&amp; message.cmd !== 'bubbleRelayMessage' &amp;&amp; message.cmd !== 'locate') {
                         if (message.cmd === 'workerStepResult') {
                             fillWorkerGlobals(message.globals);
                         }
@@ -976,6 +976,12 @@
             }
         },
         /**
+         * //// 
+         */
+        onMessage_locate: function() {
+            alert('Here I am!');
+        },
+        /**
          * Handles "main frame loaded" event. If both main frame and 
          * worker (job progress) frames are loaded then bootstraps 
          * job progress frame
@@ -1278,9 +1284,21 @@
             while (body.children.length) {
                 body.removeChild(body.children[0]);
             }
-            var span = document.createElement('span');
-            span.innerText = 'this frame is used by cartFiller as slave, do not close it';
-            body.appendChild(span);
+            var link = document.createElement('a');
+            try {
+                link.textContent = 'This tab is used by cartFiller as slave, DO NOT CLOSE IT!, click this message to locate original tab.';
+                link.style.color = 'red';
+                link.style.display = 'block';
+                link.style.padding = '20px';
+                link.setAttribute('href', '#');
+                link.onclick = function() {
+                    window.opener.postMessage('cartFillerMessage:{"cmd":"locate"}', '*');
+                };
+            } catch (e) {}
+            body.appendChild(link);
+            try {
+                link.focus();
+            } catch (e) {}
             // initialize
             worker = {};
             me.modules.dispatcher.init();
@@ -1396,13 +1414,13 @@
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Externals</h3><ul><li><a href="external%2520jQuery.external__jQuery.fn_.html">jQuery.fn</a></li><li><a href="external-jQuery.html">jQuery</a></li></ul><h3>Classes</h3><ul><li><a href="CartFiller.Api.html">Api</a></li><li><a href="CartFiller.Api.StepEnvironment.html">StepEnvironment</a></li><li><a href="CartFiller.Api.WorkerTask.html">WorkerTask</a></li><li><a href="CartFiller.Api.WorkerTasks.html">WorkerTasks</a></li><li><a href="CartFiller.Configuration.html">Configuration</a></li><li><a href="CartFiller.Dispatcher.html">Dispatcher</a></li><li><a href="CartFiller.Injector.html">Injector</a></li><li><a href="CartFiller.Loader.html">Loader</a></li><li><a href="CartFiller.SampleWorker.html">SampleWorker</a></li><li><a href="CartFiller.SampleWorker.SampleWorkerTasks.html">SampleWorkerTasks</a></li><li><a href="CartFiller.UI.html">UI</a></li><li><a href="CartFiller.UI.ArrowToElement.html">ArrowToElement</a></li><li><a href="CartFillerPlugin-JobDetails.html">JobDetails</a></li><li><a href="CartFillerPlugin-Plugin.html">Plugin</a></li><li><a href="CartFillerPlugin-Settings.html">Settings</a></li></ul><h3>Namespaces</h3><ul><li><a href="CartFiller.html">CartFiller</a></li><li><a href="CartFillerPlugin.html">CartFillerPlugin</a></li></ul><h3>Global</h3><ul><li><a href="global.html#%2522jQuery.cartFillerPlugin.hideChooseJobFrame%2522">"jQuery.cartFillerPlugin.hideChooseJobFrame"</a></li><li><a href="global.html#%2522jQuery.cartFillerPlugin.showChooseJobFrame%2522">"jQuery.cartFillerPlugin.showChooseJobFrame"</a></li><li><a href="global.html#%2522jQuery.cartFillerPlugin%2522">"jQuery.cartFillerPlugin"</a></li><li><a href="global.html#%2522jQuery.fn.cartFillerPlugin%2522">"jQuery.fn.cartFillerPlugin"</a></li><li><a href="global.html#defineSharedWorkerFunction">defineSharedWorkerFunction</a></li><li><a href="global.html#onMessage_postMessage">onMessage_postMessage</a></li><li><a href="global.html#onMessage_reportingMousePointerClick">onMessage_reportingMousePointerClick</a></li><li><a href="global.html#reportingMousePointerClick">reportingMousePointerClick</a></li><li><a href="global.html#testApiMap">testApiMap</a></li><li><a href="global.html#workerEventListeners">workerEventListeners</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Externals</h3><ul><li><a href="external%2520jQuery.external__jQuery.fn_.html">jQuery.fn</a></li><li><a href="external-jQuery.html">jQuery</a></li></ul><h3>Classes</h3><ul><li><a href="CartFiller.Api.html">Api</a></li><li><a href="CartFiller.Api.StepEnvironment.html">StepEnvironment</a></li><li><a href="CartFiller.Api.WorkerTask.html">WorkerTask</a></li><li><a href="CartFiller.Api.WorkerTasks.html">WorkerTasks</a></li><li><a href="CartFiller.Configuration.html">Configuration</a></li><li><a href="CartFiller.Dispatcher.html">Dispatcher</a></li><li><a href="CartFiller.Injector.html">Injector</a></li><li><a href="CartFiller.Loader.html">Loader</a></li><li><a href="CartFiller.SampleWorker.html">SampleWorker</a></li><li><a href="CartFiller.SampleWorker.SampleWorkerTasks.html">SampleWorkerTasks</a></li><li><a href="CartFiller.UI.html">UI</a></li><li><a href="CartFiller.UI.ArrowToElement.html">ArrowToElement</a></li><li><a href="CartFillerPlugin-JobDetails.html">JobDetails</a></li><li><a href="CartFillerPlugin-Plugin.html">Plugin</a></li><li><a href="CartFillerPlugin-Settings.html">Settings</a></li></ul><h3>Namespaces</h3><ul><li><a href="CartFiller.html">CartFiller</a></li><li><a href="CartFillerPlugin.html">CartFillerPlugin</a></li></ul><h3>Global</h3><ul><li><a href="global.html#%2522jQuery.cartFillerPlugin.hideChooseJobFrame%2522">"jQuery.cartFillerPlugin.hideChooseJobFrame"</a></li><li><a href="global.html#%2522jQuery.cartFillerPlugin.showChooseJobFrame%2522">"jQuery.cartFillerPlugin.showChooseJobFrame"</a></li><li><a href="global.html#%2522jQuery.cartFillerPlugin%2522">"jQuery.cartFillerPlugin"</a></li><li><a href="global.html#%2522jQuery.fn.cartFillerPlugin%2522">"jQuery.fn.cartFillerPlugin"</a></li><li><a href="global.html#defineSharedWorkerFunction">defineSharedWorkerFunction</a></li><li><a href="global.html#onMessage_locate">onMessage_locate</a></li><li><a href="global.html#onMessage_postMessage">onMessage_postMessage</a></li><li><a href="global.html#onMessage_reportingMousePointerClick">onMessage_reportingMousePointerClick</a></li><li><a href="global.html#reportingMousePointerClick">reportingMousePointerClick</a></li><li><a href="global.html#testApiMap">testApiMap</a></li><li><a href="global.html#workerEventListeners">workerEventListeners</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.3</a> on Mon Apr 18 2016 11:50:19 GMT+0300 (MSK)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0</a> on Mon Apr 18 2016 22:39:55 GMT+0300 (MSK)
 </footer>
 
 <script> prettyPrint(); </script>

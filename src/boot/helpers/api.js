@@ -274,13 +274,25 @@
          * Tells that this task should be repeated, so cartFiller will
          * proceed with first step of this task. After using this function
          * you still have to call api.result, and it is important to call
-         * api.skipTask first and api.result then.
+         * api.repeatTask first and api.result then.
          * @function CartFiller.Api#repeatTask
          * @return {CartFiller.Api} for chaining
          * @access public
          */
         repeatTask: function() {
             me.modules.dispatcher.manageTaskFlow('repeatTask');
+            return this;
+        },
+        /**
+         * Tells that this step should be repeated. After using this function
+         * you still have to call api.result, and it is important to call
+         * api.repeatStep first and api.result then
+         * @function CartFiller.Api#repeatStep
+         * @return {CartFiller.Api} for chaining
+         * @access public
+         */
+        repeatStep: function() {
+            me.modules.dispatcher.manageTaskFlow('repeatStep');
             return this;
         },
         /**

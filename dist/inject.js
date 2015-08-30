@@ -157,7 +157,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1460969412903';
+    config.gruntBuildTimeStamp='1461008387986';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -475,13 +475,25 @@
          * Tells that this task should be repeated, so cartFiller will
          * proceed with first step of this task. After using this function
          * you still have to call api.result, and it is important to call
-         * api.skipTask first and api.result then.
+         * api.repeatTask first and api.result then.
          * @function CartFiller.Api#repeatTask
          * @return {CartFiller.Api} for chaining
          * @access public
          */
         repeatTask: function() {
             me.modules.dispatcher.manageTaskFlow('repeatTask');
+            return this;
+        },
+        /**
+         * Tells that this step should be repeated. After using this function
+         * you still have to call api.result, and it is important to call
+         * api.repeatStep first and api.result then
+         * @function CartFiller.Api#repeatStep
+         * @return {CartFiller.Api} for chaining
+         * @access public
+         */
+        repeatStep: function() {
+            me.modules.dispatcher.manageTaskFlow('repeatStep');
             return this;
         },
         /**
@@ -1457,7 +1469,7 @@
                 if (pattern.test(event.data)){
                     var match = pattern.exec(event.data);
                     var message = JSON.parse(match[1]);
-                    if (event.source === relay.nextRelay && message.cmd !== 'register' && message.cmd !== 'bubbleRelayMessage') {
+                    if (event.source === relay.nextRelay && message.cmd !== 'register' && message.cmd !== 'bubbleRelayMessage' && message.cmd !== 'locate') {
                         if (message.cmd === 'workerStepResult') {
                             fillWorkerGlobals(message.globals);
                         }
@@ -1948,6 +1960,12 @@
             }
         },
         /**
+         * //// 
+         */
+        onMessage_locate: function() {
+            alert('Here I am!');
+        },
+        /**
          * Handles "main frame loaded" event. If both main frame and 
          * worker (job progress) frames are loaded then bootstraps 
          * job progress frame
@@ -2250,9 +2268,21 @@
             while (body.children.length) {
                 body.removeChild(body.children[0]);
             }
-            var span = document.createElement('span');
-            span.innerText = 'this frame is used by cartFiller as slave, do not close it';
-            body.appendChild(span);
+            var link = document.createElement('a');
+            try {
+                link.textContent = 'This tab is used by cartFiller as slave, DO NOT CLOSE IT!, click this message to locate original tab.';
+                link.style.color = 'red';
+                link.style.display = 'block';
+                link.style.padding = '20px';
+                link.setAttribute('href', '#');
+                link.onclick = function() {
+                    window.opener.postMessage('cartFillerMessage:{"cmd":"locate"}', '*');
+                };
+            } catch (e) {}
+            body.appendChild(link);
+            try {
+                link.focus();
+            } catch (e) {}
             // initialize
             worker = {};
             me.modules.dispatcher.init();
@@ -3157,7 +3187,6 @@
                 chooseJobFrameLoaded = true;
             }
             this.chooseJobFrame.style.display = show ? 'block' : 'none';
-            this.setSize(show ? 'big' : 'small');
         },
         /**
          * Closes popup window in case of popup UI
@@ -3456,7 +3485,7 @@
                         i++;
                     }
                 }
-                stack.unshift({element: el.nodeName.toLowerCase(), attrs: attrs, classes: el.className.split(' ').filter(function(v){return v;}), id: el.id, index: i, text: String(el.innerText).length < 200 ? String(el.innerText) : ''});
+                stack.unshift({element: el.nodeName.toLowerCase(), attrs: attrs, classes: el.className.split(' ').filter(function(v){return v;}), id: el.id, index: i, text: String(el.textContent).length < 200 ? String(el.innerText) : ''});
                 el = el.parentNode;
             }
             me.modules.dispatcher.postMessageToWorker('mousePointer', {x: x, y: y, stack: stack});

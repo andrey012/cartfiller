@@ -457,7 +457,7 @@
                 if (pattern.test(event.data)){
                     var match = pattern.exec(event.data);
                     var message = JSON.parse(match[1]);
-                    if (event.source === relay.nextRelay && message.cmd !== 'register' && message.cmd !== 'bubbleRelayMessage') {
+                    if (event.source === relay.nextRelay && message.cmd !== 'register' && message.cmd !== 'bubbleRelayMessage' && message.cmd !== 'locate') {
                         if (message.cmd === 'workerStepResult') {
                             fillWorkerGlobals(message.globals);
                         }
@@ -948,6 +948,12 @@
             }
         },
         /**
+         * //// 
+         */
+        onMessage_locate: function() {
+            alert('Here I am!');
+        },
+        /**
          * Handles "main frame loaded" event. If both main frame and 
          * worker (job progress) frames are loaded then bootstraps 
          * job progress frame
@@ -1250,9 +1256,21 @@
             while (body.children.length) {
                 body.removeChild(body.children[0]);
             }
-            var span = document.createElement('span');
-            span.innerText = 'this frame is used by cartFiller as slave, do not close it';
-            body.appendChild(span);
+            var link = document.createElement('a');
+            try {
+                link.textContent = 'This tab is used by cartFiller as slave, DO NOT CLOSE IT!, click this message to locate original tab.';
+                link.style.color = 'red';
+                link.style.display = 'block';
+                link.style.padding = '20px';
+                link.setAttribute('href', '#');
+                link.onclick = function() {
+                    window.opener.postMessage('cartFillerMessage:{"cmd":"locate"}', '*');
+                };
+            } catch (e) {}
+            body.appendChild(link);
+            try {
+                link.focus();
+            } catch (e) {}
             // initialize
             worker = {};
             me.modules.dispatcher.init();
