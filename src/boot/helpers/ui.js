@@ -333,7 +333,7 @@
                 horizontalLineOverlay(0, top - 10, el.left - 30);
                 horizontalArrowOverlayRight(el.left - 30, top);
             } else if (el.top > 40) {
-                left = el.left + Math.min(30, Math.round(el.width / 2));
+                left = el.left + Math.min(30 + i * 30, Math.round(el.width / 2));
                 horizontalLineOverlay(0, 0, left - 10);
                 verticalLineOverlay(left - 10, 0, el.top - 30);
                 verticalArrowOverlayDown(left, el.top - 30);

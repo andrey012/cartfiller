@@ -46,6 +46,7 @@ define('controller', ['app', 'scroll'], function(app){
         $scope.jobDetails = [];
         $scope.jobTaskProgress = [];
         $scope.jobTaskDescriptions = {};
+        $scope.jobTaskDiscoveredParameters = {};
         $scope.indexTitles = {};
         $scope.running = false;
         $scope.workerInProgress = false;
@@ -162,6 +163,7 @@ define('controller', ['app', 'scroll'], function(app){
                 $scope.$apply(function(){
                     $scope.workersLoaded ++;
                     $scope.jobTaskDescriptions = details.jobTaskDescriptions;
+                    $scope.jobTaskDiscoveredParameters = details.discoveredParameters;
                     $scope.updateIndexTitles();
                 });
             } else if (cmd === 'workerStepResult'){
@@ -595,6 +597,29 @@ define('controller', ['app', 'scroll'], function(app){
             scope.toggleSearch = function() {
                 scope.searchVisible = ! scope.searchVisible;
             };
+            scope.textareaKeyUp = function($event){
+                if ($event.keyCode === 27) {
+                    scope.toggleSearch();
+                }
+            };
+        },1000);
+        setTimeout(function initAvailableTasksOfWorkerScope() {
+            var scope = angular.element(document.getElementById('availableTasksOfWorker')).scope();
+            if (! scope) {
+                setTimeout(initAvailableTasksOfWorkerScope,1000);
+                return;
+            }
+            scope.filter = '';
+            scope.expanded = '';
+            scope.onSearch = function(){
+                scope.filter = $('#availableTasksOfWorkerSearch').val().toLowerCase();
+                if (event.keyCode === 27) {
+                    $scope.suggestTaskNameNoWatch();
+                }
+            };
+            scope.expand = function(name) {
+                scope.expanded = scope.expanded === name ? '' : name;
+            };
         },1000);
         $scope.togglePause = function(element, event) {
             var s = element.getAttribute('id').split('_');
@@ -613,6 +638,45 @@ define('controller', ['app', 'scroll'], function(app){
                 return true;
             }
             return ! $scope.jobTaskDescriptions[task].length;
+        };
+        $scope.suggestTaskNameNoWatch = function() {
+            if ($('#jobDetails').is(':visible')) {
+                $('#jobDetails').hide();
+                $('#buttonPanel').hide();
+                $('#availableTasksOfWorker').show().data('scroll', $(window).scrollTop());
+                cfMessage.send('toggleSize', {size: 'big'});
+            } else {
+                $('#jobDetails').show();
+                $('#buttonPanel').show();
+                $('#availableTasksOfWorker').hide();
+                window.scrollTo(0, $('#availableTasksOfWorker').data('scroll'));
+                cfMessage.send('toggleSize', {size: 'small'});
+            }
+            return false;
+        };
+        $scope.taskExplorerParameterEnteredNoWatch = function(input, event){
+            var task = $(input).closest('table');
+            var result = {task: task.attr('data-name')};
+            if (! $(input).is('.result')) {
+                task.find('input').each(function(i,el){
+                    el = $(el);
+                    var name = el.attr('name');
+                    var value = el.val();
+                    if (value.length && name) {
+                        result[name] = value;
+                    }
+                });
+                task.find('textarea.result').val($scope.getSuggestTaskJsonForTask('', result));
+            }
+            if (event.keyCode === 27) {
+                $scope.suggestTaskNameNoWatch();
+            }
+        };
+        $scope.getSuggestTaskJsonForTask = function (name, result) {
+            if ('undefined' === typeof result) {
+                result = {task: name};
+            }
+            return '\n        ' + JSON.stringify(result) + ',';
         };
     }]);
 });

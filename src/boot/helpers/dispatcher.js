@@ -236,6 +236,7 @@
      * @access private
      */
     var resetWorker = function(){
+        clearRegisteredTimeoutsAndIntervals();
         workerCurrentTaskIndex = workerCurrentStepIndex = workerOnLoadHandler = false;
     };
     /**
@@ -390,6 +391,49 @@
         }
         evaluateNextWorker();
     };
+    /**
+     * Discovers task parameters, that are used by this function 
+     * looking for patters like task.theparameter or task['the parameter']
+     * @param {Function} fn
+     * @param {Object} allParams holds all parameters, parameters discovered
+     * here are added to this map
+     * @return {Object} discovered parameters
+     * @access private
+     */
+    var discoverTaskParameters = function(fn, allParams) {
+        var params = {};
+        [
+            /[^a-zA-Z0-9_$]task\.([a-zA-Z0-9_$]+)[^a-zA-Z0-9_$]/g, 
+            /[^a-zA-Z0-9_$]task\[['"]([^'"]+)['"]\]/g]
+            .filter(function(pattern) {
+
+                var localPattern = new RegExp(pattern.source);
+                var s = fn.toString();
+                var m = s.match(pattern);
+                if (m) {
+                    m.filter(function(v){
+                        var paramMatch = localPattern.exec(v);
+                        if (paramMatch) {
+                            params[paramMatch[1]] = allParams[paramMatch[1]] = true;
+                        }
+                    });
+                }
+
+                var declaredParameterList = fn.cartFillerParameterList;
+                if ('undefined' !== typeof declaredParameterList) {
+                    if (declaredParameterList instanceof Array) {
+                        declaredParameterList.filter(function(v) {
+                            params[v] = allParams[v] = true;
+                        });
+                    } else {
+                        for (var i in declaredParameterList) {
+                            params[i] = allParams[i] = true;
+                        }
+                    }
+                }
+            });
+        return params;
+    };
 
     this.cartFillerConfiguration.scripts.push({
         /** 
@@ -513,10 +557,11 @@
         /**
          * Toggles size of worker (job progress) frame
          * @function CartFiller.Dispatcher#onMessage_toggleSize
+         * @param {Object} details
          * @access public
          */
-        onMessage_toggleSize: function(){
-            me.modules.ui.setSize();
+        onMessage_toggleSize: function(details){
+                me.modules.ui.setSize(details.size);
         },
         /**
          * Shows Choose Job frame
@@ -1019,6 +1064,7 @@
             });
             var thisWorker = cb.apply(undefined, args);
             var list = {};
+            var discoveredParameters = {};
             for (var taskName in thisWorker){
                 if (thisWorker.hasOwnProperty(taskName)){
                     worker[taskName] = recursivelyCollectSteps(thisWorker[taskName]);
@@ -1026,15 +1072,22 @@
             }
             for (taskName in worker) {
                 var taskSteps = [];
+                var params = {};
+                var allParams = {};
                 for (var i = 0 ; i < worker[taskName].length; i++){
                     // this is step name/comment
                     if ('string' === typeof worker[taskName][i]){
                         taskSteps.push(worker[taskName][i]);
+                        if (worker[taskName][i+1] instanceof Function) {
+                            params[taskSteps.length - 1] = discoverTaskParameters(worker[taskName][i+1], allParams);
+                        }
                     }
                 }
+                params.all = allParams;
                 list[taskName] = taskSteps;
+                discoveredParameters[taskName] = params;
             }
-            this.postMessageToWorker('workerRegistered', {jobTaskDescriptions: list});
+            this.postMessageToWorker('workerRegistered', {jobTaskDescriptions: list, discoveredParameters: discoveredParameters});
         },
         /**
          * Remembers directions for task flow to be passed to worker (job progress)
@@ -1073,7 +1126,7 @@
                 stepRepeatCounter ++;
                 var m = /repeat(\d+)/.exec(currentStepWorkerFn.toString().split(')')[0]);
                 if (m && m[1] > stepRepeatCounter) {
-                    setTimeout(function() {
+                    me.modules.api.setTimeout(function() {
                         currentStepWorkerFn(highlightedElement, currentStepEnv);
                     }, 1000);
                     return;

@@ -13,6 +13,8 @@
         #jobDetails h1, #jobDetails h2, #jobDetails h3 {margin: 0px;}
         .pause-active {background-color: red;}
         .nobr {display: inline-block; white-space: nowrap;}
+        #availableTasksOfWorker input, #availableTasksOfWorker textarea {width: 100%;}
+        #availableTasksOfWorker .highlighted {background-color: yellow;}
     </style>
 </head>
 <body>
@@ -156,8 +158,9 @@
                    onclick="var event = arguments[0] || window.event; return angular.element(this).scope().resetWorkerNoWatch(event);">RESET WORKER</a>
             </div>
             <div ng-if="debugEnabled" style="text-align: left;">
-                <a class="btn btn-xs btn-success" onclick="var event = arguments[0] || window.event; return angular.element(this).scope().refreshPageNoWatch(event);" href="#">Refresh</a>
-                <a id="searchButton" class="btn btn-xs btn-success" onclick="return angular.element(this).scope().performSearchNoWatch();">Search</a>
+                <a class="btn btn-xs btn-success" onclick="var event = arguments[0] || window.event; return angular.element(this).scope().refreshPageNoWatch(event);" href="#" title="Refresh page in the main frame">Refresh</a>
+                <a id="searchButton" class="btn btn-xs btn-success" onclick="return angular.element(this).scope().performSearchNoWatch();" title="Show DOM path for an element and build jQuery selector">Search</a>
+                <a id="suggestButton" class="btn btn-xs btn-success" onclick="return angular.element(this).scope().suggestTaskNameNoWatch();" title="Search for task name from worker">Suggest</a>
                 <div id="searchResults" ng-repeat="dummy in [0]">
                     <div ng-if="searchVisible">
                         <div>
@@ -185,7 +188,7 @@
                                 </button>
                             </div>
                         </div>
-                        <textarea onclick="this.select()" readonly style="width: 100%">{{getCssSelector(stack)}}</textarea>
+                        <textarea onclick="this.select()" readonly style="width: 100%" ng-keyup="textareaKeyUp($event)">{{getCssSelector(stack)}}</textarea>
 
                     </div>
                 </div>
@@ -195,6 +198,44 @@
 
         </div>
         <a class="btn btn-info btn-xs" style="width: 100%; margin-top: 110px; margin-bottom: 5px;" onclick="alert('Long click on step = debug, long click on Run (fast and slow) = Run until particular step, double click on property value = change property value');">help</a>
+        <div id="availableTasksOfWorker" style="display: none;" ng-repeat="dummy in [0]">
+            <a class="btn btn-success" onclick="return angular.element(this).scope().suggestTaskNameNoWatch();">Close</a>
+            <input id="availableTasksOfWorkerSearch" placeholder="search/filter" type="text" ng-keyup="onSearch()"/>
+            <div ng-repeat="(name, steps) in jobTaskDescriptions"
+                 ng-if="-1 !== name.toLowerCase().indexOf(filter)"
+            >
+                <div ng-if="expanded != name">
+                    <span ng-if="filter.length" ng-click="expand(name)">
+                        {{name.substr(0, name.toLowerCase().indexOf(filter))}}<span class="highlighted">{{name.substr(name.toLowerCase().indexOf(filter), filter.length)}}</span>{{name.substr(name.toLowerCase().indexOf(filter) + filter.length)}}
+                    </span>
+                    <span ng-if="! filter.length" ng-click="expand(name)">
+                        {{name}}
+                    </span>
+                </div>
+                <div ng-if="expanded == name">
+                    <h3 ng-if="filter.length" ng-click="expand(name)">
+                        {{name.substr(0, name.toLowerCase().indexOf(filter))}}<span class="highlighted">{{name.substr(name.toLowerCase().indexOf(filter), filter.length)}}</span>{{name.substr(name.toLowerCase().indexOf(filter) + filter.length)}}
+                    </h3>
+                    <h3 ng-if="! filter.length" ng-click="expand(name)">
+                        {{name}}
+                    </h3>
+                    <table class="table" data-name="{{name}}">
+                        <tr ng-repeat="(parameterName, dummy) in jobTaskDiscoveredParameters[name].all">
+                            <td>{{parameterName}}</td>
+                            <td><input type="text" name="{{parameterName}}" onkeyup="var event = arguments[0] || window.event;  angular.element(this).scope().taskExplorerParameterEnteredNoWatch(this, event);"/></td>
+                        </tr>
+                        <tr>
+                            <td colspan="2"><textarea rows="3" readonly onclick="this.select();" onfocus="this.select();" class="result" onkeyup="var event = arguments[0] || window.event;  angular.element(this).scope().taskExplorerParameterEnteredNoWatch(this, event); this.select();">{{getSuggestTaskJsonForTask(name)}}</textarea></td>
+                        </tr>
+                    </table>
+                    <ol>
+                        <li ng-repeat="stepName in steps track by $index">
+                            {{stepName}}
+                        </li>
+                    </ol>
+                </div>
+            </div>
+        </div>
         <div id="jobDetails">
             <div id="{{'taskDiv_' + jobTaskIndex}}"
                  class="alert"

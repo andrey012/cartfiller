@@ -658,7 +658,7 @@
          * @access public
          */
         type: function(value, whatNext) {
-            return [
+            var r = [
                 'type key sequence',
                 function(el, env) {
                     var elementNode;
@@ -733,6 +733,8 @@
                     });
                 }
             ];
+            r[1].cartFillerParameterList = [value];
+            return r;
         },
         /**
          * Wrapper function for asynchronous things - catches exceptions and fires negative result
