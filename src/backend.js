@@ -91,6 +91,9 @@ var tearDownFn = function(code) {
 setInterval(function() {
     if (pulseTime < ((new Date()).getTime() - 60000)) {
         console.log('exitting with code 1 because there was no activity over recent 60 seconds');
+        if (childApp) {
+            childApp.kill();
+        }
         tearDownFn(1);
     }
 }, 1000);
