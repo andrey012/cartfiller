@@ -954,6 +954,15 @@
             alert('Here I am!');
         },
         /**
+         * Update hash URL of top window
+         * @function CartFiller.Dispatcher#onMessage_updateHashUrl
+         * @param {Object} details
+         * @access public
+         */
+        onMessage_updateHashUrl: function(details) {
+            window.location.hash = 'job=' + encodeURIComponent(details.jobName) + '&task=' + details.task + '&step=' + details.step;
+        },
+        /**
          * Handles "main frame loaded" event. If both main frame and 
          * worker (job progress) frames are loaded then bootstraps 
          * job progress frame

@@ -466,6 +466,14 @@
      * then cartFiller will ping workers each second and when workers are changed - they will be updated
      */
     /**
+     * @member {String} CartFillerPlugin~JobDetails#jobName optional parameter to identify
+     * job, used only for testSuites to form hash part of URL of top window
+     */
+    /**
+     * @member {String} CartFillerPlugin~JobDetails#jobTitle optional parameter to give 
+     * user-friendly job title
+     */
+    /**
      * Global plugin function - sends job details to cartFiller and
      * registers optional callback, that will receive results.
      * @function external:"jQuery".cartFillerPlugin

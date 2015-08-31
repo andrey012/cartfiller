@@ -256,8 +256,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                     setTimeout(function(){
                         $scope.runAll();
                     });
-                }
-                if ($scope.params.goto) {
+                } else if ($scope.params.goto) {
                     setTimeout(function() {
                         var index = $scope.getTestIndexByUrl($scope.params.goto);
                         if (undefined === index) {
@@ -266,6 +265,18 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                             $scope.runTest(index, $scope.params.slow ? 'slow' : 'fast', parseInt($scope.params.task) - 1, parseInt($scope.params.step) - 1);
                         }
                     });
+                } else if (cfMessage.hashUrl) {
+                    var m = /^#?job=([^&]*)&task=([^&]*)&step=([^&]*)$/.exec(cfMessage.hashUrl);
+                    if (m) {
+                        var jobName = decodeURIComponent(m[1]);
+                        for (var i = 0; i < $scope.discovery.scripts.urls.length; i ++) {
+                            if ($scope.discovery.scripts.urls[i] === jobName) {
+                                $scope.runTest(i, 'fast', parseInt(m[2]) - 1, parseInt(m[3]) - 1);
+                                return;
+                            }
+                        }
+                        alert('Job ' + jobName + ' not found');
+                    }
                 }
             } else {
                 // let's download next file
@@ -366,6 +377,8 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             test.rootCartfillerPath = $scope.discovery.currentRootPath;
             test.globals = $scope.discovery.scripts.tweaks[index];
             test.trackWorker = $scope.params.editor;
+            test.jobName = $scope.discovery.scripts.urls[index];
+            test.jobTitle = $scope.discovery.scripts.contents[index].title ? $scope.discovery.scripts.contents[index].title : $scope.discovery.scripts.urls[index];
             if (undefined !== untilTask) {
                 test.autorunUntilTask = untilTask;
                 test.autorunUntilStep = undefined !== untilStep ? untilStep : 0;
@@ -373,6 +386,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                 delete test.autorunUntilTask;
                 delete test.autorunUntilStep;
             }
+
             $.cartFillerPlugin(
                 test,
                 false,
@@ -467,7 +481,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             return false;
         };
         $scope.getTaskUrl = function(testIndex, taskIndex, stepIndex) {
-            return window.location.href.split('?')[0] + '?goto=' + encodeURIComponent(encodeURIComponent($scope.discovery.scripts.urls[testIndex])) + '&task=' + (taskIndex + 1) + '&step=' + (stepIndex + 1);
+            return window.location.href.split('?')[0] + '?goto=' + encodeURIComponent(encodeURIComponent($scope.discovery.scripts.urls[testIndex])) + '&task=' + (taskIndex + 1) + '&step=' + (stepIndex + 1) + ($scope.params.editor ? ('&editor=' + encodeURIComponent($scope.params.editor)) : '');
         };
     }]);
 });

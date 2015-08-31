@@ -157,7 +157,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1461008387986';
+    config.gruntBuildTimeStamp='1461174295693';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -1964,6 +1964,15 @@
          */
         onMessage_locate: function() {
             alert('Here I am!');
+        },
+        /**
+         * Update hash URL of top window
+         * @function CartFiller.Dispatcher#onMessage_updateHashUrl
+         * @param {Object} details
+         * @access public
+         */
+        onMessage_updateHashUrl: function(details) {
+            window.location.hash = 'job=' + encodeURIComponent(details.jobName) + '&task=' + details.task + '&step=' + details.step;
         },
         /**
          * Handles "main frame loaded" event. If both main frame and 

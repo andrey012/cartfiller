@@ -79,6 +79,8 @@ define('controller', ['app', 'scroll'], function(app){
         $scope.doingOneStep = true;
         $scope.clickedWhileWorkerWasInProgress = false;
         $scope.noResultButton = false;
+        $scope.jobName = '';
+        $scope.jobTitle = '';
         var autorunSpeed;
         var mouseDownTime;
         var isLongClick = function($event){
@@ -102,6 +104,11 @@ define('controller', ['app', 'scroll'], function(app){
             } else {
                 // wait some more time
                 setTimeout(autorun, 1000);
+            }
+        };
+        var updateTopWindowHash = function() {
+            if ($scope.debugEnabled) {
+            	cfMessage.send('updateHashUrl', {jobName: $scope.jobName, task: $scope.currentTask + 1, step: $scope.currentStep + 1});
             }
         };
         cfMessage.register(function(cmd, details){
@@ -131,6 +138,9 @@ define('controller', ['app', 'scroll'], function(app){
                         $scope.currentTask = 0;
                         $scope.currentStep = 0;
                         $scope.noResultButton = ! details.resultMessage;
+                        $scope.jobName = 'undefined' === details.jobName ? '' : details.jobName;
+                        $scope.jobTitle = 'undefined' === details.jobTitle ? '' : details.jobTitle;
+                        updateTopWindowHash();
                         scrollCurrentTaskIntoView(true);
                         var workerSrc = '';
                         if (('string' === typeof details.workerSrc) && (details.workerSrc.length > 0)) {
@@ -306,6 +316,7 @@ define('controller', ['app', 'scroll'], function(app){
                 digestTask(oldCurrentTask);
             }
             digestTask($scope.currentTask);
+            updateTopWindowHash();
         };
         $scope.getNextStepToDo = function(index){
             var steps = $scope.jobTaskDescriptions[$scope.jobDetails[index].task];
@@ -703,7 +714,7 @@ define('controller', ['app', 'scroll'], function(app){
 (function(undefined) {
     var injector;
     var config = {};
-    config.gruntBuildTimeStamp='1461008388004';
+    config.gruntBuildTimeStamp='1461174295779';
     window.addEventListener('message', function(event){
         var test = /^cartFillerMessage:(.*)$/.exec(event.data);
         var isDist = true;
@@ -757,7 +768,8 @@ define('controller', ['app', 'scroll'], function(app){
                             register: function(cb){
                                 postMessageListeners.push(cb);
                             },
-                            testSuite: message.testSuite
+                            testSuite: message.testSuite,
+                            hashUrl: window.location.hash
                         };
                     });
                 });
@@ -1093,8 +1105,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                     setTimeout(function(){
                         $scope.runAll();
                     });
-                }
-                if ($scope.params.goto) {
+                } else if ($scope.params.goto) {
                     setTimeout(function() {
                         var index = $scope.getTestIndexByUrl($scope.params.goto);
                         if (undefined === index) {
@@ -1103,6 +1114,18 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                             $scope.runTest(index, $scope.params.slow ? 'slow' : 'fast', parseInt($scope.params.task) - 1, parseInt($scope.params.step) - 1);
                         }
                     });
+                } else if (cfMessage.hashUrl) {
+                    var m = /^#?job=([^&]*)&task=([^&]*)&step=([^&]*)$/.exec(cfMessage.hashUrl);
+                    if (m) {
+                        var jobName = decodeURIComponent(m[1]);
+                        for (var i = 0; i < $scope.discovery.scripts.urls.length; i ++) {
+                            if ($scope.discovery.scripts.urls[i] === jobName) {
+                                $scope.runTest(i, 'fast', parseInt(m[2]) - 1, parseInt(m[3]) - 1);
+                                return;
+                            }
+                        }
+                        alert('Job ' + jobName + ' not found');
+                    }
                 }
             } else {
                 // let's download next file
@@ -1203,6 +1226,8 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             test.rootCartfillerPath = $scope.discovery.currentRootPath;
             test.globals = $scope.discovery.scripts.tweaks[index];
             test.trackWorker = $scope.params.editor;
+            test.jobName = $scope.discovery.scripts.urls[index];
+            test.jobTitle = $scope.discovery.scripts.contents[index].title ? $scope.discovery.scripts.contents[index].title : $scope.discovery.scripts.urls[index];
             if (undefined !== untilTask) {
                 test.autorunUntilTask = untilTask;
                 test.autorunUntilStep = undefined !== untilStep ? untilStep : 0;
@@ -1210,6 +1235,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                 delete test.autorunUntilTask;
                 delete test.autorunUntilStep;
             }
+
             $.cartFillerPlugin(
                 test,
                 false,
@@ -1304,7 +1330,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             return false;
         };
         $scope.getTaskUrl = function(testIndex, taskIndex, stepIndex) {
-            return window.location.href.split('?')[0] + '?goto=' + encodeURIComponent(encodeURIComponent($scope.discovery.scripts.urls[testIndex])) + '&task=' + (taskIndex + 1) + '&step=' + (stepIndex + 1);
+            return window.location.href.split('?')[0] + '?goto=' + encodeURIComponent(encodeURIComponent($scope.discovery.scripts.urls[testIndex])) + '&task=' + (taskIndex + 1) + '&step=' + (stepIndex + 1) + ($scope.params.editor ? ('&editor=' + encodeURIComponent($scope.params.editor)) : '');
         };
     }]);
 });
@@ -1769,6 +1795,14 @@ define('jquery-cartFiller', ['jquery'], function() {
     /**
      * @member {Object} CartFillerPlugin~JobDetails#trackWorker optional parameter, when set to true
      * then cartFiller will ping workers each second and when workers are changed - they will be updated
+     */
+    /**
+     * @member {String} CartFillerPlugin~JobDetails#jobName optional parameter to identify
+     * job, used only for testSuites to form hash part of URL of top window
+     */
+    /**
+     * @member {String} CartFillerPlugin~JobDetails#jobTitle optional parameter to give 
+     * user-friendly job title
      */
     /**
      * Global plugin function - sends job details to cartFiller and

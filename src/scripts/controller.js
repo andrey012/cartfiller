@@ -65,6 +65,8 @@ define('controller', ['app', 'scroll'], function(app){
         $scope.doingOneStep = true;
         $scope.clickedWhileWorkerWasInProgress = false;
         $scope.noResultButton = false;
+        $scope.jobName = '';
+        $scope.jobTitle = '';
         var autorunSpeed;
         var mouseDownTime;
         var isLongClick = function($event){
@@ -88,6 +90,11 @@ define('controller', ['app', 'scroll'], function(app){
             } else {
                 // wait some more time
                 setTimeout(autorun, 1000);
+            }
+        };
+        var updateTopWindowHash = function() {
+            if ($scope.debugEnabled) {
+            	cfMessage.send('updateHashUrl', {jobName: $scope.jobName, task: $scope.currentTask + 1, step: $scope.currentStep + 1});
             }
         };
         cfMessage.register(function(cmd, details){
@@ -117,6 +124,9 @@ define('controller', ['app', 'scroll'], function(app){
                         $scope.currentTask = 0;
                         $scope.currentStep = 0;
                         $scope.noResultButton = ! details.resultMessage;
+                        $scope.jobName = 'undefined' === details.jobName ? '' : details.jobName;
+                        $scope.jobTitle = 'undefined' === details.jobTitle ? '' : details.jobTitle;
+                        updateTopWindowHash();
                         scrollCurrentTaskIntoView(true);
                         var workerSrc = '';
                         if (('string' === typeof details.workerSrc) && (details.workerSrc.length > 0)) {
@@ -292,6 +302,7 @@ define('controller', ['app', 'scroll'], function(app){
                 digestTask(oldCurrentTask);
             }
             digestTask($scope.currentTask);
+            updateTopWindowHash();
         };
         $scope.getNextStepToDo = function(index){
             var steps = $scope.jobTaskDescriptions[$scope.jobDetails[index].task];
@@ -650,6 +661,7 @@ define('controller', ['app', 'scroll'], function(app){
                 $('#buttonPanel').hide();
                 $('#availableTasksOfWorker').show().data('scroll', $(window).scrollTop());
                 cfMessage.send('toggleSize', {size: 'big'});
+                $('#availableTasksOfWorkerSearch').focus();
             } else {
                 $('#jobDetails').show();
                 $('#buttonPanel').show();

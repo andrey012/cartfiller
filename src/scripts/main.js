@@ -55,7 +55,8 @@
                             register: function(cb){
                                 postMessageListeners.push(cb);
                             },
-                            testSuite: message.testSuite
+                            testSuite: message.testSuite,
+                            hashUrl: window.location.hash
                         };
                     });
                 });
