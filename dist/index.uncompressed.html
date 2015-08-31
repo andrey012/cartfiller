@@ -197,7 +197,7 @@
         <div ng-if="chooseJobState" id="cartFillerOverlay" style="z-index: 100; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); position: absolute; top: 0px; left: 0px;">
 
         </div>
-        <a class="btn btn-info btn-xs" style="width: 100%; margin-top: 110px; margin-bottom: 5px;" onclick="alert('Long click on step = debug, long click on Run (fast and slow) = Run until particular step, double click on property value = change property value');">help</a>
+        <a class="btn btn-info btn-xs" style="width: 100%; margin-top: 110px; margin-bottom: 5px;" onclick="alert('Long click on step = debug, long click on Run (fast and slow) = Run until particular step, double click on property value = change property value, double click on pause = set pause here and run');">help</a>
         <div id="availableTasksOfWorker" style="display: none;" ng-repeat="dummy in [0]">
             <a class="btn btn-success" onclick="return angular.element(this).scope().suggestTaskNameNoWatch();">Close</a>
             <input id="availableTasksOfWorkerSearch" placeholder="search/filter" type="text" ng-keyup="onSearch()"/>
@@ -259,6 +259,7 @@
                                class="pause"
                                href="#" ng-class="pausePoints[jobTaskIndex][jobTaskStepIndex] ? 'pause-active' : ''"
                                onclick="var event = arguments[0] || window.event; return angular.element(this).scope().togglePause(this, event);"
+                               ondblclick="var event = arguments[0] || window.event; return angular.element(this).scope().togglePause(this, event, true);"
                                title="click to toggle pause at this point"
                             >||</a>
                             <a id="{{'stepButton_' + jobTaskIndex + '_' + jobTaskStepIndex}}"

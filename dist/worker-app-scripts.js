@@ -107,7 +107,7 @@ define('controller', ['app', 'scroll'], function(app){
             }
         };
         var updateTopWindowHash = function() {
-            if ($scope.debugEnabled) {
+            if ($scope.debugEnabled && $scope.jobUrl) {
             	cfMessage.send('updateHashUrl', {jobName: $scope.jobName, task: $scope.currentTask + 1, step: $scope.currentStep + 1});
             }
         };
@@ -651,16 +651,19 @@ define('controller', ['app', 'scroll'], function(app){
                 scope.expanded = scope.expanded === name ? '' : name;
             };
         },1000);
-        $scope.togglePause = function(element, event) {
+        $scope.togglePause = function(element, event, doubleclick) {
             var s = element.getAttribute('id').split('_');
             var taskIndex = parseInt(s[1]);
             var stepIndex = parseInt(s[2]);
             if (undefined === $scope.pausePoints[taskIndex]) {
                 $scope.pausePoints[taskIndex] = {};
             }
-            $scope.pausePoints[taskIndex][stepIndex] = $scope.pausePoints[taskIndex][stepIndex] ? 0 : 1;
+            $scope.pausePoints[taskIndex][stepIndex] = doubleclick ? 1 : $scope.pausePoints[taskIndex][stepIndex] ? 0 : 1;
             digestTask(taskIndex);
             event.stopPropagation();
+            if (doubleclick) {
+                $scope.runNoWatch();
+            }
             return false;
         };
         $scope.noTaskSteps = function(task) {
@@ -675,6 +678,7 @@ define('controller', ['app', 'scroll'], function(app){
                 $('#buttonPanel').hide();
                 $('#availableTasksOfWorker').show().data('scroll', $(window).scrollTop());
                 cfMessage.send('toggleSize', {size: 'big'});
+                $('#availableTasksOfWorkerSearch').focus();
             } else {
                 $('#jobDetails').show();
                 $('#buttonPanel').show();
@@ -714,7 +718,7 @@ define('controller', ['app', 'scroll'], function(app){
 (function(undefined) {
     var injector;
     var config = {};
-    config.gruntBuildTimeStamp='1461174295779';
+    config.gruntBuildTimeStamp='1461224143857';
     window.addEventListener('message', function(event){
         var test = /^cartFillerMessage:(.*)$/.exec(event.data);
         var isDist = true;
