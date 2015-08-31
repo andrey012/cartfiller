@@ -157,7 +157,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1461224143839';
+    config.gruntBuildTimeStamp='1461227813496';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -1181,6 +1181,12 @@
      */
     var me = this.cartFillerConfiguration;
     /**
+     * Keeps last known window title to save some coins on updating title
+     * @var {String} CartFiller.Dispatcher~oldTitle
+     * @access private
+     */
+    var oldTitle;
+    /**
      * Keeps details about relay subsystem
      * @var {Object} CartFiller.Dispatcher~rel
      */
@@ -1975,6 +1981,16 @@
             window.location.hash = 'job=' + encodeURIComponent(details.jobName) + '&task=' + details.task + '&step=' + details.step;
         },
         /**
+         * Updates title
+         * @function CartFiller.Dispatcher#onMessage_updateTitle
+         * @param {Object} details
+         * @access public
+         */
+        onMessage_updateTitle: function(details) {
+            window.document.title = details.title;
+        },
+        ////
+        /**
          * Handles "main frame loaded" event. If both main frame and 
          * worker (job progress) frames are loaded then bootstraps 
          * job progress frame
@@ -2327,12 +2343,19 @@
          */
         registerLoadWatcher: function() {
             setTimeout(function loadWatcher(){
+                var title;
                 try {
                     if (me.modules.ui.mainFrameWindow.document &&
                         (me.modules.ui.mainFrameWindow.document.readyState === 'complete') &&
                         ! me.modules.ui.mainFrameWindow.document.getElementsByTagName('html')[0].getAttribute('data-cartfiller-reload-tracker')){
                         me.modules.ui.mainFrameWindow.document.getElementsByTagName('html')[0].setAttribute('data-cartfiller-reload-tracker', 0);
                         me.modules.dispatcher.onMainFrameLoaded(true);
+                    }
+                    title = me.modules.ui.mainFrameWindow.document.title;
+                    if (oldTitle !== title) {
+                        oldTitle = title;
+                        me.modules.dispatcher.onMessage_updateTitle({title: title});
+                        relay.bubbleMessage({cmd: 'updateTitle', title: title});
                     }
                 } catch (e){}
                 setTimeout(loadWatcher, 100);

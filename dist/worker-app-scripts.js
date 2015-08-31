@@ -107,7 +107,7 @@ define('controller', ['app', 'scroll'], function(app){
             }
         };
         var updateTopWindowHash = function() {
-            if ($scope.debugEnabled && $scope.jobUrl) {
+            if ($scope.debugEnabled && $scope.jobName) {
             	cfMessage.send('updateHashUrl', {jobName: $scope.jobName, task: $scope.currentTask + 1, step: $scope.currentStep + 1});
             }
         };
@@ -718,7 +718,7 @@ define('controller', ['app', 'scroll'], function(app){
 (function(undefined) {
     var injector;
     var config = {};
-    config.gruntBuildTimeStamp='1461224143857';
+    config.gruntBuildTimeStamp='1461227813529';
     window.addEventListener('message', function(event){
         var test = /^cartFillerMessage:(.*)$/.exec(event.data);
         var isDist = true;
