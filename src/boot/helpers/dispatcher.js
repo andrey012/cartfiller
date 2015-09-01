@@ -920,6 +920,8 @@
                 }
             } else if (details.message === 'openRelayOnTail' && ! relay.nextRelay) {
                 openRelay(details.args[0], undefined, details.args[1]);
+            } else if (details.message === 'updateTitle') {
+                me.modules.dispatcher.onMessage_updateTitle(details);
             }
         },
         /**
@@ -1339,13 +1341,15 @@
                         me.modules.ui.mainFrameWindow.document.getElementsByTagName('html')[0].setAttribute('data-cartfiller-reload-tracker', 0);
                         me.modules.dispatcher.onMainFrameLoaded(true);
                     }
-                    title = me.modules.ui.mainFrameWindow.document.title;
-                    if (oldTitle !== title) {
-                        oldTitle = title;
-                        me.modules.dispatcher.onMessage_updateTitle({title: title});
-                        relay.bubbleMessage({cmd: 'updateTitle', title: title});
-                    }
+                    title = 'undefined' === typeof me.modules.ui.mainFrameWindow.document.title ? '' : me.modules.ui.mainFrameWindow.document.title;
                 } catch (e){}
+                if (oldTitle !== title) {
+                    oldTitle = title;
+                    if ('undefined' !== typeof title) {
+                        me.modules.dispatcher.onMessage_updateTitle({title: title});
+                        relay.bubbleMessage({message: 'updateTitle', title: title});
+                    }
+                }
                 setTimeout(loadWatcher, 100);
             }, 100);
         },

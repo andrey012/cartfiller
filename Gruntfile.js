@@ -21,13 +21,17 @@ module.exports = function(grunt) {
             options: {
                 banner: "<%= meta.banner %>",
                 process: function(content, path){
+                    var time = global.gruntBuildTimeStamp ? global.gruntBuildTimeStamp : (global.gruntBuildTimeStamp = (new Date()).getTime());
                     return content
                         .replace(
-                            /config.gruntBuildTimeStamp=\'\'\;/,
-                            'config.gruntBuildTimeStamp=\'' + (new Date()).getTime() + '\';')
+                            /config.gruntBuildTimeStamp=\'\'\;/g,
+                            'config.gruntBuildTimeStamp=\'' + time + '\';')
                         .replace(
-                            /var isDist = false\;/,
-                            'var isDist = true;');
+                            /var isDist = false\;/g,
+                            'var isDist = true;')
+                        .replace(
+                            /\?0000000000/g,
+                            '?' + time);
                 }
             },
             inject: {
