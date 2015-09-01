@@ -157,7 +157,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1461273714607';
+    config.gruntBuildTimeStamp='1461364965511';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -1452,6 +1452,26 @@
             });
         return params;
     };
+    
+    var startupWatchDog = {
+        fn: function() {
+            var pc = [];
+            if (! this.workerRegistered) {
+                pc.push('worker');
+            }
+            if (pc.length) {
+                var message = 'one or more frames were not registered: ' + pc.join(', ');
+                if (window.cartFillerEventHandler) {
+                    window.cartFillerEventHandler({message: message, filename: 'dispatcher.js', lineno: 0});
+                }
+                alert(message);
+            }
+        },
+        workerRegistered: false,
+        chooseJobRegistered: false,
+        mainRegistered: false
+    };
+    setTimeout(function() {startupWatchDog.fn();}, 10000);
 
     this.cartFillerConfiguration.scripts.push({
         /** 
@@ -1527,15 +1547,20 @@
             if (source === me.modules.ui.workerFrameWindow) {
                 // skip other requests
                 workerFrameLoaded = true;
+                startupWatchDog.workerRegistered = true;
                 if (mainFrameLoaded && !bootstrapped){
                     this.bootstrapCartFiller();
                 }
             } else if (source === me.modules.ui.chooseJobFrameWindow) {
+                startupWatchDog.chooseJobRegistered = true;
                 this.postMessageToChooseJob('bootstrap', {
                     lib: getLibUrl(),
                     testSuite: true,
                     src: me.baseUrl.replace(/\/$/, '') + '/'
                 }, 'cartFillerMessage');
+            } else if (source === me.modules.ui.mainFrameWindow) {
+                startupWatchDog.mainRegistered = true;
+                postMessage(source, 'bootstrap', {dummy: true});
             } else if (source === relay.nextRelay) {
                 relay.nextRelayRegistered = true;
                 var url;

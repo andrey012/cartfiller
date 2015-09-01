@@ -718,13 +718,29 @@ define('controller', ['app', 'scroll'], function(app){
 (function(undefined) {
     var injector;
     var config = {};
-    config.gruntBuildTimeStamp='1461273714607';
+    var bootstrapped = false;
+    var reportError = function(message) {
+        if (window.cartFillerEventHandler) {
+            window.cartFillerEventHandler({message: message, filename: 'main.js', lineno: 0});
+        }
+        alert(message);
+    };
+    setTimeout(function() {
+        if (! bootstrapped) {
+            reportError('bootstrap message did not come');
+        }
+    }, 10000);
+    config.gruntBuildTimeStamp='1461364965511';
     window.addEventListener('message', function(event){
         var test = /^cartFillerMessage:(.*)$/.exec(event.data);
         var isDist = true;
         if (test){
             var message = JSON.parse(test[1]);
             if (message.cmd === 'bootstrap') {
+                bootstrapped = true;
+                if (message.dummy) {
+                    return;
+                }
                 var paths = {
                     'angular': message.lib + '/angular/angular.min',
                     'angular-route': message.lib + '/angular-route/angular-route.min',
@@ -779,10 +795,7 @@ define('controller', ['app', 'scroll'], function(app){
                 });
                 if (message.tests) {
                     require(['jquery-cartFiller'], function(){
-                        var a = $('<a/>');
-                        $('body').append(a);
-                        a.hide();
-                        var settings = {
+                        var options = {
                             type: 'framed',
                             minified: false,
                             chooseJob: window.location.href + (
@@ -795,8 +808,7 @@ define('controller', ['app', 'scroll'], function(app){
                             logLength: false,
                             useSource: ! isDist
                         };
-                        a.cartFillerPlugin(settings);
-                        a[0].click();
+                        eval($.cartFillerPlugin.getBookmarkletCode(options));  // jshint ignore:line
                     });
                 } else {
                     require(['bootstrap'], function(app){
@@ -819,6 +831,11 @@ define('controller', ['app', 'scroll'], function(app){
     if (window.parent && window.parent !== window) {
         window.parent.postMessage('cartFillerMessage:{"cmd":"register"}', '*');
     } else {
+        setTimeout(function(){
+            if (! window.cartFillerAPI) {
+                reportError('inject.js was not launched');
+            }
+        }, 10000);
         window.postMessage(
             'cartFillerMessage:' + 
             JSON.stringify({
@@ -1454,13 +1471,15 @@ define('jquery-cartFiller', ['jquery'], function() {
      * @access private
      */
     function Plugin ( element, options ) {
-        this.element = element;
         this.settings = $.extend( {}, defaults, options );
         this._defaults = defaults;
         this._name = pluginName;
+        if ('undefined' === typeof element) {
+            return;
+        }
+        this.element = element;
         this.init();
     }
-    
 
     $.extend(Plugin.prototype, {
         /**
@@ -1472,21 +1491,22 @@ define('jquery-cartFiller', ['jquery'], function() {
             if (runningInsideCartFiller){
                 $(this.element).hide();
             } else {
-                var href;
-                if (this.settings.inject === 'script'){
-                    href = this.scriptBookmarklet();
-                } else if (this.settings.inject === 'eval'){
-                    href = this.evalBookmarklet();
-                } else if (this.settings.inject === 'iframe'){
-                    href = this.iframeBookmarklet();
-                } else {
-                    alert('invalid inject value, correct values are "script", "eval" and "iframe"');
-                }
                 if (this.settings.logLength) {
                     console.log('generated bookmarklet: ' + href.length);
                 }
-                $(this.element).attr('href', href);
+                $(this.element).attr('href', this.javaScriptUrl() + this.getBookmarkletCode());
                 knownBookmarkletElements.push(this.element);
+            }
+        },
+        getBookmarkletCode: function() {
+            if (this.settings.inject === 'script'){
+                return this.scriptBookmarklet();
+            } else if (this.settings.inject === 'eval'){
+                return this.evalBookmarklet();
+            } else if (this.settings.inject === 'iframe'){
+                return this.iframeBookmarklet();
+            } else {
+                alert('invalid inject value, correct values are "script", "eval" and "iframe"');
             }
         },
         getTypeId: function(){
@@ -1519,7 +1539,7 @@ define('jquery-cartFiller', ['jquery'], function() {
             }
         },
         scriptBookmarklet: function(){
-            return this.javaScriptUrl() + 'try{' +
+            return 'try{' +
                 this.trace('start') + 
                 '(function(d,c,a,t,o,b,e,u,v,j,k,x,y,w,z,s){' + 
                     this.trace('in function') +
@@ -1555,7 +1575,7 @@ define('jquery-cartFiller', ['jquery'], function() {
             '}catch(e){alert(e);}';
         },
         evalBookmarklet: function(){
-            return this.javaScriptUrl() + 'try{' +
+            return 'try{' +
                 this.trace('start') +
                 '(function(f,x,t,u,v,j,d){' +
                     this.trace('in function') +
@@ -1594,7 +1614,7 @@ define('jquery-cartFiller', ['jquery'], function() {
             '}catch(e){alert(e);}';
         },
         iframeBookmarklet: function(){
-            return this.javaScriptUrl() + 'try{' +
+            return 'try{' +
                 this.trace('start') +
                 '(function(f,d,p,t,u,v,m,j,y,x,i){' +
                     this.trace('in') +
@@ -1876,6 +1896,20 @@ define('jquery-cartFiller', ['jquery'], function() {
             '*'
         );
     };
+    /**
+     * Global plugin function - get bookmarklet code to eval it - used
+     * only for launching testsuite
+     * @function external:"jQuery".cartFillerPlugin.getBookmarkletCode
+     * @global
+     * @param {CartFillerPlugin~Settings} options
+     * @return {String} code
+     * @access public
+     */
+    $.cartFillerPlugin.getBookmarkletCode = function(options) {
+        var plugin = new Plugin(undefined, options);
+        return plugin.getBookmarkletCode();
+    };
+
 
     window.addEventListener('message', messageEventListener,false);
     if (window.parent !== window){

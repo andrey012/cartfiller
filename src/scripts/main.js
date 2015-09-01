@@ -1,6 +1,18 @@
 (function(undefined) {
     var injector;
     var config = {};
+    var bootstrapped = false;
+    var reportError = function(message) {
+        if (window.cartFillerEventHandler) {
+            window.cartFillerEventHandler({message: message, filename: 'main.js', lineno: 0});
+        }
+        alert(message);
+    };
+    setTimeout(function() {
+        if (! bootstrapped) {
+            reportError('bootstrap message did not come');
+        }
+    }, 10000);
     config.gruntBuildTimeStamp='';
     window.addEventListener('message', function(event){
         var test = /^cartFillerMessage:(.*)$/.exec(event.data);
@@ -8,6 +20,10 @@
         if (test){
             var message = JSON.parse(test[1]);
             if (message.cmd === 'bootstrap') {
+                bootstrapped = true;
+                if (message.dummy) {
+                    return;
+                }
                 var paths = {
                     'angular': message.lib + '/angular/angular.min',
                     'angular-route': message.lib + '/angular-route/angular-route.min',
@@ -62,10 +78,7 @@
                 });
                 if (message.tests) {
                     require(['jquery-cartFiller'], function(){
-                        var a = $('<a/>');
-                        $('body').append(a);
-                        a.hide();
-                        var settings = {
+                        var options = {
                             type: 'framed',
                             minified: false,
                             chooseJob: window.location.href + (
@@ -78,8 +91,7 @@
                             logLength: false,
                             useSource: ! isDist
                         };
-                        a.cartFillerPlugin(settings);
-                        a[0].click();
+                        eval($.cartFillerPlugin.getBookmarkletCode(options));  // jshint ignore:line
                     });
                 } else {
                     require(['bootstrap'], function(app){
@@ -102,6 +114,11 @@
     if (window.parent && window.parent !== window) {
         window.parent.postMessage('cartFillerMessage:{"cmd":"register"}', '*');
     } else {
+        setTimeout(function(){
+            if (! window.cartFillerAPI) {
+                reportError('inject.js was not launched');
+            }
+        }, 10000);
         window.postMessage(
             'cartFillerMessage:' + 
             JSON.stringify({

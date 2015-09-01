@@ -72,6 +72,8 @@ module.exports = function(grunt) {
             workerFrame: {
                 options: {
                     process: function(content, srcpath){
+                        var gaSnippetFile = 'ga-snippet.html';
+                        var gaSnippet = grunt.file.exists(gaSnippetFile) ? grunt.file.read(gaSnippetFile) : '';
                         return content
                         .replace(
                             /bootstrap\.min\.css\"/, 
@@ -81,7 +83,10 @@ module.exports = function(grunt) {
                             '<script src="worker-app-scripts.min.js?__inline=true">')
                         .replace(
                             /\<html\>/,
-                            '<html manifest="self.appcache">');
+                            '<html manifest="self.appcache">')
+                        .replace(
+                            /\<\/head\>/,
+                            gaSnippet + '</head>');
                     }
                 },
                 files : [
