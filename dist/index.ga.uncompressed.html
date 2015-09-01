@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html manifest="self.appcache">
+<head>
+    <meta charset="UTF-8">
+    <title>CartFiller</title>
+    <link rel="stylesheet" href="../lib/bootstrap/dist/css/bootstrap.min.css?__inline=true"/>
+    <style>
+        #jobDetails .btn {font-family: monospace; font-size: 12px;} 
+        #jobDetails .btn {margin: 0px -5px; }
+        #jobDetails .btn-xs {margin: 5px 2px;  font-size: 12px;} 
+        #jobDetails .pause {padding: 6px 5px 9px 5px; }
+        #jobDetails .alert {padding: 5px; margin-bottom: 5px;}
+        #jobDetails h1, #jobDetails h2, #jobDetails h3 {margin: 0px;}
+        .pause-active {background-color: red;}
+        .nobr {display: inline-block; white-space: nowrap;}
+        #availableTasksOfWorker input, #availableTasksOfWorker textarea {width: 100%;}
+        #availableTasksOfWorker .highlighted {background-color: yellow;}
+    </style>
+    <script>
+        (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+        m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+        })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+        ga('create', 'UA-60902332-2', 'auto');
+        ga('send', 'pageview');
+
+        window.addEventListener('error', window.cartFillerEventHandler = function (e) {
+            var errMsg = e.message;
+            var errSrc = e.filename + ': ' + e.lineno;
+            ga('send', 'event', 'JavaScript Error', errMsg, errSrc, { 'nonInteraction': 1 });
+        }, false);
+    </script>
+</head>
+<body>
+    <div id="testSuiteManager" style="display: none;" ng-controller="testSuiteController">
+        <div class="col-xs-9">
+            <div class="alert alert-danger" ng-if="discovery.state == -1">
+                Error discovering cartfiller.json:<br/>
+                <span ng-if="discovery.errorURL"><a href="{{discovery.errorURL}}">{{discovery.errorURL}}</a><br/></span>
+                {{discovery.error}}
+            </div>
+            <div class="alert alert-info" ng-if="discovery.state == 0">
+                Looking for cartfiller.json at <a href="{{discovery.currentRootPath}}">{{discovery.currentRootPath}}</a>
+            </div>
+            <div class="alert alert-info" ng-if="discovery.state == 1">
+                Downloading test scripts
+            </div>
+        </div>
+        <div class="col-xs-3">
+            <button class="btn btn-info" ng-click="discovery.state = 0; discover()">
+                Reload
+            </button>
+            <button class="btn btn-success" ng-click="runAll()" ng-if="discovery.state == 2 && ! runningAll">
+                Run all
+            </button>
+            <button class="btn btn-danger" ng-click="stopRunningAll()" ng-if="discovery.state == 2 && runningAll">
+                Stop
+            </button>
+        </div>
+        <div class="col-xs-12">
+            <table class="table table-bordered">
+                <tbody>
+                    <tr ng-repeat-start="(index, testPath) in discovery.scripts.flat" ng-class="['active', 'danger', '', 'success'][2 + (discovery.scripts.success[index] || 0)] ">
+                        <td>
+                            <strong>{{discovery.scripts.contents[index].title ? discovery.scripts.contents[index].title : testPath.join('/')}}</strong><span ng-repeat="(name, value) in discovery.scripts.tweaks[index]">, {{name}}: <strong>{{value}}</strong></span>
+                        </td>
+                        <td>
+                            <button class="btn btn-xs btn-success" ng-click="runTest(index, 'fast')">
+                                Run
+                            </button>
+                            <button class="btn btn-xs btn-success" ng-click="runTest(index, 'slow')">
+                                Slow
+                            </button>
+                            <button class="btn btn-xs btn-success" ng-click="runTest(index, 'load')">
+                                Load
+                            </button>
+                            <button class="btn btn-xs btn-success" ng-click="expandTest(index)">
+                                {{index === expandedTest ? 'Collapse' : 'Expand'}}
+                            </button>
+                            <button class="btn btn-xs btn-success" ng-click="runAll(index)">
+                                Run all from here
+                            </button>
+                        </td>
+                    </tr>
+                    <tr ng-if="index === expandedTest" ng-repeat="(taskIndex, task) in discovery.scripts.contents[index].details">
+                        <td colspan="2" ng-if="task.heading"><h1 ng-if="task.level == 1">&nbsp;&nbsp;&nbsp;&nbsp;{{task.heading}}</h1><h2 ng-if="task.level == 2">&nbsp;&nbsp;&nbsp;&nbsp;{{task.heading}}</h2><h3 ng-if="task.level == 3">&nbsp;&nbsp;&nbsp;&nbsp;{{task.heading}}</h3></td>
+                        <td colspan="2" ng-if="task.task" ng-class="discovery.scripts.success[index] == -1 && getTaskErrorsExist(index, taskIndex) ? 'danger' : ''">
+                            &nbsp;&nbsp;&nbsp;&nbsp;
+                            <a href="{{getTaskUrl(index, taskIndex, 0)}}" ng-click="runTest(index, 'fast', taskIndex, 0, $event)" onclick="return false;">{{taskIndex + 1}}. {{task.task}}</a><span ng-repeat="(name, value) in task | orderBy: 'name'" ng-if="name !== 'task'">,
+                                <strong>
+                                {{name}}:
+                                </strong>
+                                {{value}}
+                            </span>
+                            <div ng-if="discovery.scripts.success[index] == -1" ng-repeat="(stepIndex, errorMessage) in getTaskErrors(index, taskIndex)">
+                                Step {{1 -- stepIndex}}: {{errorMessage}}
+                            </div>
+                        </td>
+                    </tr>
+                    <tr ng-if="index === expandedTest">
+                        <td colspan="2">
+                            &nbsp;&nbsp;&nbsp;&nbsp;
+                            <a href="{{getTaskUrl(index, -1, 0)}}" ng-click="runTest(index, 'fast', -1, 0, $event)" onclick="return false;">fin</a>
+                        </td>
+                    </tr>
+                    <tr ng-repeat-end></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div id="workerContainer" style="display: none;" ng-controller="indexController">
+        <div id="buttonPanel"
+             style="text-align: right; z-index: 101; position: fixed; top: 0px; width: 100%; padding: 2px;" 
+             class="alert alert-warning"
+             ng-repeat="dummy in [0]">
+            <a href="#"
+               ng-if="running"
+               class="btn btn-xl btn-danger"
+               onclick="var event = arguments[0] || window.event; return angular.element(this).scope().stopNoWatch(event);"
+               ng-disabled="workersLoaded < workersCounter"
+               >&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Stop&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</a>
+            <a href="#"
+               id="runButton"
+               ng-if="!running"
+               class="btn btn-xl btn-success"
+               title="Run"
+               ng-disabled="workerInProgress || (workersLoaded < workersCounter)"
+               onclick="var event = arguments[0] || window.event; return angular.element(this).scope().runNoWatch(false, event);"
+               disabled="disabled"
+               >&gt;&gt;&gt;</a>
+            <a href="#"
+               ng-if="!running"
+               class="btn btn-xl btn-info"
+               title="Slow"
+               ng-disabled="workerInProgress || (workersLoaded < workersCounter)"
+               onclick="var event = arguments[0] || window.event; return angular.element(this).scope().runNoWatch(true, event);"
+               >&gt;..&gt;</a>
+            <a href="#"
+               class="btn btn-xl btn-info"
+               title="Step"
+               ng-disabled="workerInProgress || (workersLoaded < workersCounter)"
+               onclick="var event = arguments[0] || window.event; return angular.element(this).scope().clickOnNextStepNoWatch(event);"
+               >I&nbsp;I&gt;</a>
+            <a href="#" 
+               id="chooseJobButton"
+               class="btn btn-info btn-xl"
+               ng-click="chooseJob()"
+               onclick="return false;"
+               >{{chooseJobState ? 'Close' : 'Open'}}</a>
+            <br/>
+            <a href="#" class="btn btn-info btn-xs" onclick="var event = arguments[0] || window.event; return angular.element(this).scope().toggleSizeNoWatch(event);" title="resize">[]</a>
+            <a href="#" class="btn btn-info btn-xs" onclick="var event = arguments[0] || window.event; return angular.element(this).scope().scrollToCurrentStepNoWatch(event);" title="scroll to current step">.</a>
+            <a href="#"
+               class="btn btn-info btn-xs"
+               ng-click="clickOnReturnResult($event)"
+               onclick="return false;"
+               ng-if="!chooseJobState && !noResultButton"
+               >Result</a>
+            <a href="#"
+               class="btn btn-default btn-active btn-xs"
+               ng-click="reloadWorker($event)"
+               title="Reload worker"
+               ng-if="debugEnabled"
+               onclick="return false;"
+               >R</a>
+            <div ng-style="{opacity: (workerInProgress ? 1 : 0)}">
+                <a href="#"
+                   id="resetWorkerButton"
+                   class="btn btn-danger btn-xs"
+                   onclick="var event = arguments[0] || window.event; return angular.element(this).scope().resetWorkerNoWatch(event);">RESET WORKER</a>
+            </div>
+            <div ng-if="debugEnabled" style="text-align: left;">
+                <a class="btn btn-xs btn-success" onclick="var event = arguments[0] || window.event; return angular.element(this).scope().refreshPageNoWatch(event);" href="#" title="Refresh page in the main frame">Refresh</a>
+                <a id="searchButton" class="btn btn-xs btn-success" onclick="return angular.element(this).scope().performSearchNoWatch();" title="Show DOM path for an element and build jQuery selector">Search</a>
+                <a id="suggestButton" class="btn btn-xs btn-success" onclick="return angular.element(this).scope().suggestTaskNameNoWatch();" title="Search for task name from worker">Suggest</a>
+                <div id="searchResults" ng-repeat="dummy in [0]">
+                    <div ng-if="searchVisible">
+                        <div>
+                            <a class="btn btn-xs btn-success" ng-click="toggleSearch()">Close</a>
+                        </div>
+                        <div style="max-height: 70vh; overflow: scroll">
+                            <div ng-repeat="element in stack">
+                                <button class="btn btn-xs" ng-class="element.selectNodeName ? 'btn-success' : 'btn-warning'" ng-click="toggle('selectNodeName', element)">
+                                    {{element.element}}
+                                </button>
+                                <button class="btn btn-xs" ng-class="element.selectId ? 'btn-success' : 'btn-danger'" ng-click="toggle('selectId', element)" ng-if="element.id">
+                                    #{{element.id}}
+                                </button>
+                                <button class="btn btn-xs" ng-class="element.selectClass[index] ? 'btn-success' : 'btn-default'" ng-click="toggle('selectClass', element, index)" ng-repeat="(index, class) in element.classes">
+                                    .{{class}}
+                                </button>
+                                <button class="btn btn-xs" ng-class="element.selectAttribute[index] ? 'btn-success' : 'btn-disabled'" ng-click="toggle('selectAttribute', element, index)" ng-repeat="(index, a) in element.attrs">
+                                    .{{a.n + '="' + a.v + '"'}}
+                                </button>
+                                <button class="btn btn-xs" ng-class="element.selectIndex ? 'btn-success' : 'btn-default'" ng-click="toggle('selectIndex', element)">
+                                    nth({{element.index}})
+                                </button>
+                                <button class="btn btn-xs" ng-class="element.selectText ? 'btn-success' : 'btn-default'" ng-click="toggle('selectText', element)" ng-if="element.text">
+                                    text
+                                </button>
+                            </div>
+                        </div>
+                        <textarea onclick="this.select()" readonly style="width: 100%" ng-keyup="textareaKeyUp($event)">{{getCssSelector(stack)}}</textarea>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div ng-if="chooseJobState" id="cartFillerOverlay" style="z-index: 100; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); position: absolute; top: 0px; left: 0px;">
+
+        </div>
+        <a class="btn btn-info btn-xs" style="width: 100%; margin-top: 110px; margin-bottom: 5px;" onclick="alert('Long click on step = debug, long click on Run (fast and slow) = Run until particular step, double click on property value = change property value, double click on pause = set pause here and run');">help</a>
+        <div id="availableTasksOfWorker" style="display: none;" ng-repeat="dummy in [0]">
+            <a class="btn btn-success" onclick="return angular.element(this).scope().suggestTaskNameNoWatch();">Close</a>
+            <input id="availableTasksOfWorkerSearch" placeholder="search/filter" type="text" ng-keyup="onSearch()"/>
+            <div ng-repeat="(name, steps) in jobTaskDescriptions"
+                 ng-if="-1 !== name.toLowerCase().indexOf(filter)"
+            >
+                <div ng-if="expanded != name">
+                    <span ng-if="filter.length" ng-click="expand(name)">
+                        {{name.substr(0, name.toLowerCase().indexOf(filter))}}<span class="highlighted">{{name.substr(name.toLowerCase().indexOf(filter), filter.length)}}</span>{{name.substr(name.toLowerCase().indexOf(filter) + filter.length)}}
+                    </span>
+                    <span ng-if="! filter.length" ng-click="expand(name)">
+                        {{name}}
+                    </span>
+                </div>
+                <div ng-if="expanded == name">
+                    <h3 ng-if="filter.length" ng-click="expand(name)">
+                        {{name.substr(0, name.toLowerCase().indexOf(filter))}}<span class="highlighted">{{name.substr(name.toLowerCase().indexOf(filter), filter.length)}}</span>{{name.substr(name.toLowerCase().indexOf(filter) + filter.length)}}
+                    </h3>
+                    <h3 ng-if="! filter.length" ng-click="expand(name)">
+                        {{name}}
+                    </h3>
+                    <table class="table" data-name="{{name}}">
+                        <tr ng-repeat="(parameterName, dummy) in jobTaskDiscoveredParameters[name].all">
+                            <td>{{parameterName}}</td>
+                            <td><input type="text" name="{{parameterName}}" onkeyup="var event = arguments[0] || window.event;  angular.element(this).scope().taskExplorerParameterEnteredNoWatch(this, event);"/></td>
+                        </tr>
+                        <tr>
+                            <td colspan="2"><textarea rows="3" readonly onclick="this.select();" onfocus="this.select();" class="result" onkeyup="var event = arguments[0] || window.event;  angular.element(this).scope().taskExplorerParameterEnteredNoWatch(this, event); this.select();">{{getSuggestTaskJsonForTask(name)}}</textarea></td>
+                        </tr>
+                    </table>
+                    <ol>
+                        <li ng-repeat="stepName in steps track by $index">
+                            {{stepName}}
+                        </li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+        <div id="jobDetails">
+            <div id="{{'taskDiv_' + jobTaskIndex}}"
+                 class="alert"
+                 ng-class="(! jobTask.task && jobTask.heading) ? '' : (jobTaskProgress[jobTaskIndex].complete ? 'alert-success' : 'alert-danger')"
+                 ng-repeat="(jobTaskIndex, jobTask) in jobDetails track by $index"
+                 ng-click="toggleTaskProgress(jobTaskIndex)"
+            >
+                <h1 ng-if="! jobTask.task && jobTask.heading && jobTask.level == 1">{{jobTask.heading}}</h1>
+                <h2 ng-if="! jobTask.task && jobTask.heading && jobTask.level == 2">{{jobTask.heading}}</h2>
+                <h3 ng-if="! jobTask.task && jobTask.heading && jobTask.level == 3">{{jobTask.heading}}</h3>
+                <span ng-if="jobTask.task" ng-dblclick="doubleClickTaskName(jobTask.task)"><strong>{{jobTaskIndex + 1}}. {{jobTitleMap[jobTask.task] ? jobTitleMap[jobTask.task] : jobTask.task}}</strong></span><span ng-repeat="(propertyName, propertyValue) in jobTask" ng-if="propertyName != 'task' && jobTask.task" ng-dblclick="doubleClickTaskInput(jobTaskIndex, propertyName, propertyValue)">, 
+                    <span>{{jobTitleMap[propertyName] ? jobTitleMap[propertyName] : propertyName}}</span>
+                    <span><strong>{{getPropertyValue(propertyValue)}}</strong></span></span>
+                <div>
+                    <textarea readonly onclick="select(this);" ng-if="jobTask.task && noTaskSteps(jobTask.task)" rows="8" style="width: 100%;">{{',\n            \'' + jobTask.task + '\': [\n                \'\', function() {\n                    \n                }, \'\', function(el) {\n                    \n                }\n            ]\n'}}</textarea>
+                    <span
+                       ng-repeat="(jobTaskStepIndex, jobTaskStep) in jobTaskDescriptions[jobTask.task] track by $index"
+                    >
+                        <div class="nobr">
+                            <a id="{{'pauseButton_' + jobTaskIndex + '_' + jobTaskStepIndex}}"
+                               class="pause"
+                               href="#" ng-class="pausePoints[jobTaskIndex][jobTaskStepIndex] ? 'pause-active' : ''"
+                               onclick="var event = arguments[0] || window.event; return angular.element(this).scope().togglePause(this, event);"
+                               ondblclick="var event = arguments[0] || window.event; return angular.element(this).scope().togglePause(this, event, true);"
+                               title="click to toggle pause at this point"
+                            >||</a>
+                            <a id="{{'stepButton_' + jobTaskIndex + '_' + jobTaskStepIndex}}"
+                               href="#"
+                               title="{{jobTaskStep + ': ' + jobTaskProgress[jobTaskIndex].stepResults[jobTaskStepIndex].message}}"
+                               class="btn"
+                               ng-class="getStepClass(jobTaskIndex, jobTaskStepIndex)"
+                               onmousedown="var event = arguments[0] || window.event; angular.element(this).scope().mouseDown(event);"
+                               onclick="var event = arguments[0] || window.event; return angular.element(this).scope().clickOnStepNoWatch(this, event);"
+                            >{{indexTitles[jobTask.task][jobTaskStepIndex]}}</a>
+                        </div>
+                        {{jobTaskProgress[jobTaskIndex].stepResults[jobTaskStepIndex].message}}
+                    </span>
+                </div>
+            </div>
+            <div class="alert alert-warning"
+                 ng-style="{opacity : (finishReached ? 1 : 0)}"
+                 id="finishReached"
+                 >
+                Completed
+            </div>
+            <div class="alert alert-info">
+                Current URL: <a href="#" target="_blank" id="currentUrl" style="word-wrap: break-word;"></a>
+            </div>
+            <div id="globalsDiv" ng-repeat="dummy in [0]">
+                <div class="alert alert-info" ng-repeat="(name, value) in workerGlobals">
+                    {{name}}: {{getWorkerGlobalValue(name)}}
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="worker-app-scripts.min.js?__inline=true"></script>
+</body>
+</html>

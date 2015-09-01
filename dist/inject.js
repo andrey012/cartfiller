@@ -157,7 +157,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1461364965511';
+    config.gruntBuildTimeStamp='1461402609593';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -189,6 +189,7 @@
         config['data-choose-job'] = this.cartFillerEval[2];
         config['data-debug'] = this.cartFillerEval[3];
         config['data-worker'] = this.cartFillerEval[4];
+        config['data-wfu'] = this.cartFillerEval[5];
     }
     // if not concatenated - then load loader.js, which, itself, will load other
     // files
@@ -3193,7 +3194,7 @@
      * @access private
      */
     var getWorkerFrameSrc = function(){
-        return me.baseUrl + '/index' + (me.concatenated ? '' : '.uncompressed') + '.html' + (me.gruntBuildTimeStamp ? ('?' + me.gruntBuildTimeStamp) : '');        
+        return me['data-wfu'] ? me['data-wfu'] : (me.baseUrl + '/index' + (me.concatenated ? '' : '.uncompressed') + '.html' + (me.gruntBuildTimeStamp ? ('?' + me.gruntBuildTimeStamp) : ''));
     };
     /**
      * Vertical position of top of highlighted element

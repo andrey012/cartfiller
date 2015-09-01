@@ -78,12 +78,14 @@
                 });
                 if (message.tests) {
                     require(['jquery-cartFiller'], function(){
+                        var myselfUrl = window.location.href + (
+    config.gruntBuildTimeStamp ? ((window.location.href.indexOf('?') === -1 ? '?' : '&') + 
+    config.gruntBuildTimeStamp) : '');
                         var options = {
                             type: 'framed',
                             minified: false,
-                            chooseJob: window.location.href + (
-    config.gruntBuildTimeStamp ? ((window.location.href.indexOf('?') === -1 ? '?' : '&') + 
-    config.gruntBuildTimeStamp) : ''),
+                            chooseJob: myselfUrl,
+                            workerFrameUrl: myselfUrl,
                             debug: true,
                             baseUrl: window.location.href.split('?')[0].replace(/\/[^\/]*$/, ''),
                             inject: 'script',

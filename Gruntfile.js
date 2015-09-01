@@ -1,4 +1,16 @@
 module.exports = function(grunt) {
+    var processWorkerFrameHtml = function(content) {
+        return content
+            .replace(
+                /bootstrap\.min\.css\"/, 
+                'bootstrap.min.css?__inline=true"')
+            .replace(
+                /\<script\s+data-main=\"scripts\/main\" src="\.\.\/lib\/requirejs\/require\.js\"\>/,
+                '<script src="worker-app-scripts.min.js?__inline=true">')
+            .replace(
+                /\<html\>/,
+                '<html manifest="self.appcache">')
+    };
 	grunt.initConfig({
 
 		// Import package manifest
@@ -72,25 +84,26 @@ module.exports = function(grunt) {
             workerFrame: {
                 options: {
                     process: function(content, srcpath){
-                        var gaSnippetFile = 'ga-snippet.html';
-                        var gaSnippet = grunt.file.exists(gaSnippetFile) ? grunt.file.read(gaSnippetFile) : '';
-                        return content
-                        .replace(
-                            /bootstrap\.min\.css\"/, 
-                            'bootstrap.min.css?__inline=true"')
-                        .replace(
-                            /\<script\s+data-main=\"scripts\/main\" src="\.\.\/lib\/requirejs\/require\.js\"\>/,
-                            '<script src="worker-app-scripts.min.js?__inline=true">')
-                        .replace(
-                            /\<html\>/,
-                            '<html manifest="self.appcache">')
-                        .replace(
-                            /\<\/head\>/,
-                            gaSnippet + '</head>');
+                        return processWorkerFrameHtml(content);
                     }
                 },
                 files : [
                     {expand: true, cwd: "src/", src: ["index.uncompressed.html"], dest: "dist/"},
+                ]
+            },
+            workerFrameWithGA: {
+                options: {
+                    process: function(content, srcpath){
+                        var gaSnippetFile = 'ga-snippet.html';
+                        var gaSnippet = grunt.file.exists(gaSnippetFile) ? grunt.file.read(gaSnippetFile) : '';
+                        return processWorkerFrameHtml(content)
+                            .replace(
+                                /\<\/head\>/,
+                                gaSnippet + '</head>');
+                    }
+                },
+                files : [
+                    {expand: true, cwd: "src/", src: ["index.uncompressed.html"], dest: "dist/", rename: function() { return "dist/index.ga.uncompressed.html"; }},
                 ]
             }
 
@@ -156,6 +169,10 @@ module.exports = function(grunt) {
             dist: {
                 src: 'dist/index.uncompressed.html',
                 dest: 'dist/index.html'
+            },
+            distWithGA: {
+                src: 'dist/index.ga.uncompressed.html',
+                dest: 'dist/index.ga.html'
             }
         },
         // Generate JSDoc documentation

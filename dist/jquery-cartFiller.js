@@ -111,7 +111,13 @@
          * @member {boolean} CartFillerPlugin~Settings#useSource
          * @default false
          */
-        useSource: false
+        useSource: false,
+        /**
+         * Internal parameter - to override worker frame URL
+         * @member {String} CartFillerPlugin~Settings#workerFrameUrl
+         * @default false
+         */
+        workerFrameUrl: ''
     };
 
     /**
@@ -189,7 +195,7 @@
         scriptBookmarklet: function(){
             return 'try{' +
                 this.trace('start') + 
-                '(function(d,c,a,t,o,b,e,u,v,j,k,x,y,w,z,s){' + 
+                '(function(d,c,a,t,o,b,e,u,v,j,k,x,y,w,z,m,n,s){' + 
                     this.trace('in function') +
                     's=d.createElement(\'script\');' + 
                     this.trace('script element created') +
@@ -205,6 +211,8 @@
                     this.trace('debug set') +
                     'if(w)s[a](c+w,z);' + 
                     this.trace('worker set') +
+                    'if(m)s[a](c+m,n);' + 
+                    this.trace('worker URL set') +
                     's.onerror=function(){alert(\'error\');};' +
                     this.trace('onerror set') +
                     'd.getElementsByTagName(\'head\')[0].appendChild(s);' +
@@ -218,14 +226,15 @@
                     '\'src\',\'' + this.getInjectUrl() + '\',' +
                     '\'choose-job\',\'' + this.settings.chooseJob + '\',' +
                     '\'debug\',' + (this.settings.debug ? 1: 0) + ',' +
-                    '\'worker\',\'' + (this.settings.worker) + '\'' +
+                    '\'worker\',\'' + (this.settings.worker) + '\',' +
+                    '\'wfu\',\'' + (this.settings.workerFrameUrl) + '\'' +
                 ');' +
             '}catch(e){alert(e);}';
         },
         evalBookmarklet: function(){
             return 'try{' +
                 this.trace('start') +
-                '(function(f,x,t,u,v,j,d){' +
+                '(function(f,x,t,u,v,j,d,w){' +
                     this.trace('in function') +
                     'x.open(' +
                         '\'GET\',' +
@@ -240,7 +249,7 @@
                             'eval(' +
                                 '\'(function(){\'+' +
                                 'x.response+' +
-                                '\'}).call({cartFillerEval:[u,t,j,d]});\'' +
+                                '\'}).call({cartFillerEval:[u,t,j,d,w]});\'' +
                             ');' +
                             this.trace('eval complete') +
                         '}catch(e){alert(e);}' +
@@ -257,14 +266,15 @@
                     '\'' + this.settings.baseUrl + '\',' +
                     '\'' + this.getInjectUrl() + '\',' +
                     '\'' + this.settings.chooseJob + '\',' +
-                    (this.settings.debug ? 1 : 0) +
+                    (this.settings.debug ? 1 : 0) + ',' +
+                    '\'' + this.settings.workerFrameUrl + '\'' +
                 ');' +
             '}catch(e){alert(e);}';
         },
         iframeBookmarklet: function(){
             return 'try{' +
                 this.trace('start') +
-                '(function(f,d,p,t,u,v,m,j,y,x,i){' +
+                '(function(f,d,p,t,u,v,m,j,y,x,i,w){' +
                     this.trace('in') +
                     'window.addEventListener(' +
                         '\'message\',' +
@@ -277,7 +287,7 @@
                                     'eval(' +
                                         '\'(function(){\'+' +
                                         'x+' +
-                                        '\'}).call({cartFillerEval:[u,t,j,y]});\'' +
+                                        '\'}).call({cartFillerEval:[u,t,j,y,w]});\'' +
                                    ');' +
                                     this.trace('eval done') +
                                 '}' +
@@ -303,7 +313,8 @@
                     '\'' + this.getIframeUrl() + '\',' + 
                     (this.settings.minified ? 1:0) + ',' +
                     '\'' + this.settings.chooseJob + '\',' +
-                    (this.settings.debug ? 1 : 0) +
+                    (this.settings.debug ? 1 : 0) + ',' +
+                    '\'' + this.settings.workerFrameUrl + '\'' +
                 ');' +
             '}catch(e){alert(e);}';
         },

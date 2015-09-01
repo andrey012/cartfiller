@@ -730,7 +730,7 @@ define('controller', ['app', 'scroll'], function(app){
             reportError('bootstrap message did not come');
         }
     }, 10000);
-    config.gruntBuildTimeStamp='1461364965511';
+    config.gruntBuildTimeStamp='1461402609593';
     window.addEventListener('message', function(event){
         var test = /^cartFillerMessage:(.*)$/.exec(event.data);
         var isDist = true;
@@ -795,12 +795,14 @@ define('controller', ['app', 'scroll'], function(app){
                 });
                 if (message.tests) {
                     require(['jquery-cartFiller'], function(){
+                        var myselfUrl = window.location.href + (
+    config.gruntBuildTimeStamp ? ((window.location.href.indexOf('?') === -1 ? '?' : '&') + 
+    config.gruntBuildTimeStamp) : '');
                         var options = {
                             type: 'framed',
                             minified: false,
-                            chooseJob: window.location.href + (
-    config.gruntBuildTimeStamp ? ((window.location.href.indexOf('?') === -1 ? '?' : '&') + 
-    config.gruntBuildTimeStamp) : ''),
+                            chooseJob: myselfUrl,
+                            workerFrameUrl: myselfUrl,
                             debug: true,
                             baseUrl: window.location.href.split('?')[0].replace(/\/[^\/]*$/, ''),
                             inject: 'script',
@@ -1463,7 +1465,13 @@ define('jquery-cartFiller', ['jquery'], function() {
          * @member {boolean} CartFillerPlugin~Settings#useSource
          * @default false
          */
-        useSource: false
+        useSource: false,
+        /**
+         * Internal parameter - to override worker frame URL
+         * @member {String} CartFillerPlugin~Settings#workerFrameUrl
+         * @default false
+         */
+        workerFrameUrl: ''
     };
 
     /**
@@ -1541,7 +1549,7 @@ define('jquery-cartFiller', ['jquery'], function() {
         scriptBookmarklet: function(){
             return 'try{' +
                 this.trace('start') + 
-                '(function(d,c,a,t,o,b,e,u,v,j,k,x,y,w,z,s){' + 
+                '(function(d,c,a,t,o,b,e,u,v,j,k,x,y,w,z,m,n,s){' + 
                     this.trace('in function') +
                     's=d.createElement(\'script\');' + 
                     this.trace('script element created') +
@@ -1557,6 +1565,8 @@ define('jquery-cartFiller', ['jquery'], function() {
                     this.trace('debug set') +
                     'if(w)s[a](c+w,z);' + 
                     this.trace('worker set') +
+                    'if(m)s[a](c+m,n);' + 
+                    this.trace('worker URL set') +
                     's.onerror=function(){alert(\'error\');};' +
                     this.trace('onerror set') +
                     'd.getElementsByTagName(\'head\')[0].appendChild(s);' +
@@ -1570,14 +1580,15 @@ define('jquery-cartFiller', ['jquery'], function() {
                     '\'src\',\'' + this.getInjectUrl() + '\',' +
                     '\'choose-job\',\'' + this.settings.chooseJob + '\',' +
                     '\'debug\',' + (this.settings.debug ? 1: 0) + ',' +
-                    '\'worker\',\'' + (this.settings.worker) + '\'' +
+                    '\'worker\',\'' + (this.settings.worker) + '\',' +
+                    '\'wfu\',\'' + (this.settings.workerFrameUrl) + '\'' +
                 ');' +
             '}catch(e){alert(e);}';
         },
         evalBookmarklet: function(){
             return 'try{' +
                 this.trace('start') +
-                '(function(f,x,t,u,v,j,d){' +
+                '(function(f,x,t,u,v,j,d,w){' +
                     this.trace('in function') +
                     'x.open(' +
                         '\'GET\',' +
@@ -1592,7 +1603,7 @@ define('jquery-cartFiller', ['jquery'], function() {
                             'eval(' +
                                 '\'(function(){\'+' +
                                 'x.response+' +
-                                '\'}).call({cartFillerEval:[u,t,j,d]});\'' +
+                                '\'}).call({cartFillerEval:[u,t,j,d,w]});\'' +
                             ');' +
                             this.trace('eval complete') +
                         '}catch(e){alert(e);}' +
@@ -1609,14 +1620,15 @@ define('jquery-cartFiller', ['jquery'], function() {
                     '\'' + this.settings.baseUrl + '\',' +
                     '\'' + this.getInjectUrl() + '\',' +
                     '\'' + this.settings.chooseJob + '\',' +
-                    (this.settings.debug ? 1 : 0) +
+                    (this.settings.debug ? 1 : 0) + ',' +
+                    '\'' + this.settings.workerFrameUrl + '\'' +
                 ');' +
             '}catch(e){alert(e);}';
         },
         iframeBookmarklet: function(){
             return 'try{' +
                 this.trace('start') +
-                '(function(f,d,p,t,u,v,m,j,y,x,i){' +
+                '(function(f,d,p,t,u,v,m,j,y,x,i,w){' +
                     this.trace('in') +
                     'window.addEventListener(' +
                         '\'message\',' +
@@ -1629,7 +1641,7 @@ define('jquery-cartFiller', ['jquery'], function() {
                                     'eval(' +
                                         '\'(function(){\'+' +
                                         'x+' +
-                                        '\'}).call({cartFillerEval:[u,t,j,y]});\'' +
+                                        '\'}).call({cartFillerEval:[u,t,j,y,w]});\'' +
                                    ');' +
                                     this.trace('eval done') +
                                 '}' +
@@ -1655,7 +1667,8 @@ define('jquery-cartFiller', ['jquery'], function() {
                     '\'' + this.getIframeUrl() + '\',' + 
                     (this.settings.minified ? 1:0) + ',' +
                     '\'' + this.settings.chooseJob + '\',' +
-                    (this.settings.debug ? 1 : 0) +
+                    (this.settings.debug ? 1 : 0) + ',' +
+                    '\'' + this.settings.workerFrameUrl + '\'' +
                 ');' +
             '}catch(e){alert(e);}';
         },
