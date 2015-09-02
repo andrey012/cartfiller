@@ -481,7 +481,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             return false;
         };
         $scope.getTaskUrl = function(testIndex, taskIndex, stepIndex) {
-            return window.location.href.split('?')[0] + '?goto=' + encodeURIComponent(encodeURIComponent($scope.discovery.scripts.urls[testIndex])) + '&task=' + (taskIndex + 1) + '&step=' + (stepIndex + 1) + ($scope.params.editor ? ('&editor=' + encodeURIComponent($scope.params.editor)) : '');
+            return window.location.href.split('?')[0] + '?' + ($scope.params.root ? ('root=' + encodeURIComponent($scope.params.root) + '&') : '') + 'goto=' + encodeURIComponent($scope.discovery.scripts.urls[testIndex]) + '&task=' + (taskIndex + 1) + '&step=' + (stepIndex + 1) + ($scope.params.editor ? ('&editor=' + encodeURIComponent($scope.params.editor)) : '');
         };
     }]);
 });
