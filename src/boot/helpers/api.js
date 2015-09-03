@@ -694,33 +694,51 @@
                         return;
                     }
                     var document = me.modules.ui.mainFrameWindow.document;
-                    me.modules.api.each(text.split(''), function(i,char) {
+                    var fn = function(text, elementNode, whatNext) {
+                        var char = text.substr(0, 1);
                         var charCode = char.charCodeAt(0);
+                        var nextText = text.substr(1);
                         var charCodeGetter = {get : function() { return charCode; }};
                         var metaKeyGetter = {get : function() { return false; }};
                         var doKeyPress = true;
                         var dispatchEventResult;
-                        for (var eventName in {keydown: 0, keypress: 0, keyup: 0}) {
+                        for (var eventName in {keydown: 0, keypress: 0, input: 0, keyup: 0}) {
                             if ('keypress' === eventName && ! doKeyPress) {
                                 continue;
                             }
-                            var e = document.createEvent('KeyboardEvent');
-                            Object.defineProperty(e, 'keyCode', charCodeGetter);
-                            Object.defineProperty(e, 'charCode', charCodeGetter);
-                            Object.defineProperty(e, 'metaKey', metaKeyGetter);
-                            Object.defineProperty(e, 'which', charCodeGetter);
-                            if (e.initKeyboardEvent) {
-                                e.initKeyboardEvent(eventName, true, true, document.defaultView, false, false, false, false, charCode, charCode);
+                            var e = false;
+                            if (eventName === 'input') {
+                                try {
+                                    e = new Event('input');
+                                } catch (e) {}
+                                if (! e) {
+                                    try {
+                                        e = document.createEvent('UIEvent');
+                                        e.initUIEvent('input');
+                                    } catch (e) {}
+                                }
+                                if (! e) {
+                                    continue;
+                                }
                             } else {
-                                e.initKeyEvent(eventName, true, true, document.defaultView, false, false, false, false, charCode, charCode);
-                            }
-                            if (e.keyCode !== charCode || e.charCode !== charCode) {
-                                me.modules.api.result('could not set correct keyCode or charCode for ' + eventName + ': keyCode returns [' + e.keyCode + '] , charCode returns [' + e.charCode + '] instead of [' + charCode + ']');
-                                return false;
-                            }
-                            if (e.metaKey) {
-                                me.modules.api.result('could not set metaKey to false');
-                                return false;
+                                e = document.createEvent('KeyboardEvent');
+                                Object.defineProperty(e, 'keyCode', charCodeGetter);
+                                Object.defineProperty(e, 'charCode', charCodeGetter);
+                                Object.defineProperty(e, 'metaKey', metaKeyGetter);
+                                Object.defineProperty(e, 'which', charCodeGetter);
+                                if (e.initKeyboardEvent) {
+                                    e.initKeyboardEvent(eventName, true, true, document.defaultView, false, false, false, false, charCode, charCode);
+                                } else {
+                                    e.initKeyEvent(eventName, true, true, document.defaultView, false, false, false, false, charCode, charCode);
+                                }
+                                if (e.keyCode !== charCode || e.charCode !== charCode) {
+                                    me.modules.api.result('could not set correct keyCode or charCode for ' + eventName + ': keyCode returns [' + e.keyCode + '] , charCode returns [' + e.charCode + '] instead of [' + charCode + ']');
+                                    return false;
+                                }
+                                if (e.metaKey) {
+                                    me.modules.api.result('could not set metaKey to false');
+                                    return false;
+                                }
                             }
                             dispatchEventResult = elementNode.dispatchEvent(e);
                             if (! dispatchEventResult && 'keydown' === eventName) {
@@ -731,18 +749,22 @@
                                 elementNode.value = elementNode.value + char;
                             }
                         }
-                    }, function() {
-                        var event = new Event('change');
-                        elementNode.dispatchEvent(event);
-                        me.modules.api.arrow(el);
-                        if (undefined === whatNext || whatNext === me.modules.api.result) {
-                            me.modules.api.result();
-                        } else if (whatNext === me.modules.api.onload) {
-                            me.modules.api.onload();
+                        if (0 === nextText.length) {
+                            var event = new Event('change');
+                            elementNode.dispatchEvent(event);
+                            me.modules.api.arrow(el);
+                            if (undefined === whatNext || whatNext === me.modules.api.result) {
+                                me.modules.api.result();
+                            } else if (whatNext === me.modules.api.onload) {
+                                me.modules.api.onload();
+                            } else {
+                                whatNext(el, env);
+                            }
                         } else {
-                            whatNext(el, env);
+                            me.modules.api.setTimeout(function() { fn(nextText, elementNode, whatNext); }, 0);
                         }
-                    });
+                    };
+                    fn(text, elementNode, whatNext);
                 }
             ];
             r[1].cartFillerParameterList = [value];
