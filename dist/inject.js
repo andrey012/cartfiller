@@ -157,7 +157,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1461406550224';
+    config.gruntBuildTimeStamp='1461446908479';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -1512,20 +1512,37 @@
                 } else {
                     // this message was received by an accident and we need to resend it to mainFrame where
                     // real recipient is.
-                    var deepCopy = function(x, k) {
+                    var deepCopy = function(x, k, d) {
+                        if (d > 20) {
+                            // too deep
+                            return {};
+                        }
+                        if ('undefined' === typeof d) {
+                            d = 0;
+                        }
                         if ('undefined' === typeof k) {
                             k = [];
                         }
-                        var known = function(v) { return v === k ; };
+                        var e;
+                        var known = function(v) { return v === e ; };
                         var r = {};
                         for (var i in x) {
-                            if (! (x[i] instanceof Window) && ! (x[i] instanceof Function)) {
-                                if (! k.filter(known).length) {
-                                    k.push(x[i]);
-                                    if ('object' === typeof x[i]) {
-                                        r[i] = deepCopy(x[i], k);
-                                    } else {
-                                        r[i] = x[i];
+                            e = x[i];
+                            if (! (e instanceof Window) && ! (e instanceof Function) && '[object Window]' !== e.toString()) {
+                                var c = null;
+                                try {
+                                    if ('object' === typeof e && e.constructor) {
+                                        c = e.constructor.name;
+                                    }
+                                } catch (e) {}
+                                if (c !== 'Window') {
+                                    if (! k.filter(known).length) {
+                                        k.push(e);
+                                        if ('object' === typeof x[i]) {
+                                            r[i] = deepCopy(e, k, d + 1);
+                                        } else {
+                                            r[i] = x[i];
+                                        }
                                     }
                                 }
                             }
