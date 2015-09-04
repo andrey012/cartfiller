@@ -202,16 +202,19 @@
         <div id="availableTasksOfWorker" style="display: none;" ng-repeat="dummy in [0]">
             <a class="btn btn-success" onclick="return angular.element(this).scope().suggestTaskNameNoWatch();">Close</a>
             <input id="availableTasksOfWorkerSearch" placeholder="search/filter" type="text" ng-keyup="onSearch()"/>
-            <div ng-repeat="(name, steps) in jobTaskDescriptions"
+            <div class="availableTask" 
+                 ng-repeat="(name, steps) in jobTaskDescriptions"
                  ng-if="-1 !== name.toLowerCase().indexOf(filter)"
             >
                 <div ng-if="expanded != name">
-                    <span ng-if="filter.length" ng-click="expand(name)">
-                        {{name.substr(0, name.toLowerCase().indexOf(filter))}}<span class="highlighted">{{name.substr(name.toLowerCase().indexOf(filter), filter.length)}}</span>{{name.substr(name.toLowerCase().indexOf(filter) + filter.length)}}
-                    </span>
-                    <span ng-if="! filter.length" ng-click="expand(name)">
-                        {{name}}
-                    </span>
+                    <a href="#" onclick="return false;" ng-click="expand(name, $event)" onkeypress="return false;" ng-keypress="expand(name, $event)">
+                        <span ng-if="filter.length">
+                            {{name.substr(0, name.toLowerCase().indexOf(filter))}}<span class="highlighted">{{name.substr(name.toLowerCase().indexOf(filter), filter.length)}}</span>{{name.substr(name.toLowerCase().indexOf(filter) + filter.length)}}
+                        </span>
+                        <span ng-if="! filter.length" ng-click="expand(name)">
+                            {{name}}
+                        </span>
+                    </a>
                 </div>
                 <div ng-if="expanded == name">
                     <h3 ng-if="filter.length" ng-click="expand(name)">

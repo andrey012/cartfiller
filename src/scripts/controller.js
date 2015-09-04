@@ -634,8 +634,19 @@ define('controller', ['app', 'scroll'], function(app){
                     $scope.suggestTaskNameNoWatch();
                 }
             };
-            scope.expand = function(name) {
+            scope.expand = function(name, $event) {
                 scope.expanded = scope.expanded === name ? '' : name;
+                if ($event && $event.target) {
+                    var div = $($event.target).closest('div.availableTask');
+                    setTimeout(function() {
+                        var input = div.find('input').first();
+                        if (! input.length) {
+                            input = div.find('textarea');
+                        }
+                        input.focus();
+                        input[0].select();
+                    }, 0);
+                }
             };
         },1000);
         $scope.togglePause = function(element, event, doubleclick) {
@@ -666,6 +677,7 @@ define('controller', ['app', 'scroll'], function(app){
                 $('#availableTasksOfWorker').show().data('scroll', $(window).scrollTop());
                 cfMessage.send('toggleSize', {size: 'big'});
                 $('#availableTasksOfWorkerSearch').focus();
+                $('#availableTasksOfWorkerSearch')[0].select();
             } else {
                 $('#jobDetails').show();
                 $('#buttonPanel').show();
