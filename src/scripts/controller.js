@@ -214,7 +214,7 @@ define('controller', ['app', 'scroll'], function(app){
                     if (proceed){
                         setTimeout(function(){
                             $scope.doNextStep();
-                        }, (($scope.running === 'slow') && (true !== details.nop)) ? 2000 : 0);
+                        }, (($scope.running === 'slow') && (true !== details.nop)) ? (('undefined' !== typeof details.sleep) ? details.sleep : 1000) : 0);
                     } else {
                         $scope.running = $scope.doingOneStep = false;
                     }

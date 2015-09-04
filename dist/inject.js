@@ -157,7 +157,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1461493413785';
+    config.gruntBuildTimeStamp='1461530369186';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -1029,6 +1029,26 @@
             }
             me.modules.dispatcher.defineSharedWorkerFunction(name, fn);
             return this;
+        },
+        /** 
+         * Defines time to sleep after this step in slow mode. Default is 1 second. 
+         * Another way of specifying this time is via magic parameters like sleep250
+         * @function CartFiller.Api#sleep
+         * @param {integer|undefined} time (ms). If undefined, then sleep will be proportional
+         * to length of message said by api.say()
+         * @return {CartFiller.Api} for chaining
+         * @access public
+         */
+        sleep: function(time) {
+            if ('undefined' === typeof time) {
+                var messageToSay = me.modules.ui.getMessageToSay();
+                if ('undefined' === messageToSay) {
+                    time = 0;
+                } else {
+                    time = 1000 + Math.floor(String(messageToSay).length * 20); // 50 chars per second
+                }
+            }
+            me.modules.dispatchr.setSleepAfterThisStep(time);
         }
     });
 }).call(this, document, window);
@@ -1209,6 +1229,12 @@
      * @access private
      */
     var oldTitle;
+    /**
+     * Keeps value (ms) to sleep after this step in slow mode
+     * @var {integer} CartFiller.Dispatcher~sleepAfterThisStep
+     * @access private
+     */
+    var sleepAfterThisStep;
     /**
      * Keeps details about relay subsystem
      * @var {Object} CartFiller.Dispatcher~rel
@@ -1867,6 +1893,7 @@
                         }
                         // register watchdog
                         registerWorkerWatchdog();
+                        sleepAfterThisStep = undefined;
                         currentStepWorkerFn = workerFn;
                         if (message.debug) {
                             /* jshint ignore:start */
@@ -2221,7 +2248,7 @@
                 alert('You have invalid worker, result is submitted twice, please fix');
                 return;
             }
-            var status;
+            var status, m;
             if ((undefined === message) || ('' === message)) {
                 status = 'ok';
             } else if ('string' === typeof message){
@@ -2234,12 +2261,20 @@
             // now let's see, if status is not ok, and method is repeatable - then repeat it
             if (status !== 'ok') {
                 stepRepeatCounter ++;
-                var m = /repeat(\d+)/.exec(currentStepWorkerFn.toString().split(')')[0]);
-                if (m && m[1] > stepRepeatCounter) {
+                m = /repeat(\d+)/.exec(currentStepWorkerFn.toString().split(')')[0]);
+                if (m && parseInt(m[1]) > stepRepeatCounter) {
                     me.modules.api.setTimeout(function() {
                         currentStepWorkerFn(highlightedElement, currentStepEnv);
                     }, 1000);
                     return;
+                }
+            } else {
+                // see how long should we sleep;
+                if ('undefined' === typeof sleepAfterThisStep) {
+                    m = /sleep(\d+)/.exec(currentStepWorkerFn.toString().split(')')[0]);
+                    if (m) {
+                        sleepAfterThisStep = parseInt(m[1]);
+                    }
                 }
             }
             this.postMessageToWorker(
@@ -2252,7 +2287,8 @@
                     response: response,
                     nop: recoverable === 'nop',
                     nextTaskFlow: nextTaskFlow,
-                    globals: workerGlobals
+                    globals: workerGlobals,
+                    sleep: sleepAfterThisStep
                 }
             );
             workerCurrentStepIndex = workerOnLoadHandler = false;
@@ -2486,6 +2522,15 @@
          */
         defineSharedWorkerFunction: function(name, fn){
             sharedWorkerFunctions[name] = fn;
+        },
+        /**
+         * Set sleepAfterThisStep
+         * @function CartFiller.Dispatcher#setSleepAfterThisStep
+         * @param {integer} time (ms)
+         * @access public
+         */
+        setSleepAfterThisStep: function(sleep) {
+            sleepAfterThisStep = sleep;
         }
     });
 }).call(this, document, window);
@@ -3643,6 +3688,15 @@
                     return 'This will cause CartFiller to reload. Choose not to reload if you want just to refresh the main frame.';
                 };
             },2000);
+        },
+        /**
+         * Getter for messageToSay
+         * @function CartFiller.UI#getMessageToSay
+         * @return {String}
+         * @access public
+         */
+        getMessageToSay: function() {
+            return messageToSay;
         }
     });
 }).call(this, document, window);

@@ -175,6 +175,12 @@
      */
     var oldTitle;
     /**
+     * Keeps value (ms) to sleep after this step in slow mode
+     * @var {integer} CartFiller.Dispatcher~sleepAfterThisStep
+     * @access private
+     */
+    var sleepAfterThisStep;
+    /**
      * Keeps details about relay subsystem
      * @var {Object} CartFiller.Dispatcher~rel
      */
@@ -832,6 +838,7 @@
                         }
                         // register watchdog
                         registerWorkerWatchdog();
+                        sleepAfterThisStep = undefined;
                         currentStepWorkerFn = workerFn;
                         if (message.debug) {
                             /* jshint ignore:start */
@@ -1186,7 +1193,7 @@
                 alert('You have invalid worker, result is submitted twice, please fix');
                 return;
             }
-            var status;
+            var status, m;
             if ((undefined === message) || ('' === message)) {
                 status = 'ok';
             } else if ('string' === typeof message){
@@ -1199,12 +1206,20 @@
             // now let's see, if status is not ok, and method is repeatable - then repeat it
             if (status !== 'ok') {
                 stepRepeatCounter ++;
-                var m = /repeat(\d+)/.exec(currentStepWorkerFn.toString().split(')')[0]);
-                if (m && m[1] > stepRepeatCounter) {
+                m = /repeat(\d+)/.exec(currentStepWorkerFn.toString().split(')')[0]);
+                if (m && parseInt(m[1]) > stepRepeatCounter) {
                     me.modules.api.setTimeout(function() {
                         currentStepWorkerFn(highlightedElement, currentStepEnv);
                     }, 1000);
                     return;
+                }
+            } else {
+                // see how long should we sleep;
+                if ('undefined' === typeof sleepAfterThisStep) {
+                    m = /sleep(\d+)/.exec(currentStepWorkerFn.toString().split(')')[0]);
+                    if (m) {
+                        sleepAfterThisStep = parseInt(m[1]);
+                    }
                 }
             }
             this.postMessageToWorker(
@@ -1217,7 +1232,8 @@
                     response: response,
                     nop: recoverable === 'nop',
                     nextTaskFlow: nextTaskFlow,
-                    globals: workerGlobals
+                    globals: workerGlobals,
+                    sleep: sleepAfterThisStep
                 }
             );
             workerCurrentStepIndex = workerOnLoadHandler = false;
@@ -1451,6 +1467,15 @@
          */
         defineSharedWorkerFunction: function(name, fn){
             sharedWorkerFunctions[name] = fn;
+        },
+        /**
+         * Set sleepAfterThisStep
+         * @function CartFiller.Dispatcher#setSleepAfterThisStep
+         * @param {integer} time (ms)
+         * @access public
+         */
+        setSleepAfterThisStep: function(sleep) {
+            sleepAfterThisStep = sleep;
         }
     });
 }).call(this, document, window);

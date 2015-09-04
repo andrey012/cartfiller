@@ -228,7 +228,7 @@ define('controller', ['app', 'scroll'], function(app){
                     if (proceed){
                         setTimeout(function(){
                             $scope.doNextStep();
-                        }, (($scope.running === 'slow') && (true !== details.nop)) ? 2000 : 0);
+                        }, (($scope.running === 'slow') && (true !== details.nop)) ? (('undefined' !== typeof details.sleep) ? details.sleep : 1000) : 0);
                     } else {
                         $scope.running = $scope.doingOneStep = false;
                     }
@@ -731,7 +731,7 @@ define('controller', ['app', 'scroll'], function(app){
             reportError('bootstrap message did not come');
         }
     }, 10000);
-    config.gruntBuildTimeStamp='1461493413785';
+    config.gruntBuildTimeStamp='1461530369186';
     window.addEventListener('message', function(event){
         var test = /^cartFillerMessage:(.*)$/.exec(event.data);
         var isDist = true;

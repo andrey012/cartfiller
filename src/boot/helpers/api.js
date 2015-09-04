@@ -827,6 +827,26 @@
             }
             me.modules.dispatcher.defineSharedWorkerFunction(name, fn);
             return this;
+        },
+        /** 
+         * Defines time to sleep after this step in slow mode. Default is 1 second. 
+         * Another way of specifying this time is via magic parameters like sleep250
+         * @function CartFiller.Api#sleep
+         * @param {integer|undefined} time (ms). If undefined, then sleep will be proportional
+         * to length of message said by api.say()
+         * @return {CartFiller.Api} for chaining
+         * @access public
+         */
+        sleep: function(time) {
+            if ('undefined' === typeof time) {
+                var messageToSay = me.modules.ui.getMessageToSay();
+                if ('undefined' === messageToSay) {
+                    time = 0;
+                } else {
+                    time = 1000 + Math.floor(String(messageToSay).length * 20); // 50 chars per second
+                }
+            }
+            me.modules.dispatchr.setSleepAfterThisStep(time);
         }
     });
 }).call(this, document, window);

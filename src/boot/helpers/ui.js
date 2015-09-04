@@ -1086,6 +1086,15 @@
                     return 'This will cause CartFiller to reload. Choose not to reload if you want just to refresh the main frame.';
                 };
             },2000);
+        },
+        /**
+         * Getter for messageToSay
+         * @function CartFiller.UI#getMessageToSay
+         * @return {String}
+         * @access public
+         */
+        getMessageToSay: function() {
+            return messageToSay;
         }
     });
 }).call(this, document, window);
