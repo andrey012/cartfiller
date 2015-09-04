@@ -157,7 +157,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1461490767032';
+    config.gruntBuildTimeStamp='1461493413785';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -2986,6 +2986,7 @@
             messageDiv.style.left = Math.max(0, (Math.round((rect.left + rect.right) / 2) - currentMessageDivWidth)) + 'px';
             messageDiv.style.width = currentMessageDivWidth + 'px';
             messageDiv.style.height = 'auto';
+            messageDiv.style.maxHeight = '100%';
             messageDiv.style.position = 'fixed';
             messageDiv.style.fontSize = '20px';
             messageDiv.className = overlayClassName;
@@ -3002,8 +3003,8 @@
             overlayWindow().document.getElementsByTagName('body')[0].appendChild(messageDiv);
             messageAdjustmentRemainingAttempts = 100;
             me.modules.ui.adjustMessageDiv(messageDiv);
-            currentMessageOnScreen = messageToSay;
         }
+        currentMessageOnScreen = messageToSay;
     };
     /**
      * Function, that maintains arrows on screen, called time to time.
@@ -3431,7 +3432,10 @@
                         messageAdjustmentRemainingAttempts --;
                         scheduleOverlayRedraw(arrowToElements);
                         scheduleOverlayRedraw(highlightedElements);
+                        currentMessageOnScreen = undefined;
                     }
+                } else {
+                    div.style.opacity = '1';
                 }
             },0);
         },
