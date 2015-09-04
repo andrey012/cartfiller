@@ -618,6 +618,7 @@ define('controller', ['app', 'scroll'], function(app){
                             return '[' + a.n + '="' + a.v + '"' + ']';
                         }).join('')) +
                         (el.selectIndex ? (':nth-of-type(' + el.index + ')') : '') +
+                        ':visible' +
                         (el.selectText ? ('\').filter(function(i,el){return el.textContent.trim() === ' + JSON.stringify(el.text) + ';}).find(\'') : '')
                     ;
                 }).join(' ') + '\')').replace(/.find\(\'\s*\'\)$/g, '').replace(/\s+/g, ' ').replace(/\'\s+/g, '\'').replace(/\s+\'/g, '\'');
@@ -730,7 +731,7 @@ define('controller', ['app', 'scroll'], function(app){
             reportError('bootstrap message did not come');
         }
     }, 10000);
-    config.gruntBuildTimeStamp='1461488584607';
+    config.gruntBuildTimeStamp='1461490767032';
     window.addEventListener('message', function(event){
         var test = /^cartFillerMessage:(.*)$/.exec(event.data);
         var isDist = true;

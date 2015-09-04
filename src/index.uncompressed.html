@@ -10,7 +10,7 @@
         #jobDetails .btn-xs {margin: 5px 2px;  font-size: 12px;} 
         #jobDetails .pause {padding: 6px 5px 9px 5px; }
         #jobDetails .alert {padding: 5px; margin-bottom: 5px;}
-        #jobDetails h1, #jobDetails h2, #jobDetails h3 {margin: 0px;}
+        #jobDetails h1, #jobDetails h2, #jobDetails h3, #jobDetails h4 {margin: 0px;}
         .pause-active {background-color: red;}
         .nobr {display: inline-block; white-space: nowrap;}
         #availableTasksOfWorker input, #availableTasksOfWorker textarea {width: 100%;}
@@ -196,6 +196,9 @@
 
         </div>
         <a class="btn btn-info btn-xs" style="width: 100%; margin-top: 110px; margin-bottom: 5px;" onclick="alert('Long click on step = debug, long click on Run (fast and slow) = Run until particular step, double click on property value = change property value, double click on pause = set pause here and run');">help</a>
+        <h3 ng-if="jobTitle">
+            {{jobTitle.substr(0,128)}}
+        </h3>
         <div id="availableTasksOfWorker" style="display: none;" ng-repeat="dummy in [0]">
             <a class="btn btn-success" onclick="return angular.element(this).scope().suggestTaskNameNoWatch();">Close</a>
             <input id="availableTasksOfWorkerSearch" placeholder="search/filter" type="text" ng-keyup="onSearch()"/>
@@ -241,9 +244,9 @@
                  ng-repeat="(jobTaskIndex, jobTask) in jobDetails track by $index"
                  ng-click="toggleTaskProgress(jobTaskIndex)"
             >
-                <h1 ng-if="! jobTask.task && jobTask.heading && jobTask.level == 1">{{jobTask.heading}}</h1>
-                <h2 ng-if="! jobTask.task && jobTask.heading && jobTask.level == 2">{{jobTask.heading}}</h2>
-                <h3 ng-if="! jobTask.task && jobTask.heading && jobTask.level == 3">{{jobTask.heading}}</h3>
+                <h2 ng-if="! jobTask.task && jobTask.heading && jobTask.level == 1">{{jobTask.heading}}</h2>
+                <h3 ng-if="! jobTask.task && jobTask.heading && jobTask.level == 2">{{jobTask.heading}}</h3>
+                <h4 ng-if="! jobTask.task && jobTask.heading && jobTask.level == 3">{{jobTask.heading}}</h4>
                 <span ng-if="jobTask.task" ng-dblclick="doubleClickTaskName(jobTask.task)"><strong>{{jobTaskIndex + 1}}. {{jobTitleMap[jobTask.task] ? jobTitleMap[jobTask.task] : jobTask.task}}</strong></span><span ng-repeat="(propertyName, propertyValue) in jobTask" ng-if="propertyName != 'task' && jobTask.task" ng-dblclick="doubleClickTaskInput(jobTaskIndex, propertyName, propertyValue)">, 
                     <span>{{jobTitleMap[propertyName] ? jobTitleMap[propertyName] : propertyName}}</span>
                     <span><strong>{{getPropertyValue(propertyValue)}}</strong></span></span>
