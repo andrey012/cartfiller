@@ -743,7 +743,7 @@ define('controller', ['app', 'scroll'], function(app){
             reportError('bootstrap message did not come');
         }
     }, 10000);
-    config.gruntBuildTimeStamp='1461539203675';
+    config.gruntBuildTimeStamp='1461539523422';
     window.addEventListener('message', function(event){
         var test = /^cartFillerMessage:(.*)$/.exec(event.data);
         var isDist = true;
