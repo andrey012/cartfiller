@@ -266,7 +266,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                         }
                     });
                 } else if (cfMessage.hashUrl) {
-                    var m = /^#?job=([^&]*)&task=([^&]*)&step=([^&]*)$/.exec(cfMessage.hashUrl);
+                    var m = /^#?\/?job=([^&]*)&task=([^&]*)&step=([^&]*)$/.exec(cfMessage.hashUrl);
                     if (m) {
                         var jobName = decodeURIComponent(m[1]);
                         for (var i = 0; i < $scope.discovery.scripts.urls.length; i ++) {

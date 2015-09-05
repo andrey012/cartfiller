@@ -743,7 +743,7 @@ define('controller', ['app', 'scroll'], function(app){
             reportError('bootstrap message did not come');
         }
     }, 10000);
-    config.gruntBuildTimeStamp='1461539523422';
+    config.gruntBuildTimeStamp='1461620415151';
     window.addEventListener('message', function(event){
         var test = /^cartFillerMessage:(.*)$/.exec(event.data);
         var isDist = true;
@@ -1151,7 +1151,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                         }
                     });
                 } else if (cfMessage.hashUrl) {
-                    var m = /^#?job=([^&]*)&task=([^&]*)&step=([^&]*)$/.exec(cfMessage.hashUrl);
+                    var m = /^#?\/?job=([^&]*)&task=([^&]*)&step=([^&]*)$/.exec(cfMessage.hashUrl);
                     if (m) {
                         var jobName = decodeURIComponent(m[1]);
                         for (var i = 0; i < $scope.discovery.scripts.urls.length; i ++) {
