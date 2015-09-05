@@ -94,7 +94,7 @@ define('controller', ['app', 'scroll'], function(app){
             cfMessage.send('focusMainFrameWindow');
         };
         var scrollCurrentTaskIntoView = function(useTop, force) {
-            cfScroll(jQuery('#jobDetails > div:nth-child(' + ($scope.currentTask + 1) + ')')[0], useTop, force);
+            cfScroll(jQuery('#stepButton_' + $scope.currentTask + '_' + $scope.currentStep)[0], useTop, force);
         };
         var autorun = function() {
             if ($scope.workersLoaded >= $scope.workersCounter) {
@@ -213,6 +213,7 @@ define('controller', ['app', 'scroll'], function(app){
                 }
                 if ($scope.pausePoints[$scope.currentTask] && $scope.pausePoints[$scope.currentTask][$scope.currentStep]) {
                     proceed = false;
+                    scrollCurrentTaskIntoView();
                 }
                 var wasRunning = $scope.running;
                 if (proceed && $scope.clickedWhileWorkerWasInProgress) {
@@ -743,7 +744,7 @@ define('controller', ['app', 'scroll'], function(app){
             reportError('bootstrap message did not come');
         }
     }, 10000);
-    config.gruntBuildTimeStamp='1461620415151';
+    config.gruntBuildTimeStamp='1461623429682';
     window.addEventListener('message', function(event){
         var test = /^cartFillerMessage:(.*)$/.exec(event.data);
         var isDist = true;
@@ -873,7 +874,7 @@ define('scroll', ['app', 'scroll'], function(app){
                 window.scrollBy(0, -1000000);
             } else {
                 var rect = element.getBoundingClientRect();
-                var bottom = window.innerHeight;
+                var bottom = window.innerHeight - 20;
                 var delta = (useTop ? rect.top : rect.bottom) - bottom;
                 if (force || delta > 0 && delta < bottom) {
                     window.scrollBy(0, delta);

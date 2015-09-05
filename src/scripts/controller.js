@@ -80,7 +80,7 @@ define('controller', ['app', 'scroll'], function(app){
             cfMessage.send('focusMainFrameWindow');
         };
         var scrollCurrentTaskIntoView = function(useTop, force) {
-            cfScroll(jQuery('#jobDetails > div:nth-child(' + ($scope.currentTask + 1) + ')')[0], useTop, force);
+            cfScroll(jQuery('#stepButton_' + $scope.currentTask + '_' + $scope.currentStep)[0], useTop, force);
         };
         var autorun = function() {
             if ($scope.workersLoaded >= $scope.workersCounter) {
@@ -199,6 +199,7 @@ define('controller', ['app', 'scroll'], function(app){
                 }
                 if ($scope.pausePoints[$scope.currentTask] && $scope.pausePoints[$scope.currentTask][$scope.currentStep]) {
                     proceed = false;
+                    scrollCurrentTaskIntoView();
                 }
                 var wasRunning = $scope.running;
                 if (proceed && $scope.clickedWhileWorkerWasInProgress) {
