@@ -524,7 +524,7 @@ define('controller', ['app', 'scroll'], function(app){
             };
             scope.getCssSelector = function(stack){
                 var r = ('(\'' + stack.map(function(el){
-                    return '' +
+                    var r = '' +
                         (el.selectNodeName ? el.element : '') +
                         (el.selectId ? ('#' + el.id) : '') +
                         (el.classes.filter(function(c,i) {
@@ -537,8 +537,11 @@ define('controller', ['app', 'scroll'], function(app){
                         }).map(function(a){
                             return '[' + a.n + '="' + a.v + '"' + ']';
                         }).join('')) +
-                        (el.selectIndex ? (':nth-of-type(' + el.index + ')') : '') +
-                        ':visible' +
+                        (el.selectIndex ? (':nth-of-type(' + el.index + ')') : '');
+                    if (r.trim().length) {
+                        r += ':visible';
+                    }
+                    return r +
                         (el.selectText ? ('\').filter(function(i,el){return el.textContent.trim() === ' + JSON.stringify(el.text) + ';}).find(\'') : '')
                     ;
                 }).join(' ') + '\')').replace(/.find\(\'\s*\'\)$/g, '').replace(/\s+/g, ' ').replace(/\'\s+/g, '\'').replace(/\s+\'/g, '\'');
@@ -663,7 +666,7 @@ define('controller', ['app', 'scroll'], function(app){
             reportError('bootstrap message did not come');
         }
     }, 10000);
-    config.gruntBuildTimeStamp='1461747470413';
+    config.gruntBuildTimeStamp='1461749351202';
     window.addEventListener('message', function(event){
         var test = /^cartFillerMessage:(.*)$/.exec(event.data);
         var isDist = true;
