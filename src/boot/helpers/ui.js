@@ -815,7 +815,7 @@
             }
             if (arrowToElements.length > 0) {
                 setTimeout(function(){
-                    scrollTo(arrowToElements);
+                    try { scrollTo(arrowToElements); } catch (e) {}
                 },0);
             }
         },

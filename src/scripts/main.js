@@ -20,6 +20,9 @@
         if (test){
             var message = JSON.parse(test[1]);
             if (message.cmd === 'bootstrap') {
+                if (bootstrapped) {
+                    return;
+                }
                 bootstrapped = true;
                 if (message.dummy) {
                     return;

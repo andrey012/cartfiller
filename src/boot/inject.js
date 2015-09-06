@@ -74,10 +74,11 @@
      * Launches the {@link CartFiller.UI}
      * 
      * @function CartFiller.Configuration#launch
+     * @param {boolean} ignoreOpener
      * @access public
      */
-    config.launch = function(){
-        if (window.opener && window.opener !== window) {
+    config.launch = function(ignoreOpener){
+        if ((! ignoreOpener) && window.opener && window.opener !== window) {
             this.modules.dispatcher.startSlaveMode();
         } else {
             if (String(config['data-type']) === '0') {

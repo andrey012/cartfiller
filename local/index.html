@@ -1,38 +1,109 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <script>
-            window.addEventListener('message', function(event) {
-                var p = /^cartFillerFilePopupUrl:(.*)$/;
-                if (p.test(event.data)) {
-                    var s = document.createElement('script');
-                    var url = p.exec(event.data)[1];
-                    s.setAttribute('src', url);
-                    document.getElementsByTagName('body')[0].appendChild(s);
-                    document.getElementById('log').textContent += 'requesting: ' + url + '\n';
-                }
-            }, false);
-            Object.defineProperty(window, 'cartfiller', {set: function(v) {
-                var json = JSON.stringify(v);
-                document.getElementById('log').textContent += 'received: ' + json.length + ' bytes\n';
-                window.opener.postMessage('cartFillerFilePopupData:' + json, '*');
-            }});
-            window.cartFillerAPI = function() {
-                return {
-                    registerWorker: function(callback) {
-                        var code = '(function(window, document, undefined){cartFillerAPI().registerWorker(' + callback.toString() + ')})(window, document);';
-                        document.getElementById('log').textContent += 'received: ' + code.length + ' bytes\n';
-                        window.opener.postMessage('cartFillerFilePopupData:' + code, '*');
-                    }
-                }
-            }
-            window.opener.postMessage('cartFillerFilePopupInit', '*');
-        </script>
     </head>
-    <data>
+    <body>
         <h1>
             Hello, this is local file operation tab, please do not close it
         </h1>
+        <p>
+            This file is designed to be opened from local filesystem, e.g. file:///home/user/cartfiller/local/index.html.</p>
+        <p>
+            There are two ways of using this file: it can be opened first, or it can be opened in a popup tab, that CartFiller opens, when it wants to access local file. 
+        </p>
+        <p>
+            When opened first, you should open this file with a hash url, so, that full URL looks like: 
+        </p>
+        <p>
+            file:///home/user/cartfiller/local/index.html#url=https://andrey012.github.io/cartfiller/dist?root=file:///home/user/cartfiller/testsuite
+        </p>
+        <p>
+            Of course you should replace /home/user/cartfiller with where cartfiller is on your local disk, and where the testsuite is.
+        </p>
+        <h3>
+            Log
+        </h3>
         <pre id="log"></pre>
-    </data>
+        <script>
+            (function() {
+                var parent = window.opener;
+                var bootstrapped = false;
+                var log = function(msg) {
+                    document.getElementById('log').textContent += msg + '\n';
+                };
+                var init = function() {
+                    log('sending init');
+                    parent.postMessage('cartFillerFilePopupInit', '*');
+                };
+                window.addEventListener('message', function(event) {
+                    var p = /^cartFillerFilePopupUrl:(.*)$/;
+                    if (p.test(event.data)) {
+                        var s = document.createElement('script');
+                        var url = p.exec(event.data)[1];
+                        s.setAttribute('src', url);
+                        document.getElementsByTagName('body')[0].appendChild(s);
+                        document.getElementById('log').textContent += 'requesting: ' + url + '\n';
+                    } else if (event.data === 'cartFillerFilePopupPing') {
+                        if (! event.source) {
+                            log('ping received, but source is not set');
+                        } else if (parent !== event.source) {
+                            log('ping received from different parent');
+                            parent = event.source;
+                            init();
+                        } else {
+                            log('ping received from same parent');
+                        }
+                   } else if (0 === event.data.indexOf('cartFillerMessage')) {
+                        log('CartFiller tries to register as slave, going to bootstrap it');
+                        if ((! parent) || (parent !== event.source && event.source)) {
+                           parent = event.source;
+                        }
+                        parent.postMessage('cartFillerMessage:{"cmd":"launchFromSlave"}', '*');
+                    } 
+                }, false);
+                Object.defineProperty(window, 'cartfiller', {set: function(v) {
+                    var json = JSON.stringify(v);
+                    log('received: ' + json.length + ' bytes, parent is ' + (parent ? 'not null' : 'null') + '\n');
+                    parent.postMessage('cartFillerFilePopupData:' + json, '*');
+                }});
+                window.cartFillerAPI = function() {
+                    return {
+                        registerWorker: function(callback) {
+                            var code = '(function(window, document, undefined){cartFillerAPI().registerWorker(' + callback.toString() + ')})(window, document);';
+                            log('received: ' + code.length + ' bytes, parent is ' + (parent ? 'not null' : 'null') + '\n');
+                            parent.postMessage('cartFillerFilePopupData:' + code, '*');
+                        }
+                    }
+                };
+                if (parent) {
+                    init();
+                } else {
+                    var m = /^#?url=([^&]+)/.exec(window.location.hash);
+                    if (m) {
+                        var url = decodeURIComponent(m[1]);
+                        parent = window.open(url, '_blank');
+                        var bootstrap = function() {                
+                            if (bootstrapped) {
+                                return;
+                            }
+                            window.postMessage(
+                                'cartFillerMessage:' +
+                                JSON.stringify({
+                                    cmd: 'bootstrap',
+                                    lib: url.split('?')[0].replace(/\/[^\/]+\/[^\/]*$/, '/lib/'),
+                                    debug: true,
+                                    tests: true,
+                                    src: url.split('?')[0].replace(/[^\/]+$/, '')
+                                }),
+                                '*'
+                            );
+                            setTimeout(bootstrap, 50);
+                        };
+                    } else {    
+                        log('no window.opener initially set, waiting for ping');
+                    }
+                }
+            })();
+        </script>
+    </body>
 </html>

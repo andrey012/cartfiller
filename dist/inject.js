@@ -87,10 +87,11 @@
      * Launches the {@link CartFiller.UI}
      * 
      * @function CartFiller.Configuration#launch
+     * @param {boolean} ignoreOpener
      * @access public
      */
-    config.launch = function(){
-        if (window.opener && window.opener !== window) {
+    config.launch = function(ignoreOpener){
+        if ((! ignoreOpener) && window.opener && window.opener !== window) {
             this.modules.dispatcher.startSlaveMode();
         } else {
             if (String(config['data-type']) === '0') {
@@ -157,7 +158,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1461749351202';
+    config.gruntBuildTimeStamp='1461782682290';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -1236,6 +1237,10 @@
      */
     var sleepAfterThisStep;
     /**
+     * ////
+     */
+    var useTopWindowForLocalFileOperations;
+    /**
      * Keeps details about relay subsystem
      * @var {Object} CartFiller.Dispatcher~rel
      */
@@ -1359,6 +1364,11 @@
      * @access private
      */
     var nextTaskFlow;
+    /**
+     * Prevent double initialization when launched from slave mode
+     * @var {boolean} CartFiller.Dispathcer~initialized
+     */
+    var initialized;
     /**
      * removes setTimeout's and setInterval's registered by worker earlier
      * @function CartFiller.Dispatcher~clearRegisteredTimeoutsAndIntervals
@@ -1520,7 +1530,6 @@
         chooseJobRegistered: false,
         mainRegistered: false
     };
-    setTimeout(function() {startupWatchDog.fn();}, 10000);
 
     this.cartFillerConfiguration.scripts.push({
         /** 
@@ -1535,10 +1544,18 @@
          * for messages from worker (job progress) frame and from 
          * Choose Job frame
          * @function CartFiller.Dispatcher#init
+         * @parameter {boolean} isSlaveMode
          * @access public
          */
-        init: function(){
+        init: function(isSlaveMode){
+            if (! isSlaveMode) {
+                setTimeout(function() {startupWatchDog.fn();}, 10000);
+            }
             var dispatcher = this;
+            if (initialized) {
+                return;
+            }
+            initialized = true;
             window.addEventListener('message', function(event) {
                 var pattern = /^cartFillerMessage:(.*)$/;
                 if (pattern.test(event.data)){
@@ -1557,6 +1574,9 @@
                             console.log('unknown message: ' + fn + ':' + event.data);
                         }
                     }
+                } else if (0 === event.data.indexOf('cartFillerFilePopupUrl') || 0 === event.data.indexOf('cartFillerFilePopupPing')) {
+                    // just relay
+                    window.opener.postMessage(event.data, '*');
                 } else {
                     // this message was received by an accident and we need to resend it to mainFrame where
                     // real recipient is.
@@ -1576,29 +1596,32 @@
                         var r = {};
                         for (var i in x) {
                             e = x[i];
-                            if (! (e instanceof Window) && ! (e instanceof Function) && '[object Window]' !== e.toString()) {
-                                var c = null;
-                                try {
-                                    if ('object' === typeof e && e.constructor) {
-                                        c = e.constructor.name;
-                                    }
-                                } catch (e) {}
-                                if (c !== 'Window') {
-                                    if (! k.filter(known).length) {
-                                        k.push(e);
-                                        if ('object' === typeof x[i]) {
-                                            r[i] = deepCopy(e, k, d + 1);
-                                        } else {
-                                            r[i] = x[i];
+                            try {
+                                if (! (e instanceof Window) && ! (e instanceof Function) && '[object Window]' !== e.toString()) {
+                                    var c = null;
+                                    try {
+                                        if ('object' === typeof e && e.constructor) {
+                                            c = e.constructor.name;
+                                        }
+                                    } catch (e) {}
+                                    if (c !== 'Window') {
+                                        if (! k.filter(known).length) {
+                                            k.push(e);
+                                            if ('object' === typeof x[i]) {
+                                                r[i] = deepCopy(e, k, d + 1);
+                                            } else {
+                                                r[i] = x[i];
+                                            }
                                         }
                                     }
                                 }
-                            }
+                            } catch (e) {}
                         }
                         return r;
                     };
                     me.modules.dispatcher.onMessage_postMessage({cmd: 'postMessage', event: deepCopy(event), originalEvent: event});
                 }
+                return false;
             }, false);
         },
         /**
@@ -1961,7 +1984,7 @@
          * @access public
          */
         onMessage_helloFromPlugin: function(details){
-            this.postMessageToChooseJob(details.message, {});
+            this.postMessageToChooseJob(details.message, {useTopWindowForLocalFileOperations: useTopWindowForLocalFileOperations});
         },
         /**
          * Refreshes worker page
@@ -2091,6 +2114,16 @@
          */
         onMessage_requestWorkers: function(details) {
             this.postMessageToChooseJob('cartFillerRequestWorkers', details);
+        },
+        /**
+         * Launches cartfiller from slave mode - in specific case, when this tab is a popup tab
+         * invoked by local/index.html
+         * @function CartFiller.Dispatcher#onMessage_launchFromSlave
+         * @access public
+         */
+        onMessage_launchFromSlave: function() {
+            useTopWindowForLocalFileOperations = true;
+            me.launch(true);
         },
         ////
         /**
@@ -2422,14 +2455,19 @@
             } catch (e) {}
             // initialize
             worker = {};
-            me.modules.dispatcher.init();
+            me.modules.dispatcher.init(true);
             window.opener.postMessage('cartFillerMessage:{"cmd":"register"}', '*');
             me.modules.ui.chooseJobFrameWindow = me.modules.ui.workerFrameWindow = window.opener;
-            for (var opener = window.opener; opener && opener !== opener.opener; opener = opener.opener) {
-                if (opener.frames.cartFillerMainFrame) {
-                    me.modules.ui.mainFrameWindow = opener.frames.cartFillerMainFrame;
+            try { // this can fail when Cartfiller tab is opened from local/index.html
+                for (var opener = window.opener; opener && opener !== opener.opener; opener = opener.opener) {
+                    if (opener.frames.cartFillerMainFrame) {
+                        me.modules.ui.mainFrameWindow = opener.frames.cartFillerMainFrame;
+                        break;
+                    }
                 }
-            }
+            } catch (e) {
+                return; 
+            }   
             if (! me.modules.ui.mainFrameWindow) {
                 alert('could not find mainFrameWindow in slave mode');
             }
@@ -3426,7 +3464,7 @@
             }
             if (arrowToElements.length > 0) {
                 setTimeout(function(){
-                    scrollTo(arrowToElements);
+                    try { scrollTo(arrowToElements); } catch (e) {}
                 },0);
             }
         },

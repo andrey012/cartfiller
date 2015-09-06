@@ -666,13 +666,16 @@ define('controller', ['app', 'scroll'], function(app){
             reportError('bootstrap message did not come');
         }
     }, 10000);
-    config.gruntBuildTimeStamp='1461749351202';
+    config.gruntBuildTimeStamp='1461782682290';
     window.addEventListener('message', function(event){
         var test = /^cartFillerMessage:(.*)$/.exec(event.data);
         var isDist = true;
         if (test){
             var message = JSON.parse(test[1]);
             if (message.cmd === 'bootstrap') {
+                if (bootstrapped) {
+                    return;
+                }
                 bootstrapped = true;
                 if (message.dummy) {
                     return;
@@ -1757,7 +1760,12 @@ define('jquery-cartFiller', ['jquery'], function() {
      * See {@link CartFiller.Dispatcher#onMessage_sendResult}
      */
     var messageEventListener = function(event){
-        if ((new RegExp('^' + helloMessageName + ':{')).test(event.data)){
+        var helloRegexp = new RegExp('^' + helloMessageName + ':(.*)$');
+        if (helloRegexp.test(event.data)){
+            var details = JSON.parse(helloRegexp.exec(event.data)[1]);
+            if (details.useTopWindowForLocalFileOperations) {
+                filePopupWindow = event.source || window.parent;
+            }
             $('.cart-filler-submit').show();
             $('.cart-filler-helper').hide();
             $(knownBookmarkletElements).hide();
@@ -1779,6 +1787,19 @@ define('jquery-cartFiller', ['jquery'], function() {
             if (data) {
                 var urls = JSON.parse(data[1]).urls;
                 loadWorkers(urls);
+            }
+            var p = 'cartFillerFilePopupData:';
+            if (0 === event.data.indexOf(p) && filePopupWindow) {
+                var next = fileRequestsQueue.shift();
+                if (fileRequestsQueue.length) {
+                    filePopupSendUrl();
+                }
+                next.complete({status: 200, responseText: event.data.substr(p.length)});
+            } else if (0 === event.data.indexOf('cartFillerFilePopupInit')) {
+                if (event.source) {
+                    filePopupWindow = event.source;
+                }
+                filePopupSendUrl();
             }
         }
     };
@@ -1945,31 +1966,27 @@ define('jquery-cartFiller', ['jquery'], function() {
     });
 
     var filePopupWindow = false;
+    var filePopupWindowInitReceived = false;
     var fileRequestsQueue = [];
+    var filePopupSendUrl = function() {
+        filePopupWindow.postMessage('cartFillerFilePopupUrl:' + fileRequestsQueue[0].url, '*');
+    };
     $.cartFillerPlugin.ajax = function(options) {
-        var sendUrl = function() {
-            filePopupWindow.postMessage('cartFillerFilePopupUrl:' + fileRequestsQueue[0].url, '*');
-        };
+        var pingFilePopupWindow = function() {
+            if (! filePopupWindowInitReceived) {
+                filePopupWindow.postMessage('cartFillerFilePopupPing', '*');
+                setTimeout(pingFilePopupWindow, 50);
+            }
+        };  
         if (/^file\:\/\/\//.test(options.url)) {
             fileRequestsQueue.push(options);
             if (filePopupWindow) {
                 if (1 === fileRequestsQueue.length) {
-                    sendUrl();
+                    filePopupSendUrl();
                 }
             } else {
                 filePopupWindow = window.open('javascript:document.write("<h1>Open cartfiller/local/index.html file from your disk in this tab</h1>");', '_blank');  // jshint ignore:line
-                window.addEventListener('message', function(event) {
-                    var p = 'cartFillerFilePopupData:';
-                    if (0 === event.data.indexOf(p)) {
-                        var next = fileRequestsQueue.shift();
-                        if (fileRequestsQueue.length) {
-                            sendUrl();
-                        }
-                        next.complete({status: 200, responseText: event.data.substr(p.length)});
-                    } else if (0 === event.data.indexOf('cartFillerFilePopupInit')) {
-                        sendUrl();
-                    }
-                }, false);
+                pingFilePopupWindow();
             }
         } else {
             $.ajax(options);
