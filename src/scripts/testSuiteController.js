@@ -10,7 +10,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             return;
         }
         var parseJson = function(s){
-            s = s.replace(/\,[ \t\n\r]*\]/g, ']').replace(/\,[ \t\n\r]*\}/g, '}').replace(/\t/g, '\\t').replace(/\r/g, '');
+            s = s.replace(/^\s*cartfiller\s*=\s*/, '').replace(/\,[ \t\n\r]*\]/g, ']').replace(/\,[ \t\n\r]*\}/g, '}').replace(/\t/g, '\\t').replace(/\r/g, '');
             var m;
             while (m = /([\{,]\s*\"(\\\"|[^"\n])*)\n/.exec(s)) {
                 s = s.replace(m[0], m[1] + '\\n');
@@ -174,8 +174,9 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             }
         };
         var discoverNextRootURL = function(){
-            $.ajax({
-                url: $scope.discovery.currentRootFile = $scope.discovery.currentRootPath.replace(/\/$/, '') + '/cartfiller.json?' + (new Date()).getTime(), 
+            $scope.discovery.currentRootFile = $scope.discovery.currentRootPath.replace(/\/$/, '') + '/cartfiller.json?' + (new Date()).getTime();
+            $.cartFillerPlugin.ajax({
+                url: $scope.discovery.currentRootFile, 
                 complete: function(xhr) {
                     if ($scope.discovery.state === 0) {
                         $scope.errorURL = false;
@@ -280,7 +281,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                 }
             } else {
                 // let's download next file
-                $.ajax({
+                $.cartFillerPlugin.ajax({
                     url: $scope.discovery.currentDownloadedTestURL = $scope.discovery.scripts.hrefs[$scope.discovery.scripts.currentDownloadingIndex] =  $scope.discovery.currentRootPath.replace(/\/$/, '') + '/' + $scope.discovery.scripts.flat[$scope.discovery.scripts.currentDownloadingIndex].join('/').replace(/\.json$/, '') + '.json?' + (new Date()).getTime(),
                     complete: function(xhr) {
                         $scope.errorURL = false;
@@ -333,7 +334,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             setTimeout(function refreshCurrentTest(){
                 // check whether currently loaded test have changed and we need to replace it
                 if (testToCheck !== false) {
-                    $.ajax({
+                    $.cartFillerPlugin.ajax({
                         url: $scope.discovery.scripts.hrefs[testToCheck] + '?' + (new Date()).getTime(),
                         complete: function(xhr) {
                             if (xhr.status === 200) {
@@ -375,6 +376,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             test.autorun = how === 'load' ? 0 : 1;
             test.autorunSpeed = how === 'slow' ? 'slow' : 'fast';
             test.rootCartfillerPath = $scope.discovery.currentRootPath;
+            test.cartFillerInstallationUrl = window.location.href.split('#')[0].split('?')[0].replace(/[^\/]*$/, '');
             test.globals = $scope.discovery.scripts.tweaks[index];
             test.trackWorker = $scope.params.editor;
             test.jobName = $scope.discovery.scripts.urls[index];

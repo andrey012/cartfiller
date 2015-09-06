@@ -988,20 +988,20 @@
          * @param {Window} source
          * @access public
          */
-        onMessage_postMessage: function(details, source) {
-            if (! me.modules.dispatcher.reflectMessage(details)) {
-                var event;
-                if ('undefined' === typeof source) {
-                    event = details.originalEvent;
-                } else {
+        onMessage_postMessage: function(details) {
+            if (/^cartFillerFilePopup/.test(details.event.data)) {
+                me.modules.ui.chooseJobFrameWindow.postMessage(details.event.data, '*');
+            } else {
+                if (! me.modules.dispatcher.reflectMessage(details)) {
+                    var event;
                     event = new me.modules.ui.mainFrameWindow.CustomEvent('message', details.event);
                     for (var i in details.event) {
                         try {
                             event[i] = details.event[i];
                         } catch (e) {}
                     }
+                    me.modules.ui.mainFrameWindow.dispatchEvent(event);
                 }
-                me.modules.ui.mainFrameWindow.dispatchEvent(event);
             }
         },
         /**
@@ -1027,6 +1027,15 @@
          */
         onMessage_updateTitle: function(details) {
             window.document.title = details.title;
+        },
+        /**
+         * Passes loadWorker message to chooseJobFrame
+         * @function CartFiller.Dispatcher#onMessage_requestWorkers
+         * @param {Object} details
+         * @access public
+         */
+        onMessage_requestWorkers: function(details) {
+            this.postMessageToChooseJob('cartFillerRequestWorkers', details);
         },
         ////
         /**

@@ -41,8 +41,6 @@ define('controller', ['app', 'scroll'], function(app){
             $scope.chooseJobState = !$scope.chooseJobState;
             cfMessage.send($scope.chooseJobState ? 'chooseJob' : 'chooseJobCancel');
         };
-        $scope.trackWorker = false;
-        $scope.trackWorkerId = 0;
         $scope.jobDetails = [];
         $scope.jobTaskProgress = [];
         $scope.jobTaskDescriptions = {};
@@ -113,7 +111,6 @@ define('controller', ['app', 'scroll'], function(app){
                     } else {
                         cfMessage.send('makeSmaller');
                         cfScroll();
-                        $scope.trackWorker = details.trackWorker;
                         $scope.chooseJobState = false;
                         $scope.jobDetails = details.details;
                         $scope.jobTitleMap = angular.isUndefined(details.titleMap) ? [] : details.titleMap;
@@ -147,7 +144,7 @@ define('controller', ['app', 'scroll'], function(app){
                         $scope.workersLoaded = 0;
                         $scope.workerSrc = workerSrc;
                         if (workerSrc){
-                            $scope.loadWorker(workerSrc);
+                            $scope.loadWorker();
                         } else {
                             alert('Worker script not specified in job description');
                         }
@@ -448,87 +445,9 @@ define('controller', ['app', 'scroll'], function(app){
             $scope.doNextStep();
             return false;
         };
-        var trackWorkerContents = {};
-        var trackWorkerLoaded = {};
-        var trackWorkersAllLoaded = function() {
-            var i; 
-            for (i in trackWorkerLoaded) {
-                if (trackWorkerLoaded.hasOwnProperty(i) && ! trackWorkerLoaded[i]) {
-                    return false;
-                }
-            }
-            return true;
-        };
-        var trackWorker = function(trackWorkerId) {
-            if ($scope.trackWorkerId !== trackWorkerId) {
-                return;
-            }
-            angular.forEach(trackWorkerContents, function(contents, url) {
-                var originalUrl = url;
-                trackWorkerLoaded[url] = false;
-                if (/\?/.test(url)){
-                    url += '&';
-                } else {
-                    url += '?';
-                }
-                url += (new Date()).getTime();
-                var xhr = new XMLHttpRequest();
-                xhr.onload = function(){
-                    if ($scope.trackWorkerId !== trackWorkerId) {
-                        return;
-                    }
-                    trackWorkerLoaded[originalUrl] = true;
-                    if (xhr.response !== trackWorkerContents[originalUrl]) {
-                        cfMessage.send('loadWorker', {code: xhr.response, src: originalUrl, isFinal: true});
-                        trackWorkerContents[originalUrl] = xhr.response;
-                    }
-                    if (trackWorkersAllLoaded()) {
-                        setTimeout(function() { trackWorker(trackWorkerId); }, 1000);
-                    }
-                };
-                xhr.onerror = function(){
-                    setTimeout(function() { trackWorker(trackWorkerId); }, 1000);
-                };
-                xhr.open('GET', url, true);
-                xhr.send();
-            });
-        };
-        $scope.loadWorker = function(url){
-            $scope.trackWorkerId ++;
-            if (undefined === url) {
-                url = $scope.workerSrc;
-            }
-            var urls;
-            if ('string' === typeof url) {
-                urls = [url];
-            } else {
-                urls = url;
-            }
-            trackWorkerContents = {};
-            trackWorkerLoaded = {};
-            angular.forEach(urls, function(url) {
-                (function(url){
-                    trackWorkerLoaded[url] = false;
-                    var originalUrl = url;
-                    if (/\?/.test(url)){
-                        url += '&';
-                    } else {
-                        url += '?';
-                    }
-                    url += (new Date()).getTime();
-                    var xhr = new XMLHttpRequest();
-                    xhr.onload = function(){
-                        trackWorkerLoaded[originalUrl] = true;
-                        trackWorkerContents[originalUrl] = xhr.response;
-                        cfMessage.send('loadWorker', {code: xhr.response, src: originalUrl, isFinal: trackWorkersAllLoaded()});
-                        if ($scope.trackWorker && trackWorkersAllLoaded()) {
-                            setTimeout(function() { trackWorker($scope.trackWorkerId); }, 1000);
-                        }
-                    };
-                    xhr.open('GET', url, true);
-                    xhr.send();
-                })(url);
-            });
+        $scope.loadWorker = function(){
+            var urls = 'string' === typeof $scope.workerSrc ? [$scope.workerSrc] : $scope.workerSrc;
+            cfMessage.send('requestWorkers', {urls: urls});
         };
         $scope.reloadWorker = function($event){
             $scope.workersLoaded = 0;

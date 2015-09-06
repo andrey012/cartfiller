@@ -381,12 +381,73 @@
      */
     var statusMessageName;
     /**
+     * Holds name for message, that will be used to trigger worker load
+     * @var {String} CartFillerPlugin~statusMessageName
+     * @access private
+     */
+    var loadWorkerMessageName = 'cartFillerRequestWorkers';
+    /**
      * Message to be used as "hello" message from {@link CartFiller.Dispatcher}
      * to plugin
      * @var {String} CartFillerPlugin~helloMessageName
      * @access private
      */
     var helloMessageName = 'helloFromCartFiller';
+    var trackWorkerContents = {};
+    var trackWorkerLoaded = {};
+    var trackWorker = false;
+    var trackWorkerId = 0;
+    var trackWorkersAllLoaded = function() {
+        var i;
+        for (i in trackWorkerLoaded) {
+            if (trackWorkerLoaded.hasOwnProperty(i) && ! trackWorkerLoaded[i]) {
+                return false;
+            }
+        }
+        return true;
+    };
+    var loadWorkers = function(urls, track) {
+        if (! track) {
+            trackWorkerId ++;
+            trackWorkerContents = {};
+            trackWorkerLoaded = {};
+        } else {
+            if (track !== trackWorkerId) {
+                return;
+            }
+        }
+        var loader = function(url, rememberedTrackWorkerId, track){
+            trackWorkerLoaded[url] = false;
+            var originalUrl = url;
+            if (/\?/.test(url)){
+                url += '&';
+            } else {
+                url += '?';
+            }
+            url += (new Date()).getTime();
+            $.cartFillerPlugin.ajax({
+                url: url,
+                complete: function(xhr) {
+                    if ('undefined' !== typeof track && track !== trackWorkerId) {
+                        return;
+                    }
+                    trackWorkerLoaded[originalUrl] = true;
+                    if ((! track) || xhr.responseText !== trackWorkerContents[originalUrl]) {
+                        window.parent.postMessage('cartFillerMessage:' + JSON.stringify({cmd: 'loadWorker', code: xhr.responseText, src: originalUrl, isFinal: trackWorkersAllLoaded() || track}), '*');
+                        trackWorkerContents[originalUrl] = xhr.responseText;
+                    }
+                    if (trackWorker && trackWorkersAllLoaded()) {
+                        setTimeout(function() { loadWorkers(urls, rememberedTrackWorkerId); }, 1000);
+                    }
+                }
+            });
+        };
+        for (var i = 0; i < urls.length; i ++) {
+            var url = urls[i];
+            loader(url, trackWorkerId, track);
+        }
+    };
+
     /**
      * Callback, that will receive job result details from cartFiller
      * @callback CartFillerPlugin.resultCallback
@@ -421,6 +482,11 @@
                 if (statusCallback){
                     statusCallback(JSON.parse(data[1]));
                 }
+            }
+            data = new RegExp('^' + loadWorkerMessageName + ':(.*)$').exec(event.data);
+            if (data) {
+                var urls = JSON.parse(data[1]).urls;
+                loadWorkers(urls);
             }
         }
     };
@@ -520,6 +586,7 @@
         }
 
         jobDetails.cmd = 'jobDetails';
+        trackWorker = jobDetails.trackWorker;
 
         window.parent.postMessage(
             'cartFillerMessage:' + 
@@ -570,7 +637,7 @@
     };
 
 
-    window.addEventListener('message', messageEventListener,false);
+    window.addEventListener('message', messageEventListener, false);
     if (window.parent !== window){
         window.parent.postMessage('cartFillerMessage:{"cmd":"helloFromPlugin","message":"' + helloMessageName + '"}', '*');
     }
@@ -585,4 +652,35 @@
         }
     });
 
+    var filePopupWindow = false;
+    var fileRequestsQueue = [];
+    $.cartFillerPlugin.ajax = function(options) {
+        var sendUrl = function() {
+            filePopupWindow.postMessage('cartFillerFilePopupUrl:' + fileRequestsQueue[0].url, '*');
+        };
+        if (/^file\:\/\/\//.test(options.url)) {
+            fileRequestsQueue.push(options);
+            if (filePopupWindow) {
+                if (1 === fileRequestsQueue.length) {
+                    sendUrl();
+                }
+            } else {
+                filePopupWindow = window.open('javascript:document.write("<h1>Open cartfiller/local/index.html file from your disk in this tab</h1>");', '_blank');  // jshint ignore:line
+                window.addEventListener('message', function(event) {
+                    var p = 'cartFillerFilePopupData:';
+                    if (0 === event.data.indexOf(p)) {
+                        var next = fileRequestsQueue.shift();
+                        if (fileRequestsQueue.length) {
+                            sendUrl();
+                        }
+                        next.complete({status: 200, responseText: event.data.substr(p.length)});
+                    } else if (0 === event.data.indexOf('cartFillerFilePopupInit')) {
+                        sendUrl();
+                    }
+                }, false);
+            }
+        } else {
+            $.ajax(options);
+        }
+    };
 })( jQuery, window, document );

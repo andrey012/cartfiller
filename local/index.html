@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <script>
+            window.addEventListener('message', function(event) {
+                var p = /^cartFillerFilePopupUrl:(.*)$/;
+                if (p.test(event.data)) {
+                    var s = document.createElement('script');
+                    var url = p.exec(event.data)[1];
+                    s.setAttribute('src', url);
+                    document.getElementsByTagName('body')[0].appendChild(s);
+                    document.getElementById('log').textContent += 'requesting: ' + url + '\n';
+                }
+            }, false);
+            Object.defineProperty(window, 'cartfiller', {set: function(v) {
+                var json = JSON.stringify(v);
+                document.getElementById('log').textContent += 'received: ' + json.length + ' bytes\n';
+                window.opener.postMessage('cartFillerFilePopupData:' + json, '*');
+            }});
+            window.cartFillerAPI = function() {
+                return {
+                    registerWorker: function(callback) {
+                        var code = '(function(window, document, undefined){cartFillerAPI().registerWorker(' + callback.toString() + ')})(window, document);';
+                        document.getElementById('log').textContent += 'received: ' + code.length + ' bytes\n';
+                        window.opener.postMessage('cartFillerFilePopupData:' + code, '*');
+                    }
+                }
+            }
+            window.opener.postMessage('cartFillerFilePopupInit', '*');
+        </script>
+    </head>
+    <data>
+        <h1>
+            Hello, this is local file operation tab, please do not close it
+        </h1>
+        <pre id="log"></pre>
+    </data>
+</html>

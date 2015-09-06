@@ -55,8 +55,6 @@ define('controller', ['app', 'scroll'], function(app){
             $scope.chooseJobState = !$scope.chooseJobState;
             cfMessage.send($scope.chooseJobState ? 'chooseJob' : 'chooseJobCancel');
         };
-        $scope.trackWorker = false;
-        $scope.trackWorkerId = 0;
         $scope.jobDetails = [];
         $scope.jobTaskProgress = [];
         $scope.jobTaskDescriptions = {};
@@ -127,7 +125,6 @@ define('controller', ['app', 'scroll'], function(app){
                     } else {
                         cfMessage.send('makeSmaller');
                         cfScroll();
-                        $scope.trackWorker = details.trackWorker;
                         $scope.chooseJobState = false;
                         $scope.jobDetails = details.details;
                         $scope.jobTitleMap = angular.isUndefined(details.titleMap) ? [] : details.titleMap;
@@ -161,7 +158,7 @@ define('controller', ['app', 'scroll'], function(app){
                         $scope.workersLoaded = 0;
                         $scope.workerSrc = workerSrc;
                         if (workerSrc){
-                            $scope.loadWorker(workerSrc);
+                            $scope.loadWorker();
                         } else {
                             alert('Worker script not specified in job description');
                         }
@@ -462,87 +459,9 @@ define('controller', ['app', 'scroll'], function(app){
             $scope.doNextStep();
             return false;
         };
-        var trackWorkerContents = {};
-        var trackWorkerLoaded = {};
-        var trackWorkersAllLoaded = function() {
-            var i; 
-            for (i in trackWorkerLoaded) {
-                if (trackWorkerLoaded.hasOwnProperty(i) && ! trackWorkerLoaded[i]) {
-                    return false;
-                }
-            }
-            return true;
-        };
-        var trackWorker = function(trackWorkerId) {
-            if ($scope.trackWorkerId !== trackWorkerId) {
-                return;
-            }
-            angular.forEach(trackWorkerContents, function(contents, url) {
-                var originalUrl = url;
-                trackWorkerLoaded[url] = false;
-                if (/\?/.test(url)){
-                    url += '&';
-                } else {
-                    url += '?';
-                }
-                url += (new Date()).getTime();
-                var xhr = new XMLHttpRequest();
-                xhr.onload = function(){
-                    if ($scope.trackWorkerId !== trackWorkerId) {
-                        return;
-                    }
-                    trackWorkerLoaded[originalUrl] = true;
-                    if (xhr.response !== trackWorkerContents[originalUrl]) {
-                        cfMessage.send('loadWorker', {code: xhr.response, src: originalUrl, isFinal: true});
-                        trackWorkerContents[originalUrl] = xhr.response;
-                    }
-                    if (trackWorkersAllLoaded()) {
-                        setTimeout(function() { trackWorker(trackWorkerId); }, 1000);
-                    }
-                };
-                xhr.onerror = function(){
-                    setTimeout(function() { trackWorker(trackWorkerId); }, 1000);
-                };
-                xhr.open('GET', url, true);
-                xhr.send();
-            });
-        };
-        $scope.loadWorker = function(url){
-            $scope.trackWorkerId ++;
-            if (undefined === url) {
-                url = $scope.workerSrc;
-            }
-            var urls;
-            if ('string' === typeof url) {
-                urls = [url];
-            } else {
-                urls = url;
-            }
-            trackWorkerContents = {};
-            trackWorkerLoaded = {};
-            angular.forEach(urls, function(url) {
-                (function(url){
-                    trackWorkerLoaded[url] = false;
-                    var originalUrl = url;
-                    if (/\?/.test(url)){
-                        url += '&';
-                    } else {
-                        url += '?';
-                    }
-                    url += (new Date()).getTime();
-                    var xhr = new XMLHttpRequest();
-                    xhr.onload = function(){
-                        trackWorkerLoaded[originalUrl] = true;
-                        trackWorkerContents[originalUrl] = xhr.response;
-                        cfMessage.send('loadWorker', {code: xhr.response, src: originalUrl, isFinal: trackWorkersAllLoaded()});
-                        if ($scope.trackWorker && trackWorkersAllLoaded()) {
-                            setTimeout(function() { trackWorker($scope.trackWorkerId); }, 1000);
-                        }
-                    };
-                    xhr.open('GET', url, true);
-                    xhr.send();
-                })(url);
-            });
+        $scope.loadWorker = function(){
+            var urls = 'string' === typeof $scope.workerSrc ? [$scope.workerSrc] : $scope.workerSrc;
+            cfMessage.send('requestWorkers', {urls: urls});
         };
         $scope.reloadWorker = function($event){
             $scope.workersLoaded = 0;
@@ -744,7 +663,7 @@ define('controller', ['app', 'scroll'], function(app){
             reportError('bootstrap message did not come');
         }
     }, 10000);
-    config.gruntBuildTimeStamp='1461623429682';
+    config.gruntBuildTimeStamp='1461747470413';
     window.addEventListener('message', function(event){
         var test = /^cartFillerMessage:(.*)$/.exec(event.data);
         var isDist = true;
@@ -896,7 +815,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             return;
         }
         var parseJson = function(s){
-            s = s.replace(/\,[ \t\n\r]*\]/g, ']').replace(/\,[ \t\n\r]*\}/g, '}').replace(/\t/g, '\\t').replace(/\r/g, '');
+            s = s.replace(/^\s*cartfiller\s*=\s*/, '').replace(/\,[ \t\n\r]*\]/g, ']').replace(/\,[ \t\n\r]*\}/g, '}').replace(/\t/g, '\\t').replace(/\r/g, '');
             var m;
             while (m = /([\{,]\s*\"(\\\"|[^"\n])*)\n/.exec(s)) {
                 s = s.replace(m[0], m[1] + '\\n');
@@ -1060,8 +979,9 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             }
         };
         var discoverNextRootURL = function(){
-            $.ajax({
-                url: $scope.discovery.currentRootFile = $scope.discovery.currentRootPath.replace(/\/$/, '') + '/cartfiller.json?' + (new Date()).getTime(), 
+            $scope.discovery.currentRootFile = $scope.discovery.currentRootPath.replace(/\/$/, '') + '/cartfiller.json?' + (new Date()).getTime();
+            $.cartFillerPlugin.ajax({
+                url: $scope.discovery.currentRootFile, 
                 complete: function(xhr) {
                     if ($scope.discovery.state === 0) {
                         $scope.errorURL = false;
@@ -1166,7 +1086,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                 }
             } else {
                 // let's download next file
-                $.ajax({
+                $.cartFillerPlugin.ajax({
                     url: $scope.discovery.currentDownloadedTestURL = $scope.discovery.scripts.hrefs[$scope.discovery.scripts.currentDownloadingIndex] =  $scope.discovery.currentRootPath.replace(/\/$/, '') + '/' + $scope.discovery.scripts.flat[$scope.discovery.scripts.currentDownloadingIndex].join('/').replace(/\.json$/, '') + '.json?' + (new Date()).getTime(),
                     complete: function(xhr) {
                         $scope.errorURL = false;
@@ -1219,7 +1139,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             setTimeout(function refreshCurrentTest(){
                 // check whether currently loaded test have changed and we need to replace it
                 if (testToCheck !== false) {
-                    $.ajax({
+                    $.cartFillerPlugin.ajax({
                         url: $scope.discovery.scripts.hrefs[testToCheck] + '?' + (new Date()).getTime(),
                         complete: function(xhr) {
                             if (xhr.status === 200) {
@@ -1261,6 +1181,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             test.autorun = how === 'load' ? 0 : 1;
             test.autorunSpeed = how === 'slow' ? 'slow' : 'fast';
             test.rootCartfillerPath = $scope.discovery.currentRootPath;
+            test.cartFillerInstallationUrl = window.location.href.split('#')[0].split('?')[0].replace(/[^\/]*$/, '');
             test.globals = $scope.discovery.scripts.tweaks[index];
             test.trackWorker = $scope.params.editor;
             test.jobName = $scope.discovery.scripts.urls[index];
@@ -1749,12 +1670,73 @@ define('jquery-cartFiller', ['jquery'], function() {
      */
     var statusMessageName;
     /**
+     * Holds name for message, that will be used to trigger worker load
+     * @var {String} CartFillerPlugin~statusMessageName
+     * @access private
+     */
+    var loadWorkerMessageName = 'cartFillerRequestWorkers';
+    /**
      * Message to be used as "hello" message from {@link CartFiller.Dispatcher}
      * to plugin
      * @var {String} CartFillerPlugin~helloMessageName
      * @access private
      */
     var helloMessageName = 'helloFromCartFiller';
+    var trackWorkerContents = {};
+    var trackWorkerLoaded = {};
+    var trackWorker = false;
+    var trackWorkerId = 0;
+    var trackWorkersAllLoaded = function() {
+        var i;
+        for (i in trackWorkerLoaded) {
+            if (trackWorkerLoaded.hasOwnProperty(i) && ! trackWorkerLoaded[i]) {
+                return false;
+            }
+        }
+        return true;
+    };
+    var loadWorkers = function(urls, track) {
+        if (! track) {
+            trackWorkerId ++;
+            trackWorkerContents = {};
+            trackWorkerLoaded = {};
+        } else {
+            if (track !== trackWorkerId) {
+                return;
+            }
+        }
+        var loader = function(url, rememberedTrackWorkerId, track){
+            trackWorkerLoaded[url] = false;
+            var originalUrl = url;
+            if (/\?/.test(url)){
+                url += '&';
+            } else {
+                url += '?';
+            }
+            url += (new Date()).getTime();
+            $.cartFillerPlugin.ajax({
+                url: url,
+                complete: function(xhr) {
+                    if ('undefined' !== typeof track && track !== trackWorkerId) {
+                        return;
+                    }
+                    trackWorkerLoaded[originalUrl] = true;
+                    if ((! track) || xhr.responseText !== trackWorkerContents[originalUrl]) {
+                        window.parent.postMessage('cartFillerMessage:' + JSON.stringify({cmd: 'loadWorker', code: xhr.responseText, src: originalUrl, isFinal: trackWorkersAllLoaded() || track}), '*');
+                        trackWorkerContents[originalUrl] = xhr.responseText;
+                    }
+                    if (trackWorker && trackWorkersAllLoaded()) {
+                        setTimeout(function() { loadWorkers(urls, rememberedTrackWorkerId); }, 1000);
+                    }
+                }
+            });
+        };
+        for (var i = 0; i < urls.length; i ++) {
+            var url = urls[i];
+            loader(url, trackWorkerId, track);
+        }
+    };
+
     /**
      * Callback, that will receive job result details from cartFiller
      * @callback CartFillerPlugin.resultCallback
@@ -1789,6 +1771,11 @@ define('jquery-cartFiller', ['jquery'], function() {
                 if (statusCallback){
                     statusCallback(JSON.parse(data[1]));
                 }
+            }
+            data = new RegExp('^' + loadWorkerMessageName + ':(.*)$').exec(event.data);
+            if (data) {
+                var urls = JSON.parse(data[1]).urls;
+                loadWorkers(urls);
             }
         }
     };
@@ -1888,6 +1875,7 @@ define('jquery-cartFiller', ['jquery'], function() {
         }
 
         jobDetails.cmd = 'jobDetails';
+        trackWorker = jobDetails.trackWorker;
 
         window.parent.postMessage(
             'cartFillerMessage:' + 
@@ -1938,7 +1926,7 @@ define('jquery-cartFiller', ['jquery'], function() {
     };
 
 
-    window.addEventListener('message', messageEventListener,false);
+    window.addEventListener('message', messageEventListener, false);
     if (window.parent !== window){
         window.parent.postMessage('cartFillerMessage:{"cmd":"helloFromPlugin","message":"' + helloMessageName + '"}', '*');
     }
@@ -1953,6 +1941,37 @@ define('jquery-cartFiller', ['jquery'], function() {
         }
     });
 
+    var filePopupWindow = false;
+    var fileRequestsQueue = [];
+    $.cartFillerPlugin.ajax = function(options) {
+        var sendUrl = function() {
+            filePopupWindow.postMessage('cartFillerFilePopupUrl:' + fileRequestsQueue[0].url, '*');
+        };
+        if (/^file\:\/\/\//.test(options.url)) {
+            fileRequestsQueue.push(options);
+            if (filePopupWindow) {
+                if (1 === fileRequestsQueue.length) {
+                    sendUrl();
+                }
+            } else {
+                filePopupWindow = window.open('javascript:document.write("<h1>Open cartfiller/local/index.html file from your disk in this tab</h1>");', '_blank');  // jshint ignore:line
+                window.addEventListener('message', function(event) {
+                    var p = 'cartFillerFilePopupData:';
+                    if (0 === event.data.indexOf(p)) {
+                        var next = fileRequestsQueue.shift();
+                        if (fileRequestsQueue.length) {
+                            sendUrl();
+                        }
+                        next.complete({status: 200, responseText: event.data.substr(p.length)});
+                    } else if (0 === event.data.indexOf('cartFillerFilePopupInit')) {
+                        sendUrl();
+                    }
+                }, false);
+            }
+        } else {
+            $.ajax(options);
+        }
+    };
 })( jQuery, window, document );
 
 /* jshint ignore:start */
