@@ -666,7 +666,7 @@ define('controller', ['app', 'scroll'], function(app){
             reportError('bootstrap message did not come');
         }
     }, 10000);
-    config.gruntBuildTimeStamp='1461782682290';
+    config.gruntBuildTimeStamp='1461786299050';
     window.addEventListener('message', function(event){
         var test = /^cartFillerMessage:(.*)$/.exec(event.data);
         var isDist = true;
@@ -1972,6 +1972,13 @@ define('jquery-cartFiller', ['jquery'], function() {
         filePopupWindow.postMessage('cartFillerFilePopupUrl:' + fileRequestsQueue[0].url, '*');
     };
     $.cartFillerPlugin.ajax = function(options) {
+        if (! runningInsideCartFiller) {
+            // retry later
+            setTimeout(function() { 
+                $.cartFillerPlugin.ajax(options);
+            }, 100);
+            return;
+        }
         var pingFilePopupWindow = function() {
             if (! filePopupWindowInitReceived) {
                 filePopupWindow.postMessage('cartFillerFilePopupPing', '*');

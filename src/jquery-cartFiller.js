@@ -669,6 +669,13 @@
         filePopupWindow.postMessage('cartFillerFilePopupUrl:' + fileRequestsQueue[0].url, '*');
     };
     $.cartFillerPlugin.ajax = function(options) {
+        if (! runningInsideCartFiller) {
+            // retry later
+            setTimeout(function() { 
+                $.cartFillerPlugin.ajax(options);
+            }, 100);
+            return;
+        }
         var pingFilePopupWindow = function() {
             if (! filePopupWindowInitReceived) {
                 filePopupWindow.postMessage('cartFillerFilePopupPing', '*');
