@@ -169,6 +169,9 @@ define('controller', ['app', 'scroll'], function(app){
                     }
                     skipHeadings();
                 });
+            } else if (cmd === 'globalsUpdate'){
+                $scope.workerGlobals = details.globals;
+                digestGlobals();
             } else if (cmd === 'workerRegistered'){
                 $scope.$apply(function(){
                     $scope.workersLoaded ++;

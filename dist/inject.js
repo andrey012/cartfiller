@@ -174,7 +174,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1461877021110';
+    config.gruntBuildTimeStamp='1461888722617';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -1466,6 +1466,12 @@
     var sharedWorkerFunctions = {};
     var evaluateNextWorker = function() {
         if (! workersToEvaluate.length) {
+            me.modules.dispatcher.postMessageToWorker(
+                'globalsUpdate', 
+                {
+                    globals: workerGlobals
+                }
+            );
             return;
         }
         eval(workerSourceCodes[workersToEvaluate.shift()]); // jshint ignore:line

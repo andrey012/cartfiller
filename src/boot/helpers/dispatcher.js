@@ -394,6 +394,12 @@
     var sharedWorkerFunctions = {};
     var evaluateNextWorker = function() {
         if (! workersToEvaluate.length) {
+            me.modules.dispatcher.postMessageToWorker(
+                'globalsUpdate', 
+                {
+                    globals: workerGlobals
+                }
+            );
             return;
         }
         eval(workerSourceCodes[workersToEvaluate.shift()]); // jshint ignore:line
