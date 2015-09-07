@@ -280,7 +280,7 @@
                                     'eval(' +
                                         '\'(function(){\'+' +
                                         'x+' +
-                                        '\'}).call({cartFillerEval:[u,t,j,y,w]});\'' +
+                                        '\'}).call({cartFillerEval:[u,t,j,y,w,"",x]});\'' +
                                    ');' +
                                     this.trace('eval done') +
                                 '}' +

@@ -690,7 +690,7 @@
                     } else if (undefined !== me.modules.dispatcher.getWorkerGlobals()[value]) {
                         text = me.modules.dispatcher.getWorkerGlobals()[value];
                     } else {
-                        me.modules.api.result('Value ty type [' + value + '] not found neither in the task properties nor in globals');
+                        me.modules.api.result('Value to type [' + value + '] not found neither in the task properties nor in globals');
                         return;
                     }
                     var document = me.modules.ui.mainFrameWindow.document;

@@ -55,6 +55,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                 errors: {}
             }
         };
+        $scope.filterTestsByText = '';
         $scope.runningAll = false;
         $scope.runAll = function (index) {
             $scope.runningAll = true;
@@ -489,5 +490,39 @@ define('testSuiteController', ['app', 'scroll'], function(app){
         $scope.getTaskUrl = function(testIndex, taskIndex, stepIndex) {
             return getLocation().split('?')[0] + '?' + ($scope.params.root ? ('root=' + encodeURIComponent($scope.params.root) + '&') : '') + 'goto=' + encodeURIComponent($scope.discovery.scripts.urls[testIndex]) + '&task=' + (taskIndex + 1) + '&step=' + (stepIndex + 1) + ($scope.params.editor ? ('&editor=' + encodeURIComponent($scope.params.editor)) : '');
         };
+        $scope.searchForTestNoWatch = function() {
+            $scope.filterTestsByText = $('#testsearch').val();
+            angular.element($('#testslist')[0]).scope().$digest();
+        };
+        $scope.isTestFilteredIn = function(index) { 
+            if (! $scope.filterTestsByText.length) {
+                return true;
+            }
+            var filter = $scope.filterTestsByText.toLowerCase();
+            if (-1 !== $scope.discovery.scripts.flat[index].join('/').toLowerCase().indexOf(filter)) {
+                return true;
+            }
+            if ($scope.discovery.scripts.contents[index] && $scope.discovery.scripts.contents[index].title && -1 !== $scope.discovery.scripts.contents[index].title.toLowerCase().indexOf(filter)) {
+                return true;
+            }
+            if ($scope.discovery.scripts.tweaks[index]) {
+                for (var i in $scope.discovery.scripts.tweaks[index]) {
+                    if (-1 !== i.toLowerCase().indexOf(filter)) {
+                        return true;
+                    }
+                    if (-1 !== String($scope.discovery.scripts.tweaks[index][i]).toLowerCase().indexOf(filter)) {
+                        return true;
+                    }
+                }
+            }
+        };
+        function focusOnSearchField() {
+            if ($('#testsearch').is(':visible')) {
+                $('#testsearch')[0].focus();
+            } else {
+                setTimeout(focusOnSearchField, 100);
+            }
+        }
+        focusOnSearchField();
     }]);
 });

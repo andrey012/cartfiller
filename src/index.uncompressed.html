@@ -31,8 +31,11 @@
             <div class="alert alert-info" ng-if="discovery.state == 1">
                 Downloading test scripts
             </div>
+            <div>
+                <input id="testsearch" type="text" style="width: 100%" placeholder="search" onkeyup="var event = arguments[0] || window.event; return angular.element(this).scope().searchForTestNoWatch(event);"/>
+            </div>
         </div>
-        <div class="col-xs-3">
+        <div class="col-xs-3" style="text-align: right;">
             <button class="btn btn-info" ng-click="discovery.state = 0; discover()">
                 Reload
             </button>
@@ -44,15 +47,18 @@
             </button>
         </div>
         <div class="col-xs-12">
-            <table class="table table-bordered">
+            <table class="table table-bordered" id="testslist" ng-repeat="dummy in [0]">
                 <tbody>
-                    <tr ng-repeat-start="(index, testPath) in discovery.scripts.flat" ng-class="['active', 'danger', '', 'success'][2 + (discovery.scripts.success[index] || 0)] ">
+                    <tr ng-repeat-start="(index, testPath) in discovery.scripts.flat" ng-class="['active', 'danger', '', 'success'][2 + (discovery.scripts.success[index] || 0)]" ng-if="isTestFilteredIn(index)">
                         <td>
                             <strong>{{discovery.scripts.contents[index].title ? discovery.scripts.contents[index].title : testPath.join('/')}}</strong><span ng-repeat="(name, value) in discovery.scripts.tweaks[index]">, {{name}}: <strong>{{value}}</strong></span>
                         </td>
                         <td>
                             <button class="btn btn-xs btn-success" ng-click="runTest(index, 'fast')">
                                 Run
+                            </button>
+                            <button class="btn btn-xs btn-success" ng-click="runAll(index)" title="Run all tests from here on">
+                                >>
                             </button>
                             <button class="btn btn-xs btn-success" ng-click="runTest(index, 'slow')">
                                 Slow
@@ -62,9 +68,6 @@
                             </button>
                             <button class="btn btn-xs btn-success" ng-click="expandTest(index)">
                                 {{index === expandedTest ? 'Collapse' : 'Expand'}}
-                            </button>
-                            <button class="btn btn-xs btn-success" ng-click="runAll(index)">
-                                Run all from here
                             </button>
                         </td>
                     </tr>

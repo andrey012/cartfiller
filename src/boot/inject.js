@@ -70,6 +70,12 @@
      */
     config.localIndexHtml = '';
     /**
+     * Used to launch slaves from filesystem
+     * @member {String} CartFiller.Configuration#localInjectJs
+     * @access public
+     */
+    config.localInjectJs = '';
+    /**
      * Array of scripts (modules) of cartFiller, that were loaded
      * See {@link CartFiller.Loader}
      * @member CartFiller.Configuration#scripts
@@ -194,6 +200,7 @@
         config['data-debug'] = this.cartFillerEval[3];
         config['data-worker'] = this.cartFillerEval[4];
         config['data-wfu'] = this.cartFillerEval[5];
+        config.localInjectJs = this.cartFillerEval[6];
     }
     // if not concatenated - then load loader.js, which, itself, will load other
     // files

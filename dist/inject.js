@@ -83,6 +83,12 @@
      */
     config.localIndexHtml = '';
     /**
+     * Used to launch slaves from filesystem
+     * @member {String} CartFiller.Configuration#localInjectJs
+     * @access public
+     */
+    config.localInjectJs = '';
+    /**
      * Array of scripts (modules) of cartFiller, that were loaded
      * See {@link CartFiller.Loader}
      * @member CartFiller.Configuration#scripts
@@ -174,7 +180,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1461889843977';
+    config.gruntBuildTimeStamp='1461960311865';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -207,6 +213,7 @@
         config['data-debug'] = this.cartFillerEval[3];
         config['data-worker'] = this.cartFillerEval[4];
         config['data-wfu'] = this.cartFillerEval[5];
+        config.localInjectJs = this.cartFillerEval[6];
     }
     // if not concatenated - then load loader.js, which, itself, will load other
     // files
@@ -909,7 +916,7 @@
                     } else if (undefined !== me.modules.dispatcher.getWorkerGlobals()[value]) {
                         text = me.modules.dispatcher.getWorkerGlobals()[value];
                     } else {
-                        me.modules.api.result('Value ty type [' + value + '] not found neither in the task properties nor in globals');
+                        me.modules.api.result('Value to type [' + value + '] not found neither in the task properties nor in globals');
                         return;
                     }
                     var document = me.modules.ui.mainFrameWindow.document;
@@ -1599,6 +1606,9 @@
                 } else if (0 === event.data.indexOf('cartFillerFilePopupUrl') || 0 === event.data.indexOf('cartFillerFilePopupPing')) {
                     // just relay
                     window.opener.postMessage(event.data, '*');
+                } else if ('/^\'cartFillerEval\'/' === event.data) {
+                    // launch slave frame
+                    event.source.postMessage(me.localInjectJs, '*');
                 } else {
                     // this message was received by an accident and we need to resend it to mainFrame where
                     // real recipient is.

@@ -527,6 +527,9 @@
                 } else if (0 === event.data.indexOf('cartFillerFilePopupUrl') || 0 === event.data.indexOf('cartFillerFilePopupPing')) {
                     // just relay
                     window.opener.postMessage(event.data, '*');
+                } else if ('/^\'cartFillerEval\'/' === event.data) {
+                    // launch slave frame
+                    event.source.postMessage(me.localInjectJs, '*');
                 } else {
                     // this message was received by an accident and we need to resend it to mainFrame where
                     // real recipient is.
