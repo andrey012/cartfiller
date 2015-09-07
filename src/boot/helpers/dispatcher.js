@@ -300,7 +300,7 @@
      */
     var getLibUrl = function() {
         //// TBD sort out paths
-        return me.baseUrl.replace(/(src|dist)\/?$/, 'lib/');
+        return me.localIndexHtml ? '' : me.baseUrl.replace(/(src|dist)\/?$/, 'lib/');
     };
     /**
      * Keeps directions on next task flow
@@ -589,7 +589,7 @@
                 this.postMessageToChooseJob('bootstrap', {
                     lib: getLibUrl(),
                     testSuite: true,
-                    src: me.baseUrl.replace(/\/$/, '') + '/'
+                    src: me.localIndexHtml ? '' : me.baseUrl.replace(/\/$/, '') + '/'
                 }, 'cartFillerMessage');
             } else if (source === me.modules.ui.mainFrameWindow) {
                 startupWatchDog.mainRegistered = true;
@@ -1413,7 +1413,13 @@
                 return; 
             }   
             if (! me.modules.ui.mainFrameWindow) {
-                alert('could not find mainFrameWindow in slave mode');
+                // probably we are still going to switch to UI mode, so we'll report this failure after 10 seconds
+                setTimeout(function() {
+                    if (! me.uiLaunched) {
+                        alert('could not find mainFrameWindow in slave mode');
+                    }
+                }, 10000);
+                return;
             }
             me.modules.dispatcher.registerLoadWatcher();
             relay.isSlave = true;

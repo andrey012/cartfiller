@@ -728,7 +728,11 @@
         showHideChooseJobFrame: function(show){
             if (show && !chooseJobFrameLoaded) {
                 // load choose job frame now
-                this.chooseJobFrameWindow.location.href = me['data-choose-job'];
+                if ((0 === me['data-choose-job'].indexOf('?')) && (me.localIndexHtml)) {
+                    this.chooseJobFrameWindow.document.write(me.localIndexHtml.replace(/data-local-href=""/, 'data-local-href="' + me['data-choose-job'] + '"'));
+                } else {
+                    this.chooseJobFrameWindow.location.href = me['data-choose-job'];
+                }
                 chooseJobFrameLoaded = true;
             }
             this.chooseJobFrame.style.display = show ? 'block' : 'none';
@@ -923,7 +927,11 @@
             this.workerFrame.style.zIndex = '100000';
             body.appendChild(this.workerFrame);
             this.workerFrameWindow = window.frames[workerFrameName];
-            this.workerFrameWindow.location.href=getWorkerFrameSrc();
+            if (me.localIndexHtml) {
+                this.workerFrameWindow.document.write(me.localIndexHtml);
+            } else {
+                this.workerFrameWindow.location.href = getWorkerFrameSrc();
+            }
 
             this.chooseJobFrame = window.document.createElement('iframe');
             this.chooseJobFrame.setAttribute('name', chooseJobFrameName);
@@ -987,7 +995,12 @@
             this.mainFrameWindow.location.href=mainFrameSrc;
             body.appendChild(this.workerFrame);
             this.workerFrameWindow = window.frames[workerFrameName];
-            this.workerFrameWindow.location.href=getWorkerFrameSrc();
+            if (me.localIndexHtml) {
+                console.log(me.localIndexHtml);
+                this.workerFrameWindow.document.write(me.localIndexHtml);
+            } else {
+                this.workerFrameWindow.location.href = getWorkerFrameSrc();
+            }
             body.appendChild(this.chooseJobFrame);
             this.chooseJobFrameWindow = window.frames[chooseJobFrameName];
 

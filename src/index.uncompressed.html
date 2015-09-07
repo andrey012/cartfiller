@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>CartFiller</title>
-    <link rel="stylesheet" href="../lib/bootstrap/dist/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="../lib/bootstrap/dist/css/bootstrap.css"/>
     <style>
         #jobDetails .btn {font-family: monospace; font-size: 12px;} 
         #jobDetails .btn {margin: 0px -5px; }
@@ -18,7 +18,7 @@
     </style>
 </head>
 <body>
-    <div id="testSuiteManager" style="display: none;" ng-controller="testSuiteController">
+    <div id="testSuiteManager" style="display: none;" ng-controller="testSuiteController" data-local-href="">
         <div class="col-xs-9">
             <div class="alert alert-danger" ng-if="discovery.state == -1">
                 Error discovering cartfiller.json:<br/>

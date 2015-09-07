@@ -6,6 +6,7 @@
         <h1>
             Hello, this is local file operation tab, please do not close it
         </h1>
+        <a id="openpopup" style="display: none;" href="#">Popups seem to be blocked, click here to open popup</a>
         <p>
             This file is designed to be opened from local filesystem, e.g. file:///home/user/cartfiller/local/index.html.</p>
         <p>
@@ -25,6 +26,7 @@
         </h3>
         <pre id="log"></pre>
         <script>
+            console.log('local.html started');
             (function() {
                 var parent = window.opener;
                 var bootstrapped = false;
@@ -56,10 +58,18 @@
                    } else if (0 === event.data.indexOf('cartFillerMessage')) {
                         log('CartFiller tries to register as slave, going to bootstrap it');
                         if ((! parent) || (parent !== event.source && event.source)) {
-                           parent = event.source;
+                            log('Adjusting parent');
+                            parent = event.source;
                         }
                         parent.postMessage('cartFillerMessage:{"cmd":"launchFromSlave"}', '*');
-                    } 
+                    } else if ('/^\'cartFillerEval\'/' === event.data) {
+                        log('got inject.js request');
+                        if ((! parent) || (parent !== event.source && event.source)) {
+                            log('Adjusting parent');
+                            parent = event.source;
+                        }
+                        parent.postMessage('\'cartFillerEval\';' + injectjs, '*');
+                    }
                 }, false);
                 Object.defineProperty(window, 'cartfiller', {set: function(v) {
                     var json = JSON.stringify(v);
@@ -81,28 +91,32 @@
                     var m = /^#?url=([^&]+)/.exec(window.location.hash);
                     if (m) {
                         var url = decodeURIComponent(m[1]);
-                        parent = window.open(url, '_blank');
-                        var bootstrap = function() {                
-                            if (bootstrapped) {
-                                return;
-                            }
-                            window.postMessage(
-                                'cartFillerMessage:' +
-                                JSON.stringify({
-                                    cmd: 'bootstrap',
-                                    lib: url.split('?')[0].replace(/\/[^\/]+\/[^\/]*$/, '/lib/'),
-                                    debug: true,
-                                    tests: true,
-                                    src: url.split('?')[0].replace(/[^\/]+$/, '')
-                                }),
-                                '*'
-                            );
-                            setTimeout(bootstrap, 50);
-                        };
+                        try {
+                            parent = window.open(url, '_blank');
+                        } catch (e) {}
+                        if (parent) {
+                            log('looks like we managed to open popup');
+                        } else {
+                            log('could not open popup');
+                            var a = document.getElementById('openpopup');
+                            a.style.display = 'block';
+                            a.onclick = function() {
+                                log('trying to open popup in onclick');
+                                parent = window.open(url, '_blank');
+                                if (parent) {
+                                    log('looks like we managed to open popup in onclick');
+                                    a.style.display = 'none';
+                                } else {
+                                    log('could not open popup in onclick');
+                                }
+                                return false;
+                            };
+                        }
                     } else {    
                         log('no window.opener initially set, waiting for ping');
                     }
                 }
+                var injectjs = '';
             })();
         </script>
     </body>

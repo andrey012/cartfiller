@@ -271,11 +271,12 @@
                     'window.addEventListener(' +
                         '\'message\',' +
                         'function(e){' +
-                            'f=1;' +
+                            'if(f)return;' +
                             'try{' +
                                 this.trace('event') +
                                 'if(p.test(x=e.data)){' +
                                     this.trace('event+') +
+                                    'f=1;' +
                                     'eval(' +
                                         '\'(function(){\'+' +
                                         'x+' +
@@ -287,13 +288,18 @@
                         '}' +
                         ',true' +
                     ');' +
-                    this.trace('lstnr+') +
-                    'i=d.createElement(\'iframe\');' +
-                    this.trace('iframe') +
-                    'd.getElementsByTagName(\'body\')[0].appendChild(i);' +
-                    this.trace('iframe+') +
-                    'i.contentWindow.location.href=u+v+(m?\'?min&\':\'?\')+(new Date()).getTime();' +
-                    this.trace('iframe++') +
+                    'if(!v){' +
+                        this.trace('local') +
+                        'window.opener.postMessage(p.toString(),\'*\');' +
+                    '}else{' +
+                        this.trace('lstnr+') +
+                        'i=d.createElement(\'iframe\');' +
+                        this.trace('iframe') +
+                        'd.getElementsByTagName(\'body\')[0].appendChild(i);' +
+                        this.trace('iframe+') +
+                        'i.contentWindow.location.href=u+v+(m?\'?min&\':\'?\')+(new Date()).getTime();' +
+                        this.trace('iframe++') +
+                    '}' +
                     'setTimeout(function(){if(!f)alert(\'error\');},5000);' +
                     this.trace('timeout set') +
                 '})(' +

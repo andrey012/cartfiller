@@ -20,8 +20,12 @@ define('testSuiteController', ['app', 'scroll'], function(app){
         var testToCheck = false;
         $scope.params = {};
         $scope.expandedTest = false;
+        var getLocation = function() {
+            var localHref = document.getElementById('testSuiteManager').getAttribute('data-local-href');
+            return localHref ? localHref : window.location.href;
+        };
         var parseParams = function() {
-            var pc = window.location.href.split('?');
+            var pc = getLocation().split('?');
             pc.shift();
             angular.forEach(pc.join('?').split('#')[0].split('&'), function(v) {
                 var pc = v.split('=');
@@ -35,7 +39,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
         parseParams();
         $scope.discovery = {
             state: 0,
-            currentRootPath: $scope.params.root ? $scope.params.root : window.location.href.split('?')[0].replace(/\/[^\/]*/, '/'),
+            currentRootPath: $scope.params.root ? $scope.params.root : getLocation().split('?')[0].replace(/\/[^\/]*/, '/'),
             visitedRootPaths: [],
             rootCartfillerJson: {},
             scripts: {
@@ -211,7 +215,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                                 $scope.discovery.state = -1;
                                 $scope.discovery.error = 'cartfiller.json was not found, visited: ' + $scope.discovery.visitedRootPaths.join(', ');
                                 $scope.discovery.currentRootFile = false;
-                                $scope.discovery.currentRootPath = $scope.params.root ? $scope.params.root : window.location.href.split('?')[0].replace(/\/[^\/]*/, '/');
+                                $scope.discovery.currentRootPath = $scope.params.root ? $scope.params.root : getLocation().split('?')[0].replace(/\/[^\/]*/, '/');
                             } else {
                                 $scope.discovery.currentRootPath = pc.join('/');
                             }
@@ -376,7 +380,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             test.autorun = how === 'load' ? 0 : 1;
             test.autorunSpeed = how === 'slow' ? 'slow' : 'fast';
             test.rootCartfillerPath = $scope.discovery.currentRootPath;
-            test.cartFillerInstallationUrl = window.location.href.split('#')[0].split('?')[0].replace(/[^\/]*$/, '');
+            test.cartFillerInstallationUrl = $scope.params.cartFillerInstallationUrl ? $scope.params.cartFillerInstallationUrl : getLocation().split('#')[0].split('?')[0].replace(/[^\/]*$/, '');
             test.globals = $scope.discovery.scripts.tweaks[index];
             test.trackWorker = $scope.params.editor;
             test.jobName = $scope.discovery.scripts.urls[index];
@@ -483,7 +487,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             return false;
         };
         $scope.getTaskUrl = function(testIndex, taskIndex, stepIndex) {
-            return window.location.href.split('?')[0] + '?' + ($scope.params.root ? ('root=' + encodeURIComponent($scope.params.root) + '&') : '') + 'goto=' + encodeURIComponent($scope.discovery.scripts.urls[testIndex]) + '&task=' + (taskIndex + 1) + '&step=' + (stepIndex + 1) + ($scope.params.editor ? ('&editor=' + encodeURIComponent($scope.params.editor)) : '');
+            return getLocation().split('?')[0] + '?' + ($scope.params.root ? ('root=' + encodeURIComponent($scope.params.root) + '&') : '') + 'goto=' + encodeURIComponent($scope.discovery.scripts.urls[testIndex]) + '&task=' + (taskIndex + 1) + '&step=' + (stepIndex + 1) + ($scope.params.editor ? ('&editor=' + encodeURIComponent($scope.params.editor)) : '');
         };
     }]);
 });

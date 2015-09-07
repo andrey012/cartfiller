@@ -76,6 +76,12 @@
      * @access public
      */
     config.concatenated = concatenated;
+    /** 
+     * Used for launching from filesystem
+     * @member {String} CartFiller.Configuration#localIndexHtml
+     * @access public
+     */
+    config.localIndexHtml = '';
     /**
      * Array of scripts (modules) of cartFiller, that were loaded
      * See {@link CartFiller.Loader}
@@ -83,6 +89,13 @@
      * @access public
      */
     config.scripts = [];
+    /**
+     * Prevents multiple UI launches
+     * @member CartFiller.Configuration#uiLaunched
+     * @access public
+     */
+    config.uiLaunched = false;
+
     /**
      * Launches the {@link CartFiller.UI}
      * 
@@ -94,12 +107,15 @@
         if ((! ignoreOpener) && window.opener && window.opener !== window) {
             this.modules.dispatcher.startSlaveMode();
         } else {
-            if (String(config['data-type']) === '0') {
-                this.modules.ui.framed(document, window);
-            } else if (String(config['data-type']) === '1'){
-                this.modules.ui.popup(document, window);
-            } else {
-                alert('Type not specified, should be 0 for framed, 1 for popup');
+            if (! config.uiLaunched) {
+                config.uiLaunched = true;
+                if (String(config['data-type']) === '0') {
+                    this.modules.ui.framed(document, window);
+                } else if (String(config['data-type']) === '1'){
+                    this.modules.ui.popup(document, window);
+                } else {
+                    alert('Type not specified, should be 0 for framed, 1 for popup');
+                }
             }
         }
     };
@@ -158,7 +174,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1461786299050';
+    config.gruntBuildTimeStamp='1461877021110';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -1356,7 +1372,7 @@
      */
     var getLibUrl = function() {
         //// TBD sort out paths
-        return me.baseUrl.replace(/(src|dist)\/?$/, 'lib/');
+        return me.localIndexHtml ? '' : me.baseUrl.replace(/(src|dist)\/?$/, 'lib/');
     };
     /**
      * Keeps directions on next task flow
@@ -1645,7 +1661,7 @@
                 this.postMessageToChooseJob('bootstrap', {
                     lib: getLibUrl(),
                     testSuite: true,
-                    src: me.baseUrl.replace(/\/$/, '') + '/'
+                    src: me.localIndexHtml ? '' : me.baseUrl.replace(/\/$/, '') + '/'
                 }, 'cartFillerMessage');
             } else if (source === me.modules.ui.mainFrameWindow) {
                 startupWatchDog.mainRegistered = true;
@@ -2469,7 +2485,13 @@
                 return; 
             }   
             if (! me.modules.ui.mainFrameWindow) {
-                alert('could not find mainFrameWindow in slave mode');
+                // probably we are still going to switch to UI mode, so we'll report this failure after 10 seconds
+                setTimeout(function() {
+                    if (! me.uiLaunched) {
+                        alert('could not find mainFrameWindow in slave mode');
+                    }
+                }, 10000);
+                return;
             }
             me.modules.dispatcher.registerLoadWatcher();
             relay.isSlave = true;
@@ -3377,7 +3399,11 @@
         showHideChooseJobFrame: function(show){
             if (show && !chooseJobFrameLoaded) {
                 // load choose job frame now
-                this.chooseJobFrameWindow.location.href = me['data-choose-job'];
+                if ((0 === me['data-choose-job'].indexOf('?')) && (me.localIndexHtml)) {
+                    this.chooseJobFrameWindow.document.write(me.localIndexHtml.replace(/data-local-href=""/, 'data-local-href="' + me['data-choose-job'] + '"'));
+                } else {
+                    this.chooseJobFrameWindow.location.href = me['data-choose-job'];
+                }
                 chooseJobFrameLoaded = true;
             }
             this.chooseJobFrame.style.display = show ? 'block' : 'none';
@@ -3572,7 +3598,11 @@
             this.workerFrame.style.zIndex = '100000';
             body.appendChild(this.workerFrame);
             this.workerFrameWindow = window.frames[workerFrameName];
-            this.workerFrameWindow.location.href=getWorkerFrameSrc();
+            if (me.localIndexHtml) {
+                this.workerFrameWindow.document.write(me.localIndexHtml);
+            } else {
+                this.workerFrameWindow.location.href = getWorkerFrameSrc();
+            }
 
             this.chooseJobFrame = window.document.createElement('iframe');
             this.chooseJobFrame.setAttribute('name', chooseJobFrameName);
@@ -3636,7 +3666,12 @@
             this.mainFrameWindow.location.href=mainFrameSrc;
             body.appendChild(this.workerFrame);
             this.workerFrameWindow = window.frames[workerFrameName];
-            this.workerFrameWindow.location.href=getWorkerFrameSrc();
+            if (me.localIndexHtml) {
+                console.log(me.localIndexHtml);
+                this.workerFrameWindow.document.write(me.localIndexHtml);
+            } else {
+                this.workerFrameWindow.location.href = getWorkerFrameSrc();
+            }
             body.appendChild(this.chooseJobFrame);
             this.chooseJobFrameWindow = window.frames[chooseJobFrameName];
 

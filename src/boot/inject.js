@@ -63,6 +63,12 @@
      * @access public
      */
     config.concatenated = concatenated;
+    /** 
+     * Used for launching from filesystem
+     * @member {String} CartFiller.Configuration#localIndexHtml
+     * @access public
+     */
+    config.localIndexHtml = '';
     /**
      * Array of scripts (modules) of cartFiller, that were loaded
      * See {@link CartFiller.Loader}
@@ -70,6 +76,13 @@
      * @access public
      */
     config.scripts = [];
+    /**
+     * Prevents multiple UI launches
+     * @member CartFiller.Configuration#uiLaunched
+     * @access public
+     */
+    config.uiLaunched = false;
+
     /**
      * Launches the {@link CartFiller.UI}
      * 
@@ -81,12 +94,15 @@
         if ((! ignoreOpener) && window.opener && window.opener !== window) {
             this.modules.dispatcher.startSlaveMode();
         } else {
-            if (String(config['data-type']) === '0') {
-                this.modules.ui.framed(document, window);
-            } else if (String(config['data-type']) === '1'){
-                this.modules.ui.popup(document, window);
-            } else {
-                alert('Type not specified, should be 0 for framed, 1 for popup');
+            if (! config.uiLaunched) {
+                config.uiLaunched = true;
+                if (String(config['data-type']) === '0') {
+                    this.modules.ui.framed(document, window);
+                } else if (String(config['data-type']) === '1'){
+                    this.modules.ui.popup(document, window);
+                } else {
+                    alert('Type not specified, should be 0 for framed, 1 for popup');
+                }
             }
         }
     };
