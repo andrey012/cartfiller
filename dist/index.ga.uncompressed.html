@@ -46171,7 +46171,7 @@ define('controller', ['app', 'scroll'], function(app){
             reportError('bootstrap message did not come');
         }
     }, 10000);
-    config.gruntBuildTimeStamp='1461960311865';
+    config.gruntBuildTimeStamp='1461966525082';
     window.addEventListener('message', function(event){
         var test = /^cartFillerMessage:(.*)$/.exec(event.data);
         var isDist = true;
@@ -47136,7 +47136,7 @@ define('jquery-cartFiller', ['jquery'], function() {
                         '}' +
                         ',true' +
                     ');' +
-                    'if(!v){' +
+                    'if(!u){' +
                         this.trace('local') +
                         'window.opener.postMessage(p.toString(),\'*\');' +
                     '}else{' +

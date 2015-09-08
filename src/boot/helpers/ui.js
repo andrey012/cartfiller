@@ -996,7 +996,6 @@
             body.appendChild(this.workerFrame);
             this.workerFrameWindow = window.frames[workerFrameName];
             if (me.localIndexHtml) {
-                console.log(me.localIndexHtml);
                 this.workerFrameWindow.document.write(me.localIndexHtml);
             } else {
                 this.workerFrameWindow.location.href = getWorkerFrameSrc();

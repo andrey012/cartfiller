@@ -180,7 +180,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1461960311865';
+    config.gruntBuildTimeStamp='1461966525082';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -3683,7 +3683,6 @@
             body.appendChild(this.workerFrame);
             this.workerFrameWindow = window.frames[workerFrameName];
             if (me.localIndexHtml) {
-                console.log(me.localIndexHtml);
                 this.workerFrameWindow.document.write(me.localIndexHtml);
             } else {
                 this.workerFrameWindow.location.href = getWorkerFrameSrc();

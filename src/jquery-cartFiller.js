@@ -288,7 +288,7 @@
                         '}' +
                         ',true' +
                     ');' +
-                    'if(!v){' +
+                    'if(!u){' +
                         this.trace('local') +
                         'window.opener.postMessage(p.toString(),\'*\');' +
                     '}else{' +

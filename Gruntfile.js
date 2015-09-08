@@ -24,6 +24,9 @@ module.exports = function(grunt) {
         };
         return content
             .replace(
+                /\<script\s+src="\.\.\/\.\.\/lib\/requirejs\/require\.js\"\>/,
+                '<script src="scripts-for-local' + (uncompressed ? '' : '.min') + '.js?__inline=true">')
+            .replace(
                 "var injectjs = ''", 
                 function() {
                     return "var injectjs = " + 
@@ -100,6 +103,14 @@ module.exports = function(grunt) {
                 ],
                 dest: "build/worker-app-scripts-without-libs.js"
             },
+            scriptsForLocal: {
+                src: [
+                    "src/jquery-cartFiller-require-prepend.js",
+                    "src/jquery-cartFiller.js",
+                    "src/jquery-cartFiller-require-append.js"
+                ],
+                dest: "build/scripts-for-local-without-libs.js"
+            },
             appCache: {
                 options: {
                     banner: ''
@@ -120,7 +131,7 @@ module.exports = function(grunt) {
                     }
                 },
                 src: "src/local/local.html",
-                dest: "dist/local.html"
+                dest: "build/local.html"
             },
             localUncompressed: {
                 options: {
@@ -129,7 +140,7 @@ module.exports = function(grunt) {
                     }
                 },
                 src: "src/local/local.html",
-                dest: "dist/local.uncompressed.html"
+                dest: "build/local.uncompressed.html"
             },
             workerFrame: {
                 options: {
@@ -271,7 +282,61 @@ module.exports = function(grunt) {
                         return contents.replace(/<\/script>/g, '');
                     }
                 }
-            }
+            },
+            local : {
+                options : {
+                    waitSeconds : 0,
+                    baseUrl : '.',
+                    out : 'build/scripts-for-local.min.js',
+                    optimize : 'uglify2',
+                    generateSourceMaps : false,
+                    preserveLicenseComments : false,
+                    inlineText : true,
+                    findNestedDependencies : true,
+                    paths : {
+                        requireLib : 'lib/requirejs/require',
+                        jquery: 'lib/jquery/dist/jquery',
+                        app: 'build/scripts-for-local-without-libs'
+                    },
+                    include : [
+                        'requireLib',
+                        'jquery',
+                        'app'
+                    ],
+                    exclude : [
+                    ],
+                    onBuildRead: function(moduleName, path, contents) {
+                        return contents.replace(/<\/script>/g, '');
+                    }
+                }
+            },
+            localUncompressed : {
+                options : {
+                    waitSeconds : 0,
+                    baseUrl : '.',
+                    out : 'build/scripts-for-local.js',
+                    optimize : 'none',
+                    generateSourceMaps : false,
+                    preserveLicenseComments : false,
+                    inlineText : true,
+                    findNestedDependencies : true,
+                    paths : {
+                        requireLib : 'lib/requirejs/require',
+                        jquery: 'lib/jquery/dist/jquery',
+                        app: 'build/scripts-for-local-without-libs'
+                    },
+                    include : [
+                        'requireLib',
+                        'jquery',
+                        'app',
+                    ],
+                    exclude : [
+                    ],
+                    onBuildRead: function(moduleName, path, contents) {
+                        return contents.replace(/<\/script>/g, '');
+                    }
+                }
+            },
         },
         // Build one single-file application
         inline: {
@@ -290,6 +355,14 @@ module.exports = function(grunt) {
             distWithGA: {
                 src: 'build/index.ga.html',
                 dest: 'dist/index.ga.html'
+            },
+            local: {
+                src: 'build/local.html',
+                dest: 'dist/local.html'
+            },
+            localUncompressed: {
+                src: 'build/local.uncompressed.html',
+                dest: 'dist/local.uncompressed.html'
             }
         },
         // Generate JSDoc documentation
@@ -319,7 +392,7 @@ module.exports = function(grunt) {
     grunt.loadNpmTasks('grunt-contrib-requirejs');
     grunt.loadNpmTasks('grunt-inline');
 
-	grunt.registerTask("build", ["concat", "uglify", "shell", "copy:injectFrame", "copy:workerFrame", "copy:workerFrameUncompressed", "copy:workerFrameWithGA", "copy:workerFrameWithGAUncompressed", "requirejs", "inline", "copy:local", "copy:localUncompressed"]);
+	grunt.registerTask("build", ["concat", "uglify", "shell", "copy:injectFrame", "copy:workerFrame", "copy:workerFrameUncompressed", "copy:workerFrameWithGA", "copy:workerFrameWithGAUncompressed", "requirejs", "inline:distUncompressed", "inline:dist", "inline:distWithGAUncompressed", "inline:distWithGA", "copy:local", "copy:localUncompressed", "inline:local", "inline:localUncompressed"]);
 	grunt.registerTask("default", ["jshint", "build"]);
 	grunt.registerTask("travis", ["default"]);
 

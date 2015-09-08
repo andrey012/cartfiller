@@ -8,6 +8,42 @@
             Hello, this is local file operation tab, please do not close it
         </h1>
         <a id="openpopup" style="display: none;" href="#">Popups seem to be blocked, click here to open popup</a>
+        <div id="bookmarklets">
+            Bookmarklets for launching from filesystem:
+        </div>
+        <div>
+            <h3>
+                Configure:
+            </h3>
+            <table>
+                <tbody>
+                    <tr>
+                        <td>URL to launch:</td>
+                        <td><input type="text" id="url"/></td>
+                    </tr>
+                    <tr>
+                        <td>ChooseJob URL:</td>
+                        <td><input type="text" id="choosejob"/></td>
+                    </tr>
+                    <tr>
+                        <td>Path to testsuite:</td>
+                        <td><input type="text" id="root"/></td>
+                    </tr>
+                    <tr>
+                        <td>Editor mode:</td>
+                        <td><input type="text" id="editor"/></td>
+                    </tr>
+                    <tr>
+                        <td>Full URL to cartFiller location inside target project</td>
+                        <td><input type="text" id="cartFillerInstallationUrl"/></td>
+                    </tr>
+                    <tr>
+                        <td>Generated ChooseJob URL:</td>
+                        <td><span id="generatedChoosejob"></span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
         <p>
             This file is designed to be opened from local filesystem, e.g. file:///home/user/cartfiller/local/index.html.</p>
         <p>
@@ -27,7 +63,6 @@
         </h3>
         <pre id="log"></pre>
         <script>
-            console.log('local.html started');
             (function() {
                 var parent = window.opener;
                 var bootstrapped = false;
@@ -69,7 +104,10 @@
                             log('Adjusting parent');
                             parent = event.source;
                         }
-                        parent.postMessage('\'cartFillerEval\';' + injectjs, '*');
+                        if (!injectjs.length) {
+                            alert('You are using source local.html, it does not have payload to launch cartFiller');
+                        }
+                        parent.postMessage('\'cartFillerEval\';this.cartFillerEval[2]=' + JSON.stringify($('#generatedChoosejob').text()) + ';' + injectjs, '*');
                     }
                 }, false);
                 Object.defineProperty(window, 'cartfiller', {set: function(v) {
@@ -117,7 +155,80 @@
                         log('no window.opener initially set, waiting for ping');
                     }
                 }
+
                 var injectjs = '';
+            })();
+        </script>
+        <script src="../../lib/requirejs/require.js"></script>
+        <script>
+            (function() {
+                var paths = {
+                    'jquery': '../../lib/jquery/dist/jquery.min',
+                    'jquery-cartFiller': '../jquery-cartFiller'
+                };
+                var deps = ['jquery', 'jquery-cartFiller'];
+                var shim = {'jquery-cartFiller': 'jquery'};
+                require.config({
+                    paths: paths,
+                    shim: shim,
+                    deps: deps,
+                    waitSeconds: 30
+                });
+                require(['jquery-cartFiller', 'jquery'], function() {
+                    for (var type in {'framed':1,'popup':1}) {
+                        var a = $('<a/>');
+                        $('#bookmarklets').append(a);
+                        $('#bookmarklets').append(', ');
+                        a.text(type);
+                        a.cartFillerPlugin({
+                            baseUrl: '',
+                            chooseJob: '',
+                            debug: 1,
+                            inject: 'iframe',
+                            minified: /local\.uncompressed\.html/.test(window.location.href) ? false: true,
+                            type: type
+                        });
+                    }
+                    var parseHash = function(initInputs) {
+                        var pc = window.location.hash.replace(/^#/, '').split('&');
+                        var fields = {};
+                        for (var i in pc) {
+                            var ppc = pc[i].split('=');
+                            var name = ppc.shift();
+                            var value = ppc.join('=');
+                            fields[name] = decodeURIComponent(value);
+                            if (initInputs) {
+                                 $('#' + name).val(fields[name]);
+                            }
+                        }
+                        var v = '';
+                        if ('string' === typeof fields.choosejob && fields.choosejob.length) {
+                            v += fields.choosejob;
+                        }
+                        var pc = [];
+                        for (var f in {root:1, editor:1, cartFillerInstallationUrl:1}) {
+                            if ('string' === typeof fields[f] && fields[f].length) {
+                                pc.push(f + '=' + encodeURIComponent(fields[f]));
+                            }
+                        }
+                        if (pc.length) {
+                            v += '?' + pc.join('&');
+                        }
+                        $('#generatedChoosejob').text(v);
+
+                    };
+                    var update = function() {
+                        var hash = [];
+                        $('input').each(function(i,el){
+                            hash.push($(el).attr('id') + '=' + encodeURIComponent($(el).val()));
+                        });
+                        window.location.hash = '#' + hash.join('&');
+                        parseHash();
+                        return;
+                    };
+                    $('input').change(update).keyup(update);
+                    parseHash(true);
+                });
             })();
         </script>
     </body>
