@@ -180,7 +180,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1461966525082';
+    config.gruntBuildTimeStamp='1462036452215';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -1347,11 +1347,29 @@
                 delete workerCurrentTask[oldKey];
             }
         }
+        var value;
         for (var newKey in src){
             if (src.hasOwnProperty(newKey)){
-                workerCurrentTask[newKey] = src[newKey];
+                value = src[newKey];
+                if (value instanceof Array) {
+                    value = workerGlobals[decodeAlias(value)];
+                }
+                workerCurrentTask[newKey] = value;
             }
         }
+    };
+    /** 
+     * Decodes nested alias. To be documented
+     * @function CartFiller.Dispatcher~decodeAlias
+     * @param {String|Array} alias
+     * @access private
+     * @return {String}
+     */
+    var decodeAlias = function(alias) {
+        var pc = alias.map(function(part) {
+            return part instanceof Array ? String(workerGlobals[decodeAlias(part)]) : part;
+        });
+        return pc.join('');
     };
     /**
      * Fills workerGlobals object with new values
@@ -1471,6 +1489,8 @@
     };
     var workersToEvaluate = [];
     var sharedWorkerFunctions = {};
+    var currentEvaluatedWorker;
+    var workerTaskSources = {};
     var evaluateNextWorker = function() {
         if (! workersToEvaluate.length) {
             me.modules.dispatcher.postMessageToWorker(
@@ -1481,7 +1501,8 @@
             );
             return;
         }
-        eval(workerSourceCodes[workersToEvaluate.shift()]); // jshint ignore:line
+        currentEvaluatedWorker = workersToEvaluate.shift();
+        eval(workerSourceCodes[currentEvaluatedWorker]); // jshint ignore:line
         evaluateNextWorker();
     };
     /**
@@ -2274,31 +2295,35 @@
                 };
             });
             var thisWorker = cb.apply(undefined, args);
-            var list = {};
-            var discoveredParameters = {};
             for (var taskName in thisWorker){
                 if (thisWorker.hasOwnProperty(taskName)){
                     worker[taskName] = recursivelyCollectSteps(thisWorker[taskName]);
+                    workerTaskSources[taskName] = currentEvaluatedWorker;
                 }
             }
-            for (taskName in worker) {
-                var taskSteps = [];
-                var params = {};
-                var allParams = {};
-                for (var i = 0 ; i < worker[taskName].length; i++){
-                    // this is step name/comment
-                    if ('string' === typeof worker[taskName][i]){
-                        taskSteps.push(worker[taskName][i]);
-                        if (worker[taskName][i+1] instanceof Function) {
-                            params[taskSteps.length - 1] = discoverTaskParameters(worker[taskName][i+1], allParams);
+            if (! workersToEvaluate.length) {
+                var list = {};
+                var discoveredParameters = {};
+                // only do this for last worker
+                for (taskName in worker) {
+                    var taskSteps = [];
+                    var params = {};
+                    var allParams = {};
+                    for (var i = 0 ; i < worker[taskName].length; i++){
+                        // this is step name/comment
+                        if ('string' === typeof worker[taskName][i]){
+                            taskSteps.push(worker[taskName][i]);
+                            if (worker[taskName][i+1] instanceof Function) {
+                                params[taskSteps.length - 1] = discoverTaskParameters(worker[taskName][i+1], allParams);
+                            }
                         }
                     }
+                    params.all = allParams;
+                    list[taskName] = taskSteps;
+                    discoveredParameters[taskName] = params;
                 }
-                params.all = allParams;
-                list[taskName] = taskSteps;
-                discoveredParameters[taskName] = params;
+                this.postMessageToWorker('workerRegistered', {jobTaskDescriptions: list, discoveredParameters: discoveredParameters, workerTaskSources: workerTaskSources});
             }
-            this.postMessageToWorker('workerRegistered', {jobTaskDescriptions: list, discoveredParameters: discoveredParameters});
         },
         /**
          * Remembers directions for task flow to be passed to worker (job progress)
@@ -2321,6 +2346,15 @@
             if (workerCurrentStepIndex === false) {
                 alert('You have invalid worker, result is submitted twice, please fix');
                 return;
+            }
+            // update worker globals if necessary
+            for (var i in currentStepEnv.task) {
+                // was task property an alias? 
+                if (currentStepEnv.task[i] instanceof Array) {
+                    // if it was nested alias - we need to find the deepest one
+                    for (var alias = currentStepEnv.task[i][0]; alias[0] instanceof Array; alias = alias[0]) {}
+                    workerGlobals[decodeAlias(currentStepEnv.task[i])] = workerCurrentTask[i];
+                }
             }
             var status, m;
             if ((undefined === message) || ('' === message)) {

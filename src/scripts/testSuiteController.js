@@ -262,7 +262,8 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                     setTimeout(function(){
                         $scope.runAll();
                     });
-                } else if ($scope.params.goto) {
+                } else if ($scope.params.goto && ! $scope.alreadyWentTo) {
+                    $scope.alreadyWentTo = true;
                     setTimeout(function() {
                         var index = $scope.getTestIndexByUrl($scope.params.goto);
                         if (undefined === index) {
@@ -382,7 +383,20 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             test.autorunSpeed = how === 'slow' ? 'slow' : 'fast';
             test.rootCartfillerPath = $scope.discovery.currentRootPath;
             test.cartFillerInstallationUrl = $scope.params.cartFillerInstallationUrl ? $scope.params.cartFillerInstallationUrl : getLocation().split('#')[0].split('?')[0].replace(/[^\/]*$/, '');
-            test.globals = $scope.discovery.scripts.tweaks[index];
+            if ('undefined' === typeof test.globals) {
+                test.globals = {};
+            }
+            var i;
+            if ('object' === typeof $scope.discovery.rootCartfillerJson.globals) {
+                for (i in $scope.discovery.rootCartfillerJson.globals) {
+                    test.globals[i] = $scope.discovery.rootCartfillerJson.globals[i];
+                }
+            }
+            if ('object' === typeof $scope.discovery.scripts.tweaks[index]) {
+                for (i in $scope.discovery.scripts.tweaks[index]) {
+                    test.globals[i] = $scope.discovery.scripts.tweaks[index][i];
+                }
+            }
             test.trackWorker = $scope.params.editor;
             test.jobName = $scope.discovery.scripts.urls[index];
             test.jobTitle = $scope.discovery.scripts.contents[index].title ? $scope.discovery.scripts.contents[index].title : $scope.discovery.scripts.urls[index];

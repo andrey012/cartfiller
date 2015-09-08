@@ -174,9 +174,10 @@ define('controller', ['app', 'scroll'], function(app){
                 digestGlobals();
             } else if (cmd === 'workerRegistered'){
                 $scope.$apply(function(){
-                    $scope.workersLoaded ++;
+                    $scope.workersLoaded = $scope.workersCounter; // now we push all data from dispatcher at once
                     $scope.jobTaskDescriptions = details.jobTaskDescriptions;
                     $scope.jobTaskDiscoveredParameters = details.discoveredParameters;
+                    $scope.workerTaskSources = details.workerTaskSources;
                     $scope.updateIndexTitles();
                 });
             } else if (cmd === 'workerStepResult'){
@@ -345,7 +346,7 @@ define('controller', ['app', 'scroll'], function(app){
             }
         };
         $scope.doubleClickTaskName = function(name) {
-            prompt('This is readonly but you can copy task name here:', name);
+            prompt('This is readonly but you can copy task name below. Source of this task is ' + $scope.workerTaskSources[name], name);
         };
         $scope.clickOnStepNoWatch = function(element, $event){
             $event.stopPropagation();

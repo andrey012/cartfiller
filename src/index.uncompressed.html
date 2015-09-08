@@ -106,28 +106,23 @@
                ng-if="running"
                class="btn btn-xl btn-danger"
                onclick="var event = arguments[0] || window.event; return angular.element(this).scope().stopNoWatch(event);"
-               ng-disabled="workersLoaded < workersCounter"
                >&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Stop&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</a>
             <a href="#"
                id="runButton"
                ng-if="!running"
                class="btn btn-xl btn-success"
                title="Run"
-               ng-disabled="workerInProgress || (workersLoaded < workersCounter)"
                onclick="var event = arguments[0] || window.event; return angular.element(this).scope().runNoWatch(false, event);"
-               disabled="disabled"
                >&gt;&gt;&gt;</a>
             <a href="#"
                ng-if="!running"
                class="btn btn-xl btn-info"
                title="Slow"
-               ng-disabled="workerInProgress || (workersLoaded < workersCounter)"
                onclick="var event = arguments[0] || window.event; return angular.element(this).scope().runNoWatch(true, event);"
                >&gt;..&gt;</a>
             <a href="#"
                class="btn btn-xl btn-info"
                title="Step"
-               ng-disabled="workerInProgress || (workersLoaded < workersCounter)"
                onclick="var event = arguments[0] || window.event; return angular.element(this).scope().clickOnNextStepNoWatch(event);"
                >I&nbsp;I&gt;</a>
             <a href="#" 
