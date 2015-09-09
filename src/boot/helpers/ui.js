@@ -1067,8 +1067,7 @@
          * @access public
          */
         startReportingMousePointer: function() {
-            arrowToElements = [];
-            highlightedElements = [];
+            removeOverlay(true);
             if (! reportMousePointer) {
                 var div = document.createElement('div');
                 div.style.height = window.innerHeight + 'px';

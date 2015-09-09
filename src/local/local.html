@@ -73,6 +73,10 @@
                     log('sending init');
                     parent.postMessage('cartFillerFilePopupInit', '*');
                 };
+                window.addEventListener('error', function(event) {
+                    debugger;
+                    parent.postMessage('cartFillerFilePopupData:', '*');
+                });
                 window.addEventListener('message', function(event) {
                     var p = /^cartFillerFilePopupUrl:(.*)$/;
                     if (p.test(event.data)) {

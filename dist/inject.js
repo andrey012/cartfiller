@@ -183,7 +183,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1462214182373';
+    config.gruntBuildTimeStamp='1462220947611';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -3843,8 +3843,7 @@
          * @access public
          */
         startReportingMousePointer: function() {
-            arrowToElements = [];
-            highlightedElements = [];
+            removeOverlay(true);
             if (! reportMousePointer) {
                 var div = document.createElement('div');
                 div.style.height = window.innerHeight + 'px';
