@@ -181,7 +181,11 @@
      */
     var sleepAfterThisStep;
     /**
-     * ////
+     * This is passed to ChooseJob frame to prevent it from requesting assets directly.
+     * If set to true, then ChooseJob should instead ask dispatcher to give it assets, 
+     * and dispatcher will itself ask the opener, which should be the local.html
+     * @var {boolean} CartFiller.Dispatcher~useTopWindowForLocalFileOperations
+     * @access private
      */
     var useTopWindowForLocalFileOperations;
     /**
@@ -619,7 +623,8 @@
                 this.postMessageToChooseJob('bootstrap', {
                     lib: getLibUrl(),
                     testSuite: true,
-                    src: me.localIndexHtml ? '' : me.baseUrl.replace(/\/$/, '') + '/'
+                    src: me.localIndexHtml ? '' : me.baseUrl.replace(/\/$/, '') + '/',
+                    hashUrl: window.location.hash
                 }, 'cartFillerMessage');
             } else if (source === me.modules.ui.mainFrameWindow) {
                 startupWatchDog.mainRegistered = true;
@@ -825,6 +830,9 @@
                 me.modules.ui.say();
             } catch (e){}
             if (this.reflectMessage(message)) {
+                if (message.debug) {
+                    console.log('Debugger call went to slave tab - look for it there!');
+                }
                 return;
             }
             if (false !== workerCurrentStepIndex){
@@ -1036,7 +1044,10 @@
             }
         },
         /**
-         * ////
+         * Used by progress frame for selector builder
+         * @function CartFiller.Dispatcher#onMessage_reportingMousePointerClick
+         * @param {Object} details
+         * @access public
          */
         onMessage_reportingMousePointerClick: function(details) {
             if (me.modules.dispatcher.reflectMessage(details)) {
@@ -1067,7 +1078,9 @@
             }
         },
         /**
-         * //// 
+         * Just alerts, used to help user to find this tab after slave tab poped up
+         * @function CartFiller.Dispatcher#onMessage_locate
+         * @access public
          */
         onMessage_locate: function() {
             alert('Here I am!');
@@ -1079,7 +1092,13 @@
          * @access public
          */
         onMessage_updateHashUrl: function(details) {
-            window.location.hash = 'job=' + encodeURIComponent(details.jobName) + '&task=' + details.task + '&step=' + details.step;
+            var pc = window.location.hash.replace(/^#+/, '').split('&')
+                .filter(function(v){
+                    return (0 === v.indexOf('job=') || 0 === v.indexOf('task=') || 0 === v.indexOf('step=')) ? 0 : 1;
+                });
+            pc.push('job=' + encodeURIComponent(details.jobName) + '&task=' + details.task + '&step=' + details.step);
+
+            window.location.hash = pc.join('&');
         },
         /**
          * Updates title
@@ -1109,10 +1128,16 @@
             useTopWindowForLocalFileOperations = true;
             me.launch(true);
         },
+        /**
+         * When user hovers over element button in selector query builder
+         * we should highlight apropriate element
+         * @function CartFiller.Dispatcher#onMessage_highlightElementForQueryBuilder
+         * @param {Object} details details.path should contain DOM path to an element to be highlighted
+         * @access public
+         */
         onMessage_highlightElementForQueryBuilder: function(details) {
             me.modules.ui.highlightElementForQueryBuilder(details.path);
         },
-        ////
         /**
          * Handles "main frame loaded" event. If both main frame and 
          * worker (job progress) frames are loaded then bootstraps 
@@ -1571,7 +1596,11 @@
             return worker;
         },
         /**
-         * ////
+         * Defines shared worker function for later use in other workers
+         * @function CartFiller.Dispatcher#defineSharedWorkerFunction
+         * @param {String} name
+         * @param {Function} fn
+         * @access public
          */
         defineSharedWorkerFunction: function(name, fn){
             sharedWorkerFunctions[name] = fn;

@@ -117,9 +117,20 @@
          * @member {String} CartFillerPlugin~Settings#workerFrameUrl
          * @default false
          */
-        workerFrameUrl: ''
+        workerFrameUrl: '',
+        /**
+         * Normally bookmarklet code adds anti-caching parameter when generating URL, because
+         * bookmarklets will live on users' computers longer then Cartfiller releases.
+         * If useBuildVersion is set to true, then build version hardcoded in released
+         * jquery-cartFiller.js will be used instead
+         * @member {boolean} CartFillerPlugin~Settings#useBuildVersion
+         * @default false
+         */
+        useBuildVersion: false
     };
 
+    var config = {}; 
+    config.gruntBuildTimeStamp = '';
     /**
      * @class CartFillerPlugin~Plugin
      * @access private
@@ -192,6 +203,12 @@
                 return '';
             }
         },
+        getVersion: function() {
+            if (this.settings.useBuildVersion && config.gruntBuildTimeStamp) {
+                return config.gruntBuildTimeStamp;
+            }
+            return '(new Date()).getTime()';
+        },
         scriptBookmarklet: function(){
             return 'try{' +
                 this.trace('start') + 
@@ -203,7 +220,7 @@
                     this.trace('type set') +
                     's[a](c+b,e);' + 
                     this.trace('base-url set') +
-                    's[a](u,e+v+\'?\'+(new Date()).getTime());' + 
+                    's[a](u,e+v+\'?\'+' + this.getVersion() + ');' + 
                     this.trace('src set') +
                     's[a](c+j,k);' +
                     this.trace('choose-job set') +
@@ -238,7 +255,7 @@
                     this.trace('in function') +
                     'x.open(' +
                         '\'GET\',' +
-                        'u+v+\'?\'+(new Date()).getTime(),' +
+                        'u+v+\'?\'+' + this.getVersion() + ',' +
                         'true' +
                     ');' +
                     this.trace('x opened') +
@@ -305,7 +322,7 @@
                         this.trace('iframe') +
                         'd.getElementsByTagName(\'body\')[0].appendChild(i);' +
                         this.trace('iframe+') +
-                        'i.contentWindow.location.href=u+v+(m?\'?min&\':\'?\')+(new Date()).getTime();' +
+                        'i.contentWindow.location.href=u+v+(m?\'?min&\':\'?\')+' + this.getVersion() + ';' +
                         this.trace('iframe++') +
                     '}' +
                     'setTimeout(function(){if(!f)alert(\'error\');},5000);' +

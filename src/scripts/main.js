@@ -75,26 +75,53 @@
                                 postMessageListeners.push(cb);
                             },
                             testSuite: message.testSuite,
-                            hashUrl: window.location.hash
+                            hashUrl: message.hashUrl
                         };
                     });
                 });
                 if (message.tests) {
+                    var x = new XMLHttpRequest();
+                    x.onload = function(){
+                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?0000000000') {
+                            console.log('new version of CartFiller was deployed, switching to it');
+                            var hash = window.location.href.split('#');
+                            var pc = hash[0].split('?');
+                            var version = 'cfv' + x.responseText.replace('?', '');
+                            var params;
+                            if (pc.length > 1) {
+                                params = pc.slice(1).join('?').replace(/cfv\d{10,14}/, version);
+                                if (-1 === params.indexOf(version)) {
+                                    params += '&' + version;
+                                }
+                            } else {
+                                params = version;
+                            }
+                            hash[0] = pc[0] + '?' + params;
+                            // let's show message and then safely redirect to newer version. 
+                            document.write('<!DOCTYPE html><html><head></head><body data-old-cartfiller-version-detected="1"><h1>Cached cartfiller version is older then now available from the server. Please refresh you page to make browser refresh application cache, do Ctrl-Shift-R or Cmd-Shift-R to enforce cache cleanup, or use other tools to clean cache. If you will not refresh, then you will be redirected to new version automatically in 15 seconds</h1></body></html>'); // jshint ignore:line
+                            setTimeout(function() {
+                                window.location.href = hash.join('#');
+                            }, 15000);
+                        }
+                    };
+                    x.open('GET', window.location.href.split(/[#?]/)[0].replace(/\/[^\/]*$/, '/version.json'), true);
+                    x.send();
                     require(['jquery-cartFiller'], function(){
-                        var myselfUrl = window.location.href + (
-    config.gruntBuildTimeStamp ? ((window.location.href.indexOf('?') === -1 ? '?' : '&') + 
-    config.gruntBuildTimeStamp) : '');
+                        var myselfUrl = window.location.href.split('#')[0] + (-1 !== window.location.href.indexOf(config.gruntBuildTimeStamp) ? '' : (
+    config.gruntBuildTimeStamp ? ((window.location.href.split('#')[0].indexOf('?') === -1 ? '?' : '&') + 
+    config.gruntBuildTimeStamp) : ''));
                         var options = {
                             type: 'framed',
                             minified: false,
                             chooseJob: myselfUrl,
                             workerFrameUrl: myselfUrl,
                             debug: true,
-                            baseUrl: window.location.href.split('?')[0].replace(/\/[^\/]*$/, ''),
+                            baseUrl: window.location.href.split(/[#?]/)[0].replace(/\/[^\/]*$/, ''),
                             inject: 'script',
                             traceStartup: false,
                             logLength: false,
-                            useSource: ! isDist
+                            useSource: ! isDist,
+                            useBuildVersion: true
                         };
                         eval($.cartFillerPlugin.getBookmarkletCode(options));  // jshint ignore:line
                     });
@@ -128,10 +155,10 @@
             'cartFillerMessage:' + 
             JSON.stringify({
                 cmd: 'bootstrap', 
-                lib: window.location.href.split('?')[0].replace(/\/[^\/]+\/[^\/]*$/, '/lib/'),
+                lib: window.location.href.split(/[#?]/)[0].replace(/\/[^\/]+\/[^\/]*$/, '/lib/'),
                 debug: true,
                 tests: true,
-                src: window.location.href.split('?')[0].replace(/[^\/]+$/, '')
+                src: window.location.href.split(/[#?]/)[0].replace(/[^\/]+$/, '')
             }),
             '*'
         );

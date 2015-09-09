@@ -728,7 +728,7 @@
         showHideChooseJobFrame: function(show){
             if (show && !chooseJobFrameLoaded) {
                 // load choose job frame now
-                if ((0 === me['data-choose-job'].indexOf('?')) && (me.localIndexHtml)) {
+                if ((0 === me['data-choose-job'].indexOf('#')) && (me.localIndexHtml)) {
                     this.chooseJobFrameWindow.document.write(me.localIndexHtml.replace(/data-local-href=""/, 'data-local-href="' + me['data-choose-job'] + '"'));
                 } else {
                     this.chooseJobFrameWindow.location.href = me['data-choose-job'];
@@ -1067,6 +1067,8 @@
          * @access public
          */
         startReportingMousePointer: function() {
+            arrowToElements = [];
+            highlightedElements = [];
             if (! reportMousePointer) {
                 var div = document.createElement('div');
                 div.style.height = window.innerHeight + 'px';

@@ -117,6 +117,13 @@ module.exports = function(grunt) {
                 },
                 src: ["src/self.appcache"],
                 dest: "dist/self.appcache"
+            },
+            version: {
+                options: {
+                    banner: ''
+                },
+                src: ["src/version.json"],
+                dest: "dist/version.json"
             }
 		},
         copy: {
