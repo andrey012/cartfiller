@@ -18,6 +18,7 @@ var argv = require('yargs')
     .alias('p', 'port')
     .describe('tear-down', 'commands to be executed on exit - for example to kill browser process, can be used several times - one for each command')
     .alias('t', 'tear-down')
+    .describe('timeout', 'exit with error code 1 if no activity happens for specified time (seconds), default 60')
     .argv;
 var express = require('express');
 var open = require('open');
@@ -37,6 +38,9 @@ var stats = {
     failedTests: 0,
     failedAssertions: 0
 };
+
+var timeout = argv.timeout ? (argv.timeout * 1000) : 60000;
+console.log('timeout set to ' + (timeout / 1000) + ' seconds');
 
 var sessionKey = crypto.randomBytes(20).toString('hex');
 var failures = [];
@@ -89,7 +93,7 @@ var tearDownFn = function(code) {
 
 
 setInterval(function() {
-    if (pulseTime < ((new Date()).getTime() - 60000)) {
+    if (pulseTime < ((new Date()).getTime() - timeout)) {
         console.log('exitting with code 1 because there was no activity over recent 60 seconds');
         if (childApp) {
             childApp.kill();
