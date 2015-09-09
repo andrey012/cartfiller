@@ -132,6 +132,7 @@
                onclick="return false;"
                >{{chooseJobState ? 'Close' : 'Open'}}</a>
             <br/>
+            <input type="checkbox" id="alertOnErrors" title="alert (show dialog) when errors are encountered"/>
             <a href="#" class="btn btn-info btn-xs" onclick="var event = arguments[0] || window.event; return angular.element(this).scope().toggleSizeNoWatch(event);" title="resize">[]</a>
             <a href="#" class="btn btn-info btn-xs" onclick="var event = arguments[0] || window.event; return angular.element(this).scope().scrollToCurrentStepNoWatch(event);" title="scroll to current step">.</a>
             <a href="#"
@@ -253,7 +254,7 @@
                     <span>{{jobTitleMap[propertyName] ? jobTitleMap[propertyName] : propertyName}}:</span>
                     <span><strong>{{getPropertyValue(propertyValue)}}</strong></span></span>
                 <div>
-                    <textarea readonly onclick="select(this);" ng-if="jobTask.task && noTaskSteps(jobTask.task)" rows="6" style="width: 100%;">{{',\n            \'' + jobTask.task + '\': [\n                \'\', function() {\n                }, \'\', function(el) {\n                }\n            ]\n'}}</textarea>
+                    <textarea readonly onclick="select(this);" ng-if="jobTask.task && noTaskSteps(jobTask.task)" rows="6" style="width: 100%;">{{',\n            \'' + jobTask.task + '\': [\n                \'\', function(e) {\n                }, \'\', function(e) {\n                }\n            ]\n'}}</textarea>
                     <span
                        ng-repeat="(jobTaskStepIndex, jobTaskStep) in jobTaskDescriptions[jobTask.task] track by $index"
                     >

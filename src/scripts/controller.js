@@ -195,6 +195,9 @@ define('controller', ['app', 'scroll'], function(app){
                     $scope.incrementCurrentStep(true, details.nextTaskFlow);
                     proceed = true;
                 } else {
+                    if ($('#alertOnErrors').is(':checked') && $scope.running){
+                        alert('error');
+                    }
                     proceed = false;
                 }
                 if ($scope.runUntilTask !== false && $scope.runUntilStep !== false && ($scope.runUntilTask < $scope.currentTask || ($scope.runUntilStep <= $scope.currentStep && $scope.runUntilTask === $scope.currentTask))) {
