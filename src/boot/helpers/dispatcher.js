@@ -803,7 +803,11 @@
          */
         onMessage_updateProperty: function(message) {
             if (parseInt(message.index) === parseInt(workerCurrentTaskIndex)) {
-                workerCurrentTask[message.name] = message.value;
+                var value = message.value;
+                if (value instanceof Array) {
+                    value = workerGlobals[decodeAlias(value)];
+                }
+                workerCurrentTask[message.name] = value;
             }
         },
         /**
@@ -993,7 +997,13 @@
             if (me.modules.dispatcher.reflectMessage(details)) {
                 return;
             }
-            this.postMessageToWorker('cssSelectorEvaluateResult', {count: eval('(function(j){j.each(function(i,el){(function(o){if (o !== "0") {el.style.opacity=0; setTimeout(function(){el.style.opacity=o;},200);}})(el.style.opacity);}); return j.length;})(me.modules.ui.mainFrameWindow.jQuery' + details.selector + ')')}); // jshint ignore:line
+            var elements = eval('me.modules.ui.mainFrameWindow.jQuery' + details.selector); // jshint ignore:line
+            var arrow = [];
+            for (var i = 0; i < elements.length && i < 16 ; i ++ ) {
+                arrow.push(elements[i]);
+            }
+            me.modules.ui.arrowTo(arrow, true);
+            this.postMessageToWorker('cssSelectorEvaluateResult', {count: elements.length});
         },
         /**
          * Processes message exchange between relays
@@ -1098,6 +1108,9 @@
         onMessage_launchFromSlave: function() {
             useTopWindowForLocalFileOperations = true;
             me.launch(true);
+        },
+        onMessage_highlightElementForQueryBuilder: function(details) {
+            me.modules.ui.highlightElementForQueryBuilder(details.path);
         },
         ////
         /**

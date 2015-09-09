@@ -666,10 +666,11 @@
          * @function CartFiller.Api#type
          * @param {string|Function} value or callback to get value
          * @param {Function} whatNext callback after this task is 
+         * @param {boolean} dontClear by default this function will clear input before typing
          * @return {Array} ready for putting into worker array
          * @access public
          */
-        type: function(value, whatNext) {
+        type: function(value, whatNext, dontClear) {
             var r = [
                 'type key sequence',
                 function(el, env) {
@@ -693,6 +694,12 @@
                         me.modules.api.result('Value to type [' + value + '] not found neither in the task properties nor in globals');
                         return;
                     }
+                    text = String(text);
+                    if (! dontClear) {
+                        try {
+                            elementNode.value = '';
+                        } catch (e) {}
+                    }
                     var document = me.modules.ui.mainFrameWindow.document;
                     var fn = function(text, elementNode, whatNext) {
                         var char = text.substr(0, 1);
@@ -704,6 +711,9 @@
                         var dispatchEventResult;
                         for (var eventName in {keydown: 0, keypress: 0, input: 0, keyup: 0}) {
                             if ('keypress' === eventName && ! doKeyPress) {
+                                continue;
+                            }
+                            if (! char.length && 'keypress' === eventName) {
                                 continue;
                             }
                             var e = false;

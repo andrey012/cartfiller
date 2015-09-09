@@ -180,6 +180,9 @@ define('controller', ['app', 'scroll'], function(app){
                     $scope.workerTaskSources = details.workerTaskSources;
                     $scope.updateIndexTitles();
                 });
+                if ($scope.clickedWhileWorkerWasInProgress) {
+                    run($scope.clickedWhileWorkerWasInProgress);
+                }
             } else if (cmd === 'workerStepResult'){
                 $scope.jobTaskProgress[details.index].stepsInProgress[details.step] = false;
                 $scope.jobTaskProgress[details.index].stepResults[details.step] = {status: details.status, message: details.message, response: details.response};
@@ -398,7 +401,7 @@ define('controller', ['app', 'scroll'], function(app){
             if ($event) {
                 $event.stopPropagation();
             }
-            if ($scope.workerInProgress) {
+            if ($scope.workerInProgress || ($scope.workersLoaded < $scope.workersCounter)) {
                 $scope.clickedWhileWorkerWasInProgress = slow ? 'slow' : 'fast';
                 return false;
             }
@@ -526,11 +529,12 @@ define('controller', ['app', 'scroll'], function(app){
                             return undefined !== el.selectAttribute && el.selectAttribute[i];
                         }).map(function(a){
                             return '[' + a.n + '="' + a.v + '"' + ']';
-                        }).join('')) +
-                        (el.selectIndex ? (':nth-of-type(' + el.index + ')') : '');
+                        }).join(''));
                     if (r.trim().length) {
                         r += ':visible';
                     }
+                    r +=
+                        (el.selectIndex ? ('\').filter(function(i,el,x,c){ c = ' + (el.index - 1) + '; for (x = el.previousSibling; x; x = x.previousSibling) c -= x.nodeName === el.nodeName ? 1 : 0; return c === 0; ;}).find(\'') : '');
                     return r +
                         (el.selectText ? ('\').filter(function(i,el){return el.textContent.trim() === ' + JSON.stringify(el.text) + ';}).find(\'') : '')
                     ;
@@ -545,6 +549,14 @@ define('controller', ['app', 'scroll'], function(app){
                 if ($event.keyCode === 27) {
                     scope.toggleSearch();
                 }
+            };
+            scope.highlight = function(button) {
+                var payload = [];
+                for (var i = 0 ; i <= button.getAttribute('data-index'); i ++) {
+                    var node = scope.stack[i];
+                    payload.push([node.element, node.index - 1]);
+                }
+                cfMessage.send('highlightElementForQueryBuilder', {path: payload});
             };
         },1000);
         setTimeout(function initAvailableTasksOfWorkerScope() {

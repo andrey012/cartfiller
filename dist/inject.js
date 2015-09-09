@@ -180,7 +180,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1462036452215';
+    config.gruntBuildTimeStamp='1462061497985';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -892,10 +892,11 @@
          * @function CartFiller.Api#type
          * @param {string|Function} value or callback to get value
          * @param {Function} whatNext callback after this task is 
+         * @param {boolean} dontClear by default this function will clear input before typing
          * @return {Array} ready for putting into worker array
          * @access public
          */
-        type: function(value, whatNext) {
+        type: function(value, whatNext, dontClear) {
             var r = [
                 'type key sequence',
                 function(el, env) {
@@ -919,6 +920,12 @@
                         me.modules.api.result('Value to type [' + value + '] not found neither in the task properties nor in globals');
                         return;
                     }
+                    text = String(text);
+                    if (! dontClear) {
+                        try {
+                            elementNode.value = '';
+                        } catch (e) {}
+                    }
                     var document = me.modules.ui.mainFrameWindow.document;
                     var fn = function(text, elementNode, whatNext) {
                         var char = text.substr(0, 1);
@@ -930,6 +937,9 @@
                         var dispatchEventResult;
                         for (var eventName in {keydown: 0, keypress: 0, input: 0, keyup: 0}) {
                             if ('keypress' === eventName && ! doKeyPress) {
+                                continue;
+                            }
+                            if (! char.length && 'keypress' === eventName) {
                                 continue;
                             }
                             var e = false;
@@ -1882,7 +1892,11 @@
          */
         onMessage_updateProperty: function(message) {
             if (parseInt(message.index) === parseInt(workerCurrentTaskIndex)) {
-                workerCurrentTask[message.name] = message.value;
+                var value = message.value;
+                if (value instanceof Array) {
+                    value = workerGlobals[decodeAlias(value)];
+                }
+                workerCurrentTask[message.name] = value;
             }
         },
         /**
@@ -2072,7 +2086,13 @@
             if (me.modules.dispatcher.reflectMessage(details)) {
                 return;
             }
-            this.postMessageToWorker('cssSelectorEvaluateResult', {count: eval('(function(j){j.each(function(i,el){(function(o){if (o !== "0") {el.style.opacity=0; setTimeout(function(){el.style.opacity=o;},200);}})(el.style.opacity);}); return j.length;})(me.modules.ui.mainFrameWindow.jQuery' + details.selector + ')')}); // jshint ignore:line
+            var elements = eval('me.modules.ui.mainFrameWindow.jQuery' + details.selector); // jshint ignore:line
+            var arrow = [];
+            for (var i = 0; i < elements.length && i < 16 ; i ++ ) {
+                arrow.push(elements[i]);
+            }
+            me.modules.ui.arrowTo(arrow, true);
+            this.postMessageToWorker('cssSelectorEvaluateResult', {count: elements.length});
         },
         /**
          * Processes message exchange between relays
@@ -2177,6 +2197,9 @@
         onMessage_launchFromSlave: function() {
             useTopWindowForLocalFileOperations = true;
             me.launch(true);
+        },
+        onMessage_highlightElementForQueryBuilder: function(details) {
+            me.modules.ui.highlightElementForQueryBuilder(details.path);
         },
         ////
         /**
@@ -3545,6 +3568,15 @@
             }
         },
         /**
+         * For selector builder
+         * @function CartFiller.UI#arrowToSingleElementNoScroll
+         * @param {HtmlElement} element
+         * @access public
+         */
+        arrowToSingleElementNoScroll: function(element) {
+            arrowToElements = [{element: element}];
+        },
+        /**
          * Displays comment message over the overlay in the main frame
          * @function CartFiller.UI#say
          * @param {String} text
@@ -3828,6 +3860,34 @@
          */
         getMessageToSay: function() {
             return messageToSay;
+        },
+        highlightElementForQueryBuilder: function(path) {
+            if (! path) {
+                this.arrowToSingleElementNoScroll();
+            } else {
+                var element = this.mainFrameWindow.document.getElementsByTagName('body')[0];
+                for (var i = 0; i < path.length; i ++  ) {
+                    var name = path[i][0];
+                    var len = element.children.length;
+                    for (var j = 0; j < len; j ++ ) {
+                        if (element.children[j].nodeName.toLowerCase() === name) {
+                            if (path[i][1]) {
+                                path[i][1] --;
+                            } else {
+                                element = element.children[j];
+                                name = false;
+                                break;
+                            }
+                        }
+                    }
+                    if (name) {
+                        // not found
+                        this.arrowToSingleElementNoScroll();
+                        return;
+                    }
+                }
+                this.arrowToSingleElementNoScroll(element);
+            }
         }
     });
 }).call(this, document, window);

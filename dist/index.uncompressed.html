@@ -6925,8 +6925,8 @@ button.close {
                             <a class="btn btn-xs btn-success" ng-click="toggleSearch()">Close</a>
                         </div>
                         <div style="max-height: 70vh; overflow: scroll">
-                            <div ng-repeat="element in stack">
-                                <button class="btn btn-xs" ng-class="element.selectNodeName ? 'btn-success' : 'btn-warning'" ng-click="toggle('selectNodeName', element)">
+                            <div ng-repeat="(elementIndex, element) in stack">
+                                <button data-index="{{elementIndex}}" class="btn btn-xs" ng-class="element.selectNodeName ? 'btn-success' : 'btn-warning'" ng-click="toggle('selectNodeName', element)" onmouseenter="angular.element(this).scope().highlight(this);">
                                     {{element.element}}
                                 </button>
                                 <button class="btn btn-xs" ng-class="element.selectId ? 'btn-success' : 'btn-danger'" ng-click="toggle('selectId', element)" ng-if="element.id">
@@ -6979,6 +6979,7 @@ button.close {
                     <h3 ng-if="! filter.length" ng-click="expand(name)">
                         {{name}}
                     </h3>
+                    <span>{{workerTaskSources[name]}}</span>
                     <table class="table" data-name="{{name}}">
                         <tr ng-repeat="(parameterName, dummy) in jobTaskDiscoveredParameters[name].all">
                             <td>{{parameterName}}</td>
@@ -7011,10 +7012,10 @@ button.close {
                 <h3 ng-if="! jobTask.task && jobTask.heading && jobTask.level == 2">{{jobTask.heading}}</h3>
                 <h4 ng-if="! jobTask.task && jobTask.heading && jobTask.level == 3">{{jobTask.heading}}</h4>
                 <span ng-if="jobTask.task" ng-dblclick="doubleClickTaskName(jobTask.task)"><strong>{{jobTaskIndex + 1}}. {{jobTitleMap[jobTask.task] ? jobTitleMap[jobTask.task] : jobTask.task}}</strong></span><span ng-repeat="(propertyName, propertyValue) in jobTask" ng-if="propertyName != 'task' && jobTask.task" ng-dblclick="doubleClickTaskInput(jobTaskIndex, propertyName, propertyValue)">, 
-                    <span>{{jobTitleMap[propertyName] ? jobTitleMap[propertyName] : propertyName}}</span>
+                    <span>{{jobTitleMap[propertyName] ? jobTitleMap[propertyName] : propertyName}}:</span>
                     <span><strong>{{getPropertyValue(propertyValue)}}</strong></span></span>
                 <div>
-                    <textarea readonly onclick="select(this);" ng-if="jobTask.task && noTaskSteps(jobTask.task)" rows="8" style="width: 100%;">{{',\n            \'' + jobTask.task + '\': [\n                \'\', function() {\n                    \n                }, \'\', function(el) {\n                    \n                }\n            ]\n'}}</textarea>
+                    <textarea readonly onclick="select(this);" ng-if="jobTask.task && noTaskSteps(jobTask.task)" rows="6" style="width: 100%;">{{',\n            \'' + jobTask.task + '\': [\n                \'\', function() {\n                }, \'\', function(el) {\n                }\n            ]\n'}}</textarea>
                     <span
                        ng-repeat="(jobTaskStepIndex, jobTaskStep) in jobTaskDescriptions[jobTask.task] track by $index"
                     >
@@ -46664,6 +46665,9 @@ define('controller', ['app', 'scroll'], function(app){
                     $scope.workerTaskSources = details.workerTaskSources;
                     $scope.updateIndexTitles();
                 });
+                if ($scope.clickedWhileWorkerWasInProgress) {
+                    run($scope.clickedWhileWorkerWasInProgress);
+                }
             } else if (cmd === 'workerStepResult'){
                 $scope.jobTaskProgress[details.index].stepsInProgress[details.step] = false;
                 $scope.jobTaskProgress[details.index].stepResults[details.step] = {status: details.status, message: details.message, response: details.response};
@@ -46882,7 +46886,7 @@ define('controller', ['app', 'scroll'], function(app){
             if ($event) {
                 $event.stopPropagation();
             }
-            if ($scope.workerInProgress) {
+            if ($scope.workerInProgress || ($scope.workersLoaded < $scope.workersCounter)) {
                 $scope.clickedWhileWorkerWasInProgress = slow ? 'slow' : 'fast';
                 return false;
             }
@@ -47010,11 +47014,12 @@ define('controller', ['app', 'scroll'], function(app){
                             return undefined !== el.selectAttribute && el.selectAttribute[i];
                         }).map(function(a){
                             return '[' + a.n + '="' + a.v + '"' + ']';
-                        }).join('')) +
-                        (el.selectIndex ? (':nth-of-type(' + el.index + ')') : '');
+                        }).join(''));
                     if (r.trim().length) {
                         r += ':visible';
                     }
+                    r +=
+                        (el.selectIndex ? ('\').filter(function(i,el,x,c){ c = ' + (el.index - 1) + '; for (x = el.previousSibling; x; x = x.previousSibling) c -= x.nodeName === el.nodeName ? 1 : 0; return c === 0; ;}).find(\'') : '');
                     return r +
                         (el.selectText ? ('\').filter(function(i,el){return el.textContent.trim() === ' + JSON.stringify(el.text) + ';}).find(\'') : '')
                     ;
@@ -47029,6 +47034,14 @@ define('controller', ['app', 'scroll'], function(app){
                 if ($event.keyCode === 27) {
                     scope.toggleSearch();
                 }
+            };
+            scope.highlight = function(button) {
+                var payload = [];
+                for (var i = 0 ; i <= button.getAttribute('data-index'); i ++) {
+                    var node = scope.stack[i];
+                    payload.push([node.element, node.index - 1]);
+                }
+                cfMessage.send('highlightElementForQueryBuilder', {path: payload});
             };
         },1000);
         setTimeout(function initAvailableTasksOfWorkerScope() {
@@ -47140,7 +47153,7 @@ define('controller', ['app', 'scroll'], function(app){
             reportError('bootstrap message did not come');
         }
     }, 10000);
-    config.gruntBuildTimeStamp='1462036452215';
+    config.gruntBuildTimeStamp='1462061497985';
     window.addEventListener('message', function(event){
         var test = /^cartFillerMessage:(.*)$/.exec(event.data);
         var isDist = true;
@@ -47557,7 +47570,8 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                             $scope.runTest(index, $scope.params.slow ? 'slow' : 'fast', parseInt($scope.params.task) - 1, parseInt($scope.params.step) - 1);
                         }
                     });
-                } else if (cfMessage.hashUrl) {
+                } else if (cfMessage.hashUrl && ! $scope.alreadyWentTo) {
+                    $scope.alreadyWentTo = true;
                     var m = /^#?\/?job=([^&]*)&task=([^&]*)&step=([^&]*)$/.exec(cfMessage.hashUrl);
                     if (m) {
                         var jobName = decodeURIComponent(m[1]);
@@ -47651,7 +47665,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
         }
         $scope.submitTestUpdate = function(index) {
             var test = $scope.discovery.scripts.contents[index];
-            $.cartFillerPlugin({'$cartFillerTestUpdate': test});
+            $.cartFillerPlugin({'$cartFillerTestUpdate': test, trackWorker: $scope.params.editor});
         };
         $scope.runTest = function(index, how, untilTask, untilStep, $event) {
             if (untilTask === -1 || untilTask === '-1') {

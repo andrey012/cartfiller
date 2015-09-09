@@ -272,7 +272,8 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                             $scope.runTest(index, $scope.params.slow ? 'slow' : 'fast', parseInt($scope.params.task) - 1, parseInt($scope.params.step) - 1);
                         }
                     });
-                } else if (cfMessage.hashUrl) {
+                } else if (cfMessage.hashUrl && ! $scope.alreadyWentTo) {
+                    $scope.alreadyWentTo = true;
                     var m = /^#?\/?job=([^&]*)&task=([^&]*)&step=([^&]*)$/.exec(cfMessage.hashUrl);
                     if (m) {
                         var jobName = decodeURIComponent(m[1]);
@@ -366,7 +367,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
         }
         $scope.submitTestUpdate = function(index) {
             var test = $scope.discovery.scripts.contents[index];
-            $.cartFillerPlugin({'$cartFillerTestUpdate': test});
+            $.cartFillerPlugin({'$cartFillerTestUpdate': test, trackWorker: $scope.params.editor});
         };
         $scope.runTest = function(index, how, untilTask, untilStep, $event) {
             if (untilTask === -1 || untilTask === '-1') {

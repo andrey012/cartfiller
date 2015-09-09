@@ -824,6 +824,15 @@
             }
         },
         /**
+         * For selector builder
+         * @function CartFiller.UI#arrowToSingleElementNoScroll
+         * @param {HtmlElement} element
+         * @access public
+         */
+        arrowToSingleElementNoScroll: function(element) {
+            arrowToElements = [{element: element}];
+        },
+        /**
          * Displays comment message over the overlay in the main frame
          * @function CartFiller.UI#say
          * @param {String} text
@@ -1107,6 +1116,34 @@
          */
         getMessageToSay: function() {
             return messageToSay;
+        },
+        highlightElementForQueryBuilder: function(path) {
+            if (! path) {
+                this.arrowToSingleElementNoScroll();
+            } else {
+                var element = this.mainFrameWindow.document.getElementsByTagName('body')[0];
+                for (var i = 0; i < path.length; i ++  ) {
+                    var name = path[i][0];
+                    var len = element.children.length;
+                    for (var j = 0; j < len; j ++ ) {
+                        if (element.children[j].nodeName.toLowerCase() === name) {
+                            if (path[i][1]) {
+                                path[i][1] --;
+                            } else {
+                                element = element.children[j];
+                                name = false;
+                                break;
+                            }
+                        }
+                    }
+                    if (name) {
+                        // not found
+                        this.arrowToSingleElementNoScroll();
+                        return;
+                    }
+                }
+                this.arrowToSingleElementNoScroll(element);
+            }
         }
     });
 }).call(this, document, window);
