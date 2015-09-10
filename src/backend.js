@@ -187,6 +187,7 @@ var launchBrowser = function(url, browser, backendUrl, editor, root) {
     if (root) {
         args.push('root=' + encodeURIComponent(root));
     }
+    url = -1 === url.indexOf('?') ? (url + '?' + (new Date()).getTime()) : (url.replace('?', '?' + (new Date()).getTime() + '&'));
     url = url + (-1 === url.indexOf('#') ? '#' : '&') + args.join('&');
     console.log('Launching ' + (argv.browser ? argv.browser : 'default browser') + ' with URL: ' + url);
     browserProcess = open(url, argv.browser);
