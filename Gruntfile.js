@@ -27,6 +27,17 @@ module.exports = function(grunt) {
                 /\<script\s+src="\.\.\/\.\.\/lib\/requirejs\/require\.js\"\>/,
                 '<script src="scripts-for-local' + (uncompressed ? '' : '.min') + '.js?__inline=true">')
             .replace(
+                /base64-content-of-([a-zA-Z.]+)-goes-here/g,
+                function(match, p1) {
+                   return (new Buffer(grunt.file.read('src/templates/' + p1))).toString('base64');
+                })
+            .replace(
+                'href="data:application/json;base64,test.json"',
+                'href="data:application/json;base64,' + (new Buffer(grunt.file.read('src/templates/test.json'))).toString('base64') + '"')
+            .replace(
+                'href="data:application/javascript;base64,worker.js"',
+                'href="data:application/javascript;base64,' + (new Buffer(grunt.file.read('src/templates/worker.js'))).toString('base64') + '"')
+            .replace(
                 "var injectjs = ''", 
                 function() {
                     return "var injectjs = " + 
@@ -205,6 +216,7 @@ module.exports = function(grunt) {
 		jshint: {
 			files: ["src/**/*.js"],
 			options: {
+				ignores: ["src/templates/worker.js"],
 				jshintrc: ".jshintrc"
 			}
 		},
