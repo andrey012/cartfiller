@@ -56,7 +56,7 @@ app.post('/progress/' + sessionKey, function (req, res) {
     if (req.body.result !== 'ok') {
         failures.push(req.body);
     }
-    console.log(req.body.test + ', task ' + (parseInt(req.body.task) + 1) + ': ' + req.body.taskName + ', step ' + (parseInt(req.body.step) + 1) + ': result = ' + req.body.result);
+    console.log((req.body.result + '       ').substr(0,8) + (new Date()) + '  ' + req.body.test + ', task ' + (parseInt(req.body.task) + 1) + ': ' + req.body.taskName + ', step ' + (parseInt(req.body.step) + 1) + ': result = ' + req.body.result);
     res.end();
 });
 
@@ -94,7 +94,7 @@ var tearDownFn = function(code) {
 
 setInterval(function() {
     if (pulseTime < ((new Date()).getTime() - timeout)) {
-        console.log('exitting with code 1 because there was no activity over recent 60 seconds');
+        console.log('exitting with code 1 because there was no activity over recent ' + (timeout / 1000 ) + ' seconds');
         if (childApp) {
             childApp.kill();
         }

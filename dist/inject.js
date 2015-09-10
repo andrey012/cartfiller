@@ -183,7 +183,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1462303984025';
+    config.gruntBuildTimeStamp='1462343886481';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -2184,13 +2184,24 @@
          * @access public
          */
         onMessage_updateHashUrl: function(details) {
-            var pc = window.location.hash.replace(/^#+/, '').split('&')
-                .filter(function(v){
-                    return (0 === v.indexOf('job=') || 0 === v.indexOf('task=') || 0 === v.indexOf('step=')) ? 0 : 1;
-                });
-            pc.push('job=' + encodeURIComponent(details.jobName) + '&task=' + details.task + '&step=' + details.step);
+            var hash = window.location.hash;
+            var replaceField = function(field, value) {
+                var pattern = new RegExp('(^#\/?|&)' + field + '=([^&]*)(&|$)');
+                value = encodeURIComponent(value);
+                var match = pattern.exec(hash);
+                if (match) {
+                    if (value !== match[2]) {
+                        hash = hash.replace(match[0], match[1] + field + '=' + value + match[3]);
+                    }
+                } else if (hash.length < 4096) {
+                    hash = hash + (-1 === hash.indexOf('&') ? '' : '&') + field + '=' + value;
+                }
+            };
+            replaceField('job', details.jobName);
+            replaceField('task', details.task);
+            replaceField('step', details.step);
 
-            window.location.hash = pc.join('&');
+            window.location.hash = hash;
         },
         /**
          * Updates title
