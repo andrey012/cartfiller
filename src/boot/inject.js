@@ -97,6 +97,7 @@
      * @access public
      */
     config.launch = function(ignoreOpener){
+        console.log('');
         if (document.getElementsByTagName('body')[0].getAttribute('data-old-cartfiller-version-detected')) {
             return; // no launch
         }

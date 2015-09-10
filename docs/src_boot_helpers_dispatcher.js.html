@@ -216,6 +216,7 @@
      * @access private
      */
     var useTopWindowForLocalFileOperations;
+    var currentInvokeWorkerMessage;
     /**
      * Keeps details about relay subsystem
      * @var {Object} CartFiller.Dispatcher~rel
@@ -226,6 +227,7 @@
         nextRelayRegistered: false,
         nextRelayQueue: [],
         knownUrls: {},
+        igniteFromLocal: false,
         bubbleMessage: function(message) {
             if (this.isSlave) {
                 postMessage(window.opener, 'bubbleRelayMessage', message);
@@ -438,6 +440,15 @@
             if (message) {
                 relay.nextRelayQueue.push(message);
             }
+            if (me.localInjectJs) {
+                relay.igniteFromLocal = true;
+                setTimeout(function igniteFromLocal() {
+                    if (relay.igniteFromLocal) {
+                        relay.nextRelay.postMessage(me.localInjectJs, '*');
+                        setTimeout(igniteFromLocal, 500);
+                    }
+                }, 500);
+            }
         }
     };
     var workersToEvaluate = [];
@@ -583,6 +594,8 @@
                 } else if ('/^\'cartFillerEval\'/' === event.data) {
                     // launch slave frame
                     event.source.postMessage(me.localInjectJs, '*');
+                } else if (0 === event.data.indexOf('\'cartFillerEval\';')) {
+                    // ignition from local message, ignore it, we are already launched
                 } else {
                     // this message was received by an accident and we need to resend it to mainFrame where
                     // real recipient is.
@@ -658,6 +671,7 @@
                 startupWatchDog.mainRegistered = true;
                 postMessage(source, 'bootstrap', {dummy: true});
             } else if (source === relay.nextRelay) {
+                relay.igniteFromLocal = false;
                 relay.nextRelayRegistered = true;
                 var url;
                 var codeToSend = [];
@@ -667,7 +681,7 @@
                     }
                 }
                 for (var i = 0; i &lt; codeToSend.length; i ++) {
-                    relay.nextRelayQueue.push({cmd: 'loadWorker', url: codeToSend[i], code: workerSourceCodes[codeToSend[i]], isFinal: (i === codeToSend.length - 1)});
+                    relay.nextRelayQueue.push({cmd: 'loadWorker', jobDetailsCache: jobDetailsCache, url: codeToSend[i], code: workerSourceCodes[codeToSend[i]], isFinal: (i === codeToSend.length - 1)});
                 }
                 // now we can send all queued messages to relay
                 var msg;
@@ -814,11 +828,15 @@
          */
         onMessage_loadWorker: function(message){
             try {
+                if (message.jobDetailsCache) {
+                    jobDetailsCache = message.jobDetailsCache;
+                }
                 workerSourceCodes[message.src] = message.code;
                 if (message.isFinal) {
                     evaluateWorkers();
                 }
                 if (relay.nextRelay) {
+                    message.jobDetailsCache = jobDetailsCache;
                     postMessage(relay.nextRelay, message.cmd, message);
                 }
 
@@ -851,13 +869,14 @@
          * @access public
          */
         onMessage_invokeWorker: function(message){
+            currentInvokeWorkerMessage = message;
             if (message.globals) {
                 fillWorkerGlobals(message.globals);
             }
             try {
                 me.modules.ui.say();
             } catch (e){}
-            if (this.reflectMessage(message)) {
+            if (this.reflectMessage(message, message.drillToFrame)) {
                 if (message.debug) {
                     console.log('Debugger call went to slave tab - look for it there!');
                 }
@@ -977,8 +996,8 @@
          * @access public
          */
         onMessage_resetWorker: function(message){
-            if (this.reflectMessage(message)) {
-                return;
+            if (relay.nextRelay) {
+                openRelay('about:blank', message);
             }
             resetWorker();
         },
@@ -1049,6 +1068,7 @@
          * @access public
          */
         onMessage_bubbleRelayMessage: function(details, source) {
+            details.cmd = 'bubbleRelayMessage';
             if (relay.isSlave &amp;&amp; source !== window.opener &amp;&amp; ! details.notToParents) {
                 postMessage(window.opener, details.cmd, details);
             }
@@ -1063,12 +1083,18 @@
                 me.modules.dispatcher.onMainFrameLoaded(details.args[0], true);
             } else if (details.message === 'openRelayOnHead' &amp;&amp; ! relay.isSlave) {
                 if (! relay.knownUrls[details.args[0]]) {
+                    relay.knownUrls[details.args[0]] = true;
                     me.modules.dispatcher.onMessage_bubbleRelayMessage({message: 'openRelayOnTail', args: details.args, notToParents: true});
                 }
             } else if (details.message === 'openRelayOnTail' &amp;&amp; ! relay.nextRelay) {
                 openRelay(details.args[0], undefined, details.args[1]);
             } else if (details.message === 'updateTitle') {
                 me.modules.dispatcher.onMessage_updateTitle(details);
+            } else if (details.message === 'drill' &amp;&amp; ! relay.isSlave) {
+                details.cmd = 'invokeWorker';
+                me.modules.dispatcher.onMessage_invokeWorker(details);
+            } else if (details.message === 'uiAssets' &amp;&amp; ! relay.isSlave) {
+                me.modules.ui.setSerializedAssets(details);
             }
         },
         /**
@@ -1130,7 +1156,7 @@
                         hash = hash.replace(match[0], match[1] + field + '=' + value + match[3]);
                     }
                 } else if (hash.length &lt; 4096) {
-                    hash = hash + (-1 === hash.indexOf('&amp;') ? '' : '&amp;') + field + '=' + value;
+                    hash = hash + (0 === hash.replace(/^#?\/?/, '').length ? '' : '&amp;') + field + '=' + value;
                 }
             };
             replaceField('job', details.jobName);
@@ -1471,14 +1497,20 @@
          * If there is no next dispatcher - then open new popup for dispatcher
          * @function CartFiller.Dispatcher#reflectMessage
          * @param {Object} message
+         * @param {integer} frameIndex
          * @return bool
          * @access public
          */
-        reflectMessage: function(message) {
+        reflectMessage: function(message, frameIndex) {
             // check whether we can access the target window at all
             var haveAccess = true;
+            var path = 'undefined' === typeof frameIndex ? [] : frameIndex.filter(function(){return 1;});
+            var windowToCheck = me.modules.ui.mainFrameWindow;
+            while (path.length){
+                windowToCheck = windowToCheck.frames[path.shift()];
+            }
             try {
-                me.modules.ui.mainFrameWindow.location.href;
+                windowToCheck.location.href;
             } catch (e){
                 haveAccess = false;
             }
@@ -1524,10 +1556,12 @@
             me.modules.ui.chooseJobFrameWindow = me.modules.ui.workerFrameWindow = window.opener;
             try { // this can fail when Cartfiller tab is opened from local/index.html
                 for (var opener = window.opener; opener &amp;&amp; opener !== opener.opener; opener = opener.opener) {
-                    if (opener.frames.cartFillerMainFrame) {
-                        me.modules.ui.mainFrameWindow = opener.frames.cartFillerMainFrame;
-                        break;
-                    }
+                    try {
+                        if (opener.frames.cartFillerMainFrame) {
+                            me.modules.ui.mainFrameWindow = opener.frames.cartFillerMainFrame;
+                            break;
+                        }
+                    } catch (e) {}
                 }
             } catch (e) {
                 return; 
@@ -1652,6 +1686,24 @@
          */
         setSleepAfterThisStep: function(sleep) {
             sleepAfterThisStep = sleep;
+        },
+        drill: function(frameIndexes) {
+            workerCurrentStepIndex = workerOnLoadHandler = false;
+            currentInvokeWorkerMessage.drillToFrame = this.getFrameToDrill();
+            currentInvokeWorkerMessage.drillToFrame.push(frameIndexes);
+            currentInvokeWorkerMessage.message = 'drill';
+            currentInvokeWorkerMessage.notToChildren = true;
+            currentInvokeWorkerMessage.notToParents = false;
+            this.onMessage_bubbleRelayMessage(currentInvokeWorkerMessage);
+        },
+        isDrilling: function() {
+            return 'undefined' !== typeof currentInvokeWorkerMessage.drillToFrame;
+        },
+        getFrameToDrill: function() {
+            return currentInvokeWorkerMessage.drillToFrame ? currentInvokeWorkerMessage.drillToFrame : [];
+        },
+        isSlave: function() {
+            return relay.isSlave;
         }
     });
 }).call(this, document, window);
@@ -1665,13 +1717,13 @@
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Externals</h3><ul><li><a href="external%2520jQuery.external__jQuery.fn_.html">jQuery.fn</a></li><li><a href="external-jQuery.html">jQuery</a></li></ul><h3>Classes</h3><ul><li><a href="CartFiller.Api.html">Api</a></li><li><a href="CartFiller.Api.StepEnvironment.html">StepEnvironment</a></li><li><a href="CartFiller.Api.WorkerTask.html">WorkerTask</a></li><li><a href="CartFiller.Api.WorkerTasks.html">WorkerTasks</a></li><li><a href="CartFiller.Configuration.html">Configuration</a></li><li><a href="CartFiller.Dispatcher.html">Dispatcher</a></li><li><a href="CartFiller.Injector.html">Injector</a></li><li><a href="CartFiller.Loader.html">Loader</a></li><li><a href="CartFiller.SampleWorker.html">SampleWorker</a></li><li><a href="CartFiller.SampleWorker.SampleWorkerTasks.html">SampleWorkerTasks</a></li><li><a href="CartFiller.UI.html">UI</a></li><li><a href="CartFiller.UI.ArrowToElement.html">ArrowToElement</a></li><li><a href="CartFillerPlugin-JobDetails.html">JobDetails</a></li><li><a href="CartFillerPlugin-Plugin.html">Plugin</a></li><li><a href="CartFillerPlugin-Settings.html">Settings</a></li></ul><h3>Namespaces</h3><ul><li><a href="CartFiller.html">CartFiller</a></li><li><a href="CartFillerPlugin.html">CartFillerPlugin</a></li></ul><h3>Global</h3><ul><li><a href="global.html#%2522jQuery.cartFillerPlugin.hideChooseJobFrame%2522">"jQuery.cartFillerPlugin.hideChooseJobFrame"</a></li><li><a href="global.html#%2522jQuery.cartFillerPlugin.showChooseJobFrame%2522">"jQuery.cartFillerPlugin.showChooseJobFrame"</a></li><li><a href="global.html#%2522jQuery.cartFillerPlugin%2522">"jQuery.cartFillerPlugin"</a></li><li><a href="global.html#%2522jQuery.fn.cartFillerPlugin%2522">"jQuery.fn.cartFillerPlugin"</a></li><li><a href="global.html#getBookmarkletCode">getBookmarkletCode</a></li><li><a href="global.html#onMessage_postMessage">onMessage_postMessage</a></li><li><a href="global.html#reportingMousePointerClick">reportingMousePointerClick</a></li><li><a href="global.html#testApiMap">testApiMap</a></li><li><a href="global.html#workerEventListeners">workerEventListeners</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Externals</h3><ul><li><a href="external%2520jQuery.external__jQuery.fn_.html">jQuery.fn</a></li><li><a href="external-jQuery.html">jQuery</a></li></ul><h3>Classes</h3><ul><li><a href="CartFiller.Api.html">Api</a></li><li><a href="CartFiller.Api.StepEnvironment.html">StepEnvironment</a></li><li><a href="CartFiller.Api.WorkerTask.html">WorkerTask</a></li><li><a href="CartFiller.Api.WorkerTasks.html">WorkerTasks</a></li><li><a href="CartFiller.Configuration.html">Configuration</a></li><li><a href="CartFiller.Dispatcher.html">Dispatcher</a></li><li><a href="CartFiller.Injector.html">Injector</a></li><li><a href="CartFiller.Loader.html">Loader</a></li><li><a href="CartFiller.SampleWorker.html">SampleWorker</a></li><li><a href="CartFiller.SampleWorker.SampleWorkerTasks.html">SampleWorkerTasks</a></li><li><a href="CartFiller.UI.html">UI</a></li><li><a href="CartFiller.UI.ArrowToElement.html">ArrowToElement</a></li><li><a href="CartFillerPlugin-JobDetails.html">JobDetails</a></li><li><a href="CartFillerPlugin-Plugin.html">Plugin</a></li><li><a href="CartFillerPlugin-Settings.html">Settings</a></li></ul><h3>Namespaces</h3><ul><li><a href="CartFiller.html">CartFiller</a></li><li><a href="CartFillerPlugin.html">CartFillerPlugin</a></li></ul><h3>Global</h3><ul><li><a href="global.html#%2522jQuery.cartFillerPlugin.hideChooseJobFrame%2522">"jQuery.cartFillerPlugin.hideChooseJobFrame"</a></li><li><a href="global.html#%2522jQuery.cartFillerPlugin.showChooseJobFrame%2522">"jQuery.cartFillerPlugin.showChooseJobFrame"</a></li><li><a href="global.html#%2522jQuery.cartFillerPlugin%2522">"jQuery.cartFillerPlugin"</a></li><li><a href="global.html#%2522jQuery.fn.cartFillerPlugin%2522">"jQuery.fn.cartFillerPlugin"</a></li><li><a href="global.html#drill">drill</a></li><li><a href="global.html#getBookmarkletCode">getBookmarkletCode</a></li><li><a href="global.html#onMessage_postMessage">onMessage_postMessage</a></li><li><a href="global.html#reportingMousePointerClick">reportingMousePointerClick</a></li><li><a href="global.html#testApiMap">testApiMap</a></li><li><a href="global.html#workerEventListeners">workerEventListeners</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.3</a> on Wed May 04 2016 09:38:15 GMT+0300 (MSK)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.3</a> on Fri May 06 2016 11:54:01 GMT+0300 (MSK)
 </footer>
 
 <script> prettyPrint(); </script>

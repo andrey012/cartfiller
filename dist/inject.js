@@ -110,6 +110,7 @@
      * @access public
      */
     config.launch = function(ignoreOpener){
+        console.log('');
         if (document.getElementsByTagName('body')[0].getAttribute('data-old-cartfiller-version-detected')) {
             return; // no launch
         }
@@ -183,7 +184,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1462343886481';
+    config.gruntBuildTimeStamp='1462524834291';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -1085,7 +1086,35 @@
                     time = 1000 + Math.floor(String(messageToSay).length * 20); // 50 chars per second
                 }
             }
-            me.modules.dispatchr.setSleepAfterThisStep(time);
+            me.modules.dispatcher.setSleepAfterThisStep(time);
+        },
+        /**
+         * ////
+         */
+        drill: function() {
+            var originalPath = me.modules.dispatcher.getFrameToDrill().filter(function(){return 1;});
+            var path = originalPath.filter(function(){return 1;});
+            var frame = me.modules.ui.mainFrameWindow;
+            var level = path.length;
+            while (path.length) {
+                frame = frame.frames[path.shift()];
+            }
+            var result = arguments[level](frame);
+            if (result) {
+                // drill further
+                for (var i = 0; i < frame.frames.length; i ++) {
+                    originalPath.push(i);
+                    if (result === frame.frames[i]){
+                        var elements = frame.document.getElementsByTagName('iframe');
+                        for (var j = 0 ; j < elements.length; j++){
+                            if (elements[j].contentWindow === result) {
+                                me.modules.ui.trackIframePosition(elements[j], originalPath);
+                            }
+                        }
+                        return me.modules.dispatcher.drill(i);
+                    }
+                }
+            }
         }
     });
 }).call(this, document, window);
@@ -1280,6 +1309,7 @@
      * @access private
      */
     var useTopWindowForLocalFileOperations;
+    var currentInvokeWorkerMessage;
     /**
      * Keeps details about relay subsystem
      * @var {Object} CartFiller.Dispatcher~rel
@@ -1290,6 +1320,7 @@
         nextRelayRegistered: false,
         nextRelayQueue: [],
         knownUrls: {},
+        igniteFromLocal: false,
         bubbleMessage: function(message) {
             if (this.isSlave) {
                 postMessage(window.opener, 'bubbleRelayMessage', message);
@@ -1502,6 +1533,15 @@
             if (message) {
                 relay.nextRelayQueue.push(message);
             }
+            if (me.localInjectJs) {
+                relay.igniteFromLocal = true;
+                setTimeout(function igniteFromLocal() {
+                    if (relay.igniteFromLocal) {
+                        relay.nextRelay.postMessage(me.localInjectJs, '*');
+                        setTimeout(igniteFromLocal, 500);
+                    }
+                }, 500);
+            }
         }
     };
     var workersToEvaluate = [];
@@ -1647,6 +1687,8 @@
                 } else if ('/^\'cartFillerEval\'/' === event.data) {
                     // launch slave frame
                     event.source.postMessage(me.localInjectJs, '*');
+                } else if (0 === event.data.indexOf('\'cartFillerEval\';')) {
+                    // ignition from local message, ignore it, we are already launched
                 } else {
                     // this message was received by an accident and we need to resend it to mainFrame where
                     // real recipient is.
@@ -1722,6 +1764,7 @@
                 startupWatchDog.mainRegistered = true;
                 postMessage(source, 'bootstrap', {dummy: true});
             } else if (source === relay.nextRelay) {
+                relay.igniteFromLocal = false;
                 relay.nextRelayRegistered = true;
                 var url;
                 var codeToSend = [];
@@ -1731,7 +1774,7 @@
                     }
                 }
                 for (var i = 0; i < codeToSend.length; i ++) {
-                    relay.nextRelayQueue.push({cmd: 'loadWorker', url: codeToSend[i], code: workerSourceCodes[codeToSend[i]], isFinal: (i === codeToSend.length - 1)});
+                    relay.nextRelayQueue.push({cmd: 'loadWorker', jobDetailsCache: jobDetailsCache, url: codeToSend[i], code: workerSourceCodes[codeToSend[i]], isFinal: (i === codeToSend.length - 1)});
                 }
                 // now we can send all queued messages to relay
                 var msg;
@@ -1878,11 +1921,15 @@
          */
         onMessage_loadWorker: function(message){
             try {
+                if (message.jobDetailsCache) {
+                    jobDetailsCache = message.jobDetailsCache;
+                }
                 workerSourceCodes[message.src] = message.code;
                 if (message.isFinal) {
                     evaluateWorkers();
                 }
                 if (relay.nextRelay) {
+                    message.jobDetailsCache = jobDetailsCache;
                     postMessage(relay.nextRelay, message.cmd, message);
                 }
 
@@ -1915,13 +1962,14 @@
          * @access public
          */
         onMessage_invokeWorker: function(message){
+            currentInvokeWorkerMessage = message;
             if (message.globals) {
                 fillWorkerGlobals(message.globals);
             }
             try {
                 me.modules.ui.say();
             } catch (e){}
-            if (this.reflectMessage(message)) {
+            if (this.reflectMessage(message, message.drillToFrame)) {
                 if (message.debug) {
                     console.log('Debugger call went to slave tab - look for it there!');
                 }
@@ -2041,8 +2089,8 @@
          * @access public
          */
         onMessage_resetWorker: function(message){
-            if (this.reflectMessage(message)) {
-                return;
+            if (relay.nextRelay) {
+                openRelay('about:blank', message);
             }
             resetWorker();
         },
@@ -2113,6 +2161,7 @@
          * @access public
          */
         onMessage_bubbleRelayMessage: function(details, source) {
+            details.cmd = 'bubbleRelayMessage';
             if (relay.isSlave && source !== window.opener && ! details.notToParents) {
                 postMessage(window.opener, details.cmd, details);
             }
@@ -2127,12 +2176,18 @@
                 me.modules.dispatcher.onMainFrameLoaded(details.args[0], true);
             } else if (details.message === 'openRelayOnHead' && ! relay.isSlave) {
                 if (! relay.knownUrls[details.args[0]]) {
+                    relay.knownUrls[details.args[0]] = true;
                     me.modules.dispatcher.onMessage_bubbleRelayMessage({message: 'openRelayOnTail', args: details.args, notToParents: true});
                 }
             } else if (details.message === 'openRelayOnTail' && ! relay.nextRelay) {
                 openRelay(details.args[0], undefined, details.args[1]);
             } else if (details.message === 'updateTitle') {
                 me.modules.dispatcher.onMessage_updateTitle(details);
+            } else if (details.message === 'drill' && ! relay.isSlave) {
+                details.cmd = 'invokeWorker';
+                me.modules.dispatcher.onMessage_invokeWorker(details);
+            } else if (details.message === 'uiAssets' && ! relay.isSlave) {
+                me.modules.ui.setSerializedAssets(details);
             }
         },
         /**
@@ -2194,7 +2249,7 @@
                         hash = hash.replace(match[0], match[1] + field + '=' + value + match[3]);
                     }
                 } else if (hash.length < 4096) {
-                    hash = hash + (-1 === hash.indexOf('&') ? '' : '&') + field + '=' + value;
+                    hash = hash + (0 === hash.replace(/^#?\/?/, '').length ? '' : '&') + field + '=' + value;
                 }
             };
             replaceField('job', details.jobName);
@@ -2535,14 +2590,20 @@
          * If there is no next dispatcher - then open new popup for dispatcher
          * @function CartFiller.Dispatcher#reflectMessage
          * @param {Object} message
+         * @param {integer} frameIndex
          * @return bool
          * @access public
          */
-        reflectMessage: function(message) {
+        reflectMessage: function(message, frameIndex) {
             // check whether we can access the target window at all
             var haveAccess = true;
+            var path = 'undefined' === typeof frameIndex ? [] : frameIndex.filter(function(){return 1;});
+            var windowToCheck = me.modules.ui.mainFrameWindow;
+            while (path.length){
+                windowToCheck = windowToCheck.frames[path.shift()];
+            }
             try {
-                me.modules.ui.mainFrameWindow.location.href;
+                windowToCheck.location.href;
             } catch (e){
                 haveAccess = false;
             }
@@ -2588,10 +2649,12 @@
             me.modules.ui.chooseJobFrameWindow = me.modules.ui.workerFrameWindow = window.opener;
             try { // this can fail when Cartfiller tab is opened from local/index.html
                 for (var opener = window.opener; opener && opener !== opener.opener; opener = opener.opener) {
-                    if (opener.frames.cartFillerMainFrame) {
-                        me.modules.ui.mainFrameWindow = opener.frames.cartFillerMainFrame;
-                        break;
-                    }
+                    try {
+                        if (opener.frames.cartFillerMainFrame) {
+                            me.modules.ui.mainFrameWindow = opener.frames.cartFillerMainFrame;
+                            break;
+                        }
+                    } catch (e) {}
                 }
             } catch (e) {
                 return; 
@@ -2716,6 +2779,24 @@
          */
         setSleepAfterThisStep: function(sleep) {
             sleepAfterThisStep = sleep;
+        },
+        drill: function(frameIndexes) {
+            workerCurrentStepIndex = workerOnLoadHandler = false;
+            currentInvokeWorkerMessage.drillToFrame = this.getFrameToDrill();
+            currentInvokeWorkerMessage.drillToFrame.push(frameIndexes);
+            currentInvokeWorkerMessage.message = 'drill';
+            currentInvokeWorkerMessage.notToChildren = true;
+            currentInvokeWorkerMessage.notToParents = false;
+            this.onMessage_bubbleRelayMessage(currentInvokeWorkerMessage);
+        },
+        isDrilling: function() {
+            return 'undefined' !== typeof currentInvokeWorkerMessage.drillToFrame;
+        },
+        getFrameToDrill: function() {
+            return currentInvokeWorkerMessage.drillToFrame ? currentInvokeWorkerMessage.drillToFrame : [];
+        },
+        isSlave: function() {
+            return relay.isSlave;
         }
     });
 }).call(this, document, window);
@@ -2863,6 +2944,8 @@
      * @access private
      */
     var highlightedElements = [];
+    var iframeElementsToTrack = {};
+    var trackedIframeElements = {};
     /**
      * Keeps current message to say
      * @member {String} CartFiller.UI~messageToSay
@@ -3067,12 +3150,42 @@
         div.style.borderBottom = '30px solid rgba(255,0,0,0.3)';
     };
     var findChanges = function(elements){
-        var rebuild = false, i, top, left, width, height, element, rect;
+        var rebuild = {}, i, top, left, width, height, element, rect;
+        if (! (elements instanceof Array)) {
+            var thearray = []; 
+            for (i in elements) {
+                thearray.push(elements[i]);
+            }
+            elements = thearray;
+        }
         // check whether positions of elements have changed
         for (i = elements.length - 1; i >= 0; i--){
             element = elements[i];
-            rect = element.element.getBoundingClientRect();
-            rect = shiftRectWithFrames(rect, element.element);
+            if (element.element) {
+                rect = element.element.getBoundingClientRect();
+                if ((! element.path) || (! element.path.length)) {
+                    rect = shiftRectWithFrames(rect, element.element);
+                }
+            } else {
+                rect = {
+                    left: element.rect.left,
+                    top: element.rect.top,
+                    right: element.rect.right,
+                    bottom: element.rect.bottom,
+                    width: element.rect.width,
+                    height: element.rect.height
+                };
+                for (var j = 0 ; j < element.path.length; j ++) {
+                    var pathAsString = element.path.slice(0,j+1).join('/');
+                    var trackedIframe = trackedIframeElements[pathAsString];
+                    if (trackedIframe) {
+                        rect.left += trackedIframe.rect.left;
+                        rect.top += trackedIframe.rect.top;
+                        rect.right += trackedIframe.rect.left;
+                        rect.bottom += trackedIframe.rect.top;
+                    }
+                }
+            }
             if (rect.width > 0 || rect.height > 0 || rect.left > 0 || rect.top > 0) {
                 top = Math.round(rect.top - 5);
                 left = Math.round(rect.left - 5);
@@ -3085,12 +3198,24 @@
                 (left !== element.left) ||
                 (height !== element.height) ||
                 (width !== element.width)){
-                rebuild = true;
+                if (element.element) {
+                    rebuild.my = true;
+                }
+                rebuild.any = true;
                 element.top = top;
                 element.left = left;
                 element.height = height;
                 element.width = width;
+                element.self = {
+                    top: rect.top,
+                    left: rect.left,
+                    right: rect.right,
+                    bottom: rect.bottom,
+                    width: rect.width,
+                    height: rect.height
+                };
             }
+
         }
         return rebuild;
     };
@@ -3242,15 +3367,55 @@
      * @access private
      */
     var arrowToFunction = function(){
+        var serialize = function(a) {
+            var map = function(e) {
+                return {
+                    rect: {
+                        left: e.self.left,
+                        top: e.self.top,
+                        right: e.self.right,
+                        bottom: e.self.bottom,
+                        width: e.self.width,
+                        height: e.self.height,
+                        url: e.element.ownerDocument.defaultView.location.href
+                    },
+                    path: e.path
+                };
+            };
+            if (a instanceof Array) {
+                return a.filter(function(e){return e.element;}).map(map);
+            } else {
+                var r = [];
+                for (var i in a) {
+                    r.push(map(a[i]));
+                }
+                return r;
+            }
+        };
         try {
             var rebuildArrows = findChanges(arrowToElements);
             var rebuildHighlights = findChanges(highlightedElements);
+            var rebuildIframes = findChanges(iframeElementsToTrack);
             var rebuildMessage = currentMessageOnScreen !== messageToSay;
-            if (rebuildArrows || rebuildHighlights || rebuildMessage){
-                removeOverlay();
-                drawArrows();
-                drawHighlights();
-                drawMessage();
+            if (rebuildArrows.my || rebuildHighlights.my || rebuildMessage || rebuildIframes.my){
+                if (me.modules.dispatcher.isDrilling()) {
+                    me.modules.dispatcher.onMessage_bubbleRelayMessage({
+                        message: 'uiAssets',
+                        arrows: rebuildArrows.my ? serialize(arrowToElements) : null,
+                        highlighted: rebuildHighlights.my ? serialize(highlightedElements) : null,
+                        iframes: rebuildIframes.my ? serialize(iframeElementsToTrack) : null,
+                        say: rebuildMessage ? messageToSay : null,
+                        notToChildren: true
+                    });
+                }
+            }
+            if (rebuildArrows.any || rebuildHighlights.any || rebuildMessage || rebuildIframes.any){
+                if (! me.modules.dispatcher.isSlave()) {
+                    removeOverlay();
+                    drawArrows();
+                    drawHighlights();
+                    drawMessage();
+                }
             }
 
         } catch (e) {}
@@ -3549,25 +3714,25 @@
             messageToSay = '';
             var body = this.mainFrameWindow.document.getElementsByTagName('body')[0];
             var i;
-
+            var path = me.modules.dispatcher.getFrameToDrill();
 
             highlightedElements = [];
             if (null !== element && 'object' === typeof element && 'string' === typeof element.jquery && undefined !== element.length && 'function' === typeof element.each){
                 element.each(function(i,el){
-                    highlightedElements.push({element: el}); 
+                    highlightedElements.push({element: el, path: path}); 
                     if (!allElements) {
                         return false;
                     }
                 });
             } else if (element instanceof Array) {
                 for (i = element.length -1 ; i >= 0 ; i --){
-                    highlightedElements.push({element: element[i]});
+                    highlightedElements.push({element: element[i], path: path});
                     if (true !== allElements) {
                         break;
                     }
                 }
             } else if (undefined !== element) {
-                highlightedElements.push({element: element});
+                highlightedElements.push({element: element, path: path});
             }
             if (highlightedElements.length > 0) {
                 body.style.paddingBottom = this.mainFrameWindow.innerHeight + 'px';
@@ -3583,23 +3748,24 @@
          * @access public
          */
         arrowTo: function(element, allElements){
+            var path = me.modules.dispatcher.getFrameToDrill();
             arrowToElements = [];
             if (null !== element && 'object' === typeof element && 'string' === typeof element.jquery && undefined !== element.length && 'function' === typeof element.each){
                 element.each(function(i,el){
-                    arrowToElements.push({element: el}); 
+                    arrowToElements.push({element: el, path: path}); 
                     if (!allElements) {
                         return false;
                     }
                 });
             } else if (element instanceof Array) {
                 for (var i = 0; i < element.length; i++){
-                    arrowToElements.push({element: element[i]});
+                    arrowToElements.push({element: element[i], path: path});
                     if (!allElements) {
                         break;
                     }
                 }
             } else if (undefined !== element) {
-                arrowToElements.push({element: element});
+                arrowToElements.push({element: element, path: path});
             } else {
                 arrowToElements = [];
                 removeOverlay(true);
@@ -3617,7 +3783,7 @@
          * @access public
          */
         arrowToSingleElementNoScroll: function(element) {
-            arrowToElements = [{element: element}];
+            arrowToElements = [{element: element, path: me.modules.dispatcher.getFrameToDrill()}];
         },
         /**
          * Displays comment message over the overlay in the main frame
@@ -3932,6 +4098,28 @@
                 }
                 this.arrowToSingleElementNoScroll(element);
             }
+        },
+        setSerializedAssets: function(message) {
+            if (message.iframes !== null) {
+                for (var i = 0; i < message.iframes.length; i++){
+                    trackedIframeElements[message.iframes[i].path.join('/')] = message.iframes[i];
+                }
+            }
+            if (message.arrows !== null) {
+                arrowToElements = message.arrows;
+            }
+            if (message.highlighted !== null) {
+                highlightedElements = message.highlighted;
+            }
+            if (message.say !== null) {
+                messageToSay = message.say;
+            }
+        },
+        trackIframePosition: function(iframe, path) {
+            arrowToElements = [];
+            highlightedElements = [];
+            messageToSay = '';
+            iframeElementsToTrack[path.join('/')] = {element: iframe, path: path};
         }
     });
 }).call(this, document, window);

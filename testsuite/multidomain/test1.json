@@ -1,0 +1,21 @@
+cartfiller={
+    "details": [
+        {"task": "open"},
+        {"task": "open relay", "host": "localhost1"},
+        {"task": "open relay", "host": "localhost2"},
+        {"task": "open relay", "host": "localhost3"},
+        {"task": "open relay", "host": "localhost4"},
+        {"task": "drill", "level": 0},
+        {"task": "drill", "level": 1},
+        {"task": "drill", "level": 2},
+        {"task": "drill", "level": 3},
+        {"task": "clicklink", "name": "localhost1"},
+        {"task": "clicklink", "name": "localhost2"},
+        {"task": "clicklink", "name": "localhost3"},
+        {"task": "clicklink", "name": "localhost4"},
+        {"task": "clicklink", "name": "localhost1"},
+        {"task": "clicklink", "name": "localhost2"},
+        {"task": "clicklink", "name": "localhost3"},
+        {"task": "clicklink", "name": "localhost4"},
+    ],
+}

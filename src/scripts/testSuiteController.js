@@ -380,7 +380,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             test.workerSrc = $scope.discovery.workerSrc;
             test.autorun = how === 'load' ? 0 : 1;
             test.autorunSpeed = how === 'slow' ? 'slow' : 'fast';
-            test.rootCartfillerPath = $scope.discovery.currentRootPath;
+            test.rootCartfillerPath = $scope.params.cartFillerRootPath ? $scope.params.cartFillerRootPath : $scope.discovery.currentRootPath;
             test.cartFillerInstallationUrl = $scope.params.cartFillerInstallationUrl ? $scope.params.cartFillerInstallationUrl : window.location.href.split('#')[0].split('?')[0].replace(/[^\/]*$/, '');
             if ('undefined' === typeof test.globals) {
                 test.globals = {};

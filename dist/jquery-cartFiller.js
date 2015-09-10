@@ -595,6 +595,14 @@
      * user-friendly job title
      */
     /**
+     * @member {String} CartFillerPlugin~JobDetails#cartFillerInstallationUrl gives an idea where
+     * to find everything else if you arelost, this one is URL of cartfiller installation
+     */
+    /**
+     * @member {String} CartFillerPlugin~JobDetails#rootCartfillerPath gives an idea where
+     * to find everything else if you are lost, this one is URL of folder where cartfiller.json is 
+     */
+    /**
      * Global plugin function - sends job details to cartFiller and
      * registers optional callback, that will receive results.
      * @function external:"jQuery".cartFillerPlugin
@@ -724,7 +732,12 @@
                 pingFilePopupWindow();
             }
         } else {
-            $.ajax(options);
+            var x = new XMLHttpRequest();
+            x.onload = function(){
+                options.complete(x);
+            };
+            x.open('GET', options.url, true);
+            x.send();
         }
     };
 })( jQuery, window, document );

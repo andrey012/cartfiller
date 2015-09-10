@@ -1,0 +1,76 @@
+<!DOCTYPE html><html><head></head><body>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+    <a class="one">localhost1</a> 
+    <a class="one">localhost2</a> 
+    <a class="one">localhost3</a> 
+    <a class="one">localhost4</a> 
+
+<span></span>
+<br/>
+<script>
+    document.getElementsByTagName('span')[0].innerText = (window.location.href);
+    var as = document.getElementsByTagName('a');
+    for (var i = 0; i < as.length; i ++) {
+        as[i].setAttribute('href', window.location.href.replace(/^(https?\:\/\/[^\/]+)\//, function(match, p1) {
+            return p1.replace(/\d*$/, '') + as[i].textContent.replace(/localhost1?/, '') + '/';
+        }));
+    }
+    var level = /\?(\d+)$/.exec(window.location.href);
+    level = level ? parseInt(level[1]) : 0;
+    if (level < 3) {
+        var f = document.createElement('iframe');
+        f.style.width = (500 - level * 100) + 'px';
+        f.style.height = (500 - level * 100) + 'px';
+        var me = /localhost(\d?)\//.exec(window.location.href)[1];
+        if (! me ) me = 1;
+        f.setAttribute('src', as[(parseInt(me)) % 4].getAttribute('href').split('?')[0] + '?' + (level + 1));
+        f.setAttribute('name', 'theframe');
+        document.getElementsByTagName('body')[0].appendChild(f);
+    }
+</script>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+</body></html>

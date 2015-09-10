@@ -47157,7 +47157,7 @@ define('controller', ['app', 'scroll'], function(app){
             reportError('bootstrap message did not come');
         }
     }, 10000);
-    config.gruntBuildTimeStamp='1462343886481';
+    config.gruntBuildTimeStamp='1462524834291';
     window.addEventListener('message', function(event){
         var test = /^cartFillerMessage:(.*)$/.exec(event.data);
         var isDist = true;
@@ -47226,7 +47226,7 @@ define('controller', ['app', 'scroll'], function(app){
                 if (message.tests) {
                     var x = new XMLHttpRequest();
                     x.onload = function(){
-                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1462343886481') {
+                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1462524834291') {
                             console.log('new version of CartFiller was deployed, switching to it');
                             var hash = window.location.href.split('#');
                             var pc = hash[0].split('?');
@@ -47709,7 +47709,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             test.workerSrc = $scope.discovery.workerSrc;
             test.autorun = how === 'load' ? 0 : 1;
             test.autorunSpeed = how === 'slow' ? 'slow' : 'fast';
-            test.rootCartfillerPath = $scope.discovery.currentRootPath;
+            test.rootCartfillerPath = $scope.params.cartFillerRootPath ? $scope.params.cartFillerRootPath : $scope.discovery.currentRootPath;
             test.cartFillerInstallationUrl = $scope.params.cartFillerInstallationUrl ? $scope.params.cartFillerInstallationUrl : window.location.href.split('#')[0].split('?')[0].replace(/[^\/]*$/, '');
             if ('undefined' === typeof test.globals) {
                 test.globals = {};
@@ -48473,6 +48473,14 @@ define('jquery-cartFiller', ['jquery'], function() {
      * user-friendly job title
      */
     /**
+     * @member {String} CartFillerPlugin~JobDetails#cartFillerInstallationUrl gives an idea where
+     * to find everything else if you arelost, this one is URL of cartfiller installation
+     */
+    /**
+     * @member {String} CartFillerPlugin~JobDetails#rootCartfillerPath gives an idea where
+     * to find everything else if you are lost, this one is URL of folder where cartfiller.json is 
+     */
+    /**
      * Global plugin function - sends job details to cartFiller and
      * registers optional callback, that will receive results.
      * @function external:"jQuery".cartFillerPlugin
@@ -48602,7 +48610,12 @@ define('jquery-cartFiller', ['jquery'], function() {
                 pingFilePopupWindow();
             }
         } else {
-            $.ajax(options);
+            var x = new XMLHttpRequest();
+            x.onload = function(){
+                options.complete(x);
+            };
+            x.open('GET', options.url, true);
+            x.send();
         }
     };
 })( jQuery, window, document );

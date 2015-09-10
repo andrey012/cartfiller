@@ -76,6 +76,8 @@
      * @access private
      */
     var highlightedElements = [];
+    var iframeElementsToTrack = {};
+    var trackedIframeElements = {};
     /**
      * Keeps current message to say
      * @member {String} CartFiller.UI~messageToSay
@@ -280,12 +282,42 @@
         div.style.borderBottom = '30px solid rgba(255,0,0,0.3)';
     };
     var findChanges = function(elements){
-        var rebuild = false, i, top, left, width, height, element, rect;
+        var rebuild = {}, i, top, left, width, height, element, rect;
+        if (! (elements instanceof Array)) {
+            var thearray = []; 
+            for (i in elements) {
+                thearray.push(elements[i]);
+            }
+            elements = thearray;
+        }
         // check whether positions of elements have changed
         for (i = elements.length - 1; i >= 0; i--){
             element = elements[i];
-            rect = element.element.getBoundingClientRect();
-            rect = shiftRectWithFrames(rect, element.element);
+            if (element.element) {
+                rect = element.element.getBoundingClientRect();
+                if ((! element.path) || (! element.path.length)) {
+                    rect = shiftRectWithFrames(rect, element.element);
+                }
+            } else {
+                rect = {
+                    left: element.rect.left,
+                    top: element.rect.top,
+                    right: element.rect.right,
+                    bottom: element.rect.bottom,
+                    width: element.rect.width,
+                    height: element.rect.height
+                };
+                for (var j = 0 ; j < element.path.length; j ++) {
+                    var pathAsString = element.path.slice(0,j+1).join('/');
+                    var trackedIframe = trackedIframeElements[pathAsString];
+                    if (trackedIframe) {
+                        rect.left += trackedIframe.rect.left;
+                        rect.top += trackedIframe.rect.top;
+                        rect.right += trackedIframe.rect.left;
+                        rect.bottom += trackedIframe.rect.top;
+                    }
+                }
+            }
             if (rect.width > 0 || rect.height > 0 || rect.left > 0 || rect.top > 0) {
                 top = Math.round(rect.top - 5);
                 left = Math.round(rect.left - 5);
@@ -298,12 +330,24 @@
                 (left !== element.left) ||
                 (height !== element.height) ||
                 (width !== element.width)){
-                rebuild = true;
+                if (element.element) {
+                    rebuild.my = true;
+                }
+                rebuild.any = true;
                 element.top = top;
                 element.left = left;
                 element.height = height;
                 element.width = width;
+                element.self = {
+                    top: rect.top,
+                    left: rect.left,
+                    right: rect.right,
+                    bottom: rect.bottom,
+                    width: rect.width,
+                    height: rect.height
+                };
             }
+
         }
         return rebuild;
     };
@@ -455,15 +499,55 @@
      * @access private
      */
     var arrowToFunction = function(){
+        var serialize = function(a) {
+            var map = function(e) {
+                return {
+                    rect: {
+                        left: e.self.left,
+                        top: e.self.top,
+                        right: e.self.right,
+                        bottom: e.self.bottom,
+                        width: e.self.width,
+                        height: e.self.height,
+                        url: e.element.ownerDocument.defaultView.location.href
+                    },
+                    path: e.path
+                };
+            };
+            if (a instanceof Array) {
+                return a.filter(function(e){return e.element;}).map(map);
+            } else {
+                var r = [];
+                for (var i in a) {
+                    r.push(map(a[i]));
+                }
+                return r;
+            }
+        };
         try {
             var rebuildArrows = findChanges(arrowToElements);
             var rebuildHighlights = findChanges(highlightedElements);
+            var rebuildIframes = findChanges(iframeElementsToTrack);
             var rebuildMessage = currentMessageOnScreen !== messageToSay;
-            if (rebuildArrows || rebuildHighlights || rebuildMessage){
-                removeOverlay();
-                drawArrows();
-                drawHighlights();
-                drawMessage();
+            if (rebuildArrows.my || rebuildHighlights.my || rebuildMessage || rebuildIframes.my){
+                if (me.modules.dispatcher.isDrilling()) {
+                    me.modules.dispatcher.onMessage_bubbleRelayMessage({
+                        message: 'uiAssets',
+                        arrows: rebuildArrows.my ? serialize(arrowToElements) : null,
+                        highlighted: rebuildHighlights.my ? serialize(highlightedElements) : null,
+                        iframes: rebuildIframes.my ? serialize(iframeElementsToTrack) : null,
+                        say: rebuildMessage ? messageToSay : null,
+                        notToChildren: true
+                    });
+                }
+            }
+            if (rebuildArrows.any || rebuildHighlights.any || rebuildMessage || rebuildIframes.any){
+                if (! me.modules.dispatcher.isSlave()) {
+                    removeOverlay();
+                    drawArrows();
+                    drawHighlights();
+                    drawMessage();
+                }
             }
 
         } catch (e) {}
@@ -762,25 +846,25 @@
             messageToSay = '';
             var body = this.mainFrameWindow.document.getElementsByTagName('body')[0];
             var i;
-
+            var path = me.modules.dispatcher.getFrameToDrill();
 
             highlightedElements = [];
             if (null !== element && 'object' === typeof element && 'string' === typeof element.jquery && undefined !== element.length && 'function' === typeof element.each){
                 element.each(function(i,el){
-                    highlightedElements.push({element: el}); 
+                    highlightedElements.push({element: el, path: path}); 
                     if (!allElements) {
                         return false;
                     }
                 });
             } else if (element instanceof Array) {
                 for (i = element.length -1 ; i >= 0 ; i --){
-                    highlightedElements.push({element: element[i]});
+                    highlightedElements.push({element: element[i], path: path});
                     if (true !== allElements) {
                         break;
                     }
                 }
             } else if (undefined !== element) {
-                highlightedElements.push({element: element});
+                highlightedElements.push({element: element, path: path});
             }
             if (highlightedElements.length > 0) {
                 body.style.paddingBottom = this.mainFrameWindow.innerHeight + 'px';
@@ -796,23 +880,24 @@
          * @access public
          */
         arrowTo: function(element, allElements){
+            var path = me.modules.dispatcher.getFrameToDrill();
             arrowToElements = [];
             if (null !== element && 'object' === typeof element && 'string' === typeof element.jquery && undefined !== element.length && 'function' === typeof element.each){
                 element.each(function(i,el){
-                    arrowToElements.push({element: el}); 
+                    arrowToElements.push({element: el, path: path}); 
                     if (!allElements) {
                         return false;
                     }
                 });
             } else if (element instanceof Array) {
                 for (var i = 0; i < element.length; i++){
-                    arrowToElements.push({element: element[i]});
+                    arrowToElements.push({element: element[i], path: path});
                     if (!allElements) {
                         break;
                     }
                 }
             } else if (undefined !== element) {
-                arrowToElements.push({element: element});
+                arrowToElements.push({element: element, path: path});
             } else {
                 arrowToElements = [];
                 removeOverlay(true);
@@ -830,7 +915,7 @@
          * @access public
          */
         arrowToSingleElementNoScroll: function(element) {
-            arrowToElements = [{element: element}];
+            arrowToElements = [{element: element, path: me.modules.dispatcher.getFrameToDrill()}];
         },
         /**
          * Displays comment message over the overlay in the main frame
@@ -1145,6 +1230,28 @@
                 }
                 this.arrowToSingleElementNoScroll(element);
             }
+        },
+        setSerializedAssets: function(message) {
+            if (message.iframes !== null) {
+                for (var i = 0; i < message.iframes.length; i++){
+                    trackedIframeElements[message.iframes[i].path.join('/')] = message.iframes[i];
+                }
+            }
+            if (message.arrows !== null) {
+                arrowToElements = message.arrows;
+            }
+            if (message.highlighted !== null) {
+                highlightedElements = message.highlighted;
+            }
+            if (message.say !== null) {
+                messageToSay = message.say;
+            }
+        },
+        trackIframePosition: function(iframe, path) {
+            arrowToElements = [];
+            highlightedElements = [];
+            messageToSay = '';
+            iframeElementsToTrack[path.join('/')] = {element: iframe, path: path};
         }
     });
 }).call(this, document, window);

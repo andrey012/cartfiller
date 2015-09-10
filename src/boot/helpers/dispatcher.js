@@ -188,6 +188,7 @@
      * @access private
      */
     var useTopWindowForLocalFileOperations;
+    var currentInvokeWorkerMessage;
     /**
      * Keeps details about relay subsystem
      * @var {Object} CartFiller.Dispatcher~rel
@@ -198,6 +199,7 @@
         nextRelayRegistered: false,
         nextRelayQueue: [],
         knownUrls: {},
+        igniteFromLocal: false,
         bubbleMessage: function(message) {
             if (this.isSlave) {
                 postMessage(window.opener, 'bubbleRelayMessage', message);
@@ -410,6 +412,15 @@
             if (message) {
                 relay.nextRelayQueue.push(message);
             }
+            if (me.localInjectJs) {
+                relay.igniteFromLocal = true;
+                setTimeout(function igniteFromLocal() {
+                    if (relay.igniteFromLocal) {
+                        relay.nextRelay.postMessage(me.localInjectJs, '*');
+                        setTimeout(igniteFromLocal, 500);
+                    }
+                }, 500);
+            }
         }
     };
     var workersToEvaluate = [];
@@ -555,6 +566,8 @@
                 } else if ('/^\'cartFillerEval\'/' === event.data) {
                     // launch slave frame
                     event.source.postMessage(me.localInjectJs, '*');
+                } else if (0 === event.data.indexOf('\'cartFillerEval\';')) {
+                    // ignition from local message, ignore it, we are already launched
                 } else {
                     // this message was received by an accident and we need to resend it to mainFrame where
                     // real recipient is.
@@ -630,6 +643,7 @@
                 startupWatchDog.mainRegistered = true;
                 postMessage(source, 'bootstrap', {dummy: true});
             } else if (source === relay.nextRelay) {
+                relay.igniteFromLocal = false;
                 relay.nextRelayRegistered = true;
                 var url;
                 var codeToSend = [];
@@ -639,7 +653,7 @@
                     }
                 }
                 for (var i = 0; i < codeToSend.length; i ++) {
-                    relay.nextRelayQueue.push({cmd: 'loadWorker', url: codeToSend[i], code: workerSourceCodes[codeToSend[i]], isFinal: (i === codeToSend.length - 1)});
+                    relay.nextRelayQueue.push({cmd: 'loadWorker', jobDetailsCache: jobDetailsCache, url: codeToSend[i], code: workerSourceCodes[codeToSend[i]], isFinal: (i === codeToSend.length - 1)});
                 }
                 // now we can send all queued messages to relay
                 var msg;
@@ -786,11 +800,15 @@
          */
         onMessage_loadWorker: function(message){
             try {
+                if (message.jobDetailsCache) {
+                    jobDetailsCache = message.jobDetailsCache;
+                }
                 workerSourceCodes[message.src] = message.code;
                 if (message.isFinal) {
                     evaluateWorkers();
                 }
                 if (relay.nextRelay) {
+                    message.jobDetailsCache = jobDetailsCache;
                     postMessage(relay.nextRelay, message.cmd, message);
                 }
 
@@ -823,13 +841,14 @@
          * @access public
          */
         onMessage_invokeWorker: function(message){
+            currentInvokeWorkerMessage = message;
             if (message.globals) {
                 fillWorkerGlobals(message.globals);
             }
             try {
                 me.modules.ui.say();
             } catch (e){}
-            if (this.reflectMessage(message)) {
+            if (this.reflectMessage(message, message.drillToFrame)) {
                 if (message.debug) {
                     console.log('Debugger call went to slave tab - look for it there!');
                 }
@@ -949,8 +968,8 @@
          * @access public
          */
         onMessage_resetWorker: function(message){
-            if (this.reflectMessage(message)) {
-                return;
+            if (relay.nextRelay) {
+                openRelay('about:blank', message);
             }
             resetWorker();
         },
@@ -1021,6 +1040,7 @@
          * @access public
          */
         onMessage_bubbleRelayMessage: function(details, source) {
+            details.cmd = 'bubbleRelayMessage';
             if (relay.isSlave && source !== window.opener && ! details.notToParents) {
                 postMessage(window.opener, details.cmd, details);
             }
@@ -1035,12 +1055,18 @@
                 me.modules.dispatcher.onMainFrameLoaded(details.args[0], true);
             } else if (details.message === 'openRelayOnHead' && ! relay.isSlave) {
                 if (! relay.knownUrls[details.args[0]]) {
+                    relay.knownUrls[details.args[0]] = true;
                     me.modules.dispatcher.onMessage_bubbleRelayMessage({message: 'openRelayOnTail', args: details.args, notToParents: true});
                 }
             } else if (details.message === 'openRelayOnTail' && ! relay.nextRelay) {
                 openRelay(details.args[0], undefined, details.args[1]);
             } else if (details.message === 'updateTitle') {
                 me.modules.dispatcher.onMessage_updateTitle(details);
+            } else if (details.message === 'drill' && ! relay.isSlave) {
+                details.cmd = 'invokeWorker';
+                me.modules.dispatcher.onMessage_invokeWorker(details);
+            } else if (details.message === 'uiAssets' && ! relay.isSlave) {
+                me.modules.ui.setSerializedAssets(details);
             }
         },
         /**
@@ -1102,7 +1128,7 @@
                         hash = hash.replace(match[0], match[1] + field + '=' + value + match[3]);
                     }
                 } else if (hash.length < 4096) {
-                    hash = hash + (-1 === hash.indexOf('&') ? '' : '&') + field + '=' + value;
+                    hash = hash + (0 === hash.replace(/^#?\/?/, '').length ? '' : '&') + field + '=' + value;
                 }
             };
             replaceField('job', details.jobName);
@@ -1443,14 +1469,20 @@
          * If there is no next dispatcher - then open new popup for dispatcher
          * @function CartFiller.Dispatcher#reflectMessage
          * @param {Object} message
+         * @param {integer} frameIndex
          * @return bool
          * @access public
          */
-        reflectMessage: function(message) {
+        reflectMessage: function(message, frameIndex) {
             // check whether we can access the target window at all
             var haveAccess = true;
+            var path = 'undefined' === typeof frameIndex ? [] : frameIndex.filter(function(){return 1;});
+            var windowToCheck = me.modules.ui.mainFrameWindow;
+            while (path.length){
+                windowToCheck = windowToCheck.frames[path.shift()];
+            }
             try {
-                me.modules.ui.mainFrameWindow.location.href;
+                windowToCheck.location.href;
             } catch (e){
                 haveAccess = false;
             }
@@ -1496,10 +1528,12 @@
             me.modules.ui.chooseJobFrameWindow = me.modules.ui.workerFrameWindow = window.opener;
             try { // this can fail when Cartfiller tab is opened from local/index.html
                 for (var opener = window.opener; opener && opener !== opener.opener; opener = opener.opener) {
-                    if (opener.frames.cartFillerMainFrame) {
-                        me.modules.ui.mainFrameWindow = opener.frames.cartFillerMainFrame;
-                        break;
-                    }
+                    try {
+                        if (opener.frames.cartFillerMainFrame) {
+                            me.modules.ui.mainFrameWindow = opener.frames.cartFillerMainFrame;
+                            break;
+                        }
+                    } catch (e) {}
                 }
             } catch (e) {
                 return; 
@@ -1624,6 +1658,24 @@
          */
         setSleepAfterThisStep: function(sleep) {
             sleepAfterThisStep = sleep;
+        },
+        drill: function(frameIndexes) {
+            workerCurrentStepIndex = workerOnLoadHandler = false;
+            currentInvokeWorkerMessage.drillToFrame = this.getFrameToDrill();
+            currentInvokeWorkerMessage.drillToFrame.push(frameIndexes);
+            currentInvokeWorkerMessage.message = 'drill';
+            currentInvokeWorkerMessage.notToChildren = true;
+            currentInvokeWorkerMessage.notToParents = false;
+            this.onMessage_bubbleRelayMessage(currentInvokeWorkerMessage);
+        },
+        isDrilling: function() {
+            return 'undefined' !== typeof currentInvokeWorkerMessage.drillToFrame;
+        },
+        getFrameToDrill: function() {
+            return currentInvokeWorkerMessage.drillToFrame ? currentInvokeWorkerMessage.drillToFrame : [];
+        },
+        isSlave: function() {
+            return relay.isSlave;
         }
     });
 }).call(this, document, window);

@@ -856,7 +856,35 @@
                     time = 1000 + Math.floor(String(messageToSay).length * 20); // 50 chars per second
                 }
             }
-            me.modules.dispatchr.setSleepAfterThisStep(time);
+            me.modules.dispatcher.setSleepAfterThisStep(time);
+        },
+        /**
+         * ////
+         */
+        drill: function() {
+            var originalPath = me.modules.dispatcher.getFrameToDrill().filter(function(){return 1;});
+            var path = originalPath.filter(function(){return 1;});
+            var frame = me.modules.ui.mainFrameWindow;
+            var level = path.length;
+            while (path.length) {
+                frame = frame.frames[path.shift()];
+            }
+            var result = arguments[level](frame);
+            if (result) {
+                // drill further
+                for (var i = 0; i < frame.frames.length; i ++) {
+                    originalPath.push(i);
+                    if (result === frame.frames[i]){
+                        var elements = frame.document.getElementsByTagName('iframe');
+                        for (var j = 0 ; j < elements.length; j++){
+                            if (elements[j].contentWindow === result) {
+                                me.modules.ui.trackIframePosition(elements[j], originalPath);
+                            }
+                        }
+                        return me.modules.dispatcher.drill(i);
+                    }
+                }
+            }
         }
     });
 }).call(this, document, window);
