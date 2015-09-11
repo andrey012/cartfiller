@@ -184,7 +184,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1462662643650';
+    config.gruntBuildTimeStamp='1462700046272';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -3181,7 +3181,6 @@
         return rebuild;
     };
     var addFrameCoordinatesMap = function(element) {
-        console.log(1);
         if (! element.path || ! element.path.length) {
             return element;
         }
@@ -3297,6 +3296,7 @@
      * @access private
      */
     var drawMessage = function(){
+        deleteOverlaysOfType('message');
         var rect = findMaxRect({highlight: true, arrow: true});
         if (rect.left === undefined) {
             rect = {top: 0, bottom: 0, left: 0, right: 0};
@@ -3322,7 +3322,7 @@
             messageDiv.style.maxHeight = '100%';
             messageDiv.style.position = 'fixed';
             messageDiv.style.fontSize = '20px';
-            messageDiv.className = overlayClassName;
+            messageDiv.className = overlayClassName + ' ' + overlayClassName + 'message';
             if (! wrapMessageToSayWithPre) {
                 messageDiv.textContent = messageToSay;
             } else {
@@ -3571,7 +3571,6 @@
     // Launch arrowToFunction
     setInterval(arrowToFunction, 200);
     var discoverPathForElement = function(window, soFar) {
-        console.log('discoverPathForElement');
         soFar = soFar || [];
         if (window === me.modules.ui.mainFrameWindow) {
             return soFar;
@@ -3580,7 +3579,6 @@
         for (var i = 0; i < parent.frames.length && window !== parent.frames[i]; i ++) {}
         soFar.unshift(i);
         discoverPathForElement(parent, soFar);
-        console.log(1);
         // let's see if we should track iframe ourselves
         try {
             parent.location.href;
@@ -3658,7 +3656,7 @@
 
             if (null !== element && 'object' === typeof element && 'string' === typeof element.jquery && undefined !== element.length && 'function' === typeof element.each){
                 element.each(function(i,el){
-                    this.addElementToTrack('highlight', el);
+                    me.modules.ui.addElementToTrack('highlight', el);
                     added = true;
                     if (!allElements) {
                         return false;
@@ -3690,7 +3688,7 @@
         arrowTo: function(element, allElements, noScroll){
             if (null !== element && 'object' === typeof element && 'string' === typeof element.jquery && undefined !== element.length && 'function' === typeof element.each){
                 element.each(function(i,el){
-                    this.addElementToTrack('arrow', el, noScroll);
+                    me.modules.ui.addElementToTrack('arrow', el, noScroll);
                     if (!allElements) {
                         return false;
                     }
@@ -3769,8 +3767,6 @@
                         messageAdjustmentRemainingAttempts = 0;
                     } else {
                         messageAdjustmentRemainingAttempts --;
-                        scheduleOverlayRedraw(arrowToElements);
-                        scheduleOverlayRedraw(highlightedElements);
                         currentMessageOnScreen = undefined;
                     }
                 } else {
@@ -4047,7 +4043,6 @@
             }
         },
         drawOverlays: function(details) {
-            console.log(2);
             var framesUpdated = false, path;
             for (path in details.iframesByPath) {
                 trackedIframes[path] = details.iframesByPath[path][0];
@@ -4100,7 +4095,6 @@
             iframeElementsToTrack[path.join('/')] = {element: iframe, path: path};
         },
         addElementToTrack: function(type, element, noScroll, addPath) {
-            console.log('addElementToTrack');
             elementsToTrack.push({
                 element: element, 
                 type: type, 
