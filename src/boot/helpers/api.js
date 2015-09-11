@@ -719,11 +719,11 @@
                             var e = false;
                             if (eventName === 'input') {
                                 try {
-                                    e = new Event('input');
+                                    e = new elementNode.ownerDocument.defaultView.Event('input');
                                 } catch (e) {}
                                 if (! e) {
                                     try {
-                                        e = document.createEvent('UIEvent');
+                                        e = elementNode.createEvent('UIEvent');
                                         e.initUIEvent('input');
                                     } catch (e) {}
                                 }
@@ -731,7 +731,7 @@
                                     continue;
                                 }
                             } else {
-                                e = document.createEvent('KeyboardEvent');
+                                e = elementNode.ownerDocument.createEvent('KeyboardEvent');
                                 Object.defineProperty(e, 'keyCode', charCodeGetter);
                                 Object.defineProperty(e, 'charCode', charCodeGetter);
                                 Object.defineProperty(e, 'metaKey', metaKeyGetter);
@@ -760,7 +760,7 @@
                             }
                         }
                         if (0 === nextText.length) {
-                            var event = new Event('change');
+                            var event = new elementNode.ownerDocument.defaultView.Event('change');
                             elementNode.dispatchEvent(event);
                             me.modules.api.arrow(el);
                             if (undefined === whatNext || whatNext === me.modules.api.result) {

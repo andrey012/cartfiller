@@ -1023,12 +1023,18 @@
             if (me.modules.dispatcher.reflectMessage(details)) {
                 return;
             }
-            var elements = eval('me.modules.ui.mainFrameWindow.jQuery' + details.selector); // jshint ignore:line
             var arrow = [];
+            var elements;
+            try {
+                elements = eval('(function(window, document, jQuery, $){return jQuery' + details.selector + ';})(me.modules.ui.mainFrameWindow, me.modules.ui.mainFrameWindow.document, me.modules.ui.mainFrameWindow.jQuery, me.modules.ui.mainFrameWindow.$);'); // jshint ignore:line
+            } catch (e) {
+                elements = [];
+            }
             for (var i = 0; i < elements.length && i < 16 ; i ++ ) {
                 arrow.push(elements[i]);
             }
-            me.modules.ui.arrowTo(arrow, true);
+            me.modules.ui.clearOverlays();
+            me.modules.ui.arrowTo(arrow, true, true);
             this.postMessageToWorker('cssSelectorEvaluateResult', {count: elements.length});
         },
         /**

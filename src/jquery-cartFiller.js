@@ -725,7 +725,7 @@
             }
         } else {
             var x = new XMLHttpRequest();
-            x.onload = function(){
+            x.onload = x.onerror = function(){
                 options.complete(x);
             };
             x.open('GET', options.url, true);

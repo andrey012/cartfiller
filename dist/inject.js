@@ -184,7 +184,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1462700046272';
+    config.gruntBuildTimeStamp='1462925363200';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -949,11 +949,11 @@
                             var e = false;
                             if (eventName === 'input') {
                                 try {
-                                    e = new Event('input');
+                                    e = new elementNode.ownerDocument.defaultView.Event('input');
                                 } catch (e) {}
                                 if (! e) {
                                     try {
-                                        e = document.createEvent('UIEvent');
+                                        e = elementNode.createEvent('UIEvent');
                                         e.initUIEvent('input');
                                     } catch (e) {}
                                 }
@@ -961,7 +961,7 @@
                                     continue;
                                 }
                             } else {
-                                e = document.createEvent('KeyboardEvent');
+                                e = elementNode.ownerDocument.createEvent('KeyboardEvent');
                                 Object.defineProperty(e, 'keyCode', charCodeGetter);
                                 Object.defineProperty(e, 'charCode', charCodeGetter);
                                 Object.defineProperty(e, 'metaKey', metaKeyGetter);
@@ -990,7 +990,7 @@
                             }
                         }
                         if (0 === nextText.length) {
-                            var event = new Event('change');
+                            var event = new elementNode.ownerDocument.defaultView.Event('change');
                             elementNode.dispatchEvent(event);
                             me.modules.api.arrow(el);
                             if (undefined === whatNext || whatNext === me.modules.api.result) {
@@ -2143,12 +2143,18 @@
             if (me.modules.dispatcher.reflectMessage(details)) {
                 return;
             }
-            var elements = eval('me.modules.ui.mainFrameWindow.jQuery' + details.selector); // jshint ignore:line
             var arrow = [];
+            var elements;
+            try {
+                elements = eval('(function(window, document, jQuery, $){return jQuery' + details.selector + ';})(me.modules.ui.mainFrameWindow, me.modules.ui.mainFrameWindow.document, me.modules.ui.mainFrameWindow.jQuery, me.modules.ui.mainFrameWindow.$);'); // jshint ignore:line
+            } catch (e) {
+                elements = [];
+            }
             for (var i = 0; i < elements.length && i < 16 ; i ++ ) {
                 arrow.push(elements[i]);
             }
-            me.modules.ui.arrowTo(arrow, true);
+            me.modules.ui.clearOverlays();
+            me.modules.ui.arrowTo(arrow, true, true);
             this.postMessageToWorker('cssSelectorEvaluateResult', {count: elements.length});
         },
         /**
@@ -3188,7 +3194,8 @@
             left: element.rect.left,
             top: element.rect.top,
             width: element.rect.width,
-            height: element.rect.height
+            height: element.rect.height,
+            originalElement: element
         };
         for (var i = element.path.length - 1; i >= 0 ; i --) {
             var path = element.path.slice(0,i+1).join('/');
@@ -3705,15 +3712,6 @@
             }
         },
         /**
-         * For selector builder
-         * @function CartFiller.UI#arrowToSingleElementNoScroll
-         * @param {HtmlElement} element
-         * @access public
-         */
-        arrowToSingleElementNoScroll: function(element) {
-            arrowToElements = [{element: element, path: me.modules.dispatcher.getFrameToDrill()}];
-        },
-        /**
          * Displays comment message over the overlay in the main frame
          * @function CartFiller.UI#say
          * @param {String} text
@@ -3933,7 +3931,7 @@
                         i++;
                     }
                 }
-                stack.unshift({element: el.nodeName.toLowerCase(), attrs: attrs, classes: el.className.split(' ').filter(function(v){return v;}), id: el.id, index: i, text: String(el.textContent).length < 200 ? String(el.innerText) : ''});
+                stack.unshift({element: el.nodeName.toLowerCase(), attrs: attrs, classes: el.className.split(' ').filter(function(v){return v;}), id: el.id, index: i, text: String(el.textContent).length < 200 ? String(el.textContent) : ''});
                 el = el.parentNode;
             }
             me.modules.dispatcher.postMessageToWorker('mousePointer', {x: x, y: y, stack: stack});
@@ -4000,9 +3998,8 @@
             return messageToSay;
         },
         highlightElementForQueryBuilder: function(path) {
-            if (! path) {
-                this.arrowToSingleElementNoScroll();
-            } else {
+            this.clearOverlays();
+            if (path) {
                 var element = this.mainFrameWindow.document.getElementsByTagName('body')[0];
                 for (var i = 0; i < path.length; i ++  ) {
                     var name = path[i][0];
@@ -4020,11 +4017,10 @@
                     }
                     if (name) {
                         // not found
-                        this.arrowToSingleElementNoScroll();
                         return;
                     }
                 }
-                this.arrowToSingleElementNoScroll(element);
+                this.arrowTo(element, false, true);
             }
         },
         clearOverlaysAndReflect: function() {
@@ -4072,35 +4068,17 @@
         tellWhatYouHaveToDraw: function() {
             arrowToFunction();
         },
-        setSerializedAssets: function(message) {
-            if (message.iframes !== null) {
-                for (var i = 0; i < message.iframes.length; i++){
-                    trackedIframeElements[message.iframes[i].path.join('/')] = message.iframes[i];
-                }
-            }
-            if (message.arrows !== null) {
-                arrowToElements = message.arrows;
-            }
-            if (message.highlighted !== null) {
-                highlightedElements = message.highlighted;
-            }
-            if (message.say !== null) {
-                messageToSay = message.say;
-            }
-        },
-        trackIframePosition: function(iframe, path) {
-            arrowToElements = [];
-            highlightedElements = [];
-            messageToSay = '';
-            iframeElementsToTrack[path.join('/')] = {element: iframe, path: path};
-        },
         addElementToTrack: function(type, element, noScroll, addPath) {
             elementsToTrack.push({
                 element: element, 
                 type: type, 
                 scroll: ! noScroll, 
-                path: discoverPathForElement(element.ownerDocument.defaultView, addPath)
+                path: discoverPathForElement(element.ownerDocument.defaultView, addPath),
+                ts: (new Date()).getTime()
             });
+            if (! noScroll) {
+                element.scrollIntoView();
+            }
         }
     });
 }).call(this, document, window);

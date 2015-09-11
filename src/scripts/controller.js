@@ -268,7 +268,7 @@ define('controller', ['app', 'scroll'], function(app){
                     scope.$digest();
                 })();
             } else if (cmd === 'cssSelectorEvaluateResult') {
-                $('#searchButton').text('Search (' + details.count + ')');
+                $('#searchButton').text('Search (' + details.count + ')').removeClass('btn-success btn-danger').addClass(details.count === 1 ? 'btn-success': 'btn-danger');
             }
         });
         $scope.incrementCurrentStep = function(skip, nextTaskFlow){
@@ -517,9 +517,11 @@ define('controller', ['app', 'scroll'], function(app){
                     }
                     where[what][index] = ! where[what][index];
                 }
+                scope.cssSelector = scope.getCssSelector();
+                cfMessage.send('evaluateCssSelector', {selector: scope.cssSelector});
             };
-            scope.getCssSelector = function(stack){
-                var r = ('(\'' + stack.map(function(el){
+            scope.getCssSelector = function(){
+                var r = ('(\'' + scope.stack.map(function(el){
                     var r = '' +
                         (el.selectNodeName ? el.element : '') +
                         (el.selectId ? ('#' + el.id) : '') +
@@ -539,10 +541,11 @@ define('controller', ['app', 'scroll'], function(app){
                     r +=
                         (el.selectIndex ? ('\').filter(function(i,el,x,c){ c = ' + (el.index - 1) + '; for (x = el.previousSibling; x; x = x.previousSibling) c -= x.nodeName === el.nodeName ? 1 : 0; return c === 0; ;}).find(\'') : '');
                     return r +
-                        (el.selectText ? ('\').filter(function(i,el){return el.textContent.trim() === ' + JSON.stringify(el.text) + ';}).find(\'') : '')
+                        (el.selectText ? ('\').filter(function(i,el){return el.textContent.replace(/\\s+/g, \' \').trim() === ' + JSON.stringify(el.text.replace(/\s+/g, ' ')) + ';}).find(\'') : '')
                     ;
-                }).join(' ') + '\')').replace(/.find\(\'\s*\'\)$/g, '').replace(/\s+/g, ' ').replace(/\'\s+/g, '\'').replace(/\s+\'/g, '\'');
-                cfMessage.send('evaluateCssSelector', {selector: r});
+                })
+                         .filter(function(v) { return v.trim().length; })
+                         .join(' ') + '\')').replace(/.find\(\'\s*\'\)$/g, '');
                 return r;
             };
             scope.toggleSearch = function() {
@@ -551,6 +554,9 @@ define('controller', ['app', 'scroll'], function(app){
             scope.textareaKeyUp = function($event){
                 if ($event.keyCode === 27) {
                     scope.toggleSearch();
+                } else {
+                    scope.cssSelector = $($event.target).val();
+                    cfMessage.send('evaluateCssSelector', {selector: scope.cssSelector});
                 }
             };
             scope.highlight = function(button) {

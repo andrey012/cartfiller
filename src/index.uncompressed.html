@@ -185,7 +185,7 @@
                                 </button>
                             </div>
                         </div>
-                        <textarea onclick="this.select()" readonly style="width: 100%" ng-keyup="textareaKeyUp($event)">{{getCssSelector(stack)}}</textarea>
+                        <textarea onclick="this.select()" onfocus="this.select()" style="width: 100%" ng-keyup="textareaKeyUp($event)">{{cssSelector}}</textarea>
 
                     </div>
                 </div>
