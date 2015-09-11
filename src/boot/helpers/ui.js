@@ -1152,7 +1152,9 @@
          * @access public
          */
         startReportingMousePointer: function() {
-            removeOverlay(true);
+            try {
+                removeOverlay(true);
+            } catch (e) {}
             if (! reportMousePointer) {
                 var div = document.createElement('div');
                 div.style.height = window.innerHeight + 'px';

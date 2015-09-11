@@ -1173,6 +1173,9 @@
          * @access public
          */
         onMessage_highlightElementForQueryBuilder: function(details) {
+            if (me.modules.dispatcher.reflectMessage(details)) {
+                return;
+            }
             me.modules.ui.highlightElementForQueryBuilder(details.path);
         },
         /**
