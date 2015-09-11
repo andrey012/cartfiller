@@ -197,6 +197,9 @@
      * @access private
      */
     var me = this.cartFillerConfiguration;
+    var cleanText = function(value) {
+        return value.replace(/\s+/g, ' ').trim().toLowerCase();
+    };
     me.scripts.push({
         /**
          * Returns name used by loader to organize modules
@@ -884,6 +887,9 @@
                     }
                 }
             }
+        },
+        compareCleanText: function(a, b) {
+            return cleanText(a) === cleanText(b);
         }
     });
 }).call(this, document, window);

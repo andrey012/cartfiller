@@ -184,7 +184,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1462925363200';
+    config.gruntBuildTimeStamp='1463002820222';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -427,6 +427,9 @@
      * @access private
      */
     var me = this.cartFillerConfiguration;
+    var cleanText = function(value) {
+        return value.replace(/\s+/g, ' ').trim().toLowerCase();
+    };
     me.scripts.push({
         /**
          * Returns name used by loader to organize modules
@@ -1114,6 +1117,9 @@
                     }
                 }
             }
+        },
+        compareCleanText: function(a, b) {
+            return cleanText(a) === cleanText(b);
         }
     });
 }).call(this, document, window);
@@ -2146,7 +2152,7 @@
             var arrow = [];
             var elements;
             try {
-                elements = eval('(function(window, document, jQuery, $){return jQuery' + details.selector + ';})(me.modules.ui.mainFrameWindow, me.modules.ui.mainFrameWindow.document, me.modules.ui.mainFrameWindow.jQuery, me.modules.ui.mainFrameWindow.$);'); // jshint ignore:line
+                elements = eval('(function(window, document, jQuery, $, api){return jQuery' + details.selector + ';})(me.modules.ui.mainFrameWindow, me.modules.ui.mainFrameWindow.document, me.modules.ui.mainFrameWindow.jQuery, me.modules.ui.mainFrameWindow.$, me.modules.api);'); // jshint ignore:line
             } catch (e) {
                 elements = [];
             }
@@ -2391,7 +2397,21 @@
                     taskSteps = [];
                 }
                 for (var i = 0 ; i < source.length ; i ++) {
-                    if (source[i] instanceof Array && source[i].length > 0 && 'string' === typeof source[i][0]) {
+                    if (source[i] === me.modules.api) {
+                        // do nothing
+                    } else if (
+                        source[i] instanceof Array && 
+                        (
+                            (source[i].length === 0) || 
+                            (
+                                source[i].length > 0 && 
+                                (
+                                    ('string' === typeof source[i][0]) || 
+                                    (source[i][0] instanceof Array)
+                                )
+                            )
+                        )
+                    ) {
                         recursivelyCollectSteps(source[i], taskSteps);
                     } else {
                         taskSteps.push(source[i]);

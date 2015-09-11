@@ -1026,7 +1026,7 @@
             var arrow = [];
             var elements;
             try {
-                elements = eval('(function(window, document, jQuery, $){return jQuery' + details.selector + ';})(me.modules.ui.mainFrameWindow, me.modules.ui.mainFrameWindow.document, me.modules.ui.mainFrameWindow.jQuery, me.modules.ui.mainFrameWindow.$);'); // jshint ignore:line
+                elements = eval('(function(window, document, jQuery, $, api){return jQuery' + details.selector + ';})(me.modules.ui.mainFrameWindow, me.modules.ui.mainFrameWindow.document, me.modules.ui.mainFrameWindow.jQuery, me.modules.ui.mainFrameWindow.$, me.modules.api);'); // jshint ignore:line
             } catch (e) {
                 elements = [];
             }
@@ -1271,7 +1271,21 @@
                     taskSteps = [];
                 }
                 for (var i = 0 ; i < source.length ; i ++) {
-                    if (source[i] instanceof Array && source[i].length > 0 && 'string' === typeof source[i][0]) {
+                    if (source[i] === me.modules.api) {
+                        // do nothing
+                    } else if (
+                        source[i] instanceof Array && 
+                        (
+                            (source[i].length === 0) || 
+                            (
+                                source[i].length > 0 && 
+                                (
+                                    ('string' === typeof source[i][0]) || 
+                                    (source[i][0] instanceof Array)
+                                )
+                            )
+                        )
+                    ) {
                         recursivelyCollectSteps(source[i], taskSteps);
                     } else {
                         taskSteps.push(source[i]);
