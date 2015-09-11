@@ -184,7 +184,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1462524834291';
+    config.gruntBuildTimeStamp='1462662643650';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -1092,7 +1092,7 @@
          * ////
          */
         drill: function() {
-            var originalPath = me.modules.dispatcher.getFrameToDrill().filter(function(){return 1;});
+            var originalPath = me.modules.dispatcher.getFrameToDrill();
             var path = originalPath.filter(function(){return 1;});
             var frame = me.modules.ui.mainFrameWindow;
             var level = path.length;
@@ -1103,12 +1103,11 @@
             if (result) {
                 // drill further
                 for (var i = 0; i < frame.frames.length; i ++) {
-                    originalPath.push(i);
                     if (result === frame.frames[i]){
                         var elements = frame.document.getElementsByTagName('iframe');
                         for (var j = 0 ; j < elements.length; j++){
                             if (elements[j].contentWindow === result) {
-                                me.modules.ui.trackIframePosition(elements[j], originalPath);
+                                me.modules.ui.addElementToTrack('iframe', elements[j], true, [j]);
                             }
                         }
                         return me.modules.dispatcher.drill(i);
@@ -1773,8 +1772,8 @@
                         codeToSend.push(url);
                     }
                 }
-                for (var i = 0; i < codeToSend.length; i ++) {
-                    relay.nextRelayQueue.push({cmd: 'loadWorker', jobDetailsCache: jobDetailsCache, url: codeToSend[i], code: workerSourceCodes[codeToSend[i]], isFinal: (i === codeToSend.length - 1)});
+                for (var i = codeToSend.length - 1; i >= 0 ; i --) {
+                    relay.nextRelayQueue.unshift({cmd: 'loadWorker', jobDetailsCache: jobDetailsCache, url: codeToSend[i], code: workerSourceCodes[codeToSend[i]], isFinal: (i === codeToSend.length - 1)});
                 }
                 // now we can send all queued messages to relay
                 var msg;
@@ -1965,10 +1964,11 @@
             currentInvokeWorkerMessage = message;
             if (message.globals) {
                 fillWorkerGlobals(message.globals);
+            } 
+            if (! relay.isSlave && ((! message.drillToFrame) || (! message.drillToFrame.length))) {
+                // ok, this is original call, we can clear all overlays, etc
+                me.modules.ui.clearOverlaysAndReflect();
             }
-            try {
-                me.modules.ui.say();
-            } catch (e){}
             if (this.reflectMessage(message, message.drillToFrame)) {
                 if (message.debug) {
                     console.log('Debugger call went to slave tab - look for it there!');
@@ -1984,8 +1984,6 @@
                 nextTaskFlow = 'normal';
                 if (workerCurrentTaskIndex !== message.index){
                     fillWorkerCurrentTask(message.details);
-                    // clear arrows and highlights
-                    me.modules.api.arrow().highlight();
                 }
                 workerCurrentTaskIndex = message.index;
                 workerCurrentStepIndex = message.step;
@@ -2186,8 +2184,14 @@
             } else if (details.message === 'drill' && ! relay.isSlave) {
                 details.cmd = 'invokeWorker';
                 me.modules.dispatcher.onMessage_invokeWorker(details);
-            } else if (details.message === 'uiAssets' && ! relay.isSlave) {
-                me.modules.ui.setSerializedAssets(details);
+            } else if (details.message === 'drawOverlays') {
+                me.modules.ui.drawOverlays(details);
+            } else if (details.message === 'clearOverlays') {
+                me.modules.ui.clearOverlays();
+            } else if (details.message === 'drawOverlays') {
+                me.modules.ui.drawOverlays();
+            } else if (details.message === 'tellWhatYouHaveToDraw') {
+                me.modules.ui.tellWhatYouHaveToDraw();
             }
         },
         /**
@@ -2294,6 +2298,9 @@
          * @access public
          */
         onMessage_highlightElementForQueryBuilder: function(details) {
+            if (me.modules.dispatcher.reflectMessage(details)) {
+                return;
+            }
             me.modules.ui.highlightElementForQueryBuilder(details.path);
         },
         /**
@@ -2483,6 +2490,10 @@
             }
             removeWatchdogHandler();
             clearRegisteredTimeoutsAndIntervals();
+            // tell UI that now it can tell all slaves what to draw
+            this.onMessage_bubbleRelayMessage({
+                message: 'tellWhatYouHaveToDraw'
+            });
             // now let's see, if status is not ok, and method is repeatable - then repeat it
             if (status !== 'ok') {
                 stepRepeatCounter ++;
@@ -2585,6 +2596,19 @@
                 workerCurrentUrl = url;
             }
         },
+        ////
+        haveAccess: function(framesPath) {
+            var windowToCheck = me.modules.ui.mainFrameWindow;
+            (framesPath || []).filter(function(index) {
+                windowToCheck = windowToCheck.frames[index];
+            });
+            try {
+                windowToCheck.location.href;
+            } catch (e){
+                return false;
+            }
+            return true;
+        },
         /**
          * Pass message to next dispatcher if this one does not have access.
          * If there is no next dispatcher - then open new popup for dispatcher
@@ -2594,20 +2618,8 @@
          * @return bool
          * @access public
          */
-        reflectMessage: function(message, frameIndex) {
-            // check whether we can access the target window at all
-            var haveAccess = true;
-            var path = 'undefined' === typeof frameIndex ? [] : frameIndex.filter(function(){return 1;});
-            var windowToCheck = me.modules.ui.mainFrameWindow;
-            while (path.length){
-                windowToCheck = windowToCheck.frames[path.shift()];
-            }
-            try {
-                windowToCheck.location.href;
-            } catch (e){
-                haveAccess = false;
-            }
-            if (haveAccess) {
+        reflectMessage: function(message, framesPath) {
+            if (this.haveAccess(framesPath)) {
                 return false;
             }
             if (message.cmd === 'invokeWorker') {
@@ -2932,26 +2944,19 @@
      * @member {integer} CartFiller.UI.ArrowToElement#height
      * @access public
      */
-    /**
-     * Keeps list of highlighted elements, which we should draw marking arrows to
-     * @member {CartFiller.UI.ArrowToElement} CartFiller.UI~arrowToElements
-     * @access private
-     */
-    var arrowToElements = [];
-    /**
-     * Keeps list of elements, which we should highlight
-     * @member {CartFiller.UI.ArrowToElement} CartFiller.UI~highlightedElements
-     * @access private
-     */
-    var highlightedElements = [];
-    var iframeElementsToTrack = {};
-    var trackedIframeElements = {};
+    /////
+    var elementsToTrack = [];
+    /////
+    var elementsToDrawByPath = {};
+
+    var trackedIframes = {};
     /**
      * Keeps current message to say
      * @member {String} CartFiller.UI~messageToSay
      * @access private
      */
     var messageToSay = '';
+    var messageToDraw = '';
     /**
      * Whether to wrap messageToSay with &lt;pre&gt;
      * @member {boolean} CartFiller.UI~wrapMessageToSayWithPre
@@ -3017,18 +3022,25 @@
     /**
      * Creates overlay div for red arrows
      * @function CartFiller.UI~getOverlayDiv2
+     * @param {String} type
      * @return {HtmlElement} div
      * @access private
      */
-    var getOverlayDiv2 = function(){ 
+    var getOverlayDiv2 = function(type){ 
         var div = overlayWindow().document.createElement('div');
         div.style.position = 'fixed';
         div.style.backgroundColor = getRedArrowColor();
         div.style.zIndex = getZIndexForOverlay();
-        div.className = overlayClassName;
-        div.onclick = function(){removeOverlay(true);};
+        div.className = overlayClassName + ' ' + overlayClassName + type;
+        div.onclick = function(){me.modules.ui.clearOverlaysAndReflect();};
         overlayWindow().document.getElementsByTagName('body')[0].appendChild(div);
         return div;
+    };
+    var deleteOverlaysOfType = function(type) {
+        var divs = overlayWindow().document.getElementsByClassName(overlayClassName + (type ? type : ''));
+        for (var i = divs.length - 1; i >= 0; i --) {
+            divs[i].parentNode.removeChild(divs[i]);
+        }
     };
     /**
      * Draws vertical arrow line
@@ -3038,8 +3050,8 @@
      * @param {integer} height
      * @access private
      */
-    var verticalLineOverlay = function(left, top, height){
-        var div = getOverlayDiv2();
+    var verticalLineOverlay = function(type, left, top, height){
+        var div = getOverlayDiv2(type);
         div.style.left = left + 'px';
         div.style.top = top + 'px';
         div.style.width = '20px';
@@ -3053,8 +3065,8 @@
      * @param {integer} width
      * @access private
      */
-    var horizontalLineOverlay = function(left, top, width) {
-        var div = getOverlayDiv2();
+    var horizontalLineOverlay = function(type, left, top, width) {
+        var div = getOverlayDiv2(type);
         div.style.left = left + 'px';
         div.style.top = top + 'px';
         div.style.width = width + 'px';
@@ -3067,8 +3079,8 @@
      * @param {integer} top
      * @access private
      */
-    var horizontalArrowOverlayRight = function (left, top){
-        var div = getOverlayDiv2();
+    var horizontalArrowOverlayRight = function (type, left, top){
+        var div = getOverlayDiv2(type);
         div.style.left = left + 'px';
         div.style.top = (top - 25) + 'px';
         div.style.width = div.style.height = '0px';
@@ -3083,8 +3095,8 @@
      * @param {integer} top
      * @access private
      */
-    var verticalArrowOverlayDown = function(left, top){
-        var div = getOverlayDiv2();
+    var verticalArrowOverlayDown = function(type, left, top){
+        var div = getOverlayDiv2(type);
         div.style.left = (left - 25) + 'px';
         div.style.top = top + 'px';
         div.style.width = div.style.height = '0px';
@@ -3093,55 +3105,14 @@
         div.style.borderTop = '30px solid rgba(255,0,0,0.3)';
     };
     /**
-     * Shifts client bounding rectangle if an element is inside frame(s)
-     * @param {Object} rect Client bounding rect
-     * @param {HtmlElement} el
-     * @return {Object} rect
-     * @access private
-     */
-    var shiftRectWithFrames = function(rect, el){
-        if (undefined !== el.ownerDocument && undefined !== el.ownerDocument.defaultView && undefined !== el.ownerDocument.defaultView.parent && el.ownerDocument.defaultView.parent !== el.ownerDocument.defaultView) {
-            var frames = [];
-            try {
-                frames = el.ownerDocument.defaultView.parent.document.getElementsByTagName('iframe');
-            } catch (e) {}
-            for (var i = frames.length - 1 ; i >= 0 ;i --){
-                var frameDocument;
-                try {
-                    frameDocument = frames[i].contentDocument;
-                } catch (e){}
-                var frameWindow;
-                try {
-                    frameWindow = frames[i].contentWindow;
-                } catch (e){}
-                if (
-                    (frameDocument === el.ownerDocument) ||
-                    (el.ownerDocument !== undefined && el.ownerDocument.defaultView === frameWindow)
-                ){
-                    var frameRect = frames[i].getBoundingClientRect();
-                    var newRect = {
-                        top: rect.top + frameRect.top,
-                        bottom: rect.bottom + frameRect.top,
-                        left: rect.left + frameRect.left,
-                        right: rect.right + frameRect.left,
-                        width: rect.width,
-                        height: rect.height
-                    };
-                    return shiftRectWithFrames(newRect, frames[i]);
-                }
-            }
-        }
-        return rect;
-    };
-    /**
      * Draws vertical overlay arrow, direction = up
      * @function CartFiller.UI~verticalArrowOverlayUp
      * @param {integer} left
      * @param {integer} top
      * @access private
      */
-    var verticalArrowOverlayUp = function(left, top){
-        var div = getOverlayDiv2();
+    var verticalArrowOverlayUp = function(type, left, top){
+        var div = getOverlayDiv2(type);
         div.style.left = (left - 25) + 'px';
         div.style.top = top + 'px';
         div.style.width = div.style.height = '0px';
@@ -3161,30 +3132,14 @@
         // check whether positions of elements have changed
         for (i = elements.length - 1; i >= 0; i--){
             element = elements[i];
-            if (element.element) {
-                rect = element.element.getBoundingClientRect();
-                if ((! element.path) || (! element.path.length)) {
-                    rect = shiftRectWithFrames(rect, element.element);
-                }
-            } else {
-                rect = {
-                    left: element.rect.left,
-                    top: element.rect.top,
-                    right: element.rect.right,
-                    bottom: element.rect.bottom,
-                    width: element.rect.width,
-                    height: element.rect.height
-                };
-                for (var j = 0 ; j < element.path.length; j ++) {
-                    var pathAsString = element.path.slice(0,j+1).join('/');
-                    var trackedIframe = trackedIframeElements[pathAsString];
-                    if (trackedIframe) {
-                        rect.left += trackedIframe.rect.left;
-                        rect.top += trackedIframe.rect.top;
-                        rect.right += trackedIframe.rect.left;
-                        rect.bottom += trackedIframe.rect.top;
-                    }
-                }
+            rect = element.element.getBoundingClientRect();
+            var plusLeft = 0, plusTop = 0;
+            if (element.type === 'iframe') {
+                try {
+                    var style = element.element.ownerDocument.defaultView.getComputedStyle(element.element);
+                    plusTop = parseInt(style.borderTopWidth.replace(/[^0-9]/g, ''));
+                    plusLeft = parseInt(style.borderLeftWidth.replace(/[^0-9]/g, ''));
+                } catch (e) {}
             }
             if (rect.width > 0 || rect.height > 0 || rect.left > 0 || rect.top > 0) {
                 top = Math.round(rect.top - 5);
@@ -3192,32 +3147,59 @@
                 height = Math.round(rect.height + 9);
                 width = Math.round(rect.width + 9);
             } else {
-                element.left = element.right = element.top = element.bottom = undefined;
+                rebuild.any = true;
+                if (element.type) {
+                    rebuild[element.type] = true;
+                }
+                delete elements[i]; 
+                continue;   
             }
             if ((top !== element.top) ||
                 (left !== element.left) ||
                 (height !== element.height) ||
                 (width !== element.width)){
-                if (element.element) {
-                    rebuild.my = true;
-                }
                 rebuild.any = true;
+                if (element.type) {
+                    rebuild[element.type] = true;
+                }
                 element.top = top;
                 element.left = left;
                 element.height = height;
                 element.width = width;
+                element.right = left + width;
+                element.bottom = top + height;
                 element.self = {
-                    top: rect.top,
-                    left: rect.left,
-                    right: rect.right,
-                    bottom: rect.bottom,
+                    top: rect.top + plusTop,
+                    left: rect.left + plusLeft,
+                    right: rect.right + plusLeft,
+                    bottom: rect.bottom + plusTop,
                     width: rect.width,
                     height: rect.height
                 };
             }
-
         }
         return rebuild;
+    };
+    var addFrameCoordinatesMap = function(element) {
+        console.log(1);
+        if (! element.path || ! element.path.length) {
+            return element;
+        }
+        var rect = {
+            left: element.rect.left,
+            top: element.rect.top,
+            width: element.rect.width,
+            height: element.rect.height
+        };
+        for (var i = element.path.length - 1; i >= 0 ; i --) {
+            var path = element.path.slice(0,i+1).join('/');
+            var iframe = trackedIframes[path];
+            if (iframe) {
+                rect.left += iframe.rect.left;
+                rect.top += iframe.rect.top;
+            }
+        }
+        return {rect: rect};
     };
     /**
      * Draws arrow overlay divs
@@ -3225,75 +3207,70 @@
      * @access private
      */
     var drawArrows = function(){
-        var i, top, left, bottom;
-        for (i = arrowToElements.length - 1; i >= 0; i--){
-            var el = arrowToElements[i];
-            if (el.left === undefined) {
-                continue;
-            }
-            var div = getOverlayDiv2();
+        deleteOverlaysOfType('arrow');
+        for (var path in elementsToDrawByPath) {
+            drawArrowsForPath(elementsToDrawByPath[path]);
+        }
+    };
+    var drawArrowsForPath = function(elements) {
+        var top, left, bottom;
+        elements
+        .filter(function(el) { return 'arrow' === el.type; })
+        .map(addFrameCoordinatesMap)
+        .filter(function(el, i) {
+            var div = getOverlayDiv2('arrow');
             div.style.backgroundColor = 'transparent';
             div.style.borderLeft = div.style.borderTop = div.style.borderRight = div.style.borderBottom = '5px solid rgba(255,0,0,0.3)';
-            div.style.left = el.left + 'px';
-            div.style.top = el.top + 'px';
-            div.style.width = el.width + 'px';
-            div.style.height = el.height + 'px';
+            div.style.left = el.rect.left + 'px';
+            div.style.top = el.rect.top + 'px';
+            div.style.width = el.rect.width + 'px';
+            div.style.height = el.rect.height + 'px';
             div.style.boxSizing = 'border-box';
-            if (el.left > 40) {
-                top = el.top + Math.round(el.height/2);
-                verticalLineOverlay(0, 0, top - 10);
-                horizontalLineOverlay(0, top - 10, el.left - 30);
-                horizontalArrowOverlayRight(el.left - 30, top);
-            } else if (el.top > 40) {
-                left = el.left + Math.min(30 + i * 30, Math.round(el.width / 2));
-                horizontalLineOverlay(0, 0, left - 10);
-                verticalLineOverlay(left - 10, 0, el.top - 30);
-                verticalArrowOverlayDown(left, el.top - 30);
+            if (el.rect.left > 40) {
+                top = el.rect.top + Math.round(el.rect.height/2);
+                verticalLineOverlay('arrow', 0, 0, top - 10);
+                horizontalLineOverlay('arrow', 0, top - 10, el.rect.left - 30);
+                horizontalArrowOverlayRight('arrow', el.rect.left - 30, top);
+            } else if (el.rect.top > 40) {
+                left = el.rect.left + Math.min(30 + i * 30, Math.round(el.rect.width / 2));
+                horizontalLineOverlay('arrow', 0, 0, left - 10);
+                verticalLineOverlay('arrow', left - 10, 0, el.rect.top - 30);
+                verticalArrowOverlayDown('arrow', left, el.rect.top - 30);
             } else {
-                left = el.left + Math.min(30, Math.round(el.width / 2));
-                bottom = el.top + el.height;
-                horizontalLineOverlay(0, bottom + 60, left + 10);
-                verticalLineOverlay(left - 10, bottom + 30, 30);
-                verticalArrowOverlayUp(left, bottom);
+                left = el.rect.left + Math.min(30, Math.round(el.rect.width / 2));
+                bottom = el.rect.top + el.rect.height;
+                horizontalLineOverlay('arrow', 0, bottom + 60, left + 10);
+                verticalLineOverlay('arrow', left - 10, bottom + 30, 30);
+                verticalArrowOverlayUp('arrow', left, bottom);
 
             }
-        }
+        });
     };
     /**
      * Finds max bounding rectange of elements
      * @function CartFiller.UI~findMaxRect
-     * @param {CartFiller.UI.ArrowToElement[]} elements
-     * @param {CartFiller.UI.ArrowToElement[]} moreElements
+     * @param {Object} what
      * @access private
      */
-    var findMaxRect = function(elements, moreElements){
-        var src = [elements, moreElements];
-        var i, j, left, top, right, bottom, el;
-        for (j = src.length - 1 ; j >= 0; j--){
-            if (undefined === src[j]) {
-                continue;
-            }
-            for (i = src[j].length - 1; i >= 0; i--){
-                el = src[j][i];
-                left = undefined === left ? el.left : Math.min(left, el.left);
-                right = undefined === right ? (el.left + el.width) : Math.max(right, (el.left + el.width));
-                top = undefined === top ? el.top : Math.min(top, el.top);
-                bottom = undefined === bottom ? (el.top + el.height) : Math.max(bottom, (el.top + el.height));
-            }
+    var findMaxRect = function(what){
+        var left, top, right, bottom;
+        var filter = function(el) {
+            return 'undefined' === typeof what ||
+                what[el.type];
+        };
+        var calc = function(el) {
+            left = undefined === left ? el.rect.left : Math.min(left, el.rect.left);
+            right = undefined === right ? (el.rect.left + el.rect.width) : Math.max(right, (el.rect.left + el.rect.width));
+            top = undefined === top ? el.rect.top : Math.min(top, el.rect.top);
+            bottom = undefined === bottom ? (el.rect.top + el.rect.height) : Math.max(bottom, (el.rect.top + el.rect.height));
+        };
+        for (var path in elementsToDrawByPath) {
+            elementsToDrawByPath[path]
+            .filter(filter)
+            .map(addFrameCoordinatesMap)
+            .filter(calc);
         }
         return {left: left, right: right, top: top, bottom: bottom};
-    };
-    /**
-     * Schedules redraw of overlay divs by clearing cached positions
-     * @function CartFiller.UI~scheduleOverlayRedraw
-     * @param {CartFiller.UI.ArrowToElement[]} elements
-     * @access private
-     */
-    var scheduleOverlayRedraw = function(elements){
-        var i;
-        for (i = elements.length - 1 ; i >= 0; i --){
-            elements[i].left = elements[i].top = elements[i].width = elements[i].height = undefined;
-        }
     };
     /**
      * Draws highlighting overlay divs
@@ -3301,7 +3278,8 @@
      * @access private
      */
     var drawHighlights = function(){
-        var rect = findMaxRect(highlightedElements);
+        deleteOverlaysOfType('highlight');
+        var rect = findMaxRect({highlight: true});
         if (rect.left === undefined) {
             return;
         }
@@ -3319,7 +3297,7 @@
      * @access private
      */
     var drawMessage = function(){
-        var rect = findMaxRect(arrowToElements, highlightedElements);
+        var rect = findMaxRect({highlight: true, arrow: true});
         if (rect.left === undefined) {
             rect = {top: 0, bottom: 0, left: 0, right: 0};
         }
@@ -3354,7 +3332,7 @@
                 pre.style.backgroundColor = '#fff';
                 pre.style.border = 'none';
             }
-            messageDiv.onclick = function(){removeOverlay(true);};
+            messageDiv.onclick = function(){me.modules.ui.clearOverlaysAndReflect();};
             overlayWindow().document.getElementsByTagName('body')[0].appendChild(messageDiv);
             messageAdjustmentRemainingAttempts = 100;
             me.modules.ui.adjustMessageDiv(messageDiv);
@@ -3367,57 +3345,59 @@
      * @access private
      */
     var arrowToFunction = function(){
-        var serialize = function(a) {
+        var serialize = function(what) {
             var map = function(e) {
+                var src = e.type === 'iframe' ? e.self : e;
                 return {
                     rect: {
-                        left: e.self.left,
-                        top: e.self.top,
-                        right: e.self.right,
-                        bottom: e.self.bottom,
-                        width: e.self.width,
-                        height: e.self.height,
+                        left: src.left,
+                        top: src.top,
+                        width: src.width,
+                        height: src.height,
+                        right: src.right,
+                        bottom: src.bottom,
                         url: e.element.ownerDocument.defaultView.location.href
                     },
+                    type: e.type,
                     path: e.path
                 };
             };
-            if (a instanceof Array) {
-                return a.filter(function(e){return e.element;}).map(map);
-            } else {
-                var r = [];
-                for (var i in a) {
-                    r.push(map(a[i]));
-                }
-                return r;
-            }
+            var r = {};
+            elementsToTrack
+                .filter(function(e){ 
+                    return what[e.type]; 
+                })
+                .filter(function(e){ 
+                    r[e.path.join('/')] = []; 
+                    return true; 
+                })
+                .map(map)
+                .filter(function(e) { 
+                    if (! e.discard) {
+                        r[e.path.join('/')].push(e);
+                    }
+                });
+            return r;
         };
         try {
-            var rebuildArrows = findChanges(arrowToElements);
-            var rebuildHighlights = findChanges(highlightedElements);
-            var rebuildIframes = findChanges(iframeElementsToTrack);
+            var rebuildElements = findChanges(elementsToTrack);
             var rebuildMessage = currentMessageOnScreen !== messageToSay;
-            if (rebuildArrows.my || rebuildHighlights.my || rebuildMessage || rebuildIframes.my){
-                if (me.modules.dispatcher.isDrilling()) {
-                    me.modules.dispatcher.onMessage_bubbleRelayMessage({
-                        message: 'uiAssets',
-                        arrows: rebuildArrows.my ? serialize(arrowToElements) : null,
-                        highlighted: rebuildHighlights.my ? serialize(highlightedElements) : null,
-                        iframes: rebuildIframes.my ? serialize(iframeElementsToTrack) : null,
-                        say: rebuildMessage ? messageToSay : null,
-                        notToChildren: true
-                    });
+            if (rebuildElements.arrow || rebuildElements.highlight || rebuildMessage || rebuildElements.iframe) {
+                // that's real things to draw, let's do that
+                var details = {
+                    elementsByPath: serialize({arrow: rebuildElements.arrow, highlight: rebuildElements.highlight}),
+                    rebuild: rebuildElements,
+                    iframesByPath: {}
+                };
+                if (rebuildMessage) {
+                    details.messageToSay = messageToSay;
+                    details.rebuild.message = true;
                 }
-            }
-            if (rebuildArrows.any || rebuildHighlights.any || rebuildMessage || rebuildIframes.any){
-                if (! me.modules.dispatcher.isSlave()) {
-                    removeOverlay();
-                    drawArrows();
-                    drawHighlights();
-                    drawMessage();
+                if (rebuildElements.iframe) {
+                    details.iframesByPath = serialize({iframe: true});
                 }
+                me.modules.ui.drawOverlaysAndReflect(details);
             }
-
         } catch (e) {}
     };
     var currentWindowDimensions = {
@@ -3553,73 +3533,10 @@
         div.style.height = (bottom - top) + 'px';
         div.style.backgroundColor = 'rgba(0,0,0,0.3)';
         div.style.zIndex = getZIndexForOverlay();
-        div.className = overlayClassName;
-        div.onclick = function(){removeOverlay(true);};
+        div.className = overlayClassName + ' ' + overlayClassName + 'highlight';
+        div.onclick = function(){me.modules.ui.clearOverlaysAndReflect();};
         getDocument().getElementsByTagName('body')[0].appendChild(div);
 
-    };
-    /**
-     * Scrolls both vertically and horizontally to make center of specified
-     * rectangle be in the center of window if possible
-     * @function CartFiller.UI~scrollTo
-     * @param {integer} left
-     * @param {integer} top
-     * @param {integer} right
-     * @param {integer} bottom
-     * @access private
-     */
-    var scrollTo = function(elements){
-        var rect;
-        var bottom = me.modules.ui.mainFrameWindow.innerHeight;
-        var right =  me.modules.ui.mainFrameWindow.innerWidth;
-        var minLeft, maxLeft, newLeft;
-        var minTop, maxTop, newTop;
-        if (elements.length > 0){
-            if ('function' === typeof elements[0].element.scrollIntoView){
-                elements[0].element.scrollIntoView();
-            }
-        }
-        for (var tries = 1000; tries; tries--){
-            findChanges(elements);
-            rect = findMaxRect(elements);
-            newLeft = Math.round((rect.right + rect.left) / 2);
-            newTop = Math.round((rect.bottom + rect.top) / 2);
-            if ((undefined !== minLeft) && 
-               (newLeft >= minLeft) && (newLeft <= maxLeft) &&
-               (newTop >= minTop) && (newTop <= maxTop))
-            {
-                break;
-            }
-            minLeft = undefined === minLeft ? newLeft : Math.min(minLeft, newLeft);
-            maxLeft = undefined === maxLeft ? newLeft : Math.max(maxLeft, newLeft);
-            minTop = undefined === minTop ? newTop : Math.min(minTop, newTop);
-            maxTop = undefined === maxTop ? newTop : Math.max(maxTop, newTop);
-            me.modules.ui.mainFrameWindow.scrollBy(newLeft - Math.round(right/2), newTop - Math.round(bottom/2));
-        }
-        scheduleOverlayRedraw(elements);
-    };
-    /**
-     * Removes overlay divs
-     * @function CartFiller.UI~removeOverlay
-     * @access private
-     */
-    var removeOverlay = function(forever){
-        var i, divs = getDocument().getElementsByTagName('div');
-        for (i = divs.length - 1; i >= 0 ; i--){
-            if (divs[i].className === overlayClassName) {
-                divs[i].parentNode.removeChild(divs[i]);
-            }
-        }
-        divs = overlayWindow().document.getElementsByTagName('div');
-        for (i = divs.length - 1; i >= 0 ; i--){
-            if (divs[i].className === overlayClassName) {
-                divs[i].parentNode.removeChild(divs[i]);
-            }
-        }
-        if (true === forever) {
-            arrowToElements = highlightedElements = [];
-            messageToSay = '';
-        }
     };
 
     /**
@@ -3653,6 +3570,30 @@
     };
     // Launch arrowToFunction
     setInterval(arrowToFunction, 200);
+    var discoverPathForElement = function(window, soFar) {
+        console.log('discoverPathForElement');
+        soFar = soFar || [];
+        if (window === me.modules.ui.mainFrameWindow) {
+            return soFar;
+        }
+        var parent = window.parent;
+        for (var i = 0; i < parent.frames.length && window !== parent.frames[i]; i ++) {}
+        soFar.unshift(i);
+        discoverPathForElement(parent, soFar);
+        console.log(1);
+        // let's see if we should track iframe ourselves
+        try {
+            parent.location.href;
+            // we can
+            var iframes = parent.document.getElementsByTagName('iframe');
+            for (i = iframes.length - 1 ; i >= 0 ; i --) {
+                if (iframes[i].contentWindow === window) {
+                    me.modules.ui.addElementToTrack('iframe', iframes[i], true, [i]);
+                }
+            }
+        } catch(e) {}
+        return soFar;
+    };
 
     me.scripts.push({
 
@@ -3712,33 +3653,32 @@
          */
         highlight: function(element, allElements){
             messageToSay = '';
-            var body = this.mainFrameWindow.document.getElementsByTagName('body')[0];
             var i;
-            var path = me.modules.dispatcher.getFrameToDrill();
+            var added = false;
 
-            highlightedElements = [];
             if (null !== element && 'object' === typeof element && 'string' === typeof element.jquery && undefined !== element.length && 'function' === typeof element.each){
                 element.each(function(i,el){
-                    highlightedElements.push({element: el, path: path}); 
+                    this.addElementToTrack('highlight', el);
+                    added = true;
                     if (!allElements) {
                         return false;
                     }
                 });
             } else if (element instanceof Array) {
                 for (i = element.length -1 ; i >= 0 ; i --){
-                    highlightedElements.push({element: element[i], path: path});
+                    this.addElementToTrack('highlight', element[i]);
+                    added = true;
                     if (true !== allElements) {
                         break;
                     }
                 }
             } else if (undefined !== element) {
-                highlightedElements.push({element: element, path: path});
+                this.addElementToTrack('highlight', element);
+                added = true;
             }
-            if (highlightedElements.length > 0) {
+            if (added > 0 && me.modules.dispatcher.haveAccess()) {
+                var body = this.mainFrameWindow.document.getElementsByTagName('body')[0];
                 body.style.paddingBottom = this.mainFrameWindow.innerHeight + 'px';
-                setTimeout(function(){
-                    scrollTo(highlightedElements);
-                },0);
             }
         },
         /**
@@ -3747,33 +3687,23 @@
          * @function CartFiller.UI#arrowTo
          * @access public
          */
-        arrowTo: function(element, allElements){
-            var path = me.modules.dispatcher.getFrameToDrill();
-            arrowToElements = [];
+        arrowTo: function(element, allElements, noScroll){
             if (null !== element && 'object' === typeof element && 'string' === typeof element.jquery && undefined !== element.length && 'function' === typeof element.each){
                 element.each(function(i,el){
-                    arrowToElements.push({element: el, path: path}); 
+                    this.addElementToTrack('arrow', el, noScroll);
                     if (!allElements) {
                         return false;
                     }
                 });
             } else if (element instanceof Array) {
                 for (var i = 0; i < element.length; i++){
-                    arrowToElements.push({element: element[i], path: path});
+                    this.addElementToTrack('arrow', element[i], noScroll);
                     if (!allElements) {
                         break;
                     }
                 }
             } else if (undefined !== element) {
-                arrowToElements.push({element: element, path: path});
-            } else {
-                arrowToElements = [];
-                removeOverlay(true);
-            }
-            if (arrowToElements.length > 0) {
-                setTimeout(function(){
-                    try { scrollTo(arrowToElements); } catch (e) {}
-                },0);
+                this.addElementToTrack('arrow', element, noScroll);
             }
         },
         /**
@@ -4020,7 +3950,9 @@
          * @access public
          */
         startReportingMousePointer: function() {
-            removeOverlay(true);
+            try {
+                me.modules.ui.clearOverlaysAndReflect();
+            } catch (e) {}
             if (! reportMousePointer) {
                 var div = document.createElement('div');
                 div.style.height = window.innerHeight + 'px';
@@ -4099,6 +4031,52 @@
                 this.arrowToSingleElementNoScroll(element);
             }
         },
+        clearOverlaysAndReflect: function() {
+            me.modules.dispatcher.onMessage_bubbleRelayMessage({
+                message: 'clearOverlays'
+            });
+        },
+        clearOverlays: function() {
+            elementsToTrack = [];
+            elementsToDrawByPath = {};
+            messageToSay = '';
+            if (me.modules.dispatcher.haveAccess()) {
+                drawArrows();
+                drawHighlights();
+                drawMessage();
+            }
+        },
+        drawOverlays: function(details) {
+            console.log(2);
+            var framesUpdated = false, path;
+            for (path in details.iframesByPath) {
+                trackedIframes[path] = details.iframesByPath[path][0];
+                framesUpdated = true;
+            }
+            for (path in details.elementsByPath) {
+                elementsToDrawByPath[path] = details.elementsByPath[path];
+            }
+            if (me.modules.dispatcher.haveAccess()) {
+                // we are going to draw on this page
+                if (details.rebuild.arrow || framesUpdated) {
+                    drawArrows();
+                }
+                if (details.rebuild.highlight || framesUpdated) {
+                    drawHighlights();
+                }
+                if (details.rebuild.message || framesUpdated) {
+                    messageToDraw = details.messageToSay;
+                    drawMessage();
+                }
+            }
+        },
+        drawOverlaysAndReflect: function(details) {
+            details.message = 'drawOverlays';
+            me.modules.dispatcher.onMessage_bubbleRelayMessage(details);
+        },
+        tellWhatYouHaveToDraw: function() {
+            arrowToFunction();
+        },
         setSerializedAssets: function(message) {
             if (message.iframes !== null) {
                 for (var i = 0; i < message.iframes.length; i++){
@@ -4120,6 +4098,15 @@
             highlightedElements = [];
             messageToSay = '';
             iframeElementsToTrack[path.join('/')] = {element: iframe, path: path};
+        },
+        addElementToTrack: function(type, element, noScroll, addPath) {
+            console.log('addElementToTrack');
+            elementsToTrack.push({
+                element: element, 
+                type: type, 
+                scroll: ! noScroll, 
+                path: discoverPathForElement(element.ownerDocument.defaultView, addPath)
+            });
         }
     });
 }).call(this, document, window);

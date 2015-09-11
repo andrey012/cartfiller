@@ -862,7 +862,7 @@
          * ////
          */
         drill: function() {
-            var originalPath = me.modules.dispatcher.getFrameToDrill().filter(function(){return 1;});
+            var originalPath = me.modules.dispatcher.getFrameToDrill();
             var path = originalPath.filter(function(){return 1;});
             var frame = me.modules.ui.mainFrameWindow;
             var level = path.length;
@@ -873,12 +873,11 @@
             if (result) {
                 // drill further
                 for (var i = 0; i < frame.frames.length; i ++) {
-                    originalPath.push(i);
                     if (result === frame.frames[i]){
                         var elements = frame.document.getElementsByTagName('iframe');
                         for (var j = 0 ; j < elements.length; j++){
                             if (elements[j].contentWindow === result) {
-                                me.modules.ui.trackIframePosition(elements[j], originalPath);
+                                me.modules.ui.addElementToTrack('iframe', elements[j], true, [j]);
                             }
                         }
                         return me.modules.dispatcher.drill(i);

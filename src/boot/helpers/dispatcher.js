@@ -652,8 +652,8 @@
                         codeToSend.push(url);
                     }
                 }
-                for (var i = 0; i < codeToSend.length; i ++) {
-                    relay.nextRelayQueue.push({cmd: 'loadWorker', jobDetailsCache: jobDetailsCache, url: codeToSend[i], code: workerSourceCodes[codeToSend[i]], isFinal: (i === codeToSend.length - 1)});
+                for (var i = codeToSend.length - 1; i >= 0 ; i --) {
+                    relay.nextRelayQueue.unshift({cmd: 'loadWorker', jobDetailsCache: jobDetailsCache, url: codeToSend[i], code: workerSourceCodes[codeToSend[i]], isFinal: (i === codeToSend.length - 1)});
                 }
                 // now we can send all queued messages to relay
                 var msg;
@@ -844,10 +844,11 @@
             currentInvokeWorkerMessage = message;
             if (message.globals) {
                 fillWorkerGlobals(message.globals);
+            } 
+            if (! relay.isSlave && ((! message.drillToFrame) || (! message.drillToFrame.length))) {
+                // ok, this is original call, we can clear all overlays, etc
+                me.modules.ui.clearOverlaysAndReflect();
             }
-            try {
-                me.modules.ui.say();
-            } catch (e){}
             if (this.reflectMessage(message, message.drillToFrame)) {
                 if (message.debug) {
                     console.log('Debugger call went to slave tab - look for it there!');
@@ -863,8 +864,6 @@
                 nextTaskFlow = 'normal';
                 if (workerCurrentTaskIndex !== message.index){
                     fillWorkerCurrentTask(message.details);
-                    // clear arrows and highlights
-                    me.modules.api.arrow().highlight();
                 }
                 workerCurrentTaskIndex = message.index;
                 workerCurrentStepIndex = message.step;
@@ -1065,8 +1064,14 @@
             } else if (details.message === 'drill' && ! relay.isSlave) {
                 details.cmd = 'invokeWorker';
                 me.modules.dispatcher.onMessage_invokeWorker(details);
-            } else if (details.message === 'uiAssets' && ! relay.isSlave) {
-                me.modules.ui.setSerializedAssets(details);
+            } else if (details.message === 'drawOverlays') {
+                me.modules.ui.drawOverlays(details);
+            } else if (details.message === 'clearOverlays') {
+                me.modules.ui.clearOverlays();
+            } else if (details.message === 'drawOverlays') {
+                me.modules.ui.drawOverlays();
+            } else if (details.message === 'tellWhatYouHaveToDraw') {
+                me.modules.ui.tellWhatYouHaveToDraw();
             }
         },
         /**
@@ -1365,6 +1370,10 @@
             }
             removeWatchdogHandler();
             clearRegisteredTimeoutsAndIntervals();
+            // tell UI that now it can tell all slaves what to draw
+            this.onMessage_bubbleRelayMessage({
+                message: 'tellWhatYouHaveToDraw'
+            });
             // now let's see, if status is not ok, and method is repeatable - then repeat it
             if (status !== 'ok') {
                 stepRepeatCounter ++;
@@ -1467,6 +1476,19 @@
                 workerCurrentUrl = url;
             }
         },
+        ////
+        haveAccess: function(framesPath) {
+            var windowToCheck = me.modules.ui.mainFrameWindow;
+            (framesPath || []).filter(function(index) {
+                windowToCheck = windowToCheck.frames[index];
+            });
+            try {
+                windowToCheck.location.href;
+            } catch (e){
+                return false;
+            }
+            return true;
+        },
         /**
          * Pass message to next dispatcher if this one does not have access.
          * If there is no next dispatcher - then open new popup for dispatcher
@@ -1476,20 +1498,8 @@
          * @return bool
          * @access public
          */
-        reflectMessage: function(message, frameIndex) {
-            // check whether we can access the target window at all
-            var haveAccess = true;
-            var path = 'undefined' === typeof frameIndex ? [] : frameIndex.filter(function(){return 1;});
-            var windowToCheck = me.modules.ui.mainFrameWindow;
-            while (path.length){
-                windowToCheck = windowToCheck.frames[path.shift()];
-            }
-            try {
-                windowToCheck.location.href;
-            } catch (e){
-                haveAccess = false;
-            }
-            if (haveAccess) {
+        reflectMessage: function(message, framesPath) {
+            if (this.haveAccess(framesPath)) {
                 return false;
             }
             if (message.cmd === 'invokeWorker') {

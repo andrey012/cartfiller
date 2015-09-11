@@ -36,29 +36,42 @@
             ],
             'drill': [
                 '', function() {
+                    var fn = task.highlight ? 'highlight' : 'arrow';
                     api.drill(function(window) {
-                        if (task.level === 0) {
-                            api.arrow(window.document.getElementsByTagName('a')[0]).result();
-                        } else {
-                            return window.frames[0];
+                        var pc = task.path.split('/');
+                        var i = pc[0];
+                        if (! i || task.all) {
+                            api[fn](window.document.getElementsByTagName('a')[0]).result();
+                        }
+                        if (i) {
+                            return window.frames[parseInt(i)];
                         }
                     }, function(window) {
-                        if (task.level === 1) {
-                            api.arrow(window.document.getElementsByTagName('a')[0]).result();
-                        } else {
-                            return window.frames[0];
+                        var pc = task.path.split('/');
+                        var i = pc[1];
+                        if (! i || task.all) {
+                            api[fn](window.document.getElementsByTagName('a')[0]).result();
+                        }
+                        if (i) {
+                            return window.frames[parseInt(i)];
                         }
                     }, function(window) {
-                        if (task.level === 2) {
-                            api.arrow(window.document.getElementsByTagName('a')[0]).result();
-                        } else {
-                            return window.frames[0];
+                        var pc = task.path.split('/');
+                        var i = pc[2];
+                        if (! i || task.all) {
+                            api[fn](window.document.getElementsByTagName('a')[0]).result();
+                        }
+                        if (i) {
+                            return window.frames[parseInt(i)];
                         }
                     }, function(window) {
-                        if (task.level === 3) {
-                            api.arrow(window.document.getElementsByTagName('a')[0]).result();
-                        } else {
-                            return window.frames[0];
+                        var pc = task.path.split('/');
+                        var i = pc[3];
+                        if (! i || task.all) {
+                            api[fn](window.document.getElementsByTagName('a')[0]).result();
+                        }
+                        if (i) {
+                            return window.frames[parseInt(i)];
                         }
                     });
                 }
