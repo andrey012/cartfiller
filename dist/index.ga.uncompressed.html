@@ -36654,7 +36654,7 @@ function ngViewFillContentFactory($compile, $controller, $route) {
 define("angular-route", function(){});
 
 /*!
- * jQuery JavaScript Library v2.2.3
+ * jQuery JavaScript Library v2.2.2
  * http://jquery.com/
  *
  * Includes Sizzle.js
@@ -36664,7 +36664,7 @@ define("angular-route", function(){});
  * Released under the MIT license
  * http://jquery.org/license
  *
- * Date: 2016-04-05T19:26Z
+ * Date: 2016-03-17T17:51Z
  */
 
 (function( global, factory ) {
@@ -36720,7 +36720,7 @@ var support = {};
 
 
 var
-	version = "2.2.3",
+	version = "2.2.2",
 
 	// Define a local copy of jQuery
 	jQuery = function( selector, context ) {
@@ -46130,7 +46130,7 @@ jQuery.fn.load = function( url, params, callback ) {
 		// If it fails, this function gets "jqXHR", "status", "error"
 		} ).always( callback && function( jqXHR, status ) {
 			self.each( function() {
-				callback.apply( this, response || [ jqXHR.responseText, status, jqXHR ] );
+				callback.apply( self, response || [ jqXHR.responseText, status, jqXHR ] );
 			} );
 		} );
 	}
@@ -47189,7 +47189,7 @@ define('controller', ['app', 'scroll'], function(app){
             reportError('bootstrap message did not come');
         }
     }, 10000);
-    config.gruntBuildTimeStamp='1463121183252';
+    config.gruntBuildTimeStamp='1463229231047';
     window.addEventListener('message', function(event){
         var test = /^cartFillerMessage:(.*)$/.exec(event.data);
         var isDist = true;
@@ -47258,7 +47258,7 @@ define('controller', ['app', 'scroll'], function(app){
                 if (message.tests) {
                     var x = new XMLHttpRequest();
                     x.onload = function(){
-                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1463121183252') {
+                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1463229231047') {
                             console.log('new version of CartFiller was deployed, switching to it');
                             var hash = window.location.href.split('#');
                             var pc = hash[0].split('?');
