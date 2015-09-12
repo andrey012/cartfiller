@@ -47178,7 +47178,7 @@ define('controller', ['app', 'scroll'], function(app){
             reportError('bootstrap message did not come');
         }
     }, 10000);
-    config.gruntBuildTimeStamp='1463393846211';
+    config.gruntBuildTimeStamp='1463558568270';
     window.addEventListener('message', function(event){
         var test = /^cartFillerMessage:(.*)$/.exec(event.data);
         var isDist = true;
@@ -47247,7 +47247,7 @@ define('controller', ['app', 'scroll'], function(app){
                 if (message.tests) {
                     var x = new XMLHttpRequest();
                     x.onload = function(){
-                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1463393846211') {
+                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1463558568270') {
                             console.log('new version of CartFiller was deployed, switching to it');
                             var hash = window.location.href.split('#');
                             var pc = hash[0].split('?');

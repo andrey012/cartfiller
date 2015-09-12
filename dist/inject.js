@@ -184,7 +184,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1463393846211';
+    config.gruntBuildTimeStamp='1463558568270';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -2257,24 +2257,43 @@
          * @access public
          */
         onMessage_updateHashUrl: function(details) {
-            var hash = window.location.hash;
-            var replaceField = function(field, value) {
-                var pattern = new RegExp('(^#\/?|&)' + field + '=([^&]*)(&|$)');
-                value = encodeURIComponent(value);
-                var match = pattern.exec(hash);
-                if (match) {
-                    if (value !== match[2]) {
-                        hash = hash.replace(match[0], match[1] + field + '=' + value + match[3]);
+            var jobAdded, taskAdded, stepAdded;
+            var hash = window.location.hash.replace(/^#\/?/, '').split('&').map(function(v) {
+                if (0 === v.indexOf('job=')) {
+                    if (jobAdded) {
+                        return '';
                     }
-                } else if (hash.length < 4096) {
-                    hash = hash + (0 === hash.replace(/^#?\/?/, '').length ? '' : '&') + field + '=' + value;
+                    jobAdded = true;
+                    return 'job=' + encodeURIComponent(details.jobName);
+                } else if (0 === v.indexOf('task=')) {
+                    if (taskAdded) {
+                        return '';
+                    }
+                    taskAdded = true;
+                    return 'task=' + encodeURIComponent(details.task);
+                } else if (0 === v.indexOf('step=')) {
+                    if (stepAdded) {
+                        return '';
+                    }
+                    stepAdded = true;
+                    return 'step=' + encodeURIComponent(details.step);
+                } else {
+                    return v;
                 }
-            };
-            replaceField('job', details.jobName);
-            replaceField('task', details.task);
-            replaceField('step', details.step);
-
-            window.location.hash = hash;
+            }).filter(function(v){ return v.length; });
+            if (! jobAdded) {
+                hash.push('job=' + encodeURIComponent(details.jobName));
+            }
+            if (! taskAdded) {
+                hash.push('task=' + encodeURIComponent(details.task));
+            }
+            if (! stepAdded) {
+                hash.push('step=' + encodeURIComponent(details.step));
+            }
+            var hashString = hash.join('&');
+            if (hashString.length < 4096) {
+                window.location.hash = hashString;
+            }
         },
         /**
          * Updates title
