@@ -243,7 +243,7 @@
         evalBookmarklet: function(){
             return 'try{' +
                 this.trace('start') +
-                '(function(f,x,t,u,v,j,d,w){' +
+                '(function(f,x,t,u,v,j,d,w,y){' +
                     this.trace('in function') +
                     'x.open(' +
                         '\'GET\',' +
@@ -258,7 +258,7 @@
                             'eval(' +
                                 '\'(function(){\'+' +
                                 'x.response+' +
-                                '\'}).call({cartFillerEval:[u,t,j,d,w]});\'' +
+                                '\'}).call({cartFillerEval:[u,t,j,d,w,y]});\'' +
                             ');' +
                             this.trace('eval complete') +
                         '}catch(e){alert(e);}' +
@@ -276,6 +276,7 @@
                     '\'' + this.getInjectUrl() + '\',' +
                     '\'' + this.settings.chooseJob + '\',' +
                     (this.settings.debug ? 1 : 0) + ',' +
+                    '\'' + this.settings.worker + '\',' +
                     '\'' + this.settings.workerFrameUrl + '\'' +
                 ');' +
             '}catch(e){alert(e);}';
