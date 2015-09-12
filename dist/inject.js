@@ -184,7 +184,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1463229231047';
+    config.gruntBuildTimeStamp='1463315469400';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -725,10 +725,10 @@
                 }
             } else if (null !== array && 'object' === typeof array && 'string' === typeof array.jquery && undefined !== array.length && 'function' === typeof array.each) {
                 array.each(function(i,el){
-                    if (resultMeansWeShouldStop(n(i,el))) {
+                    if (resultMeansWeShouldStop(fn(i,el))) {
                         breaked = true;
+                        return false;
                     }
-                    return r;
                 });
             } else {
                 for (i in array) {

@@ -495,10 +495,10 @@
                 }
             } else if (null !== array && 'object' === typeof array && 'string' === typeof array.jquery && undefined !== array.length && 'function' === typeof array.each) {
                 array.each(function(i,el){
-                    if (resultMeansWeShouldStop(n(i,el))) {
+                    if (resultMeansWeShouldStop(fn(i,el))) {
                         breaked = true;
+                        return false;
                     }
-                    return r;
                 });
             } else {
                 for (i in array) {
