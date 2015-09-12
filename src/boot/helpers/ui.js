@@ -252,6 +252,9 @@
         // check whether positions of elements have changed
         for (i = elements.length - 1; i >= 0; i--){
             element = elements[i];
+            if (! element) {
+                continue;
+            }
             rect = element.element.getBoundingClientRect();
             var plusLeft = 0, plusTop = 0;
             if (element.type === 'iframe') {
