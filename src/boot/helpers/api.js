@@ -471,6 +471,9 @@
         each: function(array, fn, otherwise){
             var i;
             var breaked = false;
+            var resultMeansWeShouldStop = function(r) {
+                return r === false || r === 0 || r === me.modules.api;
+            };
             if (
                 array instanceof Array || 
                 (
@@ -485,15 +488,14 @@
                 String(array) === '[object NodeList]'
             ) {
                 for (i = 0 ; i < array.length; i++ ) {
-                    if (false === fn(i, array[i])) {
+                    if (resultMeansWeShouldStop(fn(i, array[i]))) {
                         breaked = true;
                         break;
                     }
                 }
             } else if (null !== array && 'object' === typeof array && 'string' === typeof array.jquery && undefined !== array.length && 'function' === typeof array.each) {
                 array.each(function(i,el){
-                    var r = fn(i,el);
-                    if (false === r) {
+                    if (resultMeansWeShouldStop(n(i,el))) {
                         breaked = true;
                     }
                     return r;
@@ -501,7 +503,7 @@
             } else {
                 for (i in array) {
                     if (array.hasOwnProperty(i)) {
-                        if (false === fn(i, array[i])) {
+                        if (resultMeansWeShouldStop(fn(i, array[i]))) {
                             breaked = true;
                             break;
                         }
