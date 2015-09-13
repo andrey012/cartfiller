@@ -356,7 +356,8 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                                 }
                             }
                             setTimeout(refreshCurrentTest, 1000);
-                        }
+                        },
+                        cartFillerTrackSomething: true
                     });
                 } else {
                     setTimeout(refreshCurrentTest, 1000);

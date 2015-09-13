@@ -189,6 +189,7 @@
      */
     var useTopWindowForLocalFileOperations;
     var currentInvokeWorkerMessage;
+    var suspendAjaxRequestsCallback;
     /**
      * Keeps details about relay subsystem
      * @var {Object} CartFiller.Dispatcher~rel
@@ -259,7 +260,7 @@
      */
     var resetWorker = function(){
         clearRegisteredTimeoutsAndIntervals();
-        workerCurrentTaskIndex = workerCurrentStepIndex = workerOnLoadHandler = false;
+        workerCurrentTaskIndex = workerCurrentStepIndex = workerOnLoadHandler = suspendAjaxRequestsCallback = false;
     };
     /**
      * Fills workerCurrentTask object with current task parameters.
@@ -364,7 +365,7 @@
         if (workerTimeout) {
             workerWatchdogId = setTimeout(function(){
                 workerWatchdogId = false;
-                workerOnLoadHandler = false;
+                workerOnLoadHandler = suspendAjaxRequestsCallback = false;
                 me.modules.api.result('Timeout happened, worker step cancelled');
             }, workerTimeout);
         } else {
@@ -1218,6 +1219,30 @@
             this.reflectMessage(details);
             workerGlobals[details.name] = details.value;
         },
+         /*
+         *
+         */
+        onMessage_toggleEditorMode: function(details) {
+            ////
+            this.onMessage_sendStatus({'toggleEditorMode': true, enable: details.enable});
+            if (details.cb) {
+                suspendAjaxRequestsCallback = details.cb;
+            }
+            if (details.enable) {
+                this.postMessageToWorker('toggleEditorModeResponse', {enabled: true});
+            }
+        },
+        /**
+         * 
+         */
+        onMessage_suspendAjaxRequestsDone: function() {
+            this.postMessageToWorker('toggleEditorModeResponse');
+            if (suspendAjaxRequestsCallback) {
+                suspendAjaxRequestsCallback();
+                suspendAjaxRequestsCallback = false;
+                this.onMessage_toggleEditorMode({enable: true});
+            }
+        },
         /**
          * Handles "main frame loaded" event. If both main frame and 
          * worker (job progress) frames are loaded then bootstraps 
@@ -1456,7 +1481,7 @@
                     sleep: sleepAfterThisStep
                 }
             );
-            workerCurrentStepIndex = workerOnLoadHandler = false;
+            workerCurrentStepIndex = workerOnLoadHandler = suspendAjaxRequestsCallback = false;
         },
         /**
          * Registers worker's onLoad callback for main frame
@@ -1722,7 +1747,7 @@
             sleepAfterThisStep = sleep;
         },
         drill: function(frameIndexes) {
-            workerCurrentStepIndex = workerOnLoadHandler = false;
+            workerCurrentStepIndex = workerOnLoadHandler = suspendAjaxRequestsCallback = false;
             currentInvokeWorkerMessage.drillToFrame = this.getFrameToDrill();
             currentInvokeWorkerMessage.drillToFrame.push(frameIndexes);
             currentInvokeWorkerMessage.message = 'drill';

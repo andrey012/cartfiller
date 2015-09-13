@@ -413,6 +413,20 @@
     var trackWorkerLoaded = {};
     var trackWorker = false;
     var trackWorkerId = 0;
+    var suspendTrackingRequested = false;
+    var suspendTrackingDone = false;
+    var pendingAjaxRequests = 0;
+    var reportPendingAjaxRequestsToDispatcher = function() {
+        if (suspendTrackingRequested && (! pendingAjaxRequests)) {
+            suspendTrackingRequested = false;
+            suspendTrackingDone = true;
+            window.parent.postMessage(
+                'cartFillerMessage:' + JSON.stringify({cmd: 'suspendAjaxRequestsDone'}),
+                '*'
+            );
+            ////
+        }
+    };
     var trackWorkersAllLoaded = function() {
         var i;
         for (i in trackWorkerLoaded) {
@@ -455,7 +469,8 @@
                     if (trackWorker && trackWorkersAllLoaded()) {
                         setTimeout(function() { loadWorkers(urls, rememberedTrackWorkerId); }, 1000);
                     }
-                }
+                },
+                cartFillerTrackSomething: track ? true : false
             });
         };
         for (var i = 0; i < urls.length; i ++) {
@@ -481,9 +496,10 @@
      * See {@link CartFiller.Dispatcher#onMessage_sendResult}
      */
     var messageEventListener = function(event){
+        var details;
         var helloRegexp = new RegExp('^' + helloMessageName + ':(.*)$');
         if (helloRegexp.test(event.data)){
-            var details = JSON.parse(helloRegexp.exec(event.data)[1]);
+            details = JSON.parse(helloRegexp.exec(event.data)[1]);
             if (details.useTopWindowForLocalFileOperations) {
                 filePopupWindow = event.source || window.parent;
             }
@@ -500,8 +516,20 @@
             }
             data = new RegExp('^' + statusMessageName + ':(.*)$').exec(event.data);
             if (data) {
-                if (statusCallback){
-                    statusCallback(JSON.parse(data[1]));
+                details = JSON.parse(data[1]);
+                if (details.toggleEditorMode) {
+                    if (suspendTrackingRequested) {
+                        // do nothing
+                    } else if (! details.enable) {
+                        suspendTrackingRequested = true;
+                        reportPendingAjaxRequestsToDispatcher();
+                    } else {
+                        suspendTrackingDone = false;
+                    }
+                } else {
+                    if (statusCallback){
+                        statusCallback(details);
+                    }
                 }
             }
             data = new RegExp('^' + loadWorkerMessageName + ':(.*)$').exec(event.data);
@@ -708,12 +736,16 @@
             }, 100);
             return;
         }
+        if (options.cartFillerTrackSomething && (suspendTrackingRequested || suspendTrackingDone)) {
+            options.complete({}); // skip results
+            return;
+        }
         var pingFilePopupWindow = function() {
             if (! filePopupWindowInitReceived) {
                 filePopupWindow.postMessage('cartFillerFilePopupPing', '*');
                 setTimeout(pingFilePopupWindow, 50);
             }
-        };  
+        };
         if (/^file\:\/\/\//.test(options.url)) {
             fileRequestsQueue.push(options);
             if (filePopupWindow) {
@@ -725,8 +757,12 @@
                 pingFilePopupWindow();
             }
         } else {
+            pendingAjaxRequests ++;
+            reportPendingAjaxRequestsToDispatcher();
             var x = new XMLHttpRequest();
             x.onload = x.onerror = function(){
+                pendingAjaxRequests --;
+                reportPendingAjaxRequestsToDispatcher();
                 options.complete(x);
             };
             x.open('GET', options.url, true);

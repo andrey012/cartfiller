@@ -905,6 +905,9 @@
         },
         compareCleanText: function(a, b) {
             return cleanText(a) === cleanText(b);
+        },
+        suspendRequests: function(cb) {
+            me.modules.dispatcher.onMessage_toggleEditorMode({enable: false, cb: cb});
         }
     });
 }).call(this, document, window);

@@ -67,6 +67,7 @@ define('controller', ['app', 'scroll'], function(app){
         $scope.jobTitle = '';
         var autorunSpeed;
         var mouseDownTime;
+        var suspendEditorMode;
         var isLongClick = function($event){
             var now = $event.timeStamp ? $event.timeStamp : (new Date()).getTime();
             return (now - mouseDownTime) > 1000;
@@ -96,7 +97,10 @@ define('controller', ['app', 'scroll'], function(app){
             }
         };
         cfMessage.register(function(cmd, details){
-            if (cmd === 'jobDetails'){
+            if (cmd === 'toggleEditorModeResponse') {
+                suspendEditorMode = ! details.enabled;
+                $('#suspendEditorMode').prop('checked', suspendEditorMode);
+            } else if (cmd === 'jobDetails'){
                 $scope.$apply(function(){
                     if (undefined !== details.$cartFillerTestUpdate && undefined === details.details) {
                         // this is just test update
@@ -672,5 +676,11 @@ define('controller', ['app', 'scroll'], function(app){
                 }
             };
         }, 1000);
+        $scope.suspendEditorModeNoWatch = function(event) {
+            event.stopPropagation();
+            var enable = suspendEditorMode;
+            cfMessage.send('toggleEditorMode', {enable: enable});
+            return false;
+        };
     }]);
 });
