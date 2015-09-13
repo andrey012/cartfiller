@@ -324,12 +324,50 @@
         }
         return {rect: rect};
     };
+    var knownScrollTs = 0;
+    var scrollIfNecessary = function() {
+        var scrollPretendent, scrollPretendentTs;
+        var findScrollPretendent = function(el) {
+            if (el.scroll && (el.ts > knownScrollTs)) {
+                if (el.ts > scrollPretendentTs || ! scrollPretendentTs) {
+                    scrollPretendent = el;
+                    scrollPretendentTs = el.ts;
+                }
+            }
+        };
+        for (var path in elementsToDrawByPath) {
+            elementsToDrawByPath[path]
+                .filter(findScrollPretendent);
+        }
+        if (scrollPretendent) {
+            knownScrollTs = scrollPretendentTs;
+            var border = 0.25;
+            var scroll = [
+                scrollPretendent.rect.left - (getInnerWidth() * border),
+                scrollPretendent.rect.top - (getInnerHeight() * border)
+            ];
+            for (var i = 0 ; i < 2 ; i ++ ) {
+                if (scroll[i] < 0) {
+                    // we need to scroll up/left - that's ok
+                } else {
+                    // we need to scroll down/right -- only if element does not fit
+                    // to the 20...80 % rect
+                    scroll[i] = Math.min(scroll[i], Math.max(0, scrollPretendent.rect[i ? 'bottom' : 'right'] - (i ? getInnerHeight() : getInnerWidth()) * (1 - border)));
+                }
+            }
+            me.modules.ui.mainFrameWindow.scrollBy(scroll[0], scroll[1]);
+            return true;
+        }
+    };
     /**
      * Draws arrow overlay divs
      * @function CartFiller.UI~drawArrows
      * @access private
      */
     var drawArrows = function(){
+        if (scrollIfNecessary()) {
+            return setTimeout(drawArrows, 100);
+        }
         deleteOverlaysOfType('arrow');
         for (var path in elementsToDrawByPath) {
             drawArrowsForPath(elementsToDrawByPath[path]);
@@ -365,7 +403,6 @@
                 horizontalLineOverlay('arrow', 0, bottom + 60, left + 10);
                 verticalLineOverlay('arrow', left - 10, bottom + 30, 30);
                 verticalArrowOverlayUp('arrow', left, bottom);
-
             }
         });
     };
@@ -395,6 +432,12 @@
         }
         return {left: left, right: right, top: top, bottom: bottom};
     };
+    var getInnerHeight = function() {
+        return me.modules.ui.mainFrameWindow.innerHeight;
+    };
+    var getInnerWidth = function() {
+        return me.modules.ui.mainFrameWindow.innerWidth;
+    };
     /**
      * Draws highlighting overlay divs
      * @function CartFiller.UI~drawHighlights
@@ -406,8 +449,8 @@
         if (rect.left === undefined) {
             return;
         }
-        var pageBottom = me.modules.ui.mainFrameWindow.innerHeight;
-        var pageRight = me.modules.ui.mainFrameWindow.innerWidth;
+        var pageBottom = getInnerHeight();
+        var pageRight = getInnerWidth();
         var border = 5;
         createOverlay(0, 0, Math.max(0, rect.left - border), pageBottom);
         createOverlay(Math.min(pageRight, rect.right + border), 0, pageRight, pageBottom);
@@ -483,7 +526,9 @@
                         url: e.element.ownerDocument.defaultView.location.href
                     },
                     type: e.type,
-                    path: e.path
+                    path: e.path,
+                    scroll: e.scroll,
+                    ts: e.ts
                 };
             };
             var r = {};
@@ -800,7 +845,7 @@
             }
             if (added > 0 && me.modules.dispatcher.haveAccess()) {
                 var body = this.mainFrameWindow.document.getElementsByTagName('body')[0];
-                body.style.paddingBottom = this.mainFrameWindow.innerHeight + 'px';
+                body.style.paddingBottom = getInnerHeight() + 'px';
             }
         },
         /**
@@ -838,7 +883,7 @@
         say: function(text, pre){
             messageToSay = undefined === text ? '' : text;
             wrapMessageToSayWithPre = pre;
-            currentMessageDivWidth = Math.max(100, Math.round(this.mainFrameWindow.innerWidth * 0.5));
+            currentMessageDivWidth = Math.max(100, Math.round(getInnerWidth() * 0.5));
             messageAdjustmentRemainingAttempts = 100;
         },
         /**

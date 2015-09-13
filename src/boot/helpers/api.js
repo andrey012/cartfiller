@@ -769,7 +769,10 @@
                                     return false;
                                 }
                             }
-                            dispatchEventResult = elementNode.dispatchEvent(e);
+                            dispatchEventResult = true;
+                            try {
+                                dispatchEventResult = elementNode.dispatchEvent(e);
+                            } catch (e) {}
                             if (! dispatchEventResult && 'keydown' === eventName) {
                                 // do not send keypress event if keydown event returned false
                                 doKeyPress = false;
@@ -779,8 +782,10 @@
                             }
                         }
                         if (0 === nextText.length) {
-                            var event = new elementNode.ownerDocument.defaultView.Event('change');
-                            elementNode.dispatchEvent(event);
+                            try {
+                                var event = new elementNode.ownerDocument.defaultView.Event('change');
+                                elementNode.dispatchEvent(event);
+                            } catch (e) {}
                             me.modules.api.arrow(el);
                             finish();
                         } else {
