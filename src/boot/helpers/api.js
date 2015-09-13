@@ -602,7 +602,9 @@
         click: function(whatNext) {
             return [
                 'click', function(el, env){
-                    if ('object' === typeof el && 'string' === typeof el.jquery && undefined !== el.length) {
+                    if (! el) {
+                        // do nothing
+                    } else if ('object' === typeof el && 'string' === typeof el.jquery && undefined !== el.length) {
                         el[0].click();
                     } else if (el instanceof Array) {
                         el[0].click();
@@ -679,8 +681,20 @@
             var r = [
                 'type key sequence',
                 function(el, env) {
+                    var finish = function() {
+                        if (undefined === whatNext || whatNext === me.modules.api.result) {
+                            me.modules.api.result();
+                        } else if (whatNext === me.modules.api.onload) {
+                            me.modules.api.onload();
+                        } else {
+                            whatNext(el, env);
+                        }
+                    };
                     var elementNode;
-                    if ('object' === typeof el && 'string' === typeof el.jquery && undefined !== el.length) {
+                    if (! el) {
+                        // do nothing
+                        return finish();
+                    } else if ('object' === typeof el && 'string' === typeof el.jquery && undefined !== el.length) {
                         elementNode = el[0];
                     } else if (el instanceof Array) {
                         elementNode = el[0];
@@ -768,13 +782,7 @@
                             var event = new elementNode.ownerDocument.defaultView.Event('change');
                             elementNode.dispatchEvent(event);
                             me.modules.api.arrow(el);
-                            if (undefined === whatNext || whatNext === me.modules.api.result) {
-                                me.modules.api.result();
-                            } else if (whatNext === me.modules.api.onload) {
-                                me.modules.api.onload();
-                            } else {
-                                whatNext(el, env);
-                            }
+                            finish();
                         } else {
                             me.modules.api.setTimeout(function() { fn(nextText, elementNode, whatNext); }, 0);
                         }
