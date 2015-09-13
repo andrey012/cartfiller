@@ -41,7 +41,10 @@
                         var pc = task.path.split('/');
                         var i = pc[0];
                         if (! i || task.all) {
-                            api[fn](window.document.getElementsByTagName('a')[0]).result();
+                            api[fn](window.document.getElementsByTagName('a')[0]);
+                        }
+                        if (! i) {
+                            api.result();
                         }
                         if (i) {
                             return window.frames[parseInt(i)];
@@ -50,7 +53,10 @@
                         var pc = task.path.split('/');
                         var i = pc[1];
                         if (! i || task.all) {
-                            api[fn](window.document.getElementsByTagName('a')[0]).result();
+                            api[fn](window.document.getElementsByTagName('a')[0]);
+                        }
+                        if (! i) {
+                            api.result();
                         }
                         if (i) {
                             return window.frames[parseInt(i)];
@@ -59,7 +65,10 @@
                         var pc = task.path.split('/');
                         var i = pc[2];
                         if (! i || task.all) {
-                            api[fn](window.document.getElementsByTagName('a')[0]).result();
+                            api[fn](window.document.getElementsByTagName('a')[0]);
+                        }
+                        if (! i) {
+                            api.result();
                         }
                         if (i) {
                             return window.frames[parseInt(i)];
@@ -68,7 +77,10 @@
                         var pc = task.path.split('/');
                         var i = pc[3];
                         if (! i || task.all) {
-                            api[fn](window.document.getElementsByTagName('a')[0]).result();
+                            api[fn](window.document.getElementsByTagName('a')[0]);
+                        }
+                        if (! i) {
+                            api.result();
                         }
                         if (i) {
                             return window.frames[parseInt(i)];

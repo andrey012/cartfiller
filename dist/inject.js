@@ -184,7 +184,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1464295243365';
+    config.gruntBuildTimeStamp='1464296853746';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -949,7 +949,7 @@
                             elementNode.value = '';
                         } catch (e) {}
                     }
-                    var document = me.modules.ui.mainFrameWindow.document;
+                    var document = elementNode.ownerDocument;
                     var fn = function(text, elementNode, whatNext) {
                         var char = text.substr(0, 1);
                         var charCode = char.charCodeAt(0);
@@ -3384,6 +3384,9 @@
      * @access private
      */
     var drawHighlights = function(){
+        if (scrollIfNecessary()) {
+            return setTimeout(drawHighlights, 100);
+        }
         deleteOverlaysOfType('highlight');
         var rect = findMaxRect({highlight: true});
         if (rect.left === undefined) {

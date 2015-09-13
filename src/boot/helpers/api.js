@@ -719,7 +719,7 @@
                             elementNode.value = '';
                         } catch (e) {}
                     }
-                    var document = me.modules.ui.mainFrameWindow.document;
+                    var document = elementNode.ownerDocument;
                     var fn = function(text, elementNode, whatNext) {
                         var char = text.substr(0, 1);
                         var charCode = char.charCodeAt(0);

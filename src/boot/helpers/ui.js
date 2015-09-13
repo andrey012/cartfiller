@@ -444,6 +444,9 @@
      * @access private
      */
     var drawHighlights = function(){
+        if (scrollIfNecessary()) {
+            return setTimeout(drawHighlights, 100);
+        }
         deleteOverlaysOfType('highlight');
         var rect = findMaxRect({highlight: true});
         if (rect.left === undefined) {
