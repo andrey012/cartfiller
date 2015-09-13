@@ -659,5 +659,18 @@ define('controller', ['app', 'scroll'], function(app){
             }
             return '\n        ' + JSON.stringify(result) + ',';
         };
+        setTimeout(function initGlobalsScope() {
+            var scope = angular.element(document.getElementById('globalsDiv')).scope();
+            if (! scope) {
+                return setTimeout(initGlobalsScope, 1000);
+            }
+            scope.updateGlobal = function(name) {
+                var newValue = prompt('Enter new value for [' + name + ']', $scope.workerGlobals[name]);
+                if (null !== newValue) {
+                    $scope.workerGlobals[name] = newValue;
+                    cfMessage.send('updateGlobal', {name: name, value: newValue});
+                }
+            };
+        }, 1000);
     }]);
 });

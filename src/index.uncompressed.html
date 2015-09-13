@@ -290,7 +290,7 @@
             </div>
             <div id="globalsDiv" ng-repeat="dummy in [0]">
                 <div class="alert alert-info" ng-repeat="(name, value) in workerGlobals">
-                    {{name}}: {{getWorkerGlobalValue(name)}}
+                    {{name}}: <span title="Doubleclick to change" ng-dblclick="updateGlobal(name)">{{getWorkerGlobalValue(name)}}</span>
                 </div>
             </div>
         </div>

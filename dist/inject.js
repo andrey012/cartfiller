@@ -184,7 +184,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1464296853746';
+    config.gruntBuildTimeStamp='1464306119463';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -2348,6 +2348,16 @@
                 return;
             }
             me.modules.ui.highlightElementForQueryBuilder(details.path);
+        },
+        /**
+         * Update global value from progress frame
+         * @function CartFiller.Dispatcher#onMessage_updateGlobal
+         * @param {Object} details
+         * @access public
+         */
+        onMessage_updateGlobal: function(details) {
+            this.reflectMessage(details);
+            workerGlobals[details.name] = details.value;
         },
         /**
          * Handles "main frame loaded" event. If both main frame and 

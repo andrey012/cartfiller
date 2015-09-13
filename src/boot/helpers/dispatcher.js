@@ -1209,6 +1209,16 @@
             me.modules.ui.highlightElementForQueryBuilder(details.path);
         },
         /**
+         * Update global value from progress frame
+         * @function CartFiller.Dispatcher#onMessage_updateGlobal
+         * @param {Object} details
+         * @access public
+         */
+        onMessage_updateGlobal: function(details) {
+            this.reflectMessage(details);
+            workerGlobals[details.name] = details.value;
+        },
+        /**
          * Handles "main frame loaded" event. If both main frame and 
          * worker (job progress) frames are loaded then bootstraps 
          * job progress frame

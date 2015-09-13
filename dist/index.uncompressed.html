@@ -6876,7 +6876,7 @@ button.close {
             </div>
             <div id="globalsDiv" ng-repeat="dummy in [0]">
                 <div class="alert alert-info" ng-repeat="(name, value) in workerGlobals">
-                    {{name}}: {{getWorkerGlobalValue(name)}}
+                    {{name}}: <span title="Doubleclick to change" ng-dblclick="updateGlobal(name)">{{getWorkerGlobalValue(name)}}</span>
                 </div>
             </div>
         </div>
@@ -46157,6 +46157,19 @@ define('controller', ['app', 'scroll'], function(app){
             }
             return '\n        ' + JSON.stringify(result) + ',';
         };
+        setTimeout(function initGlobalsScope() {
+            var scope = angular.element(document.getElementById('globalsDiv')).scope();
+            if (! scope) {
+                return setTimeout(initGlobalsScope, 1000);
+            }
+            scope.updateGlobal = function(name) {
+                var newValue = prompt('Enter new value for [' + name + ']', $scope.workerGlobals[name]);
+                if (null !== newValue) {
+                    $scope.workerGlobals[name] = newValue;
+                    cfMessage.send('updateGlobal', {name: name, value: newValue});
+                }
+            };
+        }, 1000);
     }]);
 });
 
@@ -46175,7 +46188,7 @@ define('controller', ['app', 'scroll'], function(app){
             reportError('bootstrap message did not come');
         }
     }, 10000);
-    config.gruntBuildTimeStamp='1464296853746';
+    config.gruntBuildTimeStamp='1464306119463';
     window.addEventListener('message', function(event){
         var test = /^cartFillerMessage:(.*)$/.exec(event.data);
         var isDist = true;
@@ -46244,7 +46257,7 @@ define('controller', ['app', 'scroll'], function(app){
                 if (message.tests) {
                     var x = new XMLHttpRequest();
                     x.onload = function(){
-                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1464296853746') {
+                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1464306119463') {
                             console.log('new version of CartFiller was deployed, switching to it');
                             var hash = window.location.href.split('#');
                             var pc = hash[0].split('?');
