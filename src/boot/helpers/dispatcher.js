@@ -789,8 +789,16 @@
          * @access public
          */
         onMessage_sendStatus: function(message){
-            if (statusMessageName){
-                this.postMessageToChooseJob(statusMessageName, message);
+            if (relay.isSlave) {
+                //////
+                message.message = 'sendStatus';
+                message.notToChildren = true;
+                message.cmd = 'bubbleRelayMessage';
+                this.onMessage_bubbleRelayMessage(message);
+            } else {
+                if (statusMessageName){
+                    this.postMessageToChooseJob(statusMessageName, message);
+                }
             }
         },
         /**
@@ -1079,6 +1087,9 @@
                 me.modules.ui.drawOverlays();
             } else if (details.message === 'tellWhatYouHaveToDraw') {
                 me.modules.ui.tellWhatYouHaveToDraw();
+            } else if (details.message === 'sendStatus' && source && (! relay.isSlave)) {
+                //////
+                me.modules.dispatcher.onMessage_sendStatus(details);
             }
         },
         /**
@@ -1130,38 +1141,23 @@
          * @access public
          */
         onMessage_updateHashUrl: function(details) {
-            var jobAdded, taskAdded, stepAdded;
+            var params = details.params;
             var hash = window.location.hash.replace(/^#\/?/, '').split('&').map(function(v) {
-                if (0 === v.indexOf('job=')) {
-                    if (jobAdded) {
-                        return '';
+                for (var i in params) {
+                    var name = encodeURIComponent(i);
+                    if (0 === v.indexOf(name + '=')) {
+                        var r = (params[i] !== '' && params[i] !== false) ? (name + '=' + encodeURIComponent(params[i])) : '';
+                        delete params[i];
+                        return r;
                     }
-                    jobAdded = true;
-                    return 'job=' + encodeURIComponent(details.jobName);
-                } else if (0 === v.indexOf('task=')) {
-                    if (taskAdded) {
-                        return '';
-                    }
-                    taskAdded = true;
-                    return 'task=' + encodeURIComponent(details.task);
-                } else if (0 === v.indexOf('step=')) {
-                    if (stepAdded) {
-                        return '';
-                    }
-                    stepAdded = true;
-                    return 'step=' + encodeURIComponent(details.step);
-                } else {
-                    return v;
+
                 }
+                return v;
             }).filter(function(v){ return v.length; });
-            if (! jobAdded) {
-                hash.push('job=' + encodeURIComponent(details.jobName));
-            }
-            if (! taskAdded) {
-                hash.push('task=' + encodeURIComponent(details.task));
-            }
-            if (! stepAdded) {
-                hash.push('step=' + encodeURIComponent(details.step));
+            for (var i in params) {
+                if (params[i] !== '' && params[i] !== false) {
+                    hash.push(encodeURIComponent(i) + '=' + encodeURIComponent(params[i]));
+                }
             }
             var hashString = hash.join('&');
             if (hashString.length < 4096) {
@@ -1235,7 +1231,10 @@
         /**
          * 
          */
-        onMessage_suspendAjaxRequestsDone: function() {
+        onMessage_suspendAjaxRequestsDone: function(details) {
+            if (this.reflectMessage(details)) {
+                return;
+            }
             this.postMessageToWorker('toggleEditorModeResponse');
             if (suspendAjaxRequestsCallback) {
                 suspendAjaxRequestsCallback();

@@ -769,4 +769,12 @@
             x.send();
         }
     };
+    $.cartFillerPlugin.postMessageToDispatcher = function(cmd, details) {
+        details = details || {};
+        details.cmd = cmd;
+        window.parent.postMessage(
+            'cartFillerMessage:' + JSON.stringify(details),
+            '*'
+        );
+    };
 })( jQuery, window, document );

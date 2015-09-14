@@ -6781,7 +6781,7 @@ button.close {
 </head>
 <body>
     <div id="testSuiteManager" style="display: none;" ng-controller="testSuiteController" data-local-href="">
-        <div class="col-xs-9">
+        <div class="col-xs-8">
             <div class="alert alert-danger" ng-if="discovery.state == -1">
                 Error discovering cartfiller.json:<br/>
                 <span ng-if="discovery.errorURL"><a href="{{discovery.errorURL}}">{{discovery.errorURL}}</a><br/></span>
@@ -6797,7 +6797,7 @@ button.close {
                 <input id="testsearch" type="text" style="width: 100%" placeholder="search" onkeyup="var event = arguments[0] || window.event; return angular.element(this).scope().searchForTestNoWatch(event);"/>
             </div>
         </div>
-        <div class="col-xs-3" style="text-align: right;">
+        <div class="col-xs-4" style="text-align: right;">
             <button class="btn btn-info" ng-click="discovery.state = 0; discover()">
                 Reload
             </button>
@@ -6807,6 +6807,35 @@ button.close {
             <button class="btn btn-danger" ng-click="stopRunningAll()" ng-if="discovery.state == 2 && runningAll">
                 Stop
             </button>
+            <button class="btn btn-success" ng-click="toggleConfigure()">
+                Configure
+            </button>
+        </div>
+        <div ng-if="showConfigure">
+            <table class="table">
+                <tbody>
+                    <tr>
+                        <th>Editor mode</th>
+                        <td><input type="checkbox" ng-model="params.editor" ng-change="updateParams()"/></td>
+                    </tr>
+                    <tr>
+                        <th>Cartfiler.json root</th>
+                        <td><input type="text" ng-model="params.root" ng-change="updateParams()"/></td>
+                    </tr>
+                    <tr ng-repeat="(key, value) in discovery.rootCartfillerJson.globals">
+                        <th>{{key}}</th>
+                        <td><input type="text" ng-model="params.globals[key]" ng-change="updateParams()"/></td>
+                    </tr>
+                    <tr>
+                        <th>Bookmarklets</th>
+                        <td>
+                            <a ng-repeat="bookmarklet in bookmarklets" href="javascript:{{bookmarklet.code}}">
+                                {{bookmarklet.name}}
+                            </a>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
         <div class="col-xs-12">
             <table class="table table-bordered" id="testslist" ng-repeat="dummy in [0]">
@@ -46591,7 +46620,7 @@ define('controller', ['app', 'scroll'], function(app){
         };
         var updateTopWindowHash = function() {
             if ($scope.debugEnabled && $scope.jobName) {
-            	cfMessage.send('updateHashUrl', {jobName: $scope.jobName, task: $scope.currentTask + 1, step: $scope.currentStep + 1});
+            	cfMessage.send('updateHashUrl', {params: {job: $scope.jobName, task: $scope.currentTask + 1, step: $scope.currentStep + 1}});
             }
         };
         cfMessage.register(function(cmd, details){
@@ -47198,7 +47227,7 @@ define('controller', ['app', 'scroll'], function(app){
             reportError('bootstrap message did not come');
         }
     }, 10000);
-    config.gruntBuildTimeStamp='1464466873519';
+    config.gruntBuildTimeStamp='1465234051899';
     window.addEventListener('message', function(event){
         var test = /^cartFillerMessage:(.*)$/.exec(event.data);
         var isDist = true;
@@ -47238,7 +47267,9 @@ define('controller', ['app', 'scroll'], function(app){
                 define('cfMessageService', ['app'], function(app){
                     app.service('cfDebug', function(){
                         return {
-                            debugEnabled: message.debug
+                            debugEnabled: message.debug,
+                            src: message.src,
+                            useSource: ! isDist,
                         };
                     }),
                     app.service('cfMessage', function(){
@@ -47267,7 +47298,7 @@ define('controller', ['app', 'scroll'], function(app){
                 if (message.tests) {
                     var x = new XMLHttpRequest();
                     x.onload = function(){
-                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1464466873519') {
+                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1465234051899') {
                             console.log('new version of CartFiller was deployed, switching to it');
                             var hash = window.location.href.split('#');
                             var pc = hash[0].split('?');
@@ -47371,6 +47402,9 @@ define('scroll', ['app', 'scroll'], function(app){
 define('testSuiteController', ['app', 'scroll'], function(app){
     'use strict';
     app
+    .config(['$compileProvider', function($compileProvider){
+        $compileProvider.aHrefSanitizationWhitelist(/^\s*(https?|ftp|mailto|file|javascript):/);
+    }])
     .controller('testSuiteController', ['$scope', 'cfMessage', '$timeout', 'cfDebug', '$location', function ($scope, cfMessage, $timeout, cfDebug, $location){
         $location;
         cfDebug;
@@ -47390,6 +47424,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
         var testToCheck = false;
         $scope.params = {};
         $scope.expandedTest = false;
+        $scope.showConfigure = false;
         var getLocation = function() {
             var localHref = document.getElementById('testSuiteManager').getAttribute('data-local-href');
             return localHref ? localHref : cfMessage.hashUrl;
@@ -47397,8 +47432,17 @@ define('testSuiteController', ['app', 'scroll'], function(app){
         var parseParams = function() {
             angular.forEach(getLocation().replace(/^#*\/*/, '').split('&'), function(v) {
                 var pc = v.split('=');
-                var name = pc.shift();
-                $scope.params[decodeURIComponent(name)] = decodeURIComponent(pc.join('='));
+                var name = decodeURIComponent(pc.shift());
+                var value = pc.join('=');
+                if (name === 'editor') {
+                    $scope.params.editor = (value === '0' || value === '') ? false : true;
+                } else if (0 === name.indexOf('globals[')) {
+                    var m = /^globals\[([^\]]+)\]$/.exec(name);
+                    $scope.params.globals = $scope.params.globals || {};
+                    $scope.params.globals[m[1]] = decodeURIComponent(value);
+                } else {
+                    $scope.params[name] = decodeURIComponent(value);
+                }
             });
             if ($scope.params.editor) {
                 $.cartFillerPlugin({'$preventPageReload': true});
@@ -47556,6 +47600,13 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                         if (xhr.status === 200) {
                             try {
                                 $scope.discovery.rootCartfillerJson = parseJson(xhr.responseText);
+                                if ('object' === typeof $scope.discovery.rootCartfillerJson.globals) {
+                                    for (var i in $scope.discovery.rootCartfillerJson.globals) {
+                                        if ($scope.params.globals && undefined !== $scope.params.globals[i]) {
+                                            $scope.discovery.rootCartfillerJson.globals[i] = $scope.params.globals[i];
+                                        }
+                                    }
+                                }
                                 $scope.discovery.workerSrc = normalizeWorkerURLs($scope.discovery.rootCartfillerJson.worker, $scope.discovery.currentRootPath);
                                 $scope.discovery.state = 1;
                                 $scope.discovery.scripts.flat = [];
@@ -47920,6 +47971,37 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             }
         }
         focusOnSearchField();
+        $scope.toggleConfigure = function() {
+            $scope.showConfigure = ! $scope.showConfigure;
+        };
+        $scope.updateParams = function() {
+            var params = {
+                editor: $scope.params.editor ? 1 : '',
+                root: $scope.params.root
+            };
+            if ('object' === typeof $scope.params.globals) {
+                for (var i in $scope.params.globals) {
+                    params['globals[' + i + ']'] = $scope.params.globals[i];
+                }
+            }
+            $.cartFillerPlugin.postMessageToDispatcher('updateHashUrl', {params: params});
+        };
+        $scope.bookmarklets = [
+            {
+                name: 'framed',
+                baseUrl: cfDebug.src,
+                chooseJob: '', 
+                debug: true,
+                inject: 'script',
+                minified: false,
+                type: 'framed',
+                useSource: cfDebug.useSource
+            }
+        ].map(function(options) {
+            options.code = $.cartFillerPlugin.getBookmarkletCode(options);
+            return options;
+        });
+
     }]);
 });
 
@@ -48696,6 +48778,14 @@ define('jquery-cartFiller', ['jquery'], function() {
             x.open('GET', options.url, true);
             x.send();
         }
+    };
+    $.cartFillerPlugin.postMessageToDispatcher = function(cmd, details) {
+        details = details || {};
+        details.cmd = cmd;
+        window.parent.postMessage(
+            'cartFillerMessage:' + JSON.stringify(details),
+            '*'
+        );
     };
 })( jQuery, window, document );
 

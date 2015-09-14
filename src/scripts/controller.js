@@ -93,7 +93,7 @@ define('controller', ['app', 'scroll'], function(app){
         };
         var updateTopWindowHash = function() {
             if ($scope.debugEnabled && $scope.jobName) {
-            	cfMessage.send('updateHashUrl', {jobName: $scope.jobName, task: $scope.currentTask + 1, step: $scope.currentStep + 1});
+            	cfMessage.send('updateHashUrl', {params: {job: $scope.jobName, task: $scope.currentTask + 1, step: $scope.currentStep + 1}});
             }
         };
         cfMessage.register(function(cmd, details){

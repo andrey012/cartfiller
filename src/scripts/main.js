@@ -53,7 +53,9 @@
                 define('cfMessageService', ['app'], function(app){
                     app.service('cfDebug', function(){
                         return {
-                            debugEnabled: message.debug
+                            debugEnabled: message.debug,
+                            src: message.src,
+                            useSource: ! isDist,
                         };
                     }),
                     app.service('cfMessage', function(){

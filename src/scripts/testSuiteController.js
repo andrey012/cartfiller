@@ -1,6 +1,9 @@
 define('testSuiteController', ['app', 'scroll'], function(app){
     'use strict';
     app
+    .config(['$compileProvider', function($compileProvider){
+        $compileProvider.aHrefSanitizationWhitelist(/^\s*(https?|ftp|mailto|file|javascript):/);
+    }])
     .controller('testSuiteController', ['$scope', 'cfMessage', '$timeout', 'cfDebug', '$location', function ($scope, cfMessage, $timeout, cfDebug, $location){
         $location;
         cfDebug;
@@ -20,6 +23,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
         var testToCheck = false;
         $scope.params = {};
         $scope.expandedTest = false;
+        $scope.showConfigure = false;
         var getLocation = function() {
             var localHref = document.getElementById('testSuiteManager').getAttribute('data-local-href');
             return localHref ? localHref : cfMessage.hashUrl;
@@ -27,8 +31,17 @@ define('testSuiteController', ['app', 'scroll'], function(app){
         var parseParams = function() {
             angular.forEach(getLocation().replace(/^#*\/*/, '').split('&'), function(v) {
                 var pc = v.split('=');
-                var name = pc.shift();
-                $scope.params[decodeURIComponent(name)] = decodeURIComponent(pc.join('='));
+                var name = decodeURIComponent(pc.shift());
+                var value = pc.join('=');
+                if (name === 'editor') {
+                    $scope.params.editor = (value === '0' || value === '') ? false : true;
+                } else if (0 === name.indexOf('globals[')) {
+                    var m = /^globals\[([^\]]+)\]$/.exec(name);
+                    $scope.params.globals = $scope.params.globals || {};
+                    $scope.params.globals[m[1]] = decodeURIComponent(value);
+                } else {
+                    $scope.params[name] = decodeURIComponent(value);
+                }
             });
             if ($scope.params.editor) {
                 $.cartFillerPlugin({'$preventPageReload': true});
@@ -186,6 +199,13 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                         if (xhr.status === 200) {
                             try {
                                 $scope.discovery.rootCartfillerJson = parseJson(xhr.responseText);
+                                if ('object' === typeof $scope.discovery.rootCartfillerJson.globals) {
+                                    for (var i in $scope.discovery.rootCartfillerJson.globals) {
+                                        if ($scope.params.globals && undefined !== $scope.params.globals[i]) {
+                                            $scope.discovery.rootCartfillerJson.globals[i] = $scope.params.globals[i];
+                                        }
+                                    }
+                                }
                                 $scope.discovery.workerSrc = normalizeWorkerURLs($scope.discovery.rootCartfillerJson.worker, $scope.discovery.currentRootPath);
                                 $scope.discovery.state = 1;
                                 $scope.discovery.scripts.flat = [];
@@ -550,5 +570,36 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             }
         }
         focusOnSearchField();
+        $scope.toggleConfigure = function() {
+            $scope.showConfigure = ! $scope.showConfigure;
+        };
+        $scope.updateParams = function() {
+            var params = {
+                editor: $scope.params.editor ? 1 : '',
+                root: $scope.params.root
+            };
+            if ('object' === typeof $scope.params.globals) {
+                for (var i in $scope.params.globals) {
+                    params['globals[' + i + ']'] = $scope.params.globals[i];
+                }
+            }
+            $.cartFillerPlugin.postMessageToDispatcher('updateHashUrl', {params: params});
+        };
+        $scope.bookmarklets = [
+            {
+                name: 'framed',
+                baseUrl: cfDebug.src,
+                chooseJob: '', 
+                debug: true,
+                inject: 'script',
+                minified: false,
+                type: 'framed',
+                useSource: cfDebug.useSource
+            }
+        ].map(function(options) {
+            options.code = $.cartFillerPlugin.getBookmarkletCode(options);
+            return options;
+        });
+
     }]);
 });
