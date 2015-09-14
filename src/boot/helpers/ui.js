@@ -493,15 +493,13 @@
             messageDiv.style.position = 'fixed';
             messageDiv.style.fontSize = '20px';
             messageDiv.className = overlayClassName + ' ' + overlayClassName + 'message';
-            if (! wrapMessageToSayWithPre) {
-                messageDiv.textContent = messageToSay;
-            } else {
-                var pre = overlayWindow().document.createElement('pre');
-                messageDiv.appendChild(pre);
-                pre.textContent = messageToSay;
-                pre.style.backgroundColor = '#fff';
-                pre.style.border = 'none';
-            }
+
+            var innerDiv = overlayWindow().document.createElement(wrapMessageToSayWithPre ? 'pre' : 'div');
+            messageDiv.appendChild(innerDiv);
+            innerDiv.textContent = messageToSay;
+            innerDiv.style.backgroundColor = '#fff';
+            innerDiv.style.border = 'none';
+            innerDiv.onclick = function(e) { e.stopPropagation(); return false; };
             messageDiv.onclick = function(){me.modules.ui.clearOverlaysAndReflect();};
             overlayWindow().document.getElementsByTagName('body')[0].appendChild(messageDiv);
             messageAdjustmentRemainingAttempts = 100;
