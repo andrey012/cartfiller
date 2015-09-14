@@ -184,7 +184,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1464435868936';
+    config.gruntBuildTimeStamp='1464466873519';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -834,6 +834,7 @@
                 'click', function(el, env){
                     if (! el) {
                         // do nothing
+                        return me.modules.api.result();
                     } else if ('object' === typeof el && 'string' === typeof el.jquery && undefined !== el.length) {
                         el[0].click();
                     } else if (el instanceof Array) {
@@ -923,7 +924,7 @@
                     var elementNode;
                     if (! el) {
                         // do nothing
-                        return finish();
+                        return me.modules.api.result();
                     } else if ('object' === typeof el && 'string' === typeof el.jquery && undefined !== el.length) {
                         elementNode = el[0];
                     } else if (el instanceof Array) {
@@ -2383,8 +2384,6 @@
             this.postMessageToWorker('toggleEditorModeResponse');
             if (suspendAjaxRequestsCallback) {
                 suspendAjaxRequestsCallback();
-                suspendAjaxRequestsCallback = false;
-                this.onMessage_toggleEditorMode({enable: true});
             }
         },
         /**
@@ -2565,6 +2564,10 @@
          * @access public
          */
         submitWorkerResult: function(message, recoverable, response){
+            if (suspendAjaxRequestsCallback) {
+                suspendAjaxRequestsCallback = false;
+                this.onMessage_toggleEditorMode({enable: true});
+            }
             if (workerCurrentStepIndex === false) {
                 alert('You have invalid worker, result is submitted twice, please fix');
                 return;

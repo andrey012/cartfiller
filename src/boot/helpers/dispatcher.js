@@ -1239,8 +1239,6 @@
             this.postMessageToWorker('toggleEditorModeResponse');
             if (suspendAjaxRequestsCallback) {
                 suspendAjaxRequestsCallback();
-                suspendAjaxRequestsCallback = false;
-                this.onMessage_toggleEditorMode({enable: true});
             }
         },
         /**
@@ -1421,6 +1419,10 @@
          * @access public
          */
         submitWorkerResult: function(message, recoverable, response){
+            if (suspendAjaxRequestsCallback) {
+                suspendAjaxRequestsCallback = false;
+                this.onMessage_toggleEditorMode({enable: true});
+            }
             if (workerCurrentStepIndex === false) {
                 alert('You have invalid worker, result is submitted twice, please fix');
                 return;

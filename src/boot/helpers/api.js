@@ -604,6 +604,7 @@
                 'click', function(el, env){
                     if (! el) {
                         // do nothing
+                        return me.modules.api.result();
                     } else if ('object' === typeof el && 'string' === typeof el.jquery && undefined !== el.length) {
                         el[0].click();
                     } else if (el instanceof Array) {
@@ -693,7 +694,7 @@
                     var elementNode;
                     if (! el) {
                         // do nothing
-                        return finish();
+                        return me.modules.api.result();
                     } else if ('object' === typeof el && 'string' === typeof el.jquery && undefined !== el.length) {
                         elementNode = el[0];
                     } else if (el instanceof Array) {
