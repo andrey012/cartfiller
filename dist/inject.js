@@ -184,7 +184,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1465240232604';
+    config.gruntBuildTimeStamp='1465240612141';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -905,10 +905,11 @@
          * @param {string|Function} value or callback to get value
          * @param {Function} whatNext callback after this task is 
          * @param {boolean} dontClear by default this function will clear input before typing
+         * @param {ignoreErrors} set to true to ignore errors during attempts to set keyCode and charCode values
          * @return {Array} ready for putting into worker array
          * @access public
          */
-        type: function(value, whatNext, dontClear) {
+        type: function(value, whatNext, dontClear, ignoreErrors) {
             var r = [
                 'type key sequence',
                 function(el, env) {
@@ -967,6 +968,7 @@
                                 continue;
                             }
                             var e = false;
+                            var invalidEvent = false;
                             if (eventName === 'input') {
                                 try {
                                     e = new elementNode.ownerDocument.defaultView.Event('input');
@@ -982,20 +984,20 @@
                                 }
                             } else {
                                 e = elementNode.ownerDocument.createEvent('KeyboardEvent');
-                                Object.defineProperty(e, 'keyCode', charCodeGetter);
-                                Object.defineProperty(e, 'charCode', charCodeGetter);
-                                Object.defineProperty(e, 'metaKey', metaKeyGetter);
-                                Object.defineProperty(e, 'which', charCodeGetter);
+                                try { Object.defineProperty(e, 'keyCode', charCodeGetter); } catch (e) { invalidEvent = true; }
+                                try { Object.defineProperty(e, 'charCode', charCodeGetter); } catch (e) { invalidEvent = true; }
+                                try { Object.defineProperty(e, 'metaKey', metaKeyGetter); } catch (e) { invalidEvent = true; }
+                                try { Object.defineProperty(e, 'which', charCodeGetter); } catch (e) { invalidEvent = true; }
                                 if (e.initKeyboardEvent) {
                                     e.initKeyboardEvent(eventName, true, true, document.defaultView, false, false, false, false, charCode, charCode);
                                 } else {
                                     e.initKeyEvent(eventName, true, true, document.defaultView, false, false, false, false, charCode, charCode);
                                 }
-                                if (e.keyCode !== charCode || e.charCode !== charCode) {
+                                if ((! ignoreErrors) && (e.keyCode !== charCode || e.charCode !== charCode)) {
                                     me.modules.api.result('could not set correct keyCode or charCode for ' + eventName + ': keyCode returns [' + e.keyCode + '] , charCode returns [' + e.charCode + '] instead of [' + charCode + ']');
                                     return false;
                                 }
-                                if (e.metaKey) {
+                                if ((! ignoreErrors) && e.metaKey) {
                                     me.modules.api.result('could not set metaKey to false');
                                     return false;
                                 }
@@ -1008,7 +1010,7 @@
                                 // do not send keypress event if keydown event returned false
                                 doKeyPress = false;
                             }
-                            if (dispatchEventResult && 'keypress' === eventName) {
+                            if ((invalidEvent || dispatchEventResult) && 'keypress' === eventName) {
                                 elementNode.value = elementNode.value + char;
                             }
                         }
