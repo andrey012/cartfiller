@@ -1,0 +1,18 @@
+{
+    "globals": {
+        "partno": ""
+    },
+    "title": "This is subtest - intended to be included in other tests",
+    "details": [
+        {"if": "param1", "then": [
+            "### this will appear if param1 is set"
+        ], "else": [
+            "### this will appear if param1 is not set"
+        ]},
+        {"if": {"param2": 12}, "then": [
+            "### this will appear if param2 is equal 12"
+        ], "else": [
+            "### this will appear if param2 is not equal 12"
+        ]},
+    ]
+}

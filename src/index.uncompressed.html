@@ -32,7 +32,8 @@
                 Downloading test scripts
             </div>
             <div>
-                <input id="testsearch" type="text" style="width: 100%" placeholder="search" onkeyup="var event = arguments[0] || window.event; return angular.element(this).scope().searchForTestNoWatch(event);"/>
+                <input id="testsearch" type="text" style="width: 100%" placeholder="search for test" onkeyup="var event = arguments[0] || window.event; return angular.element(this).scope().searchForTestNoWatch(event);"/><br/>
+                <input id="tasksearch" type="text" style="width: 100%" placeholder="search for task inside test" onkeyup="var event = arguments[0] || window.event; return angular.element(this).scope().searchForTaskNoWatch(event);"/>
             </div>
         </div>
         <div class="col-xs-4" style="text-align: right;">
@@ -100,7 +101,7 @@
                             </button>
                         </td>
                     </tr>
-                    <tr ng-if="index === expandedTest" ng-repeat="(taskIndex, task) in discovery.scripts.contents[index].details">
+                    <tr ng-if="(index === expandedTest || isTaskFilteredIn(index, taskIndex)) && isTestFilteredIn(index)" ng-repeat="(taskIndex, task) in discovery.scripts.contents[index].details">
                         <td colspan="2" ng-if="task.heading"><h1 ng-if="task.level == 1">&nbsp;&nbsp;&nbsp;&nbsp;{{task.heading}}</h1><h2 ng-if="task.level == 2">&nbsp;&nbsp;&nbsp;&nbsp;{{task.heading}}</h2><h3 ng-if="task.level == 3">&nbsp;&nbsp;&nbsp;&nbsp;{{task.heading}}</h3></td>
                         <td colspan="2" ng-if="task.task" ng-class="discovery.scripts.success[index] == -1 && getTaskErrorsExist(index, taskIndex) ? 'danger' : ''">
                             &nbsp;&nbsp;&nbsp;&nbsp;

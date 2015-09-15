@@ -22,6 +22,17 @@ define('testSuiteController', ['app', 'scroll'], function(app){
         };
         var testsToCheck = [];
         var currentTest = false;
+        var testDependencies = {};
+        var getIncludedTests = function(index, result) {
+            result.push(index);
+            if (testDependencies[index]) {
+                for (var i in testDependencies[index]) {
+                    getIncludedTests(i, result);
+                }
+            }
+            return result;
+        };
+
         $scope.params = {};
         $scope.expandedTest = false;
         $scope.showConfigure = false;
@@ -68,6 +79,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             }
         };
         $scope.filterTestsByText = '';
+        $scope.filterTasksByText = '';
         $scope.runningAll = false;
         $scope.runAll = function (index) {
             $scope.runningAll = true;
@@ -84,40 +96,58 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             $scope.runningAll = false;
         };
         var deepMapGlobalReferences = function(param, map) {
-            if (param instanceof Array) {
+            if ((param instanceof Array) && (1 === param.length) && (! (param[0] instanceof Array))) {
+                // this is reference
+                return map[param[0]];
+            } else if (param instanceof Array) {
                 return param.map(function(v) { return deepMapGlobalReferences(v, map); });
             } else {
-                if (undefined === map[param]) {
-                    return param;
-                } else {
-                    return map[param];
-                }
+                throw new Error('invalid case');
             }
         };
-        var processIncludes = function(details, myIndex) {
+        var processIncludes = function(details, myIndex, tweaks, map) {
+            if (undefined === map) {
+                map = {};
+            }
             var result = [];
-            details.filter(function(detail, i) {
+            details.filter(function(detail) {
+                var i;
                 if (detail.include) {
-                    var includedTestIndex = getTestIndexByName(detail.include, $scope.discovery.scripts.urls[myIndex]);
-                    if (! $scope.discovery.scripts.contents[includedTestIndex]) {
-                        processDownloadedTest(includedTestIndex);
+                    var thisMap = angular.copy(map);
+                    for (i in detail) {
+                        if (i !== 'include') {
+                            if (detail[i] instanceof Array) {
+                                if (undefined !== map[detail[i][0]]) {
+                                    thisMap[i] = map[detail[i][0]];
+                                } else {
+                                    thisMap[i] = detail[i];
+                                }
+                            } else {
+                                thisMap[i] = detail[i];
+                            }
+                        }
                     }
-                    // ok, another test is already loaded 
-                    var tasksToInclude = processIncludes($scope.discovery.scripts.contents[includedTestIndex].details);
+                    var includedTestIndex = getTestIndexByName(detail.include, $scope.discovery.scripts.urls[myIndex]);
+                    if (! testDependencies[myIndex]) {
+                        testDependencies[myIndex] = {};
+                    }
+                    testDependencies[myIndex][includedTestIndex] = true;
+                    var tasksToInclude = processIncludes(parseJson($scope.discovery.scripts.rawContents[includedTestIndex]).details, includedTestIndex, tweaks, thisMap);
+                    
                     tasksToInclude.filter(function(task) {  
                         task = angular.copy(task);
                         for (var i in task) {
                             if (task[i] instanceof Array) { // reference to global
-                                task[i] = deepMapGlobalReferences(task[i], detail);
+                                task[i] = deepMapGlobalReferences(task[i], thisMap);
                             }
                         }
                         result.push(task);
                     });
                 } else {
-                    result.push(details[i]);
+                    result.push(detail);
                 }
             });
-            return result;
+            return processConditionals(result, tweaks, map);
         };
         var getTestIndexByName = function(name, ref) {
             var currentDir = ref.replace(/\/?[^\/]*$/, '/');
@@ -125,10 +155,10 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                 currentDir = '';
             }
             var pretendents = $scope.discovery.scripts.urls.map(function(url, index) {
-                if (url === currentDir + name) {
-                    return index;
+                if ('/' === name.substr(0, 1)) {
+                    return (('/' + url.replace(/^\//, ''))  === name) ? index : false;
                 } else {
-                    return false;
+                    return (url === currentDir + name) ? index : false;
                 }
             }).filter(function(v){return v !== false;});
             if (pretendents.length) {
@@ -156,14 +186,23 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                             }
                         }
                     }
-                    result[i].heading = headingLevelCounters.slice(0, result[i].level).filter(function(v){return v;}).join('.') + '. ' + result[i].heading;
+                    result[i].heading = headingLevelCounters.slice(0, result[i].level).filter(function(v){return v;}).join('.') + '. ' + result[i].heading.replace(/^(\d+\.)+\s*/, '');
                 }
             }
             return result;
         };
-        var processConditionals = function(details, globals) {
+        var processConditionals = function(details, globals, map) {
+            var resolveValue = function(j) {
+                if (undefined === map[j]) {
+                    return globals[j];
+                } else if (map[j] instanceof Array) {
+                    return globals[map[j][0]];
+                } else {
+                    return map[j];
+                }
+            };
             var result = [];
-            var i, j, match;
+            var i, j, match, value;
             for (i = 0; i < details.length; i ++) {
                 if ('string' === typeof details[i]) {
                     details[i] = {'heading': details[i]};
@@ -185,12 +224,14 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                         if ('object' === typeof details[i].if) {
                             match = true;
                             for (j in details[i].if) {
-                                if (String(details[i].if[j]) !== String(globals[j])) {
+                                value = resolveValue(j);
+                                if (String(details[i].if[j]) !== String(value)) {
                                     match = false;
                                 }
                             }
                         } else if ('string' === typeof details[i].if) {
-                            match = 'undefined' !== typeof globals[details[i].if];
+                            value = resolveValue(details[i].if);
+                            match = 'undefined' !== typeof value && null !== value;
                         }
                         var src = [];
                         if (match && 'undefined' !== typeof details[i].then) {
@@ -308,7 +349,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
         };
         var processDownloadedTest = function(index) {
             var contents = parseJson($scope.discovery.scripts.rawContents[index]);
-            contents.details = processIncludes(processHeadings(processConditionals(contents.details, $scope.discovery.scripts.tweaks[index])), index);
+            contents.details = processHeadings(processIncludes(contents.details, index, $scope.discovery.scripts.tweaks[index]));
             $scope.discovery.scripts.contents[index] = contents;
         };
         var normalizeWorkerURLs = function(urls, root) {
@@ -333,7 +374,9 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             }
             if ($scope.discovery.scripts.currentDownloadingIndex >= $scope.discovery.scripts.flat.length) {
                 // we are done
+                testDependencies = {};
                 for (i = 0; i < $scope.discovery.scripts.flat.length; i ++) {
+                    $scope.discovery.currentProcessedTestURL = $scope.discovery.scripts.hrefs[i];
                     processDownloadedTest(i);
                 }
                 $scope.discovery.state = 2;
@@ -375,11 +418,17 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                         if (xhr.status === 200) {
                             try {
                                 rememberDownloadedTest(xhr.responseText, $scope.discovery.scripts.currentDownloadingIndex);
-                                downloadNextScriptFile();
                             } catch (e) {
                                 $scope.discovery.state = -1;
                                 $scope.discovery.error = 'Unable to parse test script: ' + String(e);
                                 $scope.discovery.errorURL = $scope.discovery.currentDownloadedTestURL;
+                            }
+                            try {
+                                downloadNextScriptFile();
+                            } catch (e) {
+                                $scope.discovery.state = -1;
+                                $scope.discovery.error = 'Unable to parse test script: ' + String(e);
+                                $scope.discovery.errorURL = $scope.discovery.currentProcessedTestURL;
                             }
                         } else {
                             $scope.discovery.state = -1;
@@ -429,7 +478,10 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                                 if (oldContents !== xhr.responseText) {
                                     try {
                                         rememberDownloadedTest(xhr.responseText, testsToCheck[0]);
-                                        processDownloadedTest(testsToCheck[0]);
+                                        testsToCheck.filter(function(index) {
+                                            $scope.discovery.scripts.contents[index] = undefined;
+                                        });
+                                        processDownloadedTest(currentTest);
                                         $scope.submitTestUpdate(currentTest);
                                         $scope.$digest();
                                     } catch (e){
@@ -460,7 +512,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                 $event.stopPropagation();
             }
             $scope.discovery.scripts.errors[index] = {};
-            testsToCheck = [index];
+            testsToCheck = getIncludedTests(index, []);
             currentTest = index;
             var test = $scope.discovery.scripts.contents[index];
             test.workerSrc = $scope.discovery.workerSrc;
@@ -603,13 +655,21 @@ define('testSuiteController', ['app', 'scroll'], function(app){
         };
         $scope.searchForTestNoWatch = function() {
             $scope.filterTestsByText = $('#testsearch').val();
+            $scope.expandedTest = false;
             angular.element($('#testslist')[0]).scope().$digest();
         };
-        $scope.isTestFilteredIn = function(index) { 
-            if (! $scope.filterTestsByText.length) {
-                return true;
-            }
-            var filter = $scope.filterTestsByText.toLowerCase();
+        $scope.searchForTaskNoWatch = function() {
+            $scope.filterTasksByText = $('#tasksearch').val();
+            $scope.expandedTest = false;
+            angular.element($('#testslist')[0]).scope().$digest();
+        };
+        var taskMatchesFilter = function(task, taskFilter) {
+            return ((
+                (task.task && -1 !== task.task.toLowerCase().indexOf(taskFilter)) ||
+                ((! task.task) && task.heading && -1 !== task.heading.toLowerCase().indexOf(taskFilter))
+                ) ? true : false);
+        };
+        var testMatchesFilter = function(index, filter) {
             if (-1 !== $scope.discovery.scripts.flat[index].join('/').toLowerCase().indexOf(filter)) {
                 return true;
             }
@@ -622,6 +682,39 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                         return true;
                     }
                     if (-1 !== String($scope.discovery.scripts.tweaks[index][i]).toLowerCase().indexOf(filter)) {
+                        return true;
+                    }
+                }
+            }
+
+        };
+        $scope.isTestFilteredIn = function(index) { 
+            if ((! $scope.filterTestsByText.length) && (! $scope.filterTasksByText.length)) {
+                return true;
+            }
+            var filter = $scope.filterTestsByText.toLowerCase();
+            var taskFilter = $scope.filterTasksByText.toLowerCase();
+            if (taskFilter.length) {
+                if (filter.length && ! testMatchesFilter(index, filter)) {
+                    return false;
+                }
+                if ($scope.discovery.scripts.contents[index] && $scope.discovery.scripts.contents[index].details) {
+                    if ($scope.discovery.scripts.contents[index].details.filter(function(task) {
+                        return taskMatchesFilter(task, taskFilter);
+                    }).length) {
+                        return true;
+                    }
+                }
+            } else {
+                return ((! filter.length) || testMatchesFilter(index, filter));
+            }
+        };
+        $scope.isTaskFilteredIn = function(testIndex, taskIndex) {
+            var taskFilter = $scope.filterTasksByText.toLowerCase();
+            if (taskFilter.length) {
+                if ($scope.discovery.scripts.contents[testIndex] && $scope.discovery.scripts.contents[testIndex].details) {
+                    if ($scope.discovery.scripts.contents[testIndex].details[taskIndex] &&
+                        taskMatchesFilter($scope.discovery.scripts.contents[testIndex].details[taskIndex], taskFilter)) {
                         return true;
                     }
                 }
