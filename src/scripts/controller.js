@@ -192,11 +192,12 @@ define('controller', ['app', 'scroll'], function(app){
                 $scope.jobTaskProgress[details.index].stepResults[details.step] = {status: details.status, message: details.message, response: details.response};
                 $scope.jobTaskProgress[details.index].complete = details.nextTaskFlow === 'skipTask' || $scope.updateTaskCompleteMark(details.index);
                 var proceed;
+                var pause = false;
                 if ('ok' === details.status){
-                    $scope.incrementCurrentStep(false, details.nextTaskFlow);
+                    pause = $scope.incrementCurrentStep(false, details.nextTaskFlow);
                     proceed = true;
                 } else if ('skip' === details.status){
-                    $scope.incrementCurrentStep(true, details.nextTaskFlow);
+                    pause = $scope.incrementCurrentStep(true, details.nextTaskFlow);
                     proceed = true;
                 } else {
                     if ($('#alertOnErrors').is(':checked') && $scope.running){
@@ -208,7 +209,7 @@ define('controller', ['app', 'scroll'], function(app){
                     $scope.runUntilTask = $scope.runUntilStep = false;
                     proceed = false;
                 }
-                if ($scope.pausePoints[$scope.currentTask] && $scope.pausePoints[$scope.currentTask][$scope.currentStep]) {
+                if (pause) {
                     proceed = false;
                     scrollCurrentTaskIntoView();
                 }
@@ -276,11 +277,26 @@ define('controller', ['app', 'scroll'], function(app){
             }
         });
         $scope.incrementCurrentStep = function(skip, nextTaskFlow){
-            if (nextTaskFlow !== 'repeatStep') {
+            var pause = false, i;
+            if ('string' === typeof nextTaskFlow && 0 === nextTaskFlow.indexOf('skipStep,')) {
+                var steps = (1 + parseInt(nextTaskFlow.replace('skipStep,', '')));
+                for (i = 0; i < steps && $scope.currentStep < $scope.jobTaskDescriptions[$scope.jobDetails[$scope.currentTask].task].length; i ++ ) {
+                    $scope.currentStep ++;
+                    if ($scope.pausePoints[$scope.currentTask] && $scope.pausePoints[$scope.currentTask][$scope.currentStep]) {
+                        pause = true;
+                    }
+                }
+            } else if (nextTaskFlow !== 'repeatStep') {
                 $scope.currentStep ++;
             }
             var oldCurrentTask = $scope.currentTask;
             if (skip || nextTaskFlow === 'skipTask' || nextTaskFlow === 'repeatTask' || $scope.jobTaskDescriptions[$scope.jobDetails[$scope.currentTask].task].length <= $scope.currentStep){
+                while ($scope.currentStep < $scope.jobTaskDescriptions[$scope.jobDetails[$scope.currentTask].task].length) {
+                    if ($scope.pausePoints[$scope.currentTask] && $scope.pausePoints[$scope.currentTask][$scope.currentStep]) {
+                        pause = true;
+                    }
+                    $scope.currentStep ++;
+                }
                 $scope.currentStep = 0;
                 if (nextTaskFlow === 'repeatTask') {
                     if (undefined === $scope.repeatedTaskCounter[$scope.currentTask]) {
@@ -315,6 +331,10 @@ define('controller', ['app', 'scroll'], function(app){
             }
             digestTask($scope.currentTask);
             updateTopWindowHash();
+            if ($scope.pausePoints[$scope.currentTask] && $scope.pausePoints[$scope.currentTask][$scope.currentStep]) {
+                pause = true;
+            }
+            return pause;
         };
         $scope.getNextStepToDo = function(index){
             var steps = $scope.jobTaskDescriptions[$scope.jobDetails[index].task];

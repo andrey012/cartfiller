@@ -184,7 +184,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1465674860847';
+    config.gruntBuildTimeStamp='1465685851570';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -501,6 +501,22 @@
          */
         skipTask: function() {
             me.modules.dispatcher.manageTaskFlow('skipTask');
+            return this;
+        },
+        /**
+         * Tells that next n steps should be skipped. After using this function you 
+         * still have to call api.result, and it is important to call api.skipTask first 
+         * and api.result then. 
+         * @function CartFiller.Api#skipStep
+         * @param {integer} n default = 1
+         * @return {CartFiller.Api} for chaining
+         * @access public
+         */
+        skipStep: function(n) {
+            if ('undefined' === typeof n) {
+                n = 1;
+            }
+            me.modules.dispatcher.manageTaskFlow('skipStep,' + n);
             return this;
         },
         /**

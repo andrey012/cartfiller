@@ -274,6 +274,22 @@
             return this;
         },
         /**
+         * Tells that next n steps should be skipped. After using this function you 
+         * still have to call api.result, and it is important to call api.skipTask first 
+         * and api.result then. 
+         * @function CartFiller.Api#skipStep
+         * @param {integer} n default = 1
+         * @return {CartFiller.Api} for chaining
+         * @access public
+         */
+        skipStep: function(n) {
+            if ('undefined' === typeof n) {
+                n = 1;
+            }
+            me.modules.dispatcher.manageTaskFlow('skipStep,' + n);
+            return this;
+        },
+        /**
          * Tells that this task should be repeated, so cartFiller will
          * proceed with first step of this task. After using this function
          * you still have to call api.result, and it is important to call
