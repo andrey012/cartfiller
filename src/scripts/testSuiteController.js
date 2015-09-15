@@ -20,7 +20,8 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             }
             return JSON.parse(s);
         };
-        var testToCheck = false;
+        var testsToCheck = [];
+        var currentTest = false;
         $scope.params = {};
         $scope.expandedTest = false;
         $scope.showConfigure = false;
@@ -81,6 +82,59 @@ define('testSuiteController', ['app', 'scroll'], function(app){
         };
         $scope.stopRunningAll = function() {
             $scope.runningAll = false;
+        };
+        var deepMapGlobalReferences = function(param, map) {
+            if (param instanceof Array) {
+                return param.map(function(v) { return deepMapGlobalReferences(v, map); });
+            } else {
+                if (undefined === map[param]) {
+                    return param;
+                } else {
+                    return map[param];
+                }
+            }
+        };
+        var processIncludes = function(details, myIndex) {
+            var result = [];
+            details.filter(function(detail, i) {
+                if (detail.include) {
+                    var includedTestIndex = getTestIndexByName(detail.include, $scope.discovery.scripts.urls[myIndex]);
+                    if (! $scope.discovery.scripts.contents[includedTestIndex]) {
+                        processDownloadedTest(includedTestIndex);
+                    }
+                    // ok, another test is already loaded 
+                    var tasksToInclude = processIncludes($scope.discovery.scripts.contents[includedTestIndex].details);
+                    tasksToInclude.filter(function(task) {  
+                        task = angular.copy(task);
+                        for (var i in task) {
+                            if (task[i] instanceof Array) { // reference to global
+                                task[i] = deepMapGlobalReferences(task[i], detail);
+                            }
+                        }
+                        result.push(task);
+                    });
+                } else {
+                    result.push(details[i]);
+                }
+            });
+            return result;
+        };
+        var getTestIndexByName = function(name, ref) {
+            var currentDir = ref.replace(/\/?[^\/]*$/, '/');
+            if (currentDir === '/') {
+                currentDir = '';
+            }
+            var pretendents = $scope.discovery.scripts.urls.map(function(url, index) {
+                if (url === currentDir + name) {
+                    return index;
+                } else {
+                    return false;
+                }
+            }).filter(function(v){return v !== false;});
+            if (pretendents.length) {
+                return pretendents[0];
+            }
+            throw new Error('unable to find included test: [' + name + ']');
         };
         var processHeadings = function(result) {
             var headingLevelCounters = [];
@@ -147,6 +201,8 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                         for (j = 0 ; j < src.length; j++) {
                             result.push(src[j]);
                         }
+                    } else if ('undefined' !== typeof details[i].include) {
+                        result.push(details[i]); 
                     }
                 } else {
                     result.push(details[i]);
@@ -217,7 +273,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                                 $scope.discovery.scripts.urls = [];
                                 $scope.discovery.scripts.hrefs = {};
                                 $scope.discovery.scripts.errors = {};
-                                testToCheck = false;
+                                testsToCheck = [];
                                 flattenCartfillerJson($scope.discovery.rootCartfillerJson.tests);
                                 $scope.discovery.scripts.currentDownloadingIndex = false;
                             } catch (e) {
@@ -247,10 +303,12 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                 }
             });
         };
-        var processDownloadedTest = function(response, index) {
-            var contents = parseJson(response);
+        var rememberDownloadedTest = function(response, index) {
             $scope.discovery.scripts.rawContents[index] = response;
-            contents.details = processHeadings(processConditionals(contents.details, $scope.discovery.scripts.tweaks[index]));
+        };
+        var processDownloadedTest = function(index) {
+            var contents = parseJson($scope.discovery.scripts.rawContents[index]);
+            contents.details = processIncludes(processHeadings(processConditionals(contents.details, $scope.discovery.scripts.tweaks[index])), index);
             $scope.discovery.scripts.contents[index] = contents;
         };
         var normalizeWorkerURLs = function(urls, root) {
@@ -267,6 +325,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             });
         };
         var downloadNextScriptFile = function() {
+            var i;
             if ($scope.discovery.scripts.currentDownloadingIndex === false) {
                 $scope.discovery.scripts.currentDownloadingIndex = 0;
             } else {
@@ -274,6 +333,9 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             }
             if ($scope.discovery.scripts.currentDownloadingIndex >= $scope.discovery.scripts.flat.length) {
                 // we are done
+                for (i = 0; i < $scope.discovery.scripts.flat.length; i ++) {
+                    processDownloadedTest(i);
+                }
                 $scope.discovery.state = 2;
                 $scope.$digest();
                 if ($scope.params.backend && ! $scope.params.editor) {
@@ -296,7 +358,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                            ! $scope.alreadyWentTo) 
                 {
                     $scope.alreadyWentTo = true;
-                    for (var i = 0; i < $scope.discovery.scripts.urls.length; i ++) {
+                    for (i = 0; i < $scope.discovery.scripts.urls.length; i ++) {
                         if ($scope.discovery.scripts.urls[i] === $scope.params.job) {
                             $scope.runTest(i, 'fast', parseInt($scope.params.task) - 1, parseInt($scope.params.step) - 1);
                             return;
@@ -312,7 +374,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                         $scope.errorURL = false;
                         if (xhr.status === 200) {
                             try {
-                                processDownloadedTest(xhr.responseText, $scope.discovery.scripts.currentDownloadingIndex);
+                                rememberDownloadedTest(xhr.responseText, $scope.discovery.scripts.currentDownloadingIndex);
                                 downloadNextScriptFile();
                             } catch (e) {
                                 $scope.discovery.state = -1;
@@ -358,24 +420,26 @@ define('testSuiteController', ['app', 'scroll'], function(app){
         if ($scope.params.editor) {
             setTimeout(function refreshCurrentTest(){
                 // check whether currently loaded test have changed and we need to replace it
-                if (testToCheck !== false) {
+                if (testsToCheck.length) {
                     $.cartFillerPlugin.ajax({
-                        url: $scope.discovery.scripts.hrefs[testToCheck] + '?' + (new Date()).getTime(),
+                        url: $scope.discovery.scripts.hrefs[testsToCheck[0]] + '?' + (new Date()).getTime(),
                         complete: function(xhr) {
                             if (xhr.status === 200) {
-                                var oldContents = $scope.discovery.scripts.rawContents[testToCheck];
+                                var oldContents = $scope.discovery.scripts.rawContents[testsToCheck[0]];
                                 if (oldContents !== xhr.responseText) {
                                     try {
-                                        processDownloadedTest(xhr.responseText, testToCheck);
-                                        $scope.submitTestUpdate(testToCheck);
+                                        rememberDownloadedTest(xhr.responseText, testsToCheck[0]);
+                                        processDownloadedTest(testsToCheck[0]);
+                                        $scope.submitTestUpdate(currentTest);
                                         $scope.$digest();
                                     } catch (e){
                                         alert('Something went wrong when processing updated test file - looks like JSON is invalid: ' + String(e));
-                                        $scope.discovery.scripts.rawContents[testToCheck] = xhr.responseText;
+                                        $scope.discovery.scripts.rawContents[testsToCheck[0]] = xhr.responseText;
                                     }
                                 }
                             }
-                            setTimeout(refreshCurrentTest, 1000);
+                            testsToCheck.push(testsToCheck.shift());
+                            setTimeout(refreshCurrentTest, 1000 / testsToCheck.length);
                         },
                         cartFillerTrackSomething: true
                     });
@@ -396,7 +460,8 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                 $event.stopPropagation();
             }
             $scope.discovery.scripts.errors[index] = {};
-            testToCheck = index;
+            testsToCheck = [index];
+            currentTest = index;
             var test = $scope.discovery.scripts.contents[index];
             test.workerSrc = $scope.discovery.workerSrc;
             test.autorun = how === 'load' ? 0 : 1;
