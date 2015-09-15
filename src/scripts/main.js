@@ -20,12 +20,15 @@
         if (test){
             var message = JSON.parse(test[1]);
             if (message.cmd === 'bootstrap') {
-                if (bootstrapped) {
+                if (bootstrapped && ! message.forceBootstrap) {
                     return;
                 }
                 bootstrapped = true;
                 if (message.dummy) {
                     return;
+                }
+                if (message.forceBootstrap) {
+                    event = {source: window};
                 }
                 var paths = {
                     'angular': message.lib + '/angular/angular.min',

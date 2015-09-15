@@ -2,7 +2,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
     'use strict';
     app
     .config(['$compileProvider', function($compileProvider){
-        $compileProvider.aHrefSanitizationWhitelist(/^\s*(https?|ftp|mailto|file|javascript):/);
+        $compileProvider.aHrefSanitizationWhitelist(/^\s*(https?|ftp|mailto|file|javascript|data):/);
     }])
     .controller('testSuiteController', ['$scope', 'cfMessage', '$timeout', 'cfDebug', '$location', function ($scope, cfMessage, $timeout, cfDebug, $location){
         $location;
@@ -728,6 +728,32 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             }
         }
         focusOnSearchField();
+        $scope.templates = {
+            cartfiller: 'data:application/json;base64,base64-content-of-cartfiller.json-goes-here',
+            test: 'data:application/json;base64,base64-content-of-test.json-goes-here',
+            worker: 'data:application/javascript;base64,base64-content-of-worker.js-goes-here',
+        };
+        (function(){
+            var base64Pattern = /base64-content-of-([^-]+)-goes-here/;
+            var getter = function(i) {
+                $.cartFillerPlugin.ajax({
+                    url: window.location.href.split('#')[0].replace(/\/[^\/]*$/, '/templates/') + base64Pattern.exec($scope.templates[i])[1],
+                    complete: function(xhr) {
+                        if (xhr.status === 200) {
+                            $scope.templates[i] = $scope.templates[i].replace(base64Pattern, btoa(xhr.responseText));
+                            if (angular.element($('#templates')) && angular.element($('#templates')).scope()) {
+                                angular.element($('#templates')).scope().$digest();
+                            }
+                        }
+                    }
+                });
+            };
+            for (var i in $scope.templates) {
+                if (base64Pattern.test($scope.templates[i])) {
+                    getter(i);
+                }
+            }
+        })();
         $scope.toggleConfigure = function() {
             $scope.showConfigure = ! $scope.showConfigure;
         };

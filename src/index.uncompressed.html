@@ -73,13 +73,21 @@
                             </a>
                         </td>
                     </tr>
+                    <tr id="templates" ng-repeat="dummy in [0]">
+                        <th>Templates</th>
+                        <td>
+                            <a download="cartfiller.json" class="template-link" href="{{templates.cartfiller}}">cartfiller.json</a>,
+                            <a download="test.json" class="template-link" href="{{templates.test}}">test.json</a>,
+                            <a target="_blank" class="template-link" href="{{templates.worker}}">worker.js</a>
+                        </td>
+                    </tr>
                 </tbody>
             </table>
         </div>
         <div class="col-xs-12">
             <table class="table table-bordered" id="testslist" ng-repeat="dummy in [0]">
                 <tbody>
-                    <tr ng-repeat-start="(index, testPath) in discovery.scripts.flat" ng-class="['active', 'danger', '', 'success'][2 + (discovery.scripts.success[index] || 0)]" ng-if="isTestFilteredIn(index)">
+                    <tr class="test-row" ng-repeat-start="(index, testPath) in discovery.scripts.flat" ng-class="['active', 'danger', '', 'success'][2 + (discovery.scripts.success[index] || 0)]" ng-if="isTestFilteredIn(index)">
                         <td>
                             <strong>{{discovery.scripts.contents[index].title ? discovery.scripts.contents[index].title : testPath.join('/')}}</strong><span ng-repeat="(name, value) in discovery.scripts.tweaks[index]">, {{name}}: <strong>{{value}}</strong></span>
                         </td>
@@ -101,7 +109,7 @@
                             </button>
                         </td>
                     </tr>
-                    <tr ng-if="(index === expandedTest || isTaskFilteredIn(index, taskIndex)) && isTestFilteredIn(index)" ng-repeat="(taskIndex, task) in discovery.scripts.contents[index].details">
+                    <tr class="task-row" ng-if="(index === expandedTest || isTaskFilteredIn(index, taskIndex)) && isTestFilteredIn(index)" ng-repeat="(taskIndex, task) in discovery.scripts.contents[index].details">
                         <td colspan="2" ng-if="task.heading"><h1 ng-if="task.level == 1">&nbsp;&nbsp;&nbsp;&nbsp;{{task.heading}}</h1><h2 ng-if="task.level == 2">&nbsp;&nbsp;&nbsp;&nbsp;{{task.heading}}</h2><h3 ng-if="task.level == 3">&nbsp;&nbsp;&nbsp;&nbsp;{{task.heading}}</h3></td>
                         <td colspan="2" ng-if="task.task" ng-class="discovery.scripts.success[index] == -1 && getTaskErrorsExist(index, taskIndex) ? 'danger' : ''">
                             &nbsp;&nbsp;&nbsp;&nbsp;

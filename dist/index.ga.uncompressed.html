@@ -6674,13 +6674,21 @@ button.close {
                             </a>
                         </td>
                     </tr>
+                    <tr id="templates" ng-repeat="dummy in [0]">
+                        <th>Templates</th>
+                        <td>
+                            <a download="cartfiller.json" class="template-link" href="{{templates.cartfiller}}">cartfiller.json</a>,
+                            <a download="test.json" class="template-link" href="{{templates.test}}">test.json</a>,
+                            <a target="_blank" class="template-link" href="{{templates.worker}}">worker.js</a>
+                        </td>
+                    </tr>
                 </tbody>
             </table>
         </div>
         <div class="col-xs-12">
             <table class="table table-bordered" id="testslist" ng-repeat="dummy in [0]">
                 <tbody>
-                    <tr ng-repeat-start="(index, testPath) in discovery.scripts.flat" ng-class="['active', 'danger', '', 'success'][2 + (discovery.scripts.success[index] || 0)]" ng-if="isTestFilteredIn(index)">
+                    <tr class="test-row" ng-repeat-start="(index, testPath) in discovery.scripts.flat" ng-class="['active', 'danger', '', 'success'][2 + (discovery.scripts.success[index] || 0)]" ng-if="isTestFilteredIn(index)">
                         <td>
                             <strong>{{discovery.scripts.contents[index].title ? discovery.scripts.contents[index].title : testPath.join('/')}}</strong><span ng-repeat="(name, value) in discovery.scripts.tweaks[index]">, {{name}}: <strong>{{value}}</strong></span>
                         </td>
@@ -6702,7 +6710,7 @@ button.close {
                             </button>
                         </td>
                     </tr>
-                    <tr ng-if="(index === expandedTest || isTaskFilteredIn(index, taskIndex)) && isTestFilteredIn(index)" ng-repeat="(taskIndex, task) in discovery.scripts.contents[index].details">
+                    <tr class="task-row" ng-if="(index === expandedTest || isTaskFilteredIn(index, taskIndex)) && isTestFilteredIn(index)" ng-repeat="(taskIndex, task) in discovery.scripts.contents[index].details">
                         <td colspan="2" ng-if="task.heading"><h1 ng-if="task.level == 1">&nbsp;&nbsp;&nbsp;&nbsp;{{task.heading}}</h1><h2 ng-if="task.level == 2">&nbsp;&nbsp;&nbsp;&nbsp;{{task.heading}}</h2><h3 ng-if="task.level == 3">&nbsp;&nbsp;&nbsp;&nbsp;{{task.heading}}</h3></td>
                         <td colspan="2" ng-if="task.task" ng-class="discovery.scripts.success[index] == -1 && getTaskErrorsExist(index, taskIndex) ? 'danger' : ''">
                             &nbsp;&nbsp;&nbsp;&nbsp;
@@ -46264,19 +46272,22 @@ define('controller', ['app', 'scroll'], function(app){
             reportError('bootstrap message did not come');
         }
     }, 10000);
-    config.gruntBuildTimeStamp='1466854377940';
+    config.gruntBuildTimeStamp='1466888487999';
     window.addEventListener('message', function(event){
         var test = /^cartFillerMessage:(.*)$/.exec(event.data);
         var isDist = true;
         if (test){
             var message = JSON.parse(test[1]);
             if (message.cmd === 'bootstrap') {
-                if (bootstrapped) {
+                if (bootstrapped && ! message.forceBootstrap) {
                     return;
                 }
                 bootstrapped = true;
                 if (message.dummy) {
                     return;
+                }
+                if (message.forceBootstrap) {
+                    event = {source: window};
                 }
                 var paths = {
                     'angular': message.lib + '/angular/angular.min',
@@ -46335,7 +46346,7 @@ define('controller', ['app', 'scroll'], function(app){
                 if (message.tests) {
                     var x = new XMLHttpRequest();
                     x.onload = function(){
-                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1466854377940') {
+                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1466888487999') {
                             console.log('new version of CartFiller was deployed, switching to it');
                             var hash = window.location.href.split('#');
                             var pc = hash[0].split('?');
@@ -46440,7 +46451,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
     'use strict';
     app
     .config(['$compileProvider', function($compileProvider){
-        $compileProvider.aHrefSanitizationWhitelist(/^\s*(https?|ftp|mailto|file|javascript):/);
+        $compileProvider.aHrefSanitizationWhitelist(/^\s*(https?|ftp|mailto|file|javascript|data):/);
     }])
     .controller('testSuiteController', ['$scope', 'cfMessage', '$timeout', 'cfDebug', '$location', function ($scope, cfMessage, $timeout, cfDebug, $location){
         $location;
@@ -47166,6 +47177,32 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             }
         }
         focusOnSearchField();
+        $scope.templates = {
+            cartfiller: 'data:application/json;base64,base64-content-of-cartfiller.json-goes-here',
+            test: 'data:application/json;base64,base64-content-of-test.json-goes-here',
+            worker: 'data:application/javascript;base64,base64-content-of-worker.js-goes-here',
+        };
+        (function(){
+            var base64Pattern = /base64-content-of-([^-]+)-goes-here/;
+            var getter = function(i) {
+                $.cartFillerPlugin.ajax({
+                    url: window.location.href.split('#')[0].replace(/\/[^\/]*$/, '/templates/') + base64Pattern.exec($scope.templates[i])[1],
+                    complete: function(xhr) {
+                        if (xhr.status === 200) {
+                            $scope.templates[i] = $scope.templates[i].replace(base64Pattern, btoa(xhr.responseText));
+                            if (angular.element($('#templates')) && angular.element($('#templates')).scope()) {
+                                angular.element($('#templates')).scope().$digest();
+                            }
+                        }
+                    }
+                });
+            };
+            for (var i in $scope.templates) {
+                if (base64Pattern.test($scope.templates[i])) {
+                    getter(i);
+                }
+            }
+        })();
         $scope.toggleConfigure = function() {
             $scope.showConfigure = ! $scope.showConfigure;
         };

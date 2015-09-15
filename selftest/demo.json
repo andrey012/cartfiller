@@ -1,0 +1,19 @@
+cartfiller = {
+    "title": "Demo",
+    "globals": {
+        "baseUrl": "",
+    },
+    "details": [
+        {"task": "open start page"},
+        {"task": "say", "message": "CartFiller is a functionality test framework and interactive test execution tool. Here you can see list of tests of the testsuite. The idea is that you can get to any step of any test. Click expand to open test scenario:"},
+        {"task": "click expand", "testIndex": "0"},
+        {"task": "find task", "taskName": "7. addToCart"},
+        {"task": "say", "message":"if we click on this link, CartFiller will guide us quickly to this step of the test"},
+        {"task": "click"},
+        {"task": "find task in worker", "taskName": "7. addToCart"},
+        {"task": "say", "message":"here it is, you can now play around with page under test or proceed step by step"},
+        {"task": "find step button"},
+        {"task": "say", "message":"here is button to make one step, by clicking it you may move forward and see how it works"},
+        {"task": "click", "clicks": "5", "interval": "1000"},
+    ]
+}

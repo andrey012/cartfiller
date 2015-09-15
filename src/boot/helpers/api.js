@@ -430,12 +430,13 @@
          * object, then whole page will be covered by gray overlay.
          * @param {boolean|undefined} allElements If set to true, then a rectangle
          * which fit all the elements will be drawn
+         * @param {boolean|undefined} noScroll set to true to avoid scrolling to this element
          * @return {CartFiller.Api} for chaining
          * @access public
          */
-        highlight: function(element, allElements){
+        highlight: function(element, allElements, noScroll){
             try {
-                me.modules.ui.highlight(element, allElements);
+                me.modules.ui.highlight(element, allElements, noScroll);
                 me.modules.dispatcher.setHighlightedElement(element);
             } catch (e) {}
             return this;
@@ -452,9 +453,9 @@
          * @return {CartFiller.Api} for chaining
          * @access public
          */
-        arrow: function(element, allElements){
+        arrow: function(element, allElements, noScroll){
             try {
-                me.modules.ui.arrowTo(element, allElements);
+                me.modules.ui.arrowTo(element, allElements, noScroll);
                 me.modules.dispatcher.setHighlightedElement(element);
             } catch (e){}
             return this;
@@ -894,9 +895,15 @@
                 }
             }
             me.modules.dispatcher.setSleepAfterThisStep(time);
+            return this;
         },
         /**
-         * ////
+         * @function CartFiller.Api#drill
+         * @param {Function} cb This function should return iframe's contentWindow object if needed to 
+         * drill further, otherwise do its job and return nothing. This function will get
+         * frame's window as first parameter
+         * @return {CartFiller.Api} for chaining
+         * @access public
          */
         drill: function() {
             var originalPath = me.modules.dispatcher.getFrameToDrill();
@@ -921,6 +928,7 @@
                     }
                 }
             }
+            return this;
         },
         compareCleanText: function(a, b) {
             return cleanText(a) === cleanText(b);

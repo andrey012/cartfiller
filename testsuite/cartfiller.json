@@ -3,6 +3,9 @@ cartfiller = {
         "worker.js",
         "../samples/worker.js"
     ],
+    "globals": {
+        "skipMessages": true
+    },
     "tests": {
         "suite1": {
             "test11?a=b": true,

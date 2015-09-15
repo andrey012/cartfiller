@@ -202,18 +202,18 @@
                 'find total amount of items in the cart', [function(el, env){
                     if (env.params.theParam !== 1) throw "params are passed incorrectly";
                     var strong = cartAmountElement();
-                    api.highlight(strong).arrow(strong).say('Here is total amount in cart. To start filling the cart we need to make sure, that cart is empty.').result((1 === strong.length) ? "" : "Cant find amount in cart");
+                    api.highlight(strong).arrow(strong).say(globals.skipMessages?'':'Here is total amount in cart. To start filling the cart we need to make sure, that cart is empty.').result((1 === strong.length) ? "" : "Cant find amount in cart");
                 }, {theParam: 1}],
                 'check, that cart has more then 0 items', function(strong){
                     cartIsEmpty = ("0" === strong.text());
                     var msg = cartIsEmpty ? 'Cart is empty' : 'Cart is not empty';
-                    api.highlight(strong).arrow(strong).say(msg).result('', false, msg);
+                    api.highlight(strong).arrow(strong).say(globals.skipMessages?'':msg).result('', false, msg);
                 },
                 'if cart is not empty - find link to open cart', function(){
                     api.arrow();
                     if (cartIsEmpty) return api.nop();
                     var cartLink = window.jQuery('#navbar a:contains("Open Cart"):visible');
-                    api.highlight(cartLink).say('Here is "open cart" link, we are going to open cart').result((1 === cartLink.length) ? "" : "Cant find link to open cart");
+                    api.highlight(cartLink).say(globals.skipMessages?'':'Here is "open cart" link, we are going to open cart').result((1 === cartLink.length) ? "" : "Cant find link to open cart");
                 },
                 'if cart is not empty - click on open cart link', function(cartLink){
                     if (cartIsEmpty) return api.nop();
@@ -230,12 +230,12 @@
                 'if cart is not empty - find clear cart button', function(){
                     if (cartIsEmpty) return api.nop();
                     var removeAllItems = window.jQuery('a:contains("Remove all items"):visible');
-                    api.highlight(removeAllItems).say('Here is "Remove all" button').result((1 &lt;= removeAllItems.length) ? "" : "Cant find clear cart button");
+                    api.highlight(removeAllItems).say(globals.skipMessages?'':'Here is "Remove all" button').result((1 &lt;= removeAllItems.length) ? "" : "Cant find clear cart button");
                 },
                 'if cart is not empty - click clear cart button', function(removeAllItems){
                     if (cartIsEmpty) return api.nop();
                     removeAllItems.each(function(i,el){click(el);});
-                    api.highlight(removeAllItems).say('We are going to clear cart.');
+                    api.highlight(removeAllItems).say(globals.skipMessages?'':'We are going to clear cart.');
                     api.waitFor(
                         function(){
                             return "0" === cartAmountElement().text();
@@ -248,13 +248,13 @@
                 'if cart was not empty - find cart amount element again', function(){
                     if (cartIsEmpty) return api.nop();
                     var strong = cartAmountElement();
-                    api.highlight(strong).say('Let\'s see if cart is empty now').result((1 === strong.length) ? "" : "Cant find cart amount element");
+                    api.highlight(strong).say(globals.skipMessages?'':'Let\'s see if cart is empty now').result((1 === strong.length) ? "" : "Cant find cart amount element");
                 },
                 'if cart was not empty - make sure it is empty now', function(){
                     if (cartIsEmpty) return api.nop();
                     var cartIsEmptyNow = ("0" === cartAmountElement().text());
 
-                    api.highlight(cartAmountElement()).say(cartIsEmptyNow ? 'Cart is empty now' : 'Cart is still not empty').result(cartIsEmptyNow ? "" : "Cant clear cart - it is still not empty");
+                    api.highlight(cartAmountElement()).say(globals.skipMessages?'':(cartIsEmptyNow ? 'Cart is empty now' : 'Cart is still not empty')).result(cartIsEmptyNow ? "" : "Cant clear cart - it is still not empty");
                 }
             ],
             /**
@@ -267,7 +267,7 @@
             addToCart: [
                 'go to home', function(){
                     var homeLink = window.jQuery('#navbar a:contains("Home"):visible');
-                    api.highlight(homeLink).say('This is "Home" link that we will use to search for product').result((1 === homeLink.length) ? "" : "Cant find home link");
+                    api.highlight(homeLink).say(globals.skipMessages?'':'This is "Home" link that we will use to search for product').result((1 === homeLink.length) ? "" : "Cant find home link");
                 }, 
                 'click home', function(homeLink){
                     homeLink.each(function(i,el){click(el);});
@@ -276,24 +276,24 @@
                             return (window.jQuery) &amp;&amp; (1 === searchBox().length);
                         },
                         function(result){
-                            api.highlight(searchBox()).say('Here is search box, which means, that we came to home page.').result(result ? "" : "Cant navigate to home");
+                            api.highlight(searchBox()).say(globals.skipMessages?'':'Here is search box, which means, that we came to home page.').result(result ? "" : "Cant navigate to home");
                         }
                     );
                 },
                 'find search box', function(){
                     var input = searchBox();
-                    api.highlight(input).say('Here is search box, let\'s put our number (' + task.partno + ') into it').result((1 === input.length) ? "" : "Cant find search box");
-                }, api.type('partno'),
+                    api.highlight(input).say(globals.skipMessages?'':('Here is search box, let\'s put our number (' + task.partno + ') into it')).result((1 === input.length) ? "" : "Cant find search box");
+                }, api.type('partno', undefined, undefined, true),
                 'find search button', function(){
                     var searchButton = window.jQuery('input[type="submit"][value="Search"]:visible');
-                    api.highlight(searchButton).say('Here is search button').result((1 === searchButton.length) ? "" : "Cant find search button");
+                    api.highlight(searchButton).say(globals.skipMessages?'':'Here is search button').result((1 === searchButton.length) ? "" : "Cant find search button");
                 },
                 'click search button', function(searchButton){
                     searchButton.each(function(i,el){click(el);});
                     api.waitFor(function(){
                         return (window.jQuery) &amp;&amp; (1 === searchResultsHeading().length);
                     }, function(result){
-                        api.highlight(searchResultsHeading()).say('Here is search results heading, which means, that search operation was successful').result(result? "" : "Cant search");
+                        api.highlight(searchResultsHeading()).say(globals.skipMessages?'':'Here is search results heading, which means, that search operation was successful').result(result? "" : "Cant search");
                     });
                 },
                 'find suitable item', function(){
@@ -305,32 +305,32 @@
                             (parseInt(window.jQuery(el).find('td:nth-child(3)').text()) === 1) &amp;&amp;
                             (parseFloat(window.jQuery(el).find('td:nth-child(4)').text()) &lt;= (task.price * 1.02))
                         ){
-                            api.highlight(suitableRow = el).say('This row looks suitable for our search criteria').result("");
+                            api.highlight(suitableRow = el).say(globals.skipMessages?'':'This row looks suitable for our search criteria').result("");
                             found = true;
                             return false;
                         }
                     });
                     if (!found){
-                        api.highlight().say('We could not find any suitable lines').result("Cant find suitable items for " + String(task.partno), true);
+                        api.highlight().say(globals.skipMessages?'':'We could not find any suitable lines').result("Cant find suitable items for " + String(task.partno), true);
                     }
                 },
                 'find quantity box', function(row){
                     var input = window.jQuery(row).find('td:nth-child(5) input[type="text"]:visible');
-                    api.highlight(input).say('This is quantity box').result((1 === input.length) ? "" : "Cant find quantity input");
+                    api.highlight(input).say(globals.skipMessages?'':'This is quantity box').result((1 === input.length) ? "" : "Cant find quantity input");
                 },
                 'put appropriate quantity', function(input){
                     input.val(task.quantity);
                     input.change();
-                    api.highlight(input).say('Let\'s put necessary quantity (' + task.quantity + ') into it').result();
+                    api.highlight(input).say(globals.skipMessages?'':('Let\'s put necessary quantity (' + task.quantity + ') into it')).result();
                 },
                 'remember current amount in cart', function(){
                     var cart = cartAmountElement();
                     globals.currentCartAmount = parseInt(cart.text());
-                    api.highlight(cart).say('We are going to remember current cart amount (' + globals.currentCartAmount + ') and after we\'ll add more items to cart - we are going to check, that cart amount increased accordingly').result();
+                    api.highlight(cart).say(globals.skipMessages?'':('We are going to remember current cart amount (' + globals.currentCartAmount + ') and after we\'ll add more items to cart - we are going to check, that cart amount increased accordingly')).result();
                 },
                 'find Add to cart button', function(){
                     var add = window.jQuery(suitableRow).find('td:nth-child(5) a:visible');
-                    api.highlight(add).say('This is "Add to cart" button').result((1 === add.length) ? "" : "Cant find add to cart link");
+                    api.highlight(add).say(globals.skipMessages?'':'This is "Add to cart" button').result((1 === add.length) ? "" : "Cant find add to cart link");
                 },
                 'click on Add to cart button', function(add){
                     if (!task.quantity) return api.result();
@@ -338,22 +338,22 @@
                     api.waitFor(function(){
                         return globals.currentCartAmount !== parseInt(cartAmountElement().text());
                     }, function(r){
-                        api.highlight(add).say('Something was added, let\'s check what in the next step').result(r ? "" : "Cant add to cart - total cart amount is not changing");
+                        api.highlight(add).say(globals.skipMessages?'':'Something was added, let\'s check what in the next step').result(r ? "" : "Cant add to cart - total cart amount is not changing");
                     });
                 },
                 'make sure, that hint appeared', function(){
                     if (!task.quantity) return api.result();
                     var hint = window.jQuery(suitableRow).next();
-                    api.highlight(hint).say('Here is hint box').result((1 === hint.length) ? "" : "Cant find hint line");
+                    api.highlight(hint).say(globals.skipMessages?'':'Here is hint box').result((1 === hint.length) ? "" : "Cant find hint line");
                 },
                 'make sure, that quantity on hint is correct', function(hint){
                     var bold = hint.find('strong');
-                    api.highlight(bold).say('Let\'s make sure, that amount in the hint is correct').result(((1 === hint.length) &amp;&amp; (task.quantity === parseInt(hint.text()))) ? "" : "Hint problems");
+                    api.highlight(bold).say(globals.skipMessages?'':'Let\'s make sure, that amount in the hint is correct').result(((1 === hint.length) &amp;&amp; (task.quantity === parseInt(hint.text()))) ? "" : "Hint problems");
                 },
                 'make sure, that cart amount increased properly', function(){
                     var cart = cartAmountElement();
                     api.highlight(cart);
-                    api.say('Let\'s make sure, that total cart amount increased appropriately').result(((globals.currentCartAmount + task.quantity) === parseInt(cart.text())) ? "" : "new total cart amount is incorrect");
+                    api.say(globals.skipMessages?'':'Let\'s make sure, that total cart amount increased appropriately').result(((globals.currentCartAmount + task.quantity) === parseInt(cart.text())) ? "" : "new total cart amount is incorrect");
                 }
             ]
         };
@@ -372,13 +372,13 @@
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Externals</h3><ul><li><a href="external%2520jQuery.external__jQuery.fn_.html">jQuery.fn</a></li><li><a href="external-jQuery.html">jQuery</a></li></ul><h3>Classes</h3><ul><li><a href="CartFiller.Api.html">Api</a></li><li><a href="CartFiller.Api.StepEnvironment.html">StepEnvironment</a></li><li><a href="CartFiller.Api.WorkerTask.html">WorkerTask</a></li><li><a href="CartFiller.Api.WorkerTasks.html">WorkerTasks</a></li><li><a href="CartFiller.Configuration.html">Configuration</a></li><li><a href="CartFiller.Dispatcher.html">Dispatcher</a></li><li><a href="CartFiller.Injector.html">Injector</a></li><li><a href="CartFiller.Loader.html">Loader</a></li><li><a href="CartFiller.SampleWorker.html">SampleWorker</a></li><li><a href="CartFiller.SampleWorker.SampleWorkerTasks.html">SampleWorkerTasks</a></li><li><a href="CartFiller.UI.html">UI</a></li><li><a href="CartFiller.UI.ArrowToElement.html">ArrowToElement</a></li><li><a href="CartFillerPlugin-JobDetails.html">JobDetails</a></li><li><a href="CartFillerPlugin-Plugin.html">Plugin</a></li><li><a href="CartFillerPlugin-Settings.html">Settings</a></li></ul><h3>Namespaces</h3><ul><li><a href="CartFiller.html">CartFiller</a></li><li><a href="CartFillerPlugin.html">CartFillerPlugin</a></li></ul><h3>Global</h3><ul><li><a href="global.html#%2522jQuery.cartFillerPlugin.hideChooseJobFrame%2522">"jQuery.cartFillerPlugin.hideChooseJobFrame"</a></li><li><a href="global.html#%2522jQuery.cartFillerPlugin.showChooseJobFrame%2522">"jQuery.cartFillerPlugin.showChooseJobFrame"</a></li><li><a href="global.html#%2522jQuery.cartFillerPlugin%2522">"jQuery.cartFillerPlugin"</a></li><li><a href="global.html#%2522jQuery.fn.cartFillerPlugin%2522">"jQuery.fn.cartFillerPlugin"</a></li><li><a href="global.html#drill">drill</a></li><li><a href="global.html#getBookmarkletCode">getBookmarkletCode</a></li><li><a href="global.html#onMessage_postMessage">onMessage_postMessage</a></li><li><a href="global.html#onMessage_suspendAjaxRequestsDone">onMessage_suspendAjaxRequestsDone</a></li><li><a href="global.html#reportingMousePointerClick">reportingMousePointerClick</a></li><li><a href="global.html#testApiMap">testApiMap</a></li><li><a href="global.html#workerEventListeners">workerEventListeners</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Externals</h3><ul><li><a href="external%2520jQuery.external__jQuery.fn_.html">jQuery.fn</a></li><li><a href="external-jQuery.html">jQuery</a></li></ul><h3>Classes</h3><ul><li><a href="CartFiller.Api.html">Api</a></li><li><a href="CartFiller.Api.StepEnvironment.html">StepEnvironment</a></li><li><a href="CartFiller.Api.WorkerTask.html">WorkerTask</a></li><li><a href="CartFiller.Api.WorkerTasks.html">WorkerTasks</a></li><li><a href="CartFiller.Configuration.html">Configuration</a></li><li><a href="CartFiller.Dispatcher.html">Dispatcher</a></li><li><a href="CartFiller.Injector.html">Injector</a></li><li><a href="CartFiller.Loader.html">Loader</a></li><li><a href="CartFiller.SampleWorker.html">SampleWorker</a></li><li><a href="CartFiller.SampleWorker.SampleWorkerTasks.html">SampleWorkerTasks</a></li><li><a href="CartFiller.UI.html">UI</a></li><li><a href="CartFiller.UI.ArrowToElement.html">ArrowToElement</a></li><li><a href="CartFillerPlugin-JobDetails.html">JobDetails</a></li><li><a href="CartFillerPlugin-Plugin.html">Plugin</a></li><li><a href="CartFillerPlugin-Settings.html">Settings</a></li></ul><h3>Namespaces</h3><ul><li><a href="CartFiller.html">CartFiller</a></li><li><a href="CartFillerPlugin.html">CartFillerPlugin</a></li></ul><h3>Global</h3><ul><li><a href="global.html#%2522jQuery.cartFillerPlugin.hideChooseJobFrame%2522">"jQuery.cartFillerPlugin.hideChooseJobFrame"</a></li><li><a href="global.html#%2522jQuery.cartFillerPlugin.showChooseJobFrame%2522">"jQuery.cartFillerPlugin.showChooseJobFrame"</a></li><li><a href="global.html#%2522jQuery.cartFillerPlugin%2522">"jQuery.cartFillerPlugin"</a></li><li><a href="global.html#%2522jQuery.fn.cartFillerPlugin%2522">"jQuery.fn.cartFillerPlugin"</a></li><li><a href="global.html#getBookmarkletCode">getBookmarkletCode</a></li><li><a href="global.html#onMessage_postMessage">onMessage_postMessage</a></li><li><a href="global.html#onMessage_suspendAjaxRequestsDone">onMessage_suspendAjaxRequestsDone</a></li><li><a href="global.html#reportingMousePointerClick">reportingMousePointerClick</a></li><li><a href="global.html#testApiMap">testApiMap</a></li><li><a href="global.html#workerEventListeners">workerEventListeners</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0</a> on Sat Jun 25 2016 14:33:04 GMT+0300 (MSK)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0</a> on Sun Jun 26 2016 00:01:41 GMT+0300 (MSK)
 </footer>
 
 <script> prettyPrint(); </script>

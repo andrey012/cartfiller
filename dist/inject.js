@@ -184,7 +184,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1466854377940';
+    config.gruntBuildTimeStamp='1466888487999';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -660,12 +660,13 @@
          * object, then whole page will be covered by gray overlay.
          * @param {boolean|undefined} allElements If set to true, then a rectangle
          * which fit all the elements will be drawn
+         * @param {boolean|undefined} noScroll set to true to avoid scrolling to this element
          * @return {CartFiller.Api} for chaining
          * @access public
          */
-        highlight: function(element, allElements){
+        highlight: function(element, allElements, noScroll){
             try {
-                me.modules.ui.highlight(element, allElements);
+                me.modules.ui.highlight(element, allElements, noScroll);
                 me.modules.dispatcher.setHighlightedElement(element);
             } catch (e) {}
             return this;
@@ -682,9 +683,9 @@
          * @return {CartFiller.Api} for chaining
          * @access public
          */
-        arrow: function(element, allElements){
+        arrow: function(element, allElements, noScroll){
             try {
-                me.modules.ui.arrowTo(element, allElements);
+                me.modules.ui.arrowTo(element, allElements, noScroll);
                 me.modules.dispatcher.setHighlightedElement(element);
             } catch (e){}
             return this;
@@ -1124,9 +1125,15 @@
                 }
             }
             me.modules.dispatcher.setSleepAfterThisStep(time);
+            return this;
         },
         /**
-         * ////
+         * @function CartFiller.Api#drill
+         * @param {Function} cb This function should return iframe's contentWindow object if needed to 
+         * drill further, otherwise do its job and return nothing. This function will get
+         * frame's window as first parameter
+         * @return {CartFiller.Api} for chaining
+         * @access public
          */
         drill: function() {
             var originalPath = me.modules.dispatcher.getFrameToDrill();
@@ -1151,6 +1158,7 @@
                     }
                 }
             }
+            return this;
         },
         compareCleanText: function(a, b) {
             return cleanText(a) === cleanText(b);
@@ -3102,6 +3110,13 @@
      */
     var currentMessageDivWidth = false;
     /**
+     * Keeps current message div top divisor from default value which is 
+     * adjusted until message will fit in current viewport
+     * @member {integer} CartFiller.UI~currentMessageDivTopDivisor
+     * @access private
+     */
+    var currentMessageDivTopDivisor = 1;
+    /**
      * Is set to true if UI is working in framed mode
      * This lets us draw overlays in main window instead of main frame
      * @member {boolean} CartFiller.UI~isFramed
@@ -3483,7 +3498,7 @@
             messageDiv.style.borderRadius = '20px';
             messageDiv.style.overflow = 'auto';
             messageDiv.style.opacity = '0';
-            messageDiv.style.top = (rect.bottom + 5) + 'px';
+            messageDiv.style.top = Math.min(getInnerHeight() - 100, Math.floor((rect.bottom + 5) / currentMessageDivTopDivisor)) + 'px';
             messageDiv.style.left = Math.max(0, (Math.round((rect.left + rect.right) / 2) - currentMessageDivWidth)) + 'px';
             messageDiv.style.width = currentMessageDivWidth + 'px';
             messageDiv.style.height = 'auto';
@@ -3717,24 +3732,12 @@
         return me['data-wfu'] ? me['data-wfu'] : (me.baseUrl + '/index' + (me.concatenated ? '' : '.uncompressed') + '.html' + (me.gruntBuildTimeStamp ? ('?' + me.gruntBuildTimeStamp) : ''));
     };
     /**
-     * Vertical position of top of highlighted element
-     * @member {integer} CartFiller.UI~highlightedElementTop
-     * @access private
-     */
-    var highlightedElementTop = false;
-    /**
-     * Vertical position of bottom of highlighted element
-     * @member {integer} CartFiller.UI~highlightedElementBottom
-     * @access private
-     */
-    var highlightedElementBottom = false;
-    /**
      * Returns z-index for overlay divs. 
      * @function {integer} CartFiller.UI~getZIndexForOverlay
      * @access private
      */
     var getZIndexForOverlay = function(){
-        return 10000000; // TBD look for max zIndex used in the main frame
+        return 100000000; // TBD look for max zIndex used in the main frame
     };
     // Launch arrowToFunction
     setInterval(arrowToFunction, 200);
@@ -3883,6 +3886,7 @@
             messageToSay = undefined === text ? '' : text;
             wrapMessageToSayWithPre = pre;
             currentMessageDivWidth = Math.max(100, Math.round(getInnerWidth() * 0.5));
+            currentMessageDivTopDivisor = 1;
             messageAdjustmentRemainingAttempts = 100;
         },
         /**
@@ -3901,13 +3905,8 @@
                     var rect = div.getBoundingClientRect();
                     if (rect.bottom > ui.mainFrameWindow.innerHeight){
                         if (rect.width > 0.95 * ui.mainFrameWindow.innerWidth){
-                            // let's try scrolling down
-                            if ((rect.top - (highlightedElementBottom - highlightedElementTop) - 10) < ui.mainFrameWindow.innerHeight * 0.05){
-                                // no more scrolling available
-                                ok = true;
-                            } else {
-                                ui.mainFrameWindow.scrollBy(0, Math.round(ui.mainFrameWindow.innerHeight * 0.05));
-                            }
+                            currentMessageDivTopDivisor *= 2;
+                            ok = div.style.top < (getInnerHeight() * 0.05);
                         } else {
                             // let's make div wider
                             currentMessageDivWidth = Math.min(ui.mainFrameWindow.innerWidth, (parseInt(div.style.width.replace('px', '')) + Math.round(ui.mainFrameWindow.innerWidth * 0.04)));
