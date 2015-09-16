@@ -107,10 +107,10 @@
     /**
      * Keeps current message div top divisor from default value which is 
      * adjusted until message will fit in current viewport
-     * @member {integer} CartFiller.UI~currentMessageDivTopDivisor
+     * @member {integer} CartFiller.UI~currentMessageDivTopShift
      * @access private
      */
-    var currentMessageDivTopDivisor = 1;
+    var currentMessageDivTopShift = 0;
     /**
      * Is set to true if UI is working in framed mode
      * This lets us draw overlays in main window instead of main frame
@@ -493,7 +493,7 @@
             messageDiv.style.borderRadius = '20px';
             messageDiv.style.overflow = 'auto';
             messageDiv.style.opacity = '0';
-            messageDiv.style.top = Math.min(getInnerHeight() - 100, Math.floor((rect.bottom + 5) / currentMessageDivTopDivisor)) + 'px';
+            messageDiv.style.top = Math.min(getInnerHeight() - 100, rect.bottom + 5 - currentMessageDivTopShift) + 'px';
             messageDiv.style.left = Math.max(0, (Math.round((rect.left + rect.right) / 2) - currentMessageDivWidth)) + 'px';
             messageDiv.style.width = currentMessageDivWidth + 'px';
             messageDiv.style.height = 'auto';
@@ -896,7 +896,7 @@
             messageToSayOptions.nextButton = nextButton;
             wrapMessageToSayWithPre = pre;
             currentMessageDivWidth = Math.max(100, Math.round(getInnerWidth() * 0.5));
-            currentMessageDivTopDivisor = 1;
+            currentMessageDivTopShift = 0;
             messageAdjustmentRemainingAttempts = 100;
         },
         /**
@@ -908,18 +908,21 @@
          */
         adjustMessageDiv: function(div){
             var ui = this;
-            setTimeout(function(){
+            setTimeout(function adjustMessageDivTimeoutFn(){
                 var ok = true;
                 if (messageAdjustmentRemainingAttempts > 0){
+                    if (! div.parentNode) {
+                        setTimeout(adjustMessageDivTimeoutFn, 100);
+                        return;
+                    }
                     ok = false;
                     var rect = div.getBoundingClientRect();
                     if (rect.bottom > ui.mainFrameWindow.innerHeight){
                         if (rect.width > 0.95 * ui.mainFrameWindow.innerWidth){
-                            currentMessageDivTopDivisor *= 1.2;
-                            ok = div.style.top < (getInnerHeight() * 0.05);
+                            currentMessageDivTopShift += Math.min(rect.top, rect.bottom - ui.mainFrameWindow.innerHeight);
                         } else {
                             // let's make div wider
-                            currentMessageDivWidth = Math.min(ui.mainFrameWindow.innerWidth, (parseInt(div.style.width.replace('px', '')) + Math.round(ui.mainFrameWindow.innerWidth * 0.04)));
+                            currentMessageDivWidth = Math.min(ui.mainFrameWindow.innerWidth, (parseInt(div.style.width.replace('px', '')) + Math.round(ui.mainFrameWindow.innerWidth * 0.4)));
                         }
                     } else {
                         // that's ok 
@@ -927,16 +930,12 @@
                     }
                     if (ok){
                         div.style.opacity = '1';
-                        var p = div.parentNode;
-                        if (p) {
-                            p.removeChild(div);
-                        }
-                        overlayWindow().document.getElementsByTagName('body')[0].appendChild(div);
                         messageAdjustmentRemainingAttempts = 0;
+                        currentMessageOnScreen = messageToSay;
                     } else {
                         messageAdjustmentRemainingAttempts --;
                         currentMessageOnScreen = undefined;
-                        setTimeout(drawMessage, 100);
+                        //setTimeout(drawMessage, 100);
                     }
                 } else {
                     div.style.opacity = '1';

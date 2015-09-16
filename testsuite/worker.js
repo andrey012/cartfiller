@@ -4,10 +4,10 @@
  */
 (function(window, document, undefined){
     cartFillerAPI().registerWorker(function(window, document, api, task, job, globals){
-        var baseUrl = job.cartFillerInstallationUrl.replace(/\/[^\/]+\/?$/, '') + '/samples/sample-shop.html';
+        var baseUrl = job.cartFillerInstallationUrl.replace(/\/[^\/]+\/?$/, '') + '/samples/sample-shop.html?noBookmarklets';
         var githubPattern = /^https?\:\/\/andrey012.github.io\/cartfiller\//;
         if (githubPattern.test(job.cartFillerInstallationUrl)) {
-            baseUrl = githubPattern.exec(job.cartFillerInstallationUrl)[0];
+            baseUrl = githubPattern.exec(job.cartFillerInstallationUrl)[0] + 'samples/sample-shop.html?noBookmarklets';
         }
         globals.greeting = 'World';
         return {

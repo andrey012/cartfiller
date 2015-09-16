@@ -351,7 +351,8 @@
          * once after event or timeout has happened
          * @function CartFiller.Api#waitFor
          * @param {CartFiller.Api.waitForCheckCallback} checkCallback
-         * @param {CartFiller.Api.waitForResultCallback} resultCallback can be string or nothing.
+         * @param {CartFiller.Api.waitForResultCallback|String|undefined} resultCallback can be a callback or 
+         * string or nothing.
          * If string is specified, then generic result callback will be there, submitting
          * string as error result. If nothing is specified, then just "timeout" will be submitted
          * in case of failure

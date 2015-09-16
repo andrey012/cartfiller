@@ -119,6 +119,21 @@
                 }, 'find expand button', function(e) {
                     h(jc(e).find('button:contains("Load")'));
                 }, api.click()
+            ],
+            'highlight all test headings': [
+                '', function(e) {
+                    h(jc('#testslist tr.task-row td[ng-if="task.heading"]'), true, true);
+                }
+            ],
+            'highlight all test tasks': [
+                '', function(e) {
+                    h(jc('#testslist tr.task-row td[ng-if="task.task"]'), true, true);
+                }
+            ],
+            'wait for inner CartFiller to stop': [
+                '', function(e) {
+                    api.waitFor(cartFillerNotRunning);
+                }
             ]
 
 
@@ -128,6 +143,12 @@
 
 
 
+
+
+
         };
+        function cartFillerNotRunning() {
+            return jw('#runButton:visible').length;
+        }
     });
 })(window, document);
