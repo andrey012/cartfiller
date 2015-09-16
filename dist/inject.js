@@ -184,7 +184,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1466890930866';
+    config.gruntBuildTimeStamp='1466932868223';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -696,11 +696,13 @@
          * @param {String} message
          * @param {boolean} pre Preserve formatting (if set to true then message will be wrapped
          * with &lt;pre&gt; tag)
+         * @param {String} nextButton If used, then button with this name will appear below the message
+         * In this case you should not do api.result() as this will be done when user clicks this button.
          * @return {CartFiller.Api} for chaining
          * @access public
          */
-        say: function(message, pre){
-            me.modules.ui.say(message, pre);
+        say: function(message, pre, nextButton){
+            me.modules.ui.say(message, pre, nextButton);
             return this;
         },
         /**
@@ -3082,6 +3084,7 @@
      * @access private
      */
     var messageToSay = '';
+    var messageToSayOptions = {};
     var messageToDraw = '';
     /**
      * Whether to wrap messageToSay with &lt;pre&gt;
@@ -3513,6 +3516,19 @@
             innerDiv.style.backgroundColor = '#fff';
             innerDiv.style.border = 'none';
             innerDiv.onclick = function(e) { e.stopPropagation(); return false; };
+            var closeButton = overlayWindow().document.createElement('button');
+            messageDiv.appendChild(closeButton);
+            closeButton.textContent = messageToSayOptions.nextButton || 'Close';
+            closeButton.style.borderRadius = '4px';
+            closeButton.style.fontSize = '14px';
+            closeButton.style.float = 'right';
+            if (messageToSayOptions.nextButton) {
+                closeButton.onclick = function(e) { 
+                    e.stopPropagation(); 
+                    me.modules.ui.clearOverlaysAndReflect();
+                    return false;
+                };
+            }
             messageDiv.onclick = function(){me.modules.ui.clearOverlaysAndReflect();};
             overlayWindow().document.getElementsByTagName('body')[0].appendChild(messageDiv);
             messageAdjustmentRemainingAttempts = 100;
@@ -3880,10 +3896,12 @@
          * @function CartFiller.UI#say
          * @param {String} text
          * @param {boolean} pre
+         * @param {String|undefined} nextButton
          * @access public
          */
-        say: function(text, pre){
+        say: function(text, pre, nextButton){
             messageToSay = undefined === text ? '' : text;
+            messageToSayOptions.nextButton = nextButton;
             wrapMessageToSayWithPre = pre;
             currentMessageDivWidth = Math.max(100, Math.round(getInnerWidth() * 0.5));
             currentMessageDivTopDivisor = 1;
@@ -3905,7 +3923,7 @@
                     var rect = div.getBoundingClientRect();
                     if (rect.bottom > ui.mainFrameWindow.innerHeight){
                         if (rect.width > 0.95 * ui.mainFrameWindow.innerWidth){
-                            currentMessageDivTopDivisor *= 2;
+                            currentMessageDivTopDivisor *= 1.2;
                             ok = div.style.top < (getInnerHeight() * 0.05);
                         } else {
                             // let's make div wider
@@ -3926,6 +3944,7 @@
                     } else {
                         messageAdjustmentRemainingAttempts --;
                         currentMessageOnScreen = undefined;
+                        setTimeout(drawMessage, 100);
                     }
                 } else {
                     div.style.opacity = '1';
@@ -4057,7 +4076,7 @@
                 adjustFrameCoordinates();
             };
 
-            this.setSize('big');
+            this.setSize('small');
             // Launch adjustFrameCoordinates
             setInterval(adjustFrameCoordinates, 2000);
         },
@@ -4184,6 +4203,10 @@
             }
         },
         clearOverlaysAndReflect: function() {
+            if (messageToSayOptions.nextButton) {
+                me.modules.api.result();
+                messageToSayOptions.nextButton = false;
+            }
             me.modules.dispatcher.onMessage_bubbleRelayMessage({
                 message: 'clearOverlays'
             });

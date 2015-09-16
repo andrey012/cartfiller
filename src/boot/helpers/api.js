@@ -466,11 +466,13 @@
          * @param {String} message
          * @param {boolean} pre Preserve formatting (if set to true then message will be wrapped
          * with &lt;pre&gt; tag)
+         * @param {String} nextButton If used, then button with this name will appear below the message
+         * In this case you should not do api.result() as this will be done when user clicks this button.
          * @return {CartFiller.Api} for chaining
          * @access public
          */
-        say: function(message, pre){
-            me.modules.ui.say(message, pre);
+        say: function(message, pre, nextButton){
+            me.modules.ui.say(message, pre, nextButton);
             return this;
         },
         /**

@@ -8,7 +8,7 @@ cartfiller = {
     },
     "tests": {
         "suite1": {
-            "test11?a=b": true,
+            "test11": true,
             "test12": false
         },
         "suite2": {

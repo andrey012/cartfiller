@@ -6619,7 +6619,7 @@ button.close {
     </script>
 </head>
 <body>
-    <div id="testSuiteManager" style="display: none;" ng-controller="testSuiteController" data-local-href="">
+    <div id="testSuiteManager" style="display: none;" ng-controller="testSuiteController" data-local-href="" ng-class="'rendered'">
         <div class="col-xs-8">
             <div class="alert alert-danger" ng-if="discovery.state == -1">
                 Error discovering cartfiller.json:<br/>
@@ -6736,7 +6736,7 @@ button.close {
             </table>
         </div>
     </div>
-    <div id="workerContainer" style="display: none;" ng-controller="indexController">
+    <div id="workerContainer" style="display: none;" ng-controller="indexController" ng-class="'rendered'">
         <div id="buttonPanel"
              style="text-align: right; z-index: 101; position: fixed; top: 0px; width: 100%; padding: 2px;" 
              class="alert alert-warning"
@@ -6877,7 +6877,7 @@ button.close {
             </div>
         </div>
         <div id="jobDetails">
-            <a class="btn btn-info btn-xs" style="width: 100%; margin-top: 110px; margin-bottom: 5px;" onclick="alert('Long click on step = debug, long click on Run (fast and slow) = Run until particular step, double click on property value = change property value, double click on pause = set pause here and run');">help</a>
+            <a class="btn btn-info btn-xs" style="width: 100%; margin-top: 120px; margin-bottom: 5px;" onclick="alert('Long click on step = debug (debugger window should be open, once in debugger - do \'step into\' until you are in your worker code), double click on task property or global value = change property value, double click on pause = set pause here and run');">help</a>
             <h3 ng-if="jobTitle">
                 {{jobTitle.substr(0,128)}}
             </h3>
@@ -46272,7 +46272,7 @@ define('controller', ['app', 'scroll'], function(app){
             reportError('bootstrap message did not come');
         }
     }, 10000);
-    config.gruntBuildTimeStamp='1466890930866';
+    config.gruntBuildTimeStamp='1466932868223';
     window.addEventListener('message', function(event){
         var test = /^cartFillerMessage:(.*)$/.exec(event.data);
         var isDist = true;
@@ -46346,7 +46346,7 @@ define('controller', ['app', 'scroll'], function(app){
                 if (message.tests) {
                     var x = new XMLHttpRequest();
                     x.onload = function(){
-                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1466890930866') {
+                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1466932868223') {
                             console.log('new version of CartFiller was deployed, switching to it');
                             var hash = window.location.href.split('#');
                             var pc = hash[0].split('?');
@@ -46394,7 +46394,14 @@ define('controller', ['app', 'scroll'], function(app){
                         injector = app;
                     });
                     require(['jquery'], function() {
-                        jQuery(message.testSuite ? '#testSuiteManager' : '#workerContainer').show();
+                        setTimeout(function showUI() {
+                            var div = jQuery(message.testSuite ? '#testSuiteManager.rendered' : '#workerContainer.rendered');
+                            if (div.length) {
+                                div.show();
+                            } else {
+                                setTimeout(showUI, 100);
+                            }
+                        },100);
                     });
                 }
             } else {

@@ -76,6 +76,7 @@
      * @access private
      */
     var messageToSay = '';
+    var messageToSayOptions = {};
     var messageToDraw = '';
     /**
      * Whether to wrap messageToSay with &lt;pre&gt;
@@ -507,6 +508,19 @@
             innerDiv.style.backgroundColor = '#fff';
             innerDiv.style.border = 'none';
             innerDiv.onclick = function(e) { e.stopPropagation(); return false; };
+            var closeButton = overlayWindow().document.createElement('button');
+            messageDiv.appendChild(closeButton);
+            closeButton.textContent = messageToSayOptions.nextButton || 'Close';
+            closeButton.style.borderRadius = '4px';
+            closeButton.style.fontSize = '14px';
+            closeButton.style.float = 'right';
+            if (messageToSayOptions.nextButton) {
+                closeButton.onclick = function(e) { 
+                    e.stopPropagation(); 
+                    me.modules.ui.clearOverlaysAndReflect();
+                    return false;
+                };
+            }
             messageDiv.onclick = function(){me.modules.ui.clearOverlaysAndReflect();};
             overlayWindow().document.getElementsByTagName('body')[0].appendChild(messageDiv);
             messageAdjustmentRemainingAttempts = 100;
@@ -874,10 +888,12 @@
          * @function CartFiller.UI#say
          * @param {String} text
          * @param {boolean} pre
+         * @param {String|undefined} nextButton
          * @access public
          */
-        say: function(text, pre){
+        say: function(text, pre, nextButton){
             messageToSay = undefined === text ? '' : text;
+            messageToSayOptions.nextButton = nextButton;
             wrapMessageToSayWithPre = pre;
             currentMessageDivWidth = Math.max(100, Math.round(getInnerWidth() * 0.5));
             currentMessageDivTopDivisor = 1;
@@ -899,7 +915,7 @@
                     var rect = div.getBoundingClientRect();
                     if (rect.bottom > ui.mainFrameWindow.innerHeight){
                         if (rect.width > 0.95 * ui.mainFrameWindow.innerWidth){
-                            currentMessageDivTopDivisor *= 2;
+                            currentMessageDivTopDivisor *= 1.2;
                             ok = div.style.top < (getInnerHeight() * 0.05);
                         } else {
                             // let's make div wider
@@ -920,6 +936,7 @@
                     } else {
                         messageAdjustmentRemainingAttempts --;
                         currentMessageOnScreen = undefined;
+                        setTimeout(drawMessage, 100);
                     }
                 } else {
                     div.style.opacity = '1';
@@ -1051,7 +1068,7 @@
                 adjustFrameCoordinates();
             };
 
-            this.setSize('big');
+            this.setSize('small');
             // Launch adjustFrameCoordinates
             setInterval(adjustFrameCoordinates, 2000);
         },
@@ -1178,6 +1195,10 @@
             }
         },
         clearOverlaysAndReflect: function() {
+            if (messageToSayOptions.nextButton) {
+                me.modules.api.result();
+                messageToSayOptions.nextButton = false;
+            }
             me.modules.dispatcher.onMessage_bubbleRelayMessage({
                 message: 'clearOverlays'
             });

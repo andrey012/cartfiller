@@ -135,7 +135,14 @@
                         injector = app;
                     });
                     require(['jquery'], function() {
-                        jQuery(message.testSuite ? '#testSuiteManager' : '#workerContainer').show();
+                        setTimeout(function showUI() {
+                            var div = jQuery(message.testSuite ? '#testSuiteManager.rendered' : '#workerContainer.rendered');
+                            if (div.length) {
+                                div.show();
+                            } else {
+                                setTimeout(showUI, 100);
+                            }
+                        },100);
                     });
                 }
             } else {

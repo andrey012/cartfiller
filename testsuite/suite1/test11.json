@@ -1,14 +1,11 @@
 cartfiller = {
     "details": [
-        "# heading 1",
-        "## subheading 1",
+        "## Hello World",
         {"task": "sayHello"},
-        "## subheading 2",
+        "## clear cart",
         {"task": "clearCart"}, 
-        "## subheading 3",
+        "## add parts",
         {"task": "addToCart", "partno": "1111111", "quantity": 2, "price": 1.22}, 
         {"task": "addToCart", "partno": "2222222", "quantity": 3, "price": 2},
-        "# included test goes here",
-        {"include": "test12"},
     ]
 }
