@@ -235,9 +235,9 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                         }
                         var src = [];
                         if (match && 'undefined' !== typeof details[i].then) {
-                            src = processConditionals(details[i].then, globals);
+                            src = processConditionals(details[i].then, globals, map);
                         } else if (! match && 'undefined' !== typeof details[i].else) {
-                            src = processConditionals(details[i].else, globals);
+                            src = processConditionals(details[i].else, globals, map);
                         }
                         for (j = 0 ; j < src.length; j++) {
                             result.push(src[j]);
@@ -374,6 +374,9 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             }
             if ($scope.discovery.scripts.currentDownloadingIndex >= $scope.discovery.scripts.flat.length) {
                 // we are done
+                if ($('#testsearch.rendered').is(':visible')) {
+                    $('#testsearch.rendered')[0].focus();
+                }
                 testDependencies = {};
                 for (i = 0; i < $scope.discovery.scripts.flat.length; i ++) {
                     $scope.discovery.currentProcessedTestURL = $scope.discovery.scripts.hrefs[i];
@@ -721,8 +724,8 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             }
         };
         function focusOnSearchField() {
-            if ($('#testsearch').is(':visible')) {
-                $('#testsearch')[0].focus();
+            if ($('#testsearch.rendered').is(':visible')) {
+                $('#testsearch.rendered')[0].focus();
             } else {
                 setTimeout(focusOnSearchField, 100);
             }

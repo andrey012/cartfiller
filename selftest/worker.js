@@ -59,7 +59,16 @@
             ],
             'say': [
                 'say', function(e,sleep5000) {
-                    api.arrow(e,true,true).say(task.message);
+                    if (task.highlight === "chooseJobFrame") {
+                        api.highlight(j('[name="cartFillerChooseJobFrame"]:visible'));
+                    }
+                    if (task.highlight === "workerFrame") {
+                        api.highlight(j('[name="cartFillerWorkerFrame"]:visible'));
+                    }
+                    if (! task.clearArrow) {
+                        api.arrow(e,true,true);
+                    }
+                    api.say(task.message);
                     api.result();
                 }
             ],
@@ -97,7 +106,22 @@
                 'find step button', function(e) {
                     h(jw('#buttonPanel a[title="Step"]'));
                 }, 
+            ],
+            'toggle ChooseJob frame': [
+                'find button', function(e) {
+                    h(e = jw('#chooseJobButton'));
+                    e[0].click();
+                }
+            ],
+            'load test': [
+                'find test', function(e) {
+                    h([jc('#testslist tr.test-row')[task.testIndex]]);
+                }, 'find expand button', function(e) {
+                    h(jc(e).find('button:contains("Load")'));
+                }, api.click()
             ]
+
+
 
 
 
