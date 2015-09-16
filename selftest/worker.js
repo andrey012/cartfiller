@@ -58,7 +58,7 @@
                 }
             ],
             'say': [
-                'say', function(e,sleep5000) {
+                'say', function(e,sleep15000) {
                     if (task.highlight === "chooseJobFrame") {
                         api.highlight(j('[name="cartFillerChooseJobFrame"]:visible'));
                     }

@@ -5,7 +5,7 @@ cartfiller = {
     },
     "details": [
         {"task": "open start page"},
-        {"task": "say", "message": "CartFiller is a functionality test framework and interactive test execution tool. It has 3 frames. This frame is the testsuite, you can see list of tests here. This frame pops up to select test.", "highlight": "chooseJobFrame"},
+        {"task": "say", "message": "CartFiller is a functional test framework and interactive test execution tool. UI consists of 3 frames. This frame is the testsuite, you can see list of tests here. This frame pops up to select test.", "highlight": "chooseJobFrame"},
         {"task": "load test", "testIndex": 0},
         {"task": "say", "message": "This is interactive test dashboard - it shows steps of the test being executed, lets you pause test, resume test, replay particular steps and even change test details", "highlight": "workerFrame", "clearArrow": true},
         {"task":"toggle ChooseJob frame"},
@@ -19,5 +19,6 @@ cartfiller = {
         {"task": "find step button"},
         {"task": "say", "message":"here is button to make one step, by clicking it you may move forward and see how it works"},
         {"task": "click", "clicks": "5", "interval": "1000"},
+        {"task": "say", "message": "you can try clicking this button youself now"},
     ]
 }
