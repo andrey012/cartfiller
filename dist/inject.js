@@ -184,7 +184,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1467065168219';
+    config.gruntBuildTimeStamp='1467066986234';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -1719,10 +1719,9 @@
             }
             initialized = true;
             window.addEventListener('message', function(event) {
-                var pattern = /^cartFillerMessage:(.*)$/;
-                if (pattern.test(event.data)){
-                    var match = pattern.exec(event.data);
-                    var message = JSON.parse(match[1]);
+                var prefix = 'cartFillerMessage:';
+                if (prefix === event.data.substr(0, prefix.length)) {
+                    var message = JSON.parse(event.data.substr(prefix.length));
                     if (event.source === relay.nextRelay && message.cmd !== 'register' && message.cmd !== 'bubbleRelayMessage' && message.cmd !== 'locate') {
                         if (message.cmd === 'workerStepResult') {
                             fillWorkerGlobals(message.globals);
