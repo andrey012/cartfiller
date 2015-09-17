@@ -46293,12 +46293,12 @@ define('controller', ['app', 'scroll'], function(app){
             reportError('bootstrap message did not come');
         }
     }, 10000);
-    config.gruntBuildTimeStamp='1467066986234';
+    config.gruntBuildTimeStamp='1467067694583';
     window.addEventListener('message', function(event){
-        var test = /^cartFillerMessage:(.*)$/.exec(event.data);
+        var prefix = 'cartFillerMessage:';
         var isDist = true;
-        if (test){
-            var message = JSON.parse(test[1]);
+        if (prefix === event.data.substr(0, prefix.length)) {
+            var message = JSON.parse(event.data.substr(prefix.length));
             if (message.cmd === 'bootstrap') {
                 if (bootstrapped && ! message.forceBootstrap) {
                     return;
@@ -46367,7 +46367,7 @@ define('controller', ['app', 'scroll'], function(app){
                 if (message.tests) {
                     var x = new XMLHttpRequest();
                     x.onload = function(){
-                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1467066986234') {
+                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1467067694583') {
                             console.log('new version of CartFiller was deployed, switching to it');
                             var hash = window.location.href.split('#');
                             var pc = hash[0].split('?');

@@ -15,10 +15,10 @@
     }, 10000);
     config.gruntBuildTimeStamp='';
     window.addEventListener('message', function(event){
-        var test = /^cartFillerMessage:(.*)$/.exec(event.data);
+        var prefix = 'cartFillerMessage:';
         var isDist = false;
-        if (test){
-            var message = JSON.parse(test[1]);
+        if (prefix === event.data.substr(0, prefix.length)) {
+            var message = JSON.parse(event.data.substr(prefix.length));
             if (message.cmd === 'bootstrap') {
                 if (bootstrapped && ! message.forceBootstrap) {
                     return;
