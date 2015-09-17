@@ -186,7 +186,11 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                             }
                         }
                     }
-                    result[i].heading = headingLevelCounters.slice(0, result[i].level).filter(function(v){return v;}).join('.') + '. ' + result[i].heading.replace(/^(\d+\.)+\s*/, '');
+                    if (result[i].level < 4) {
+                        result[i].heading = headingLevelCounters.slice(0, result[i].level).filter(function(v){return v;}).join('.') + '. ' + result[i].heading.replace(/^(\d+\.)+\s*/, '');
+                    } else {
+                        result[i].heading = result[i].heading.replace(/^(\d+\.)+\s*/, '');
+                    }
                 }
             }
             return result;
@@ -210,12 +214,14 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                 if ('undefined' === typeof details[i].task) {
                     if ('undefined' !== typeof details[i].heading) {
                         if ('undefined' === typeof details[i].level) {
-                            if (details[i].heading.indexOf('## ') === 0){
+                            if (details[i].heading.indexOf('# ') === 0){
+                                details[i].level = 1;
+                            } else if (details[i].heading.indexOf('## ') === 0){
                                 details[i].level = 2;
                             } else if (details[i].heading.indexOf('### ') === 0){
                                 details[i].level = 3;
                             } else {
-                                details[i].level = 1;
+                                details[i].level = 4;
                             }
                         }
                         details[i].heading = details[i].heading.replace(/^#+\s*/, '');
