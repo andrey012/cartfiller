@@ -184,7 +184,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1467061177920';
+    config.gruntBuildTimeStamp='1467065168219';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -1693,6 +1693,7 @@
     };
 
     this.cartFillerConfiguration.scripts.push({
+        running: false,
         /** 
          * Returns name of this module, used by loader
          * @function CartFiller.Dispatcher#getName
@@ -2028,6 +2029,7 @@
             if (message.globals) {
                 fillWorkerGlobals(message.globals);
             } 
+            this.running = message.running;
             if (! relay.isSlave && ((! message.drillToFrame) || (! message.drillToFrame.length))) {
                 // ok, this is original call, we can clear all overlays, etc
                 me.modules.ui.clearOverlaysAndReflect();
@@ -3524,11 +3526,17 @@
             closeButton.style.fontSize = '14px';
             closeButton.style.float = 'right';
             if (messageToSayOptions.nextButton) {
-                closeButton.onclick = function(e) { 
-                    e.stopPropagation(); 
-                    me.modules.ui.clearOverlaysAndReflect();
-                    return false;
-                };
+                if (me.modules.dispatcher.running === true) {
+                    setTimeout(function() {
+                        me.modules.ui.clearOverlaysAndReflect();
+                    },0);
+                } else {
+                    closeButton.onclick = function(e) { 
+                        e.stopPropagation(); 
+                        me.modules.ui.clearOverlaysAndReflect();
+                        return false;
+                    };
+                }
             }
             messageDiv.onclick = function(){me.modules.ui.clearOverlaysAndReflect();};
             overlayWindow().document.getElementsByTagName('body')[0].appendChild(messageDiv);

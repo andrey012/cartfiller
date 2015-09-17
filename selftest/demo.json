@@ -15,7 +15,7 @@ cartfiller = {
         {"task": "say", "message": "These are headings - they do nothing, just let you structure test scenario is a more readable way"},
         {"task": "highlight all test tasks"},
         {"task": "say", "message": "These are test tasks. Each task may have parameters, which can be either explicitly specified in test scenario or derived from global parameters. Each task consists of steps, but steps are too small to be shown in the scenario."},
-        {"task": "find task", "taskName": "7. addToCart"},
+        {"task": "find task", "taskIndex": "7."},
         {"task": "say", "message":"If we click on this link, CartFiller will guide us quickly to this step of the test"},
         {"task": "click"},
         {"task": "wait for inner CartFiller to stop"},

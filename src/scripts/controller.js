@@ -403,7 +403,15 @@ define('controller', ['app', 'scroll'], function(app){
             var details = $scope.jobDetails[taskIndex];
             var taskName = details.task;
             $scope.workerInProgress = true;
-            cfMessage.send('invokeWorker', {index: taskIndex, task: taskName, step: stepIndex, details: details, debug: debug, repeatCounter: $scope.repeatedTaskCounter[taskIndex] || 0});
+            cfMessage.send('invokeWorker', {
+                index: taskIndex, 
+                task: taskName, 
+                step: stepIndex, 
+                details: details, 
+                debug: debug, 
+                repeatCounter: $scope.repeatedTaskCounter[taskIndex] || 0,
+                running: $scope.running
+            });
             digestButtonPanel();
             digestTask($scope.currentTask);
         };

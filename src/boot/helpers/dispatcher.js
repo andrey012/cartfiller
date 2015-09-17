@@ -519,6 +519,7 @@
     };
 
     this.cartFillerConfiguration.scripts.push({
+        running: false,
         /** 
          * Returns name of this module, used by loader
          * @function CartFiller.Dispatcher#getName
@@ -854,6 +855,7 @@
             if (message.globals) {
                 fillWorkerGlobals(message.globals);
             } 
+            this.running = message.running;
             if (! relay.isSlave && ((! message.drillToFrame) || (! message.drillToFrame.length))) {
                 // ok, this is original call, we can clear all overlays, etc
                 me.modules.ui.clearOverlaysAndReflect();

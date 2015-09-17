@@ -515,11 +515,17 @@
             closeButton.style.fontSize = '14px';
             closeButton.style.float = 'right';
             if (messageToSayOptions.nextButton) {
-                closeButton.onclick = function(e) { 
-                    e.stopPropagation(); 
-                    me.modules.ui.clearOverlaysAndReflect();
-                    return false;
-                };
+                if (me.modules.dispatcher.running === true) {
+                    setTimeout(function() {
+                        me.modules.ui.clearOverlaysAndReflect();
+                    },0);
+                } else {
+                    closeButton.onclick = function(e) { 
+                        e.stopPropagation(); 
+                        me.modules.ui.clearOverlaysAndReflect();
+                        return false;
+                    };
+                }
             }
             messageDiv.onclick = function(){me.modules.ui.clearOverlaysAndReflect();};
             overlayWindow().document.getElementsByTagName('body')[0].appendChild(messageDiv);

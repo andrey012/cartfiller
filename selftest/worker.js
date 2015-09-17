@@ -81,7 +81,7 @@
             ],
             'find task': [
                 'find task row', function(e, repeat10) {
-                    h(jc('#testslist tr.task-row:contains("' + task.taskName + '")'));
+                    h(jc('#testslist td.task-line-number:contains("' + task.taskIndex + '")').closest('tr'));
                 }, 'find link', function(e) {
                     h(jc(e).find('a').first());
                 }
@@ -114,6 +114,9 @@
                 }
             ],
             'load test': [
+                'wait for tests to load', function() {
+                    api.waitFor(noTestsLoadingAlert);
+                },
                 'find test', function(e) {
                     h([jc('#testslist tr.test-row')[task.testIndex]]);
                 }, 'find expand button', function(e) {
@@ -149,6 +152,9 @@
         };
         function cartFillerNotRunning() {
             return jw('#runButton:visible').length;
+        }
+        function noTestsLoadingAlert() {
+            return ! jc('#testSuiteManager div.alert').length;
         }
     });
 })(window, document);
