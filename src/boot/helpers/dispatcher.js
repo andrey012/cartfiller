@@ -545,10 +545,10 @@
             }
             initialized = true;
             window.addEventListener('message', function(event) {
-                var pattern = /^cartFillerMessage:(.*)$/;
-                if (pattern.test(event.data)){
-                    var match = pattern.exec(event.data);
-                    var message = JSON.parse(match[1]);
+                var prefix = "cartFillerMessage:";
+                var pattern = /^(.*)$/;
+                if (prefix === event.data.substr(0, prefix.length)) {
+                    var message = JSON.parse(event.data.substr(prefix.length));
                     if (event.source === relay.nextRelay && message.cmd !== 'register' && message.cmd !== 'bubbleRelayMessage' && message.cmd !== 'locate') {
                         if (message.cmd === 'workerStepResult') {
                             fillWorkerGlobals(message.globals);
