@@ -138,7 +138,11 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                         testDependencies[myIndex] = {};
                     }
                     testDependencies[myIndex][includedTestIndex] = true;
+                    var saved = $scope.discovery.currentProcessedTestURL;
+                    $scope.discovery.currentProcessedTestURL = 
+                $scope.discovery.currentProcessedTestURL = $scope.discovery.scripts.hrefs[includedTestIndex];
                     var tasksToInclude = processIncludes(parseJson($scope.discovery.scripts.rawContents[includedTestIndex]).details, includedTestIndex, tweaks, thisMap);
+                    $scope.discovery.currentProcessedTestURL = saved;
                     
                     tasksToInclude.filter(function(task) {  
                         task = angular.copy(task);
@@ -360,9 +364,12 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             $scope.discovery.scripts.rawContents[index] = response;
         };
         var processDownloadedTest = function(index) {
+            var saved = $scope.discovery.currentProcessedTestURL;
+            $scope.discovery.currentProcessedTestURL = $scope.discovery.scripts.hrefs[index];
             var contents = parseJson($scope.discovery.scripts.rawContents[index]);
             contents.details = processHeadings(processIncludes(contents.details, index, $scope.discovery.scripts.tweaks[index]));
             $scope.discovery.scripts.contents[index] = contents;
+            $scope.discovery.currentProcessedTestURL = saved;
         };
         var normalizeWorkerURLs = function(urls, root) {
             if ('string' === typeof urls) {
@@ -384,7 +391,6 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             }
             testDependencies = {};
             for (i = 0; i < $scope.discovery.scripts.flat.length; i ++) {
-                $scope.discovery.currentProcessedTestURL = $scope.discovery.scripts.hrefs[i];
                 processDownloadedTest(i);
             }
             $scope.discovery.state = 2;
@@ -469,7 +475,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                                     processScriptFilesAfterDownload();
                                 } catch (e) {
                                     $scope.discovery.state = -1;
-                                    $scope.discovery.error = 'Unable to parse test script: ' + String(e);
+                                    $scope.discovery.error = 'Unable to parse test script: ' + $scope.discovery.currentProcessedTestURL + ': ' + String(e);
                                 }
                             } 
                         }

@@ -558,6 +558,10 @@ define('controller', ['app', 'scroll'], function(app){
                 }
                 scope.cssSelector = scope.getCssSelector();
                 cfMessage.send('evaluateCssSelector', {selector: scope.cssSelector});
+                $('#selectorSearchQueryInput')[0].focus();
+                setTimeout(function() {
+                    $('#selectorSearchQueryInput')[0].select();
+                }, 0);
             };
             scope.getCssSelector = function(){
                 var r = ('(\'' + scope.stack.map(function(el){

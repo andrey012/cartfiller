@@ -1107,7 +1107,7 @@
                         i++;
                     }
                 }
-                stack.unshift({element: el.nodeName.toLowerCase(), attrs: attrs, classes: el.className.split(' ').filter(function(v){return v;}), id: el.id, index: i, text: String(el.textContent).length < 200 ? String(el.textContent) : ''});
+                stack.unshift({element: el.nodeName.toLowerCase(), attrs: attrs, classes: el.className.split(' ').filter(function(v){return v;}), id: 'string' === typeof el.id ? el.id : undefined, index: i, text: String(el.textContent).length < 200 ? String(el.textContent) : ''});
                 el = el.parentNode;
             }
             me.modules.dispatcher.postMessageToWorker('mousePointer', {x: x, y: y, stack: stack});

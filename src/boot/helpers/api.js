@@ -822,7 +822,7 @@
                         }
                         if (0 === nextText.length) {
                             try {
-                                var event = new elementNode.ownerDocument.defaultView.Event('change');
+                                var event = new elementNode.ownerDocument.defaultView.Event('change', {bubbles: true});
                                 elementNode.dispatchEvent(event);
                             } catch (e) {}
                             me.modules.api.arrow(el);
