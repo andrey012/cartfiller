@@ -184,7 +184,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1467067694583';
+    config.gruntBuildTimeStamp='1467959000917';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -430,7 +430,23 @@
     var cleanText = function(value) {
         return value.replace(/\s+/g, ' ').trim().toLowerCase();
     };
+    var useDebugger = false;
+
     me.scripts.push({
+        debugger: function(v) {
+            if (v) {
+                useDebugger = true;
+                return;
+            } else {
+                if (useDebugger) {
+                    useDebugger = false;
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+        },
+            
         /**
          * Returns name used by loader to organize modules
          * @function CartFiller.Api#getName 
@@ -1613,7 +1629,18 @@
             return;
         }
         currentEvaluatedWorker = workersToEvaluate.shift();
-        eval(workerSourceCodes[currentEvaluatedWorker]); // jshint ignore:line
+        var apiIsThere = false;
+        var injectDebuggerFn = function(match, fn, nl) {
+            if ((! apiIsThere) && /\,\s*api\s*\,/.test(match)) {
+                apiIsThere = true;
+            }
+            if (apiIsThere) {
+                return fn + ' if(api.debugger()) debugger;' + (-1 === nl.indexOf('\n') ? '\n' : nl);
+            } else {
+                return match;
+            }
+        };
+        eval(workerSourceCodes[currentEvaluatedWorker].replace(/(function\([^)]*\)\s*{[ \t]*)([\n\r]*)/g, injectDebuggerFn)); // jshint ignore:line
         evaluateNextWorker();
     };
     /**
@@ -2106,11 +2133,7 @@
                         registerWorkerWatchdog();
                         sleepAfterThisStep = undefined;
                         currentStepWorkerFn = workerFn;
-                        if (message.debug) {
-                            /* jshint ignore:start */
-                            debugger;
-                            /* jshint ignore:end */
-                        }
+                        me.modules.api.debugger(message.debug);
                         workerFn(highlightedElement, currentStepEnv);
                     }
                 } catch (err){

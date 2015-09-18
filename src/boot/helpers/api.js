@@ -200,7 +200,23 @@
     var cleanText = function(value) {
         return value.replace(/\s+/g, ' ').trim().toLowerCase();
     };
+    var useDebugger = false;
+
     me.scripts.push({
+        debugger: function(v) {
+            if (v) {
+                useDebugger = true;
+                return;
+            } else {
+                if (useDebugger) {
+                    useDebugger = false;
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+        },
+            
         /**
          * Returns name used by loader to organize modules
          * @function CartFiller.Api#getName 
