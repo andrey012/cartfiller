@@ -189,7 +189,7 @@ define('controller', ['app', 'scroll'], function(app){
                 }
             } else if (cmd === 'workerStepResult'){
                 $scope.jobTaskProgress[details.index].stepsInProgress[details.step] = false;
-                $scope.jobTaskProgress[details.index].stepResults[details.step] = {status: details.status, message: details.message, response: details.response};
+                setStepStatus(details.index, details.step, details.status, details.message, details.response);
                 $scope.jobTaskProgress[details.index].complete = details.nextTaskFlow === 'skipTask' || $scope.updateTaskCompleteMark(details.index);
                 var proceed;
                 var pause = false;
@@ -276,12 +276,17 @@ define('controller', ['app', 'scroll'], function(app){
                 $('#searchButton').text('Search (' + details.count + ')').removeClass('btn-success btn-danger').addClass(details.count === 1 ? 'btn-success': 'btn-danger');
             }
         });
+        var setStepStatus = function(task, step, status, message, response) {
+            $scope.jobTaskProgress[task].stepResults[step] = {status: status, message: message, response: response};
+        };
         $scope.incrementCurrentStep = function(skip, nextTaskFlow){
             var pause = false, i;
             if ('string' === typeof nextTaskFlow && 0 === nextTaskFlow.indexOf('skipStep,')) {
                 var steps = (1 + parseInt(nextTaskFlow.replace('skipStep,', '')));
                 for (i = 0; i < steps && $scope.currentStep < $scope.jobTaskDescriptions[$scope.jobDetails[$scope.currentTask].task].length; i ++ ) {
+                    ////
                     $scope.currentStep ++;
+                    setStepStatus($scope.currentTask, $scope.currentStep, 'skipped', '');
                     if ($scope.pausePoints[$scope.currentTask] && $scope.pausePoints[$scope.currentTask][$scope.currentStep]) {
                         pause = true;
                     }
@@ -295,6 +300,8 @@ define('controller', ['app', 'scroll'], function(app){
                     if ($scope.pausePoints[$scope.currentTask] && $scope.pausePoints[$scope.currentTask][$scope.currentStep]) {
                         pause = true;
                     }
+                    ////
+                    setStepStatus($scope.currentTask, $scope.currentStep, 'skipped', '');
                     $scope.currentStep ++;
                 }
                 $scope.currentStep = 0;
@@ -340,7 +347,7 @@ define('controller', ['app', 'scroll'], function(app){
             var steps = $scope.jobTaskDescriptions[$scope.jobDetails[index].task];
             for (var i = 0; i < steps.length; i++){
                 var result = $scope.jobTaskProgress[index].stepResults[i];
-                if (angular.isUndefined(result) || ('ok' !== result.status)){
+                if (angular.isUndefined(result) || ('ok' !== result.status && 'skipped' !== result.status)){
                     return i;
                 }
             }

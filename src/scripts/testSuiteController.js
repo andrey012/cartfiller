@@ -620,6 +620,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                                 $scope.discovery.scripts.errors[index][data.currentTaskIndex] = {};
                             }
                             $scope.discovery.scripts.errors[index][data.currentTaskIndex][data.currentTaskStepIndex] = message;
+                            $scope.$digest();
                         }
                     }
                 }

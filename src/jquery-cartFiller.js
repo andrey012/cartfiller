@@ -462,9 +462,11 @@
                         return;
                     }
                     trackWorkerLoaded[originalUrl] = true;
-                    if ((! track) || xhr.responseText !== trackWorkerContents[originalUrl]) {
-                        window.parent.postMessage('cartFillerMessage:' + JSON.stringify({cmd: 'loadWorker', code: xhr.responseText, src: originalUrl, isFinal: trackWorkersAllLoaded() || track}), '*');
-                        trackWorkerContents[originalUrl] = xhr.responseText;
+                    if ('string' === typeof xhr.responseText && xhr.responseText.length) {
+                        if ((! track) || xhr.responseText !== trackWorkerContents[originalUrl]) {
+                            window.parent.postMessage('cartFillerMessage:' + JSON.stringify({cmd: 'loadWorker', code: xhr.responseText, src: originalUrl, isFinal: trackWorkersAllLoaded() || track}), '*');
+                            trackWorkerContents[originalUrl] = xhr.responseText;
+                        }
                     }
                     if (trackWorker && trackWorkersAllLoaded()) {
                         setTimeout(function() { loadWorkers(urls, rememberedTrackWorkerId); }, 1000);

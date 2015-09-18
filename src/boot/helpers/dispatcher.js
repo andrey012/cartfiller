@@ -1222,6 +1222,7 @@
         onMessage_updateGlobal: function(details) {
             this.reflectMessage(details);
             workerGlobals[details.name] = details.value;
+            fillWorkerCurrentTask(currentStepEnv.task);
         },
          /*
          *

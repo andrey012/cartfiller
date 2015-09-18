@@ -116,13 +116,13 @@
                         </td>
                     </tr>
                     <tr class="task-row" ng-if="(index === expandedTest || isTaskFilteredIn(index, taskIndex)) && isTestFilteredIn(index)" ng-repeat="(taskIndex, task) in discovery.scripts.contents[index].details">
-                        <td colspan="2" class="task-row" ng-class="(task.task && (discovery.scripts.success[index] == -1) && getTaskErrorsExist(index, taskIndex)) ? 'danger' : ''">
+                        <td colspan="2" class="task-row">
                             <table class="table">
                                 <tr>
                                     <td class="task-line-number">
                                         {{taskIndex + 1}}.
                                     </td>
-                                    <td ng-if="task.task">
+                                    <td ng-if="task.task" ng-class="(task.task && (discovery.scripts.success[index] == -1) && getTaskErrorsExist(index, taskIndex)) ? 'danger' : ''">
                                         <a href="{{getTaskUrl(index, taskIndex, 0)}}" ng-click="runTest(index, 'fast', taskIndex, 0, $event)" onclick="return false;">{{task.task}}</a><span ng-repeat="(name, value) in task | orderBy: 'name'" ng-if="name !== 'task'">,
                                             <strong>
                                             {{name}}:

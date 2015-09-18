@@ -184,7 +184,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1467959000917';
+    config.gruntBuildTimeStamp='1468048209280';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -428,7 +428,7 @@
      */
     var me = this.cartFillerConfiguration;
     var cleanText = function(value) {
-        return value.replace(/\s+/g, ' ').trim().toLowerCase();
+        return String(value).replace(/\s+/g, ' ').trim().toLowerCase();
     };
     var useDebugger = false;
 
@@ -2412,6 +2412,7 @@
         onMessage_updateGlobal: function(details) {
             this.reflectMessage(details);
             workerGlobals[details.name] = details.value;
+            fillWorkerCurrentTask(currentStepEnv.task);
         },
          /*
          *

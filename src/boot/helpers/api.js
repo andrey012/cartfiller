@@ -198,7 +198,7 @@
      */
     var me = this.cartFillerConfiguration;
     var cleanText = function(value) {
-        return value.replace(/\s+/g, ' ').trim().toLowerCase();
+        return String(value).replace(/\s+/g, ' ').trim().toLowerCase();
     };
     var useDebugger = false;
 
