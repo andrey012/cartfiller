@@ -37,6 +37,17 @@
             <div class="alert alert-info" ng-if="discovery.state == 1">
                 Downloading test scripts
             </div>
+            <div class="alert alert-info" ng-if="downloadsInProgress.length">
+                <h3>
+                    Download in progress... Please wait for all files to be downloaded to continue...
+                </h3>
+                <table class="table">
+                    <tr ng-repeat="test in downloadsInProgress" ng-class="test.error ? 'danger' : ''">
+                        <td><a target="_blank" href="{{test.url}}">{{test.url}}</a></td>
+                        <td>{{test.error}}</td>
+                    </tr>
+                </table>
+            </div>
             <div>
                 <input id="testsearch" type="text" style="width: 100%" placeholder="search for test" onkeyup="var event = arguments[0] || window.event; return angular.element(this).scope().searchForTestNoWatch(event);" ng-class="'rendered'"/><br/>
                 <input id="tasksearch" type="text" style="width: 100%" placeholder="search for task inside test" onkeyup="var event = arguments[0] || window.event; return angular.element(this).scope().searchForTaskNoWatch(event);"/>

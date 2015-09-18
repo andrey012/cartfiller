@@ -36,10 +36,16 @@ define('testSuiteController', ['app', 'scroll'], function(app){
         $scope.params = {};
         $scope.expandedTest = false;
         $scope.showConfigure = false;
+        var isLaunchedFromLocalFilesystem = function() {
+            return document.getElementById('testSuiteManager').getAttribute('data-local-href') ? true : false;
+        };
         var getLocation = function() {
             var localHref = document.getElementById('testSuiteManager').getAttribute('data-local-href');
             return localHref ? localHref : cfMessage.hashUrl;
         };
+        $scope.maxSimultaneousDownloads = isLaunchedFromLocalFilesystem() ? 1 : 10;
+        $scope.downloadsInProgress = [];
+
         var parseParams = function() {
             angular.forEach(getLocation().replace(/^#*\/*/, '').split('&'), function(v) {
                 var pc = v.split('=');
@@ -371,82 +377,118 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                 return pre + url;
             });
         };
-        var downloadNextScriptFile = function() {
+        var processScriptFilesAfterDownload = function() {
             var i;
-            if ($scope.discovery.scripts.currentDownloadingIndex === false) {
-                $scope.discovery.scripts.currentDownloadingIndex = 0;
-            } else {
-                $scope.discovery.scripts.currentDownloadingIndex++;
+            if ($('#testsearch.rendered').is(':visible')) {
+                $('#testsearch.rendered')[0].focus();
             }
-            if ($scope.discovery.scripts.currentDownloadingIndex >= $scope.discovery.scripts.flat.length) {
-                // we are done
-                if ($('#testsearch.rendered').is(':visible')) {
-                    $('#testsearch.rendered')[0].focus();
-                }
-                testDependencies = {};
-                for (i = 0; i < $scope.discovery.scripts.flat.length; i ++) {
-                    $scope.discovery.currentProcessedTestURL = $scope.discovery.scripts.hrefs[i];
-                    processDownloadedTest(i);
-                }
-                $scope.discovery.state = 2;
-                $scope.$digest();
-                if ($scope.params.backend && ! $scope.params.editor) {
-                    setTimeout(function(){
-                        $scope.runAll();
-                    });
-                } else if ($scope.params.goto && ! $scope.alreadyWentTo) {
-                    $scope.alreadyWentTo = true;
-                    setTimeout(function() {
-                        var index = $scope.getTestIndexByUrl($scope.params.goto);
-                        if (undefined === index) {
-                            alert('test not found: ' + $scope.params.goto);
-                        } else {
-                            $scope.runTest(index, $scope.params.slow ? 'slow' : 'fast', parseInt($scope.params.task) - 1, parseInt($scope.params.step) - 1);
-                        }
-                    });
-                } else if ('undefined' !== typeof $scope.params.job && 
-                           'undefined' !== typeof $scope.params.task && 
-                           'undefined' !== typeof $scope.params.step && 
-                           ! $scope.alreadyWentTo) 
-                {
-                    $scope.alreadyWentTo = true;
-                    for (i = 0; i < $scope.discovery.scripts.urls.length; i ++) {
-                        if ($scope.discovery.scripts.urls[i] === $scope.params.job) {
-                            $scope.runTest(i, 'fast', parseInt($scope.params.task) - 1, parseInt($scope.params.step) - 1);
-                            return;
-                        }
+            testDependencies = {};
+            for (i = 0; i < $scope.discovery.scripts.flat.length; i ++) {
+                $scope.discovery.currentProcessedTestURL = $scope.discovery.scripts.hrefs[i];
+                processDownloadedTest(i);
+            }
+            $scope.discovery.state = 2;
+            $scope.$digest();
+            if ($scope.params.backend && ! $scope.params.editor) {
+                setTimeout(function(){
+                    $scope.runAll();
+                });
+            } else if ($scope.params.goto && ! $scope.alreadyWentTo) {
+                $scope.alreadyWentTo = true;
+                setTimeout(function() {
+                    var index = $scope.getTestIndexByUrl($scope.params.goto);
+                    if (undefined === index) {
+                        alert('test not found: ' + $scope.params.goto);
+                    } else {
+                        $scope.runTest(index, $scope.params.slow ? 'slow' : 'fast', parseInt($scope.params.task) - 1, parseInt($scope.params.step) - 1);
                     }
-                    alert('Job ' + $scope.params.job + ' not found');
+                });
+            } else if ('undefined' !== typeof $scope.params.job && 
+                       'undefined' !== typeof $scope.params.task && 
+                       'undefined' !== typeof $scope.params.step && 
+                       ! $scope.alreadyWentTo) 
+            {
+                $scope.alreadyWentTo = true;
+                for (i = 0; i < $scope.discovery.scripts.urls.length; i ++) {
+                    if ($scope.discovery.scripts.urls[i] === $scope.params.job) {
+                        $scope.runTest(i, 'fast', parseInt($scope.params.task) - 1, parseInt($scope.params.step) - 1);
+                        return;
+                    }
                 }
-            } else {
-                // let's download next file
+                alert('Job ' + $scope.params.job + ' not found');
+            }
+        };
+        var getIndexInDownloadsInProgress = function(url, allowEmpty) {
+            var indexInDownloads = -1;
+            $scope.downloadsInProgress.filter(function(v,k){
+                if (v.url === url) {
+                    indexInDownloads = k;
+                }
+            });
+            if (! allowEmpty && -1 === indexInDownloads) {
+                throw new Error('download error');
+            }
+            return indexInDownloads;
+        };
+        var setErrorForScriptUrl = function(url, message) {
+            $scope.downloadsInProgress[getIndexInDownloadsInProgress(url)].error = message;
+        };
+        var launchScriptDownload = function(index) {
+            var suffix; 
+            var url;
+            for (suffix = 0; -1 !== getIndexInDownloadsInProgress(url = $scope.discovery.scripts.hrefs[index] =  $scope.discovery.currentRootPath.replace(/\/$/, '') + '/' + $scope.discovery.scripts.flat[index].join('/').replace(/\.json$/, '') + '.json?' + (new Date()).getTime() + suffix, true) ; suffix ++ ){}
+            (function(index, url) {
+                $scope.downloadsInProgress.push({url: url});
                 $.cartFillerPlugin.ajax({
-                    url: $scope.discovery.currentDownloadedTestURL = $scope.discovery.scripts.hrefs[$scope.discovery.scripts.currentDownloadingIndex] =  $scope.discovery.currentRootPath.replace(/\/$/, '') + '/' + $scope.discovery.scripts.flat[$scope.discovery.scripts.currentDownloadingIndex].join('/').replace(/\.json$/, '') + '.json?' + (new Date()).getTime(),
+                    url: url,
                     complete: function(xhr) {
                         $scope.errorURL = false;
+                        $scope.downloadsInProgress[getIndexInDownloadsInProgress(url)].completed = true;
                         if (xhr.status === 200) {
                             try {
-                                rememberDownloadedTest(xhr.responseText, $scope.discovery.scripts.currentDownloadingIndex);
+                                rememberDownloadedTest(xhr.responseText, index);
                             } catch (e) {
-                                $scope.discovery.state = -1;
-                                $scope.discovery.error = 'Unable to parse test script: ' + String(e);
-                                $scope.discovery.errorURL = $scope.discovery.currentDownloadedTestURL;
+                                setErrorForScriptUrl(url, 'Unable to parse test script: ' + String(e));
                             }
                             try {
                                 downloadNextScriptFile();
                             } catch (e) {
-                                $scope.discovery.state = -1;
-                                $scope.discovery.error = 'Unable to parse test script: ' + String(e);
-                                $scope.discovery.errorURL = $scope.discovery.currentProcessedTestURL;
+                                setErrorForScriptUrl(url, 'Unable to parse test script: ' + String(e));
                             }
                         } else {
-                            $scope.discovery.state = -1;
-                            $scope.discovery.error = 'Error downloading test script:';
-                            $scope.discovery.errorURL = $scope.discovery.currentDownloadedTestURL;
+                            setErrorForScriptUrl(url, 'Error downloading test script');
+                        }
+                        var indexInDownloads = getIndexInDownloadsInProgress(url);
+                        if (! $scope.downloadsInProgress[indexInDownloads].error) {
+                            $scope.downloadsInProgress.splice(indexInDownloads, 1);
+                            if ($scope.discovery.scripts.currentDownloadingIndex >= $scope.discovery.scripts.flat.length &&
+                               $scope.downloadsInProgress.length === 0
+                           ) {
+                                // we are done
+                                try {
+                                    processScriptFilesAfterDownload();
+                                } catch (e) {
+                                    $scope.discovery.state = -1;
+                                    $scope.discovery.error = 'Unable to parse test script: ' + String(e);
+                                }
+                            } 
                         }
                         $scope.$digest();
                     }
                 });
+            })(index, url);
+        };
+        var downloadNextScriptFile = function() {
+            if ($scope.discovery.scripts.currentDownloadingIndex === false) {
+                $scope.discovery.scripts.currentDownloadingIndex = 0;
+                $scope.downloadsInProgress = [];
+            }
+            // let's download next file
+            while ($scope.discovery.scripts.currentDownloadingIndex < $scope.discovery.scripts.flat.length && 
+                  $scope.downloadsInProgress.filter(function(v){return !v.error && !v.completed;}).length < $scope.maxSimultaneousDownloads
+            ) {
+                launchScriptDownload($scope.discovery.scripts.currentDownloadingIndex);
+                $scope.discovery.scripts.currentDownloadingIndex ++;
             }
         };
         $scope.getTestIndexByUrl = function(url) {
