@@ -90,7 +90,10 @@ module.exports = function(grunt) {
                             'var isDist = true;')
                         .replace(
                             /\?0000000000/g,
-                            '?' + time);
+                            '?' + time)
+                        .replace(
+                            base64Pattern, 
+                            base64Callback);
                 }
             },
             inject: {

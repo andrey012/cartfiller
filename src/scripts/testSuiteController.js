@@ -68,7 +68,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
         parseParams();
         $scope.discovery = {
             state: 0,
-            currentRootPath: $scope.params.root ? $scope.params.root : window.location.href.split(/[#?]/)[0].replace(/\/[^\/]*/, '/'),
+            currentRootPath: '',
             visitedRootPaths: [],
             rootCartfillerJson: {},
             scripts: {
@@ -505,7 +505,11 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                 }
             }
         };
-        $scope.discover = function() {
+        $scope.discover = function(reset) {
+            if (reset) {
+                $scope.discovery.visitedRootPaths = [];
+                $scope.discovery.currentRootPath = $scope.params.root ? $scope.params.root : window.location.href.split(/[#?]/)[0].replace(/\/[^\/]*/, '/');
+            }
             switch ($scope.discovery.state) {
                 case -1:
                     $scope.discovery.state = 0;
@@ -522,7 +526,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
 
             }
         };
-        $scope.discover();
+        $scope.discover(true);
         if ($scope.params.editor) {
             setTimeout(function refreshCurrentTest(){
                 // check whether currently loaded test have changed and we need to replace it

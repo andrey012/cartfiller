@@ -55,7 +55,7 @@
             </div>
         </div>
         <div class="col-xs-4" style="text-align: right;">
-            <button class="btn btn-info" ng-click="discovery.state = 0; discover()">
+            <button class="btn btn-info" ng-click="discovery.state = 0; discover(true)">
                 Reload
             </button>
             <button class="btn btn-success" ng-click="runAll()" ng-if="discovery.state == 2 && ! runningAll">

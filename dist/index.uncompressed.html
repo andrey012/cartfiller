@@ -6817,7 +6817,7 @@ button.close {
             </div>
         </div>
         <div class="col-xs-4" style="text-align: right;">
-            <button class="btn btn-info" ng-click="discovery.state = 0; discover()">
+            <button class="btn btn-info" ng-click="discovery.state = 0; discover(true)">
                 Reload
             </button>
             <button class="btn btn-success" ng-click="runAll()" ng-if="discovery.state == 2 && ! runningAll">
@@ -47149,7 +47149,7 @@ define('controller', ['app', 'scroll'], function(app){
                     ;
                 })
                          .filter(function(v) { return v.trim().length; })
-                         .join(' ') + '\')').replace(/.find\(\'\s*\'\)$/g, '');
+                         .join(' ') + '\')').replace(/.find\(\'\s*\'\)/g, '');
                 return r;
             };
             scope.toggleSearch = function() {
@@ -47300,7 +47300,7 @@ define('controller', ['app', 'scroll'], function(app){
             reportError('bootstrap message did not come');
         }
     }, 10000);
-    config.gruntBuildTimeStamp='1468142276153';
+    config.gruntBuildTimeStamp='1468154513977';
     window.addEventListener('message', function(event){
         var prefix = 'cartFillerMessage:';
         var isDist = true;
@@ -47374,7 +47374,7 @@ define('controller', ['app', 'scroll'], function(app){
                 if (message.tests) {
                     var x = new XMLHttpRequest();
                     x.onload = function(){
-                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1468142276153') {
+                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1468154513977') {
                             console.log('new version of CartFiller was deployed, switching to it');
                             var hash = window.location.href.split('#');
                             var pc = hash[0].split('?');
@@ -47552,7 +47552,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
         parseParams();
         $scope.discovery = {
             state: 0,
-            currentRootPath: $scope.params.root ? $scope.params.root : window.location.href.split(/[#?]/)[0].replace(/\/[^\/]*/, '/'),
+            currentRootPath: '',
             visitedRootPaths: [],
             rootCartfillerJson: {},
             scripts: {
@@ -47989,7 +47989,11 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                 }
             }
         };
-        $scope.discover = function() {
+        $scope.discover = function(reset) {
+            if (reset) {
+                $scope.discovery.visitedRootPaths = [];
+                $scope.discovery.currentRootPath = $scope.params.root ? $scope.params.root : window.location.href.split(/[#?]/)[0].replace(/\/[^\/]*/, '/');
+            }
             switch ($scope.discovery.state) {
                 case -1:
                     $scope.discovery.state = 0;
@@ -48006,7 +48010,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
 
             }
         };
-        $scope.discover();
+        $scope.discover(true);
         if ($scope.params.editor) {
             setTimeout(function refreshCurrentTest(){
                 // check whether currently loaded test have changed and we need to replace it
@@ -48271,9 +48275,9 @@ define('testSuiteController', ['app', 'scroll'], function(app){
         }
         focusOnSearchField();
         $scope.templates = {
-            cartfiller: 'data:application/json;base64,base64-content-of-cartfiller.json-goes-here',
-            test: 'data:application/json;base64,base64-content-of-test.json-goes-here',
-            worker: 'data:application/javascript;base64,base64-content-of-worker.js-goes-here',
+            cartfiller: 'data:application/json;base64,Y2FydGZpbGxlciA9IHsNCiAgICAiZ2xvYmFscyI6IHsNCiAgICB9LA0KICAgICJ3b3JrZXIiOiBbDQogICAgICAgICJ3b3JrZXIuanMiLA0KICAgIF0sDQogICAgInRlc3RzIjogew0KICAgICAgICAidGVzdCI6IHRydWUsDQogICAgfQ0KfQ0K',
+            test: 'data:application/json;base64,Y2FydGZpbGxlciA9IHsNCiAgICAidGl0bGUiOiAiIiwNCiAgICAiZ2xvYmFscyI6IHsNCiAgICB9LA0KICAgICJkZXRhaWxzIjogWw0KICAgIF0NCn0NCg==',
+            worker: 'data:application/javascript;base64,KGZ1bmN0aW9uKHdpbmRvdywgZG9jdW1lbnQsIHVuZGVmaW5lZCl7DQogICAgY2FydEZpbGxlckFQSSgpLnJlZ2lzdGVyV29ya2VyKGZ1bmN0aW9uKHdpbmRvdywgZG9jdW1lbnQsIGFwaSwgdGFzaywgam9iLCBnbG9iYWxzKXsNCiAgICAgICAgcmV0dXJuIHsNCiAgICAgICAgfTsNCiAgICB9KTsNCn0pKHdpbmRvdywgZG9jdW1lbnQpOw0K',
         };
         (function(){
             var base64Pattern = /base64-content-of-([^-]+)-goes-here/;

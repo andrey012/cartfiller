@@ -601,7 +601,7 @@ define('controller', ['app', 'scroll'], function(app){
                     ;
                 })
                          .filter(function(v) { return v.trim().length; })
-                         .join(' ') + '\')').replace(/.find\(\'\s*\'\)$/g, '');
+                         .join(' ') + '\')').replace(/.find\(\'\s*\'\)/g, '');
                 return r;
             };
             scope.toggleSearch = function() {
