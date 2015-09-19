@@ -398,7 +398,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             if ($scope.params.backend && ! $scope.params.editor) {
                 setTimeout(function(){
                     $scope.runAll();
-                });
+                }, $scope.params.wait ? ($scope.params.wait * 1000) : 0);
             } else if ($scope.params.goto && ! $scope.alreadyWentTo) {
                 $scope.alreadyWentTo = true;
                 setTimeout(function() {

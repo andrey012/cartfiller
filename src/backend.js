@@ -19,6 +19,8 @@ var argv = require('yargs')
     .describe('tear-down', 'commands to be executed on exit - for example to kill browser process, can be used several times - one for each command')
     .alias('t', 'tear-down')
     .describe('timeout', 'exit with error code 1 if no activity happens for specified time (seconds), default 60')
+    .alias('w', 'wait')
+    .describe('wait', 'seconds to wait before tests will be launched, used for browser to settle and stabilize, etc')
     .argv;
 var express = require('express');
 var open = require('open');
@@ -145,7 +147,7 @@ var launchServer = function() {
             if (! err) {
                 console.log('Launched successfully on port ' + port);
                 var launchBrowserFn = function() {
-                    launchBrowser(argv._[0], argv.browser, 'http://localhost:' + port, argv.editor, argv.root);
+                    launchBrowser(argv._[0], argv.browser, 'http://localhost:' + port, argv.editor, argv.root, argv.wait);
                 };
                 if (argv.app) {
                     console.log('Launching application: ' + argv.app);
@@ -177,7 +179,7 @@ var launchServer = function() {
         });
 };
 
-var launchBrowser = function(url, browser, backendUrl, editor, root) {
+var launchBrowser = function(url, browser, backendUrl, editor, root, wait) {
     var args = [];
     args.push('backend=' + encodeURIComponent(backendUrl));
     args.push('key=' + encodeURIComponent(sessionKey));
@@ -186,6 +188,9 @@ var launchBrowser = function(url, browser, backendUrl, editor, root) {
     }
     if (root) {
         args.push('root=' + encodeURIComponent(root));
+    }
+    if (wait) {
+        args.push('wait=' + wait);
     }
     url = -1 === url.indexOf('?') ? (url + '?' + (new Date()).getTime()) : (url.replace('?', '?' + (new Date()).getTime() + '&'));
     url = url + (-1 === url.indexOf('#') ? '#' : '&') + args.join('&');

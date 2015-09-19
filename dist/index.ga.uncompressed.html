@@ -47316,7 +47316,7 @@ define('controller', ['app', 'scroll'], function(app){
             reportError('bootstrap message did not come');
         }
     }, 10000);
-    config.gruntBuildTimeStamp='1468181845319';
+    config.gruntBuildTimeStamp='1468189375115';
     window.addEventListener('message', function(event){
         var prefix = 'cartFillerMessage:';
         var isDist = true;
@@ -47390,7 +47390,7 @@ define('controller', ['app', 'scroll'], function(app){
                 if (message.tests) {
                     var x = new XMLHttpRequest();
                     x.onload = function(){
-                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1468181845319') {
+                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1468189375115') {
                             console.log('new version of CartFiller was deployed, switching to it');
                             var hash = window.location.href.split('#');
                             var pc = hash[0].split('?');
@@ -47898,7 +47898,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             if ($scope.params.backend && ! $scope.params.editor) {
                 setTimeout(function(){
                     $scope.runAll();
-                });
+                }, $scope.params.wait ? ($scope.params.wait * 1000) : 0);
             } else if ($scope.params.goto && ! $scope.alreadyWentTo) {
                 $scope.alreadyWentTo = true;
                 setTimeout(function() {
