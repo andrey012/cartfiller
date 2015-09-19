@@ -184,7 +184,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1468189375115';
+    config.gruntBuildTimeStamp='1468314551097';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -2313,6 +2313,8 @@
             } else if (details.message === 'sendStatus' && source && (! relay.isSlave)) {
                 //////
                 me.modules.dispatcher.onMessage_sendStatus(details);
+            } else if (details.message === 'clearCurrentUrl' && source) {
+                me.modules.dispatcher.onMessage_clearCurrentUrl();
             }
         },
         /**
@@ -2780,8 +2782,16 @@
         updateCurrentUrl: function(url) {
             if (workerCurrentUrl !== url) {
                 this.postMessageToWorker('currentUrl', {url: url});
+                this.onMessage_bubbleRelayMessage({message: 'clearCurrentUrl'});
                 workerCurrentUrl = url;
             }
+        },
+        /**
+         * Clears current url from this dispatcher - if another
+         * dispatcher has one
+         */
+        onMessage_clearCurrentUrl: function() {
+            workerCurrentUrl = false;
         },
         ////
         haveAccess: function(framesPath) {
@@ -3430,6 +3440,7 @@
                     scroll[i] = Math.min(scroll[i], Math.max(0, scrollPretendent.rect[i ? 'bottom' : 'right'] - (i ? getInnerHeight() : getInnerWidth()) * (1 - border)));
                 }
             }
+            me.modules.ui.mainFrameWindow.addEventListener('scroll', arrowToFunction);
             me.modules.ui.mainFrameWindow.scrollBy(scroll[0], scroll[1]);
             return true;
         }
@@ -3440,9 +3451,7 @@
      * @access private
      */
     var drawArrows = function(){
-        if (scrollIfNecessary()) {
-            return setTimeout(drawArrows, 100);
-        }
+        scrollIfNecessary();
         deleteOverlaysOfType('arrow');
         for (var path in elementsToDrawByPath) {
             drawArrowsForPath(elementsToDrawByPath[path]);
@@ -3519,9 +3528,7 @@
      * @access private
      */
     var drawHighlights = function(){
-        if (scrollIfNecessary()) {
-            return setTimeout(drawHighlights, 100);
-        }
+        scrollIfNecessary();
         deleteOverlaysOfType('highlight');
         var rect = findMaxRect({highlight: true});
         if (rect.left === undefined) {

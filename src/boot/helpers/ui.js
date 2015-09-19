@@ -363,6 +363,7 @@
                     scroll[i] = Math.min(scroll[i], Math.max(0, scrollPretendent.rect[i ? 'bottom' : 'right'] - (i ? getInnerHeight() : getInnerWidth()) * (1 - border)));
                 }
             }
+            me.modules.ui.mainFrameWindow.addEventListener('scroll', arrowToFunction);
             me.modules.ui.mainFrameWindow.scrollBy(scroll[0], scroll[1]);
             return true;
         }
@@ -373,9 +374,7 @@
      * @access private
      */
     var drawArrows = function(){
-        if (scrollIfNecessary()) {
-            return setTimeout(drawArrows, 100);
-        }
+        scrollIfNecessary();
         deleteOverlaysOfType('arrow');
         for (var path in elementsToDrawByPath) {
             drawArrowsForPath(elementsToDrawByPath[path]);
@@ -452,9 +451,7 @@
      * @access private
      */
     var drawHighlights = function(){
-        if (scrollIfNecessary()) {
-            return setTimeout(drawHighlights, 100);
-        }
+        scrollIfNecessary();
         deleteOverlaysOfType('highlight');
         var rect = findMaxRect({highlight: true});
         if (rect.left === undefined) {

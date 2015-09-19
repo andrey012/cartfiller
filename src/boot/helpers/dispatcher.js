@@ -1123,6 +1123,8 @@
             } else if (details.message === 'sendStatus' && source && (! relay.isSlave)) {
                 //////
                 me.modules.dispatcher.onMessage_sendStatus(details);
+            } else if (details.message === 'clearCurrentUrl' && source) {
+                me.modules.dispatcher.onMessage_clearCurrentUrl();
             }
         },
         /**
@@ -1590,8 +1592,16 @@
         updateCurrentUrl: function(url) {
             if (workerCurrentUrl !== url) {
                 this.postMessageToWorker('currentUrl', {url: url});
+                this.onMessage_bubbleRelayMessage({message: 'clearCurrentUrl'});
                 workerCurrentUrl = url;
             }
+        },
+        /**
+         * Clears current url from this dispatcher - if another
+         * dispatcher has one
+         */
+        onMessage_clearCurrentUrl: function() {
+            workerCurrentUrl = false;
         },
         ////
         haveAccess: function(framesPath) {
