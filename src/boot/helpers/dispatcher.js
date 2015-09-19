@@ -893,7 +893,7 @@
             this.running = message.running;
             if (! relay.isSlave && ((! message.drillToFrame) || (! message.drillToFrame.length))) {
                 // ok, this is original call, we can clear all overlays, etc
-                me.modules.ui.clearOverlaysAndReflect();
+                me.modules.ui.prepareTolearOverlaysAndReflect();
             }
             if (this.reflectMessage(message, message.drillToFrame)) {
                 if (message.debug) {
@@ -1125,6 +1125,8 @@
                 me.modules.dispatcher.onMessage_sendStatus(details);
             } else if (details.message === 'clearCurrentUrl' && source) {
                 me.modules.dispatcher.onMessage_clearCurrentUrl();
+            } else if (details.message === 'prepareToClearOverlays') {
+                me.modules.ui.prepareToClearOverlays();
             }
         },
         /**

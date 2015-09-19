@@ -184,7 +184,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1468314551097';
+    config.gruntBuildTimeStamp='1468359582639';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -2083,7 +2083,7 @@
             this.running = message.running;
             if (! relay.isSlave && ((! message.drillToFrame) || (! message.drillToFrame.length))) {
                 // ok, this is original call, we can clear all overlays, etc
-                me.modules.ui.clearOverlaysAndReflect();
+                me.modules.ui.prepareTolearOverlaysAndReflect();
             }
             if (this.reflectMessage(message, message.drillToFrame)) {
                 if (message.debug) {
@@ -2315,6 +2315,8 @@
                 me.modules.dispatcher.onMessage_sendStatus(details);
             } else if (details.message === 'clearCurrentUrl' && source) {
                 me.modules.dispatcher.onMessage_clearCurrentUrl();
+            } else if (details.message === 'prepareToClearOverlays') {
+                me.modules.ui.prepareToClearOverlays();
             }
         },
         /**
@@ -3207,6 +3209,7 @@
      * @access private
      */
     var reportMousePointer = false;
+    var prepareToClearOverlays = false;
     /**
      * Returns window, that will be used to draw overlays
      * @function {Window} CartFiller.UI~overlayWindow
@@ -3337,7 +3340,7 @@
         // check whether positions of elements have changed
         for (i = elements.length - 1; i >= 0; i--){
             element = elements[i];
-            if (! element) {
+            if (! element || ! element.element) {
                 continue;
             }
             rect = element.element.getBoundingClientRect();
@@ -3359,7 +3362,8 @@
                 if (element.type) {
                     rebuild[element.type] = true;
                 }
-                delete elements[i]; 
+                element.deleted = true;
+                element.element = null;
                 continue;   
             }
             if ((top !== element.top) ||
@@ -3460,7 +3464,7 @@
     var drawArrowsForPath = function(elements) {
         var top, left, bottom;
         elements
-        .filter(function(el) { return 'arrow' === el.type; })
+        .filter(function(el) { return 'arrow' === el.type && ! el.deleted; })
         .map(addFrameCoordinatesMap)
         .filter(function(el, i) {
             var div = getOverlayDiv2('arrow');
@@ -3499,8 +3503,9 @@
     var findMaxRect = function(what){
         var left, top, right, bottom;
         var filter = function(el) {
-            return 'undefined' === typeof what ||
-                what[el.type];
+            return ('undefined' === typeof what ||
+                what[el.type]) && 
+                ! el.deleted;
         };
         var calc = function(el) {
             left = undefined === left ? el.rect.left : Math.min(left, el.rect.left);
@@ -3625,12 +3630,13 @@
                         height: src.height,
                         right: src.right,
                         bottom: src.bottom,
-                        url: e.element.ownerDocument.defaultView.location.href
+                        url: e.element ? e.element.ownerDocument.defaultView.location.href : false
                     },
                     type: e.type,
                     path: e.path,
                     scroll: e.scroll,
-                    ts: e.ts
+                    ts: e.ts,
+                    deleted: e.deleted
                 };
             };
             var r = {};
@@ -3909,6 +3915,9 @@
          * @access public
          */
         highlight: function(element, allElements){
+            if (prepareToClearOverlays) {
+                this.clearOverlaysAndReflect(true);
+            }
             messageToSay = '';
             var i;
             var added = false;
@@ -3945,6 +3954,9 @@
          * @access public
          */
         arrowTo: function(element, allElements, noScroll){
+            if (prepareToClearOverlays) {
+                this.clearOverlaysAndReflect(true);
+            }
             if (null !== element && 'object' === typeof element && 'string' === typeof element.jquery && undefined !== element.length && 'function' === typeof element.each){
                 element.each(function(i,el){
                     me.modules.ui.addElementToTrack('arrow', el, noScroll);
@@ -4273,8 +4285,20 @@
                 this.arrowTo(element, false, true);
             }
         },
-        clearOverlaysAndReflect: function() {
-            if (messageToSayOptions.nextButton) {
+        prepareTolearOverlaysAndReflect: function() {
+            me.modules.dispatcher.onMessage_bubbleRelayMessage({
+                message: 'prepareToClearOverlays'
+            });
+        },
+        prepareToClearOverlays: function() {
+            prepareToClearOverlays = true;
+            messageToSay = '';
+            if (me.modules.dispatcher.haveAccess()) {
+                drawMessage();
+            }
+        },
+        clearOverlaysAndReflect: function(ignoreNextButton) {
+            if (! ignoreNextButton && messageToSayOptions.nextButton) {
                 me.modules.api.result();
                 messageToSayOptions.nextButton = false;
             }
@@ -4283,6 +4307,7 @@
             });
         },
         clearOverlays: function() {
+            prepareToClearOverlays = false;
             elementsToTrack = [];
             elementsToDrawByPath = {};
             messageToSay = '';
