@@ -190,6 +190,10 @@
     var useTopWindowForLocalFileOperations;
     var currentInvokeWorkerMessage;
     var suspendAjaxRequestsCallback;
+    var magicParamPatterns = {
+        repeat: /repeat(\d+)/,
+        sleep: /sleep(\d+)/
+    };
     /**
      * Keeps details about relay subsystem
      * @var {Object} CartFiller.Dispatcher~rel
@@ -467,8 +471,29 @@
         evaluateNextWorker();
     };
     /**
+     * Discovers if a step depends on result of previous step.
+     * If yes, then user should be prompted, that if he clicks on 
+     * this step straight away - then most likely it will not succeed
+     * @function CartFiller.Dispatcher~discoverStepDependencies
+     * @param {Function} fn
+     */
+    var discoverStepDependencies = function(fn) {
+        var firstParam = fn.toString().split('(')[1].split(')')[0].split(',')[0].trim();
+        if (firstParam.length) {
+            for (var i in magicParamPatterns) {
+                if (magicParamPatterns[i].test(firstParam)) {
+                    // it is magic param
+                    return false;
+                }
+            }
+            return true;
+        }
+        return false;
+    };
+    /**
      * Discovers task parameters, that are used by this function 
      * looking for patters like task.theparameter or task['the parameter']
+     * @function CartFiller.Dispatcher~discoverTaskParameters
      * @param {Function} fn
      * @param {Object} allParams holds all parameters, parameters discovered
      * here are added to this map
@@ -1386,10 +1411,12 @@
                 }
             }
             if (! workersToEvaluate.length) {
+                // only do this for last worker
                 var list = {};
                 var discoveredParameters = {};
-                // only do this for last worker
+                var stepDependencies = {};
                 for (taskName in worker) {
+                    stepDependencies[taskName] = {};
                     var taskSteps = [];
                     var params = {};
                     var allParams = {};
@@ -1399,6 +1426,7 @@
                             taskSteps.push(worker[taskName][i]);
                             if (worker[taskName][i+1] instanceof Function) {
                                 params[taskSteps.length - 1] = discoverTaskParameters(worker[taskName][i+1], allParams);
+                                stepDependencies[taskName][taskSteps.length - 1] = discoverStepDependencies(worker[taskName][i+1]);
                             }
                         }
                     }
@@ -1406,7 +1434,12 @@
                     list[taskName] = taskSteps;
                     discoveredParameters[taskName] = params;
                 }
-                this.postMessageToWorker('workerRegistered', {jobTaskDescriptions: list, discoveredParameters: discoveredParameters, workerTaskSources: workerTaskSources});
+                this.postMessageToWorker('workerRegistered', {
+                    jobTaskDescriptions: list, 
+                    discoveredParameters: discoveredParameters, 
+                    workerTaskSources: workerTaskSources,
+                    stepDependencies: stepDependencies
+                });
             }
         },
         /**
@@ -1461,7 +1494,7 @@
             // now let's see, if status is not ok, and method is repeatable - then repeat it
             if (status !== 'ok') {
                 stepRepeatCounter ++;
-                m = /repeat(\d+)/.exec(currentStepWorkerFn.toString().split(')')[0]);
+                m = magicParamPatterns.repeat.exec(currentStepWorkerFn.toString().split(')')[0]);
                 if (m && parseInt(m[1]) > stepRepeatCounter) {
                     me.modules.api.setTimeout(function() {
                         currentStepWorkerFn(highlightedElement, currentStepEnv);
@@ -1471,7 +1504,7 @@
             } else {
                 // see how long should we sleep;
                 if ('undefined' === typeof sleepAfterThisStep) {
-                    m = /sleep(\d+)/.exec(currentStepWorkerFn.toString().split(')')[0]);
+                    m = magicParamPatterns.sleep.exec(currentStepWorkerFn.toString().split(')')[0]);
                     if (m) {
                         sleepAfterThisStep = parseInt(m[1]);
                     }

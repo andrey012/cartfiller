@@ -12,6 +12,7 @@
         #jobDetails .alert {padding: 5px; margin-bottom: 5px;}
         #jobDetails h1, #jobDetails h2, #jobDetails h3, #jobDetails h4 {margin: 0px;}
         .pause-active {background-color: red;}
+        #jobDetails .btn.dependent-step {opacity: 0.5;}
         #testslist h1, #testslist h2, #testslist h3, #testslist h4, #testslist h5 {margin: 0px;}
         .pause-active {background-color: red;}
         .nobr {display: inline-block; white-space: nowrap;}
@@ -314,7 +315,7 @@
             </div>
         </div>
         <div id="jobDetails">
-            <a class="btn btn-info btn-xs" style="width: 100%; margin-top: 120px; margin-bottom: 5px;" onclick="alert('Long click on step = debug (debugger window should be open, once in debugger - do \'step into\' until you are in your worker code), double click on task property or global value = change property value, double click on pause = set pause here and run');">help</a>
+            <a class="btn btn-info btn-xs" style="width: 100%; margin-top: 120px; margin-bottom: 5px;" onclick="alert('Long click on step = debug (debugger window should be open, once in debugger - do \'step into\' until you are in your worker code), double click on task property or global value = change property value, double click on pause = set pause here and run. Grayed step buttons mean, that this step depends on previous step, and will most likely fail if launched out of a sequence.');">help</a>
             <h3 ng-if="jobTitle">
                 {{jobTitle.substr(0,128)}}
             </h3>
@@ -332,7 +333,7 @@
                     <span>{{jobTitleMap[propertyName] ? jobTitleMap[propertyName] : propertyName}}:</span>
                     <span><strong>{{getPropertyValue(propertyValue)}}</strong></span></span>
                 <div>
-                    <textarea readonly onclick="select(this);" ng-if="jobTask.task && noTaskSteps(jobTask.task)" rows="6" style="width: 100%;">{{',\n            \'' + jobTask.task + '\': [\n                \'\', function(e) {\n                }, \'\', function(e) {\n                }\n            ]\n'}}</textarea>
+                    <textarea readonly onclick="select(this);" ng-if="jobTask.task && noTaskSteps(jobTask.task)" rows="6" style="width: 100%;">{{',\n            \'' + jobTask.task + '\': [\n                \'\', function() {\n                }\n            ]\n'}}</textarea>
                     <span
                        ng-repeat="(jobTaskStepIndex, jobTaskStep) in jobTaskDescriptions[jobTask.task] track by $index"
                     >

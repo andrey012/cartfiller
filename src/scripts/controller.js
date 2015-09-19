@@ -65,6 +65,7 @@ define('controller', ['app', 'scroll'], function(app){
         $scope.noResultButton = false;
         $scope.jobName = '';
         $scope.jobTitle = '';
+        $scope.stepDependencies = {};
         var autorunSpeed;
         var mouseDownTime;
         var suspendEditorMode;
@@ -182,6 +183,7 @@ define('controller', ['app', 'scroll'], function(app){
                     $scope.jobTaskDescriptions = details.jobTaskDescriptions;
                     $scope.jobTaskDiscoveredParameters = details.discoveredParameters;
                     $scope.workerTaskSources = details.workerTaskSources;
+                    $scope.stepDependencies = details.stepDependencies;
                     $scope.updateIndexTitles();
                 });
                 if ($scope.clickedWhileWorkerWasInProgress) {
@@ -423,21 +425,32 @@ define('controller', ['app', 'scroll'], function(app){
             digestTask($scope.currentTask);
         };
         $scope.getStepClass = function(index, step){
-            var size = ((index === $scope.currentTask) && (step === $scope.currentStep)) ?
-                '' :
-                'btn-xs ';
+            var theClass = '';
+            var markDependent = true;
+            if ((index === $scope.currentTask) && (step === $scope.currentStep)) {
+                markDependent = false;
+            } else {
+                theClass += 'btn-xs ';
+            }
             if ($scope.jobTaskProgress[index].stepsInProgress[step] === true) {
-                return size + 'btn-default';
+                theClass += 'btn-default ';
+                markDependent = false;
             } 
             var result = $scope.jobTaskProgress[index].stepResults[step];
             if (!angular.isUndefined(result)) {
-                if ('ok' === result.status){
-                    return size + 'btn-success';
+                if ('ok' === result.status || 'skipped' === result.status){
+                    theClass += 'btn-success ';
                 } else if ('error' === result.status) {
-                    return size + 'btn-danger';
+                    theClass += 'btn-danger ';
+                    markDependent = false;
                 }
+            } else {
+                theClass += 'btn-warning ';
             }
-            return size + 'btn-warning';
+            if (markDependent && $scope.stepDependencies[$scope.jobDetails[index].task][step]) {
+                theClass += 'dependent-step ';
+            }
+            return theClass;
         };
         $scope.runNoWatch = function(slow, $event, fromAutorun){
             if ($event) {

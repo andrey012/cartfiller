@@ -6774,6 +6774,7 @@ button.close {
         #jobDetails .alert {padding: 5px; margin-bottom: 5px;}
         #jobDetails h1, #jobDetails h2, #jobDetails h3, #jobDetails h4 {margin: 0px;}
         .pause-active {background-color: red;}
+        #jobDetails .btn.dependent-step {opacity: 0.5;}
         #testslist h1, #testslist h2, #testslist h3, #testslist h4, #testslist h5 {margin: 0px;}
         .pause-active {background-color: red;}
         .nobr {display: inline-block; white-space: nowrap;}
@@ -7091,7 +7092,7 @@ button.close {
             </div>
         </div>
         <div id="jobDetails">
-            <a class="btn btn-info btn-xs" style="width: 100%; margin-top: 120px; margin-bottom: 5px;" onclick="alert('Long click on step = debug (debugger window should be open, once in debugger - do \'step into\' until you are in your worker code), double click on task property or global value = change property value, double click on pause = set pause here and run');">help</a>
+            <a class="btn btn-info btn-xs" style="width: 100%; margin-top: 120px; margin-bottom: 5px;" onclick="alert('Long click on step = debug (debugger window should be open, once in debugger - do \'step into\' until you are in your worker code), double click on task property or global value = change property value, double click on pause = set pause here and run. Grayed step buttons mean, that this step depends on previous step, and will most likely fail if launched out of a sequence.');">help</a>
             <h3 ng-if="jobTitle">
                 {{jobTitle.substr(0,128)}}
             </h3>
@@ -7109,7 +7110,7 @@ button.close {
                     <span>{{jobTitleMap[propertyName] ? jobTitleMap[propertyName] : propertyName}}:</span>
                     <span><strong>{{getPropertyValue(propertyValue)}}</strong></span></span>
                 <div>
-                    <textarea readonly onclick="select(this);" ng-if="jobTask.task && noTaskSteps(jobTask.task)" rows="6" style="width: 100%;">{{',\n            \'' + jobTask.task + '\': [\n                \'\', function(e) {\n                }, \'\', function(e) {\n                }\n            ]\n'}}</textarea>
+                    <textarea readonly onclick="select(this);" ng-if="jobTask.task && noTaskSteps(jobTask.task)" rows="6" style="width: 100%;">{{',\n            \'' + jobTask.task + '\': [\n                \'\', function() {\n                }\n            ]\n'}}</textarea>
                     <span
                        ng-repeat="(jobTaskStepIndex, jobTaskStep) in jobTaskDescriptions[jobTask.task] track by $index"
                     >
@@ -46627,6 +46628,7 @@ define('controller', ['app', 'scroll'], function(app){
         $scope.noResultButton = false;
         $scope.jobName = '';
         $scope.jobTitle = '';
+        $scope.stepDependencies = {};
         var autorunSpeed;
         var mouseDownTime;
         var suspendEditorMode;
@@ -46744,6 +46746,7 @@ define('controller', ['app', 'scroll'], function(app){
                     $scope.jobTaskDescriptions = details.jobTaskDescriptions;
                     $scope.jobTaskDiscoveredParameters = details.discoveredParameters;
                     $scope.workerTaskSources = details.workerTaskSources;
+                    $scope.stepDependencies = details.stepDependencies;
                     $scope.updateIndexTitles();
                 });
                 if ($scope.clickedWhileWorkerWasInProgress) {
@@ -46985,21 +46988,32 @@ define('controller', ['app', 'scroll'], function(app){
             digestTask($scope.currentTask);
         };
         $scope.getStepClass = function(index, step){
-            var size = ((index === $scope.currentTask) && (step === $scope.currentStep)) ?
-                '' :
-                'btn-xs ';
+            var theClass = '';
+            var markDependent = true;
+            if ((index === $scope.currentTask) && (step === $scope.currentStep)) {
+                markDependent = false;
+            } else {
+                theClass += 'btn-xs ';
+            }
             if ($scope.jobTaskProgress[index].stepsInProgress[step] === true) {
-                return size + 'btn-default';
+                theClass += 'btn-default ';
+                markDependent = false;
             } 
             var result = $scope.jobTaskProgress[index].stepResults[step];
             if (!angular.isUndefined(result)) {
-                if ('ok' === result.status){
-                    return size + 'btn-success';
+                if ('ok' === result.status || 'skipped' === result.status){
+                    theClass += 'btn-success ';
                 } else if ('error' === result.status) {
-                    return size + 'btn-danger';
+                    theClass += 'btn-danger ';
+                    markDependent = false;
                 }
+            } else {
+                theClass += 'btn-warning ';
             }
-            return size + 'btn-warning';
+            if (markDependent && $scope.stepDependencies[$scope.jobDetails[index].task][step]) {
+                theClass += 'dependent-step ';
+            }
+            return theClass;
         };
         $scope.runNoWatch = function(slow, $event, fromAutorun){
             if ($event) {
@@ -47301,7 +47315,7 @@ define('controller', ['app', 'scroll'], function(app){
             reportError('bootstrap message did not come');
         }
     }, 10000);
-    config.gruntBuildTimeStamp='1468101840498';
+    config.gruntBuildTimeStamp='1468142276153';
     window.addEventListener('message', function(event){
         var prefix = 'cartFillerMessage:';
         var isDist = true;
@@ -47375,7 +47389,7 @@ define('controller', ['app', 'scroll'], function(app){
                 if (message.tests) {
                     var x = new XMLHttpRequest();
                     x.onload = function(){
-                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1468101840498') {
+                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1468142276153') {
                             console.log('new version of CartFiller was deployed, switching to it');
                             var hash = window.location.href.split('#');
                             var pc = hash[0].split('?');
