@@ -712,7 +712,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             for (i in params) {
                 pc.push(i+'='+encodeURIComponent(params[i]));
             }
-            return window.location.href.split(/[#?]/)[0] + 
+            return window.location.href.replace('/src/index.uncompressed.html', '/dist/').split(/[#?]/)[0] + 
                 '#' + pc.join('&');
         };
         $scope.searchForTestNoWatch = function() {

@@ -194,6 +194,8 @@
         repeat: /repeat(\d+)/,
         sleep: /sleep(\d+)/
     };
+    var rememberedHashParams = {};
+    var hideHashParam = {};
     /**
      * Keeps details about relay subsystem
      * @var {Object} CartFiller.Dispatcher~rel
@@ -728,11 +730,16 @@
         /**
          * Shows Choose Job frame
          * @function CartFiller.Dispatcher#onMessage_chooseJob
+         * @param {Object} details
          * @access public
          */
-        onMessage_chooseJob: function(){
+        onMessage_chooseJob: function(details){
             me.modules.ui.showHideChooseJobFrame(true);
             this.postMessageToWorker('chooseJobShown');
+            if (details.hideHashDetails) {
+                hideHashParam = {job: 1, task: 1, step: 1};
+            }
+            this.onMessage_updateHashUrl({params: {}});
         },
         /**
          * Hides Choose Job frame
@@ -742,6 +749,8 @@
         onMessage_chooseJobCancel: function(){
             me.modules.ui.showHideChooseJobFrame(false);
             this.postMessageToWorker('chooseJobHidden');
+            hideHashParam = {};
+            this.onMessage_updateHashUrl({params: {}});
         },
         /**
          * Passes job details from Choose Job frame to worker (job progress)
@@ -774,6 +783,7 @@
                     statusMessageName = false;
                 }
                 me.modules.ui.showHideChooseJobFrame(false);
+                hideHashParam = {};
                 message.overrideWorkerSrc = me['data-worker'];
                 workerTimeout = message.timeout;
                 workerCurrentTask = {};
@@ -1179,11 +1189,27 @@
          */
         onMessage_updateHashUrl: function(details) {
             var params = details.params;
+            var i;
+            for (i in params) {
+                rememberedHashParams[i] = params[i];
+            }
+            for (i in rememberedHashParams) {
+                if (undefined === params[i]) {
+                    params[i] = rememberedHashParams[i];
+                }
+            }
             var hash = window.location.hash.replace(/^#\/?/, '').split('&').map(function(v) {
-                for (var i in params) {
-                    var name = encodeURIComponent(i);
+                var name, i;
+                for (i in hideHashParam) {
+                    name = encodeURIComponent(i);
                     if (0 === v.indexOf(name + '=')) {
-                        var r = (params[i] !== '' && params[i] !== false) ? (name + '=' + encodeURIComponent(params[i])) : '';
+                        return '';
+                    }
+                }
+                for (i in params) {
+                    name = encodeURIComponent(i);
+                    if (0 === v.indexOf(name + '=')) {
+                        var r = (hideHashParam[i] || (params[i] !== '' && params[i] !== false)) ? (name + '=' + encodeURIComponent(params[i])) : '';
                         delete params[i];
                         return r;
                     }
@@ -1191,8 +1217,8 @@
                 }
                 return v;
             }).filter(function(v){ return v.length; });
-            for (var i in params) {
-                if (params[i] !== '' && params[i] !== false) {
+            for (i in params) {
+                if ((! hideHashParam[i]) && params[i] !== '' && params[i] !== false) {
                     hash.push(encodeURIComponent(i) + '=' + encodeURIComponent(params[i]));
                 }
             }

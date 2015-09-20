@@ -37,9 +37,9 @@ define('controller', ['app', 'scroll'], function(app){
             scrollCurrentTaskIntoView(false, true);
             return false;
         };
-        $scope.chooseJob = function(){
+        $scope.chooseJob = function(initial){
             $scope.chooseJobState = !$scope.chooseJobState;
-            cfMessage.send($scope.chooseJobState ? 'chooseJob' : 'chooseJobCancel');
+            cfMessage.send($scope.chooseJobState ? 'chooseJob' : 'chooseJobCancel', {hideHashDetails: ! initial});
         };
         $scope.jobDetails = [];
         $scope.jobTaskProgress = [];
@@ -50,7 +50,7 @@ define('controller', ['app', 'scroll'], function(app){
         $scope.workerInProgress = false;
         $scope.currentTask = 0;
         $scope.currentStep = 0;
-        $timeout(function(){$scope.chooseJob();}, 0);
+        $timeout(function(){$scope.chooseJob(true);}, 0);
         $scope.debugEnabled = parseInt(cfDebug.debugEnabled);
         $scope.workersCounter = 1;
         $scope.workersLoaded = 0;
