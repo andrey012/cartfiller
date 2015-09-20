@@ -184,7 +184,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1468359582639';
+    config.gruntBuildTimeStamp='1468439118589';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -3583,7 +3583,19 @@
 
             var innerDiv = overlayWindow().document.createElement(wrapMessageToSayWithPre ? 'pre' : 'div');
             messageDiv.appendChild(innerDiv);
-            innerDiv.textContent = messageToSay;
+            if (wrapMessageToSayWithPre) {
+                innerDiv.textContent = messageToSay;
+            } else {
+                messageToSay.split('\n').filter(function(lineToSay, i) {
+                    if (i) {
+                        var br = overlayWindow().document.createElement('br');
+                        innerDiv.appendChild(br);
+                    }
+                    var span = overlayWindow().document.createElement('span');
+                    span.textContent = lineToSay;
+                    innerDiv.appendChild(span);
+                });
+            }
             innerDiv.style.backgroundColor = '#fff';
             innerDiv.style.border = 'none';
             innerDiv.onclick = function(e) { e.stopPropagation(); return false; };
