@@ -31,6 +31,7 @@ var bodyParser = require('body-parser');
 var childProcess = require('child_process');
 app.use( bodyParser.json() );
 app.use(bodyParser.urlencoded({ extended: true }));
+var isPhantomJs = ('string' === typeof argv.browser) && (-1 !== argv.browser.indexOf('phantomjs'));
 
 var stats = {
     totalTests: 0,
@@ -65,6 +66,16 @@ app.post('/progress/' + sessionKey, function (req, res) {
 var tearDownFn = function(code) {
     var cmds;
     var waterfall = [];
+    if (isPhantomJs) {
+        waterfall.push(function() {
+            console.log('killing child process');
+            browserProcess.on('close', function() {
+                waterfall.shift();
+                waterfall[0]();
+            });
+            browserProcess.kill();
+        });
+    }
     if (argv['tear-down']) {
         if (argv['tear-down'] instanceof Array) {
             cmds = argv['tear-down'];
@@ -194,8 +205,14 @@ var launchBrowser = function(url, browser, backendUrl, editor, root, wait) {
     }
     url = -1 === url.indexOf('?') ? (url + '?' + (new Date()).getTime()) : (url.replace('?', '?' + (new Date()).getTime() + '&'));
     url = url + (-1 === url.indexOf('#') ? '#' : '&') + args.join('&');
-    console.log('Launching ' + (argv.browser ? argv.browser : 'default browser') + ' with URL: ' + url);
-    browserProcess = open(url, argv.browser);
+    if (isPhantomJs) {
+        var childArgs = [__dirname + '/phantomjs.js', url];
+        console.log('Launching ' + (argv.browser) + ' ' + childArgs.join(' '));
+        browserProcess = childProcess.spawn(argv.browser, childArgs);
+    } else {
+        console.log('Launching ' + (argv.browser ? argv.browser : 'default browser') + ' with URL: ' + url);
+        browserProcess = open(url, argv.browser);
+    }
 };
 
 launchServer();
