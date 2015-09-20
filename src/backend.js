@@ -209,6 +209,8 @@ var launchBrowser = function(url, browser, backendUrl, editor, root, wait) {
         var childArgs = [__dirname + '/phantomjs.js', url];
         console.log('Launching ' + (argv.browser) + ' ' + childArgs.join(' '));
         browserProcess = childProcess.spawn(argv.browser, childArgs);
+        browserProcess.stdout.on('data', function(data) { console.log('PhantomJs stdout: ' + data); });
+        browserProcess.stderr.on('data', function(data) { console.log('PhantomJs stderr: ' + data); });
     } else {
         console.log('Launching ' + (argv.browser ? argv.browser : 'default browser') + ' with URL: ' + url);
         browserProcess = open(url, argv.browser);
