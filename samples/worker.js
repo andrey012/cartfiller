@@ -255,7 +255,7 @@
                 'find search box', function(){
                     var input = searchBox();
                     api.highlight(input).say(globals.skipMessages?'':('Here is search box, let\'s put our number (' + task.partno + ') into it')).result((1 === input.length) ? "" : "Cant find search box");
-                }, api.type('partno', undefined, undefined, true),
+                }, api.type('partno'),
                 'find search button', function(){
                     var searchButton = window.jQuery('input[type="submit"][value="Search"]:visible');
                     api.highlight(searchButton).say(globals.skipMessages?'':'Here is search button').result((1 === searchButton.length) ? "" : "Cant find search button");
