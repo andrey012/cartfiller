@@ -711,11 +711,11 @@
          * @param {string|Function} value or callback to get value
          * @param {Function} whatNext callback after this task is 
          * @param {boolean} dontClear by default this function will clear input before typing
-         * @param {ignoreErrors} set to true to ignore errors during attempts to set keyCode and charCode values
+         * @param {failOnErrors} set to true to fail on errors during attempts to set keyCode and charCode values
          * @return {Array} ready for putting into worker array
          * @access public
          */
-        type: function(value, whatNext, dontClear, ignoreErrors) {
+        type: function(value, whatNext, dontClear, failOnErrors) {
             var r = [
                 'type key sequence',
                 function(el, env) {
@@ -799,11 +799,11 @@
                                 } else {
                                     e.initKeyEvent(eventName, true, true, document.defaultView, false, false, false, false, charCode, charCode);
                                 }
-                                if ((! ignoreErrors) && (e.keyCode !== charCode || e.charCode !== charCode)) {
+                                if ((failOnErrors) && (e.keyCode !== charCode || e.charCode !== charCode)) {
                                     me.modules.api.result('could not set correct keyCode or charCode for ' + eventName + ': keyCode returns [' + e.keyCode + '] , charCode returns [' + e.charCode + '] instead of [' + charCode + ']');
                                     return false;
                                 }
-                                if ((! ignoreErrors) && e.metaKey) {
+                                if ((failOnErrors) && e.metaKey) {
                                     me.modules.api.result('could not set metaKey to false');
                                     return false;
                                 }
