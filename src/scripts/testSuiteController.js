@@ -32,7 +32,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             }
             return result;
         };
-
+        var backendPendingRequestCounter = 0;
         $scope.params = {};
         $scope.expandedTest = false;
         $scope.showConfigure = false;
@@ -622,10 +622,14 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                             json.message = data.result[data.currentTaskIndex].stepResults[data.currentTaskStepIndex].message;
                         }
                         // report progress to backend
+                        backendPendingRequestCounter ++;
                         $.ajax({
                             url: $scope.params.backend.replace(/\/+$/, '') + '/progress/' + $scope.params.key,
                             method: 'POST',
-                            data: json
+                            data: json,
+                            complete: function() {
+                                backendPendingRequestCounter --;
+                            }
                         });
                     }
                     if (data.completed && undefined === untilTask) {
@@ -642,13 +646,19 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                             $scope.runningAll = false;
                             $.cartFillerPlugin.showChooseJobFrame();
                             if ($scope.params.backend && ! $scope.params.editor) {
-                                $.ajax({
-                                    url: $scope.params.backend.replace(/\/+$/, '') + '/finish/' + $scope.params.key + '?' + (new Date()).getTime(),
-                                    complete: function() {
-                                        delete $scope.params.backend;
-                                        delete $scope.params.key;
+                                setTimeout(function reportFinishToBackend(){
+                                    if (backendPendingRequestCounter) {
+                                        setTimeout(reportFinishToBackend, 100);
+                                    } else {
+                                        $.ajax({
+                                            url: $scope.params.backend.replace(/\/+$/, '') + '/finish/' + $scope.params.key + '?' + (new Date()).getTime(),
+                                            complete: function() {
+                                                delete $scope.params.backend;
+                                                delete $scope.params.key;
+                                            }
+                                        });
                                     }
-                                });
+                                }, 100);
                             }
                         }
                         $scope.$digest();

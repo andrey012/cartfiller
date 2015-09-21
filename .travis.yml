@@ -4,4 +4,7 @@ node_js:
 before_script:
   - npm install -g bower
   - bower install
-script: phantomjs samples/test.js
+script: 
+ - phantomjs samples/test.js
+ - node src/backend.js -r http://127.0.0.1/testsuite --serve-http ./ -b phantomjs http://127.0.0.1/dist/
+ - ! node src/backend.js -r http://127.0.0.1/testsuite/failing --serve-http ./ -b phantomjs http://127.0.0.1/dist/ 

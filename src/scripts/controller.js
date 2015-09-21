@@ -440,7 +440,7 @@ define('controller', ['app', 'scroll'], function(app){
             if (!angular.isUndefined(result)) {
                 if ('ok' === result.status || 'skipped' === result.status){
                     theClass += 'btn-success ';
-                } else if ('error' === result.status) {
+                } else if ('error' === result.status || 'skip' === result.status) {
                     theClass += 'btn-danger ';
                     markDependent = false;
                 }

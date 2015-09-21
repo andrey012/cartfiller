@@ -1,6 +1,6 @@
 var argv = require('yargs')
     .help('help')
-    .usage('Usage: $0 [options] <cartFiller url> [test file(s) or path(s)]\n<testsuite url> is the URL where cartFiller is installed inside your project, it should end with .../dist/ or .../src/ if you are going to debug cartFiller')
+    .usage('Usage: $0 [options] <cartFiller url> [test file(s) or path(s)]\n<testsuite url> is the URL where cartFiller is installed inside your project, it should end with .../dist/ or .../src/ if you are going to debug cartFiller. Note, that if --serve-http is used then port will be automatically added to this url.')
     .demand(1, 'Please specify testsuite URL')
     .describe('suite', 'testsuite name to run, default = root testsuite (all tests)')
     .alias('s', 'suite')
@@ -8,7 +8,7 @@ var argv = require('yargs')
     .alias('b', 'browser')
     .describe('editor', 'launch interactive editor mode (test(s) will not be auto run)')
     .alias('e', 'editor')
-    .describe('root', 'root URL to discover cartfiller.json')
+    .describe('root', 'root URL to discover cartfiller.json. Note, that if --serve-http is used then port will be automatically added to this url.')
     .alias('r', 'root')
     .describe('app', 'run child application during running testsuite')
     .alias('a', 'app')
@@ -21,10 +21,13 @@ var argv = require('yargs')
     .describe('timeout', 'exit with error code 1 if no activity happens for specified time (seconds), default 60')
     .alias('w', 'wait')
     .describe('wait', 'seconds to wait before tests will be launched, used for browser to settle and stabilize, etc')
+    .describe('serve-http', 'start another local static http server, which will serve files from this directory')
+    .describe('serve-http-port', 'default http port to bind static http server to')
     .argv;
 var express = require('express');
 var open = require('open');
 var app = express();
+var serveHttpApp = express();
 var http = require('http');
 var crypto = require('crypto');
 var bodyParser = require('body-parser');
@@ -148,35 +151,21 @@ app.post('/save/' + sessionKey, function () {
 
 var server;
 var port = argv.port ? argv.port : 3000;
+var serveHttpPort = argv['serve-http-port'] ? argv['serve-http-port'] : 3001;
+var serveHttpServer;
 var browserProcess = false;
 var childApp = false;
 
-var launchServer = function() {
+var startup = [];
+
+startup.push(function() {
     server = http.createServer(app);
     server
         .listen(port, '127.0.0.1', function(err){
             if (! err) {
                 console.log('Launched successfully on port ' + port);
-                var launchBrowserFn = function() {
-                    launchBrowser(argv._[0], argv.browser, 'http://localhost:' + port, argv.editor, argv.root, argv.wait);
-                };
-                if (argv.app) {
-                    console.log('Launching application: ' + argv.app);
-                    childApp = childProcess.spawn(argv.app.split(' ')[0], argv.app.split(' ').slice(1), {cwd: argv.cwd});
-                    childApp.stdout.on('data', function(data) {
-                        console.log('app stdout: ' + data);
-                    });
-                    childApp.stderr.on('data', function(data) {
-                        console.log('app stderr: ' + data);
-                    });
-                    childApp.on('close', function(code) {
-                        console.log('exitting, because child process exitted with code ' + code);
-                        tearDownFn(code ? code : 1);
-                    });
-                    setTimeout(launchBrowserFn, 4000); //// TBD make this more predictable
-                } else {
-                    launchBrowserFn();
-                }
+                startup.shift();
+                startup[0]();
             }
         })
         .on('error', function() {
@@ -185,12 +174,70 @@ var launchServer = function() {
             if (port >= 65535) {
                 console.log('no more chances, exitting');
             } else {
-                launchServer();
+                startup[0]();
             }
         });
+});
+
+if (argv['serve-http']) {
+    serveHttpApp.use(express.static(argv['serve-http']));
+    startup.push(function() {
+        serveHttpServer = http.createServer(serveHttpApp);
+        serveHttpServer
+            .listen(serveHttpPort, '127.0.0.1', function(err){
+                if (! err) {
+                    console.log('ServeHttp launched successfully on port ' + serveHttpPort);
+                    startup.shift();
+                    startup[0]();
+                }
+            })
+            .on('error', function() {
+                console.log('No luck with port ' + serveHttpPort + ' going to try ' + (serveHttpPort + 1));
+                serveHttpPort ++;
+                if (serveHttpPort >= 65535) {
+                    console.log('no more chances, exitting');
+                } else {
+                    startup[0]();
+                }
+            });
+    });
+}
+
+
+if (argv.app) {
+    console.log('Launching application: ' + argv.app);
+    childApp = childProcess.spawn(argv.app.split(' ')[0], argv.app.split(' ').slice(1), {cwd: argv.cwd});
+    childApp.stdout.on('data', function(data) {
+        console.log('app stdout: ' + data);
+    });
+    childApp.stderr.on('data', function(data) {
+        console.log('app stderr: ' + data);
+    });
+    childApp.on('close', function(code) {
+        console.log('exitting, because child process exitted with code ' + code);
+        tearDownFn(code ? code : 1);
+    });
+    setTimeout(function() {
+        startup.shift();
+        startup[0]();
+    }, 4000); //// TBD make this more predictable
+}
+
+var injectPortIntoUrl = function(url, port) {
+    var pc = url.split('/');
+    pc[2] = pc[2].replace(/\:\d+$/, '') + ':' + port;
+    return pc.join('/');
 };
 
-var launchBrowser = function(url, browser, backendUrl, editor, root, wait) {
+startup.push(function() {
+    var url = argv._[0];
+    if (argv['serve-http']) {
+        url = injectPortIntoUrl(url, serveHttpPort);
+    }
+    var backendUrl = 'http://127.0.0.1:' + port;
+    var editor = argv.editor;
+    var root = argv.root;
+    var wait = argv.wait;
     var args = [];
     args.push('backend=' + encodeURIComponent(backendUrl));
     args.push('key=' + encodeURIComponent(sessionKey));
@@ -198,6 +245,9 @@ var launchBrowser = function(url, browser, backendUrl, editor, root, wait) {
         args.push('editor=1');
     }
     if (root) {
+        if (argv['serve-http']) {
+            root = injectPortIntoUrl(root, serveHttpPort);
+        }
         args.push('root=' + encodeURIComponent(root));
     }
     if (wait) {
@@ -215,7 +265,8 @@ var launchBrowser = function(url, browser, backendUrl, editor, root, wait) {
         console.log('Launching ' + (argv.browser ? argv.browser : 'default browser') + ' with URL: ' + url);
         browserProcess = open(url, argv.browser);
     }
-};
+});
 
-launchServer();
+startup[0]();
+
 

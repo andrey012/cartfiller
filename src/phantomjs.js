@@ -10,4 +10,3 @@ page.onConsoleMessage = function(msg) {
 };
 console.log(system.args);
 page.open(system.args[1], function() {});
-

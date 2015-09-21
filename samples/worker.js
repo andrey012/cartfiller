@@ -227,7 +227,11 @@
                     var cartIsEmptyNow = ("0" === cartAmountElement().text());
 
                     api.highlight(cartAmountElement()).say(globals.skipMessages?'':(cartIsEmptyNow ? 'Cart is empty now' : 'Cart is still not empty')).result(cartIsEmptyNow ? "" : "Cant clear cart - it is still not empty");
-                }
+                },
+                'let\' try to skip step', function() {
+                    api.skipTask().result();
+                }, 
+                'step to be skipped', function() {}
             ],
             /**
              * Searches for particular partnumber then looks for 
