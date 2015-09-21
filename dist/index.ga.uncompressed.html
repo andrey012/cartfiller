@@ -46345,7 +46345,7 @@ define('controller', ['app', 'scroll'], function(app){
             reportError('bootstrap message did not come');
         }
     }, 10000);
-    config.gruntBuildTimeStamp='1469128144111';
+    config.gruntBuildTimeStamp='1469136831667';
     window.addEventListener('message', function(event){
         var prefix = 'cartFillerMessage:';
         var isDist = true;
@@ -46419,7 +46419,7 @@ define('controller', ['app', 'scroll'], function(app){
                 if (message.tests) {
                     var x = new XMLHttpRequest();
                     x.onload = function(){
-                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1469128144111') {
+                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1469136831667') {
                             console.log('new version of CartFiller was deployed, switching to it');
                             var hash = window.location.href.split('#');
                             var pc = hash[0].split('?');
@@ -46946,7 +46946,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                 $scope.alreadyWentTo = true;
                 for (i = 0; i < $scope.discovery.scripts.urls.length; i ++) {
                     if ($scope.discovery.scripts.urls[i] === $scope.params.job) {
-                        $scope.runTest(i, 'fast', parseInt($scope.params.task) - 1, parseInt($scope.params.step) - 1);
+                        $scope.runTest(i, $scope.params.slow ? 'slow' : 'fast', parseInt($scope.params.task) - 1, parseInt($scope.params.step) - 1);
                         return;
                     }
                 }

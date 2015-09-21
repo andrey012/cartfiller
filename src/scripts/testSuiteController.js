@@ -417,7 +417,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                 $scope.alreadyWentTo = true;
                 for (i = 0; i < $scope.discovery.scripts.urls.length; i ++) {
                     if ($scope.discovery.scripts.urls[i] === $scope.params.job) {
-                        $scope.runTest(i, 'fast', parseInt($scope.params.task) - 1, parseInt($scope.params.step) - 1);
+                        $scope.runTest(i, $scope.params.slow ? 'slow' : 'fast', parseInt($scope.params.task) - 1, parseInt($scope.params.step) - 1);
                         return;
                     }
                 }
