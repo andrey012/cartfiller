@@ -11,10 +11,40 @@
 <br/>
 <br/>
 <br/>
-    <a class="one">localhost1</a> 
-    <a class="one">localhost2</a> 
-    <a class="one">localhost3</a> 
-    <a class="one">localhost4</a> 
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+    <a class="one">127.0.0.1</a> 
+    <a class="one">127.0.0.2</a> 
+    <a class="one">127.0.0.3</a> 
+    <a class="one">127.0.0.4</a> 
 
 <span></span>
 <br/>
@@ -23,7 +53,7 @@
     var as = document.getElementsByTagName('a');
     for (var i = 0; i < as.length; i ++) {
         as[i].setAttribute('href', window.location.href.replace(/^(https?\:\/\/[^\/]+)\//, function(match, p1) {
-            return p1.replace(/\d*$/, '') + as[i].textContent.replace(/localhost1?/, '') + '/';
+            return p1.replace(/127\.0\.0\.\d*$/, '') + as[i].textContent + '/';
         }));
     }
     var level = /\?(\d+)$/.exec(window.location.href);
@@ -32,7 +62,7 @@
         var f = document.createElement('iframe');
         f.style.width = (500 - level * 100) + 'px';
         f.style.height = (500 - level * 100) + 'px';
-        var me = /localhost(\d?)\//.exec(window.location.href)[1];
+        var me = /127\.0\.0\.(\d?)\//.exec(window.location.href)[1];
         if (! me ) me = 1;
         f.setAttribute('src', as[(parseInt(me)) % 4].getAttribute('href').split('?')[0] + '?' + (level + 1));
         f.setAttribute('name', 'theframe');
@@ -40,7 +70,7 @@
         f = document.createElement('iframe');
         f.style.width = (500 - level * 100) + 'px';
         f.style.height = (500 - level * 100) + 'px';
-        var me = /localhost(\d?)\//.exec(window.location.href)[1];
+        var me = /127\.0\.0\.(\d?)\//.exec(window.location.href)[1];
         if (! me ) me = 1;
         f.setAttribute('src', as[(parseInt(me)-1) % 4].getAttribute('href').split('?')[0] + '?' + (level + 1));
         f.setAttribute('name', 'theframe');

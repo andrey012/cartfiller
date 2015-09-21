@@ -162,7 +162,10 @@
         div.style.zIndex = getZIndexForOverlay();
         div.className = overlayClassName + ' ' + overlayClassName + type;
         div.onclick = function(){me.modules.ui.clearOverlaysAndReflect();};
-        overlayWindow().document.getElementsByTagName('body')[0].appendChild(div);
+        var body = overlayWindow().document.getElementsByTagName('body')[0];
+        if (body) {
+            body.appendChild(div);
+        }
         return div;
     };
     var deleteOverlaysOfType = function(type) {
@@ -351,22 +354,27 @@
         }
         if (scrollPretendent) {
             knownScrollTs = scrollPretendentTs;
-            var border = 0.25;
-            var scroll = [
-                scrollPretendent.rect.left - (getInnerWidth() * border),
-                scrollPretendent.rect.top - (getInnerHeight() * border)
-            ];
-            for (var i = 0 ; i < 2 ; i ++ ) {
-                if (scroll[i] < 0) {
-                    // we need to scroll up/left - that's ok
-                } else {
-                    // we need to scroll down/right -- only if element does not fit
-                    // to the 20...80 % rect
-                    scroll[i] = Math.min(scroll[i], Math.max(0, scrollPretendent.rect[i ? 'bottom' : 'right'] - (i ? getInnerHeight() : getInnerWidth()) * (1 - border)));
+            if (window.callPhantom && (window.callPhantom instanceof Function)) {
+                var mapped = addFrameCoordinatesMap(scrollPretendent);
+                window.callPhantom({scroll: mapped});
+            } else {
+                var border = 0.25;
+                var scroll = [
+                    scrollPretendent.rect.left - (getInnerWidth() * border),
+                    scrollPretendent.rect.top - (getInnerHeight() * border)
+                ];
+                for (var i = 0 ; i < 2 ; i ++ ) {
+                    if (scroll[i] < 0) {
+                        // we need to scroll up/left - that's ok
+                    } else {
+                        // we need to scroll down/right -- only if element does not fit
+                        // to the 20...80 % rect
+                        scroll[i] = Math.min(scroll[i], Math.max(0, scrollPretendent.rect[i ? 'bottom' : 'right'] - (i ? getInnerHeight() : getInnerWidth()) * (1 - border)));
+                    }
                 }
+                me.modules.ui.mainFrameWindow.addEventListener('scroll', arrowToFunction);
+                me.modules.ui.mainFrameWindow.scrollBy(scroll[0], scroll[1]);
             }
-            me.modules.ui.mainFrameWindow.addEventListener('scroll', arrowToFunction);
-            me.modules.ui.mainFrameWindow.scrollBy(scroll[0], scroll[1]);
             return true;
         }
     };

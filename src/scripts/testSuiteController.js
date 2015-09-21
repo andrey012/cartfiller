@@ -655,6 +655,14 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                                             complete: function() {
                                                 delete $scope.params.backend;
                                                 delete $scope.params.key;
+                                                try {
+                                                    if (window.parent && window.parent.callPhantom && ('function' === typeof window.parent.callPhantom)) {
+                                                        console.log('calling Phantom to finish');
+                                                        // we expect Phantom to be launched with --web-security=false
+                                                        // so we don't care about parent access
+                                                        window.parent.callPhantom({finish: true});
+                                                    }
+                                                } catch (e) {}
                                             }
                                         });
                                     }
