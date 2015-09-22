@@ -31,14 +31,14 @@ define('audioService', ['app', 'audioService'], function(app){
 
             navigator.getUserMedia(
                 {
-                    "audio": {
-                        "mandatory": {
-                            "googEchoCancellation": "false",
-                            "googAutoGainControl": "false",
-                            "googNoiseSuppression": "false",
-                            "googHighpassFilter": "false"
+                    'audio': {
+                        'mandatory': {
+                            'googEchoCancellation': 'false',
+                            'googAutoGainControl': 'false',
+                            'googNoiseSuppression': 'false',
+                            'googHighpassFilter': 'false'
                         },
-                        "optional": []
+                        'optional': []
                     },
                 }, 
                 function(stream) {
@@ -54,19 +54,22 @@ define('audioService', ['app', 'audioService'], function(app){
                     }
 
                     node.onaudioprocess = function(e){
-                        if (!recording) return;
+                        if (! recording) {
+                            return;
+                        }
 
                         var r = e.inputBuffer.getChannelData(0);
                         var l = e.inputBuffer.getChannelData(1);
                         var len = Math.max(r.length, l.length);
                         var b = new Uint16Array(2 * len);
-                        for (var i = 0; i < r.length; i ++) {
-                            var s = Math.max(-1, Math.min(1, r[i]));
+                        var i, s;
+                        for (i = 0; i < r.length; i ++) {
+                            s = Math.max(-1, Math.min(1, r[i]));
                             b[i * 2] = s < 0 ? s * 0x8000 : s * 0x7FFF;
                         }
 
-                        for (var i = 0; i < l.length; i ++) {
-                            var s = Math.max(-1, Math.min(1, l[i]));
+                        for (i = 0; i < l.length; i ++) {
+                            s = Math.max(-1, Math.min(1, l[i]));
                             b[i * 2 + 1] = s < 0 ? s * 0x8000 : s * 0x7FFF;
                         }
                         buffers.push(b);
@@ -87,9 +90,6 @@ define('audioService', ['app', 'audioService'], function(app){
                 }
             );
 
-        }
-        var gotStream = function(stream) {
-
         };
         return {
             toggle: function(link, testName, task, step) {
@@ -102,11 +102,11 @@ define('audioService', ['app', 'audioService'], function(app){
                     var buffer = new ArrayBuffer(44 + bufferLength * 4);
                     var view = new DataView(buffer);
 
-                    function writeString(view, offset, string){
+                    var writeString = function(view, offset, string){
                         for (var i = 0; i < string.length; i++){
                             view.setUint8(offset + i, string.charCodeAt(i));
                         }
-                    }
+                    };
                     /* RIFF identifier */
                     writeString(view, 0, 'RIFF');
                     /* file length */
@@ -152,6 +152,6 @@ define('audioService', ['app', 'audioService'], function(app){
                 }
                 return recording;
             }
-        }
+        };
     });
 });

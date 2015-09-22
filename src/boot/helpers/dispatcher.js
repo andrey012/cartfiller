@@ -1540,21 +1540,24 @@
                     }
                 }
             }
+            var messageForWorker = {
+                index: workerCurrentTaskIndex, 
+                step: workerCurrentStepIndex, 
+                status: status, 
+                message: message,
+                response: response,
+                nop: recoverable === 'nop',
+                nextTaskFlow: nextTaskFlow,
+                globals: workerGlobals,
+                sleep: sleepAfterThisStep
+            };
+            workerCurrentStepIndex = false;
+            workerOnLoadHandler = false;
+            suspendAjaxRequestsCallback = false;
             this.postMessageToWorker(
                 'workerStepResult', 
-                {
-                    index: workerCurrentTaskIndex, 
-                    step: workerCurrentStepIndex, 
-                    status: status, 
-                    message: message,
-                    response: response,
-                    nop: recoverable === 'nop',
-                    nextTaskFlow: nextTaskFlow,
-                    globals: workerGlobals,
-                    sleep: sleepAfterThisStep
-                }
+                messageForWorker
             );
-            workerCurrentStepIndex = workerOnLoadHandler = suspendAjaxRequestsCallback = false;
         },
         /**
          * Registers worker's onLoad callback for main frame

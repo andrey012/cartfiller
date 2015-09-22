@@ -184,7 +184,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1470155562176';
+    config.gruntBuildTimeStamp='1470177033964';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -2733,21 +2733,24 @@
                     }
                 }
             }
+            var messageForWorker = {
+                index: workerCurrentTaskIndex, 
+                step: workerCurrentStepIndex, 
+                status: status, 
+                message: message,
+                response: response,
+                nop: recoverable === 'nop',
+                nextTaskFlow: nextTaskFlow,
+                globals: workerGlobals,
+                sleep: sleepAfterThisStep
+            };
+            workerCurrentStepIndex = false;
+            workerOnLoadHandler = false;
+            suspendAjaxRequestsCallback = false;
             this.postMessageToWorker(
                 'workerStepResult', 
-                {
-                    index: workerCurrentTaskIndex, 
-                    step: workerCurrentStepIndex, 
-                    status: status, 
-                    message: message,
-                    response: response,
-                    nop: recoverable === 'nop',
-                    nextTaskFlow: nextTaskFlow,
-                    globals: workerGlobals,
-                    sleep: sleepAfterThisStep
-                }
+                messageForWorker
             );
-            workerCurrentStepIndex = workerOnLoadHandler = suspendAjaxRequestsCallback = false;
         },
         /**
          * Registers worker's onLoad callback for main frame

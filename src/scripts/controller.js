@@ -745,6 +745,6 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 button.removeClass('btn-danger').addClass('btn-info');
                 return true;
             }
-        }
+        };
     }]);
 });

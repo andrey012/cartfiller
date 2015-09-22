@@ -581,6 +581,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                         $scope.runTest(index, how, untilTask, untilStep, $event, true);
                     }
                 });
+                return;
             }
             if (untilTask === -1 || untilTask === '-1') {
                 untilTask = untilStep = undefined;

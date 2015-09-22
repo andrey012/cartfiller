@@ -6972,6 +6972,7 @@ button.close {
                onclick="return false;"
                >{{chooseJobState ? 'Close' : 'Open'}}</a>
             <br/>
+            <a id="recordAudio" href="#" class="btn btn-info btn-xs" onclick="var event = arguments[0] || window.event; return angular.element(this).scope().recordAudioNoWatch(event);" title="Record Audio">A</a>
             <input type="checkbox" id="suspendEditorMode" title="suspend editor mode (refresh of test scenario and workers)" onchange="var event = arguments[0] || window.event; return angular.element(this).scope().suspendEditorModeNoWatch(event, this)"/>
             <input type="checkbox" id="alertOnErrors" title="alert (show dialog) when errors are encountered"/>
             <a href="#" class="btn btn-info btn-xs" onclick="var event = arguments[0] || window.event; return angular.element(this).scope().toggleSizeNoWatch(event);" title="resize">[]</a>
@@ -46544,13 +46545,171 @@ return jQuery;
 define('app', ['angular', 'angular-route'], function(){
     return angular.module('cartFillerApp', ['ngRoute']);
 });
+define('audioService', ['app', 'audioService'], function(app){
+    app.service('cfAudioService', function(){
+        var recording = false;
+        var initialized;
+        var AudioContext;
+        var audioContext;
+        var inputPoint;
+        var analyserNode;
+        var zeroGain;
+        var node;
+        var buffers;
+        var bufferLength;
+        var sampleRate;
+        var initialize = function() {
+            if (initialized) {
+                return;
+            }
+            initialized = true;
+            AudioContext = window.AudioContext || window.webkitAudioContext;
+            audioContext = new AudioContext();
+            inputPoint = audioContext.createGain();
+            if (!navigator.getUserMedia) {
+                navigator.getUserMedia = navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
+            }
+            if (!navigator.cancelAnimationFrame) {
+                navigator.cancelAnimationFrame = navigator.webkitCancelAnimationFrame || navigator.mozCancelAnimationFrame;
+            }
+            if (!navigator.requestAnimationFrame) {
+                navigator.requestAnimationFrame = navigator.webkitRequestAnimationFrame || navigator.mozRequestAnimationFrame;
+            }
+
+            navigator.getUserMedia(
+                {
+                    'audio': {
+                        'mandatory': {
+                            'googEchoCancellation': 'false',
+                            'googAutoGainControl': 'false',
+                            'googNoiseSuppression': 'false',
+                            'googHighpassFilter': 'false'
+                        },
+                        'optional': []
+                    },
+                }, 
+                function(stream) {
+                    audioContext.createMediaStreamSource(stream).connect(inputPoint);
+                    analyserNode = audioContext.createAnalyser();
+                    analyserNode.fftSize = 2048;
+                    inputPoint.connect( analyserNode );
+                    sampleRate = inputPoint.context.sampleRate;
+                    if(!inputPoint.context.createScriptProcessor){
+                        node = inputPoint.context.createJavaScriptNode(16384, 2, 2);
+                    } else {
+                        node = inputPoint.context.createScriptProcessor(16384, 2, 2);
+                    }
+
+                    node.onaudioprocess = function(e){
+                        if (! recording) {
+                            return;
+                        }
+
+                        var r = e.inputBuffer.getChannelData(0);
+                        var l = e.inputBuffer.getChannelData(1);
+                        var len = Math.max(r.length, l.length);
+                        var b = new Uint16Array(2 * len);
+                        var i, s;
+                        for (i = 0; i < r.length; i ++) {
+                            s = Math.max(-1, Math.min(1, r[i]));
+                            b[i * 2] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+                        }
+
+                        for (i = 0; i < l.length; i ++) {
+                            s = Math.max(-1, Math.min(1, l[i]));
+                            b[i * 2 + 1] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+                        }
+                        buffers.push(b);
+                        bufferLength += len;
+                        return;
+                    };
+                    inputPoint.connect(node);
+                    node.connect(inputPoint.context.destination); 
+
+                    zeroGain = audioContext.createGain();
+                    zeroGain.gain.value = 0.0;
+                    inputPoint.connect( zeroGain );
+                    zeroGain.connect( audioContext.destination );
+                }, 
+                function(e) {
+                    alert('Error getting audio');
+                    console.log(e);
+                }
+            );
+
+        };
+        return {
+            toggle: function(link, testName, task, step) {
+                if (! recording) {
+                    recording = (new Date()).getTime();
+                    buffers = [];
+                    bufferLength = 0;
+                    initialize();
+                } else {
+                    var buffer = new ArrayBuffer(44 + bufferLength * 4);
+                    var view = new DataView(buffer);
+
+                    var writeString = function(view, offset, string){
+                        for (var i = 0; i < string.length; i++){
+                            view.setUint8(offset + i, string.charCodeAt(i));
+                        }
+                    };
+                    /* RIFF identifier */
+                    writeString(view, 0, 'RIFF');
+                    /* file length */
+                    view.setUint32(4, 32 + bufferLength * 4, true);
+                    /* RIFF type */
+                    writeString(view, 8, 'WAVE');
+                    /* format chunk identifier */
+                    writeString(view, 12, 'fmt ');
+                    /* format chunk length */
+                    view.setUint32(16, 16, true);
+                    /* sample format (raw) */
+                    view.setUint16(20, 1, true);
+                    /* channel count */
+                    view.setUint16(22, 2, true);
+                    /* sample rate */
+                    view.setUint32(24, sampleRate, true);
+                    /* byte rate (sample rate * block align) */
+                    view.setUint32(28, sampleRate * 4, true);
+                    /* block align (channel count * bytes per sample) */
+                    view.setUint16(32, 4, true);
+                    /* bits per sample */
+                    view.setUint16(34, 16, true);
+                    /* data chunk identifier */
+                    writeString(view, 36, 'data');
+                    /* data chunk length */
+                    view.setUint32(40, bufferLength * 4, true);
+                    
+                    var offset = 44;
+                    buffers.filter(function(buffer) {
+                        for (var i = 0; i < buffer.length; i ++) {
+                            view.setInt16(offset, buffer[i], true);
+                            offset += 2;
+                        }
+                    });
+
+
+                    var url = (window.URL || window.webkitURL).createObjectURL(new Blob([view], { type: 'audio/wav' }));
+                    link.href = url;
+                    var now = (new Date()).getTime();
+                    var duration = now - recording;
+                    link.download = testName + '_' + (1 + task) + '_' + (1 + step) + '_' + duration + '_' + now + ' .wav';
+                    recording = false;
+                }
+                return recording;
+            }
+        };
+    });
+});
+
 define('bootstrap', ['app', 'controller', 'cfMessageService', 'testSuiteController'], function(){
     return angular.bootstrap(document, ['cartFillerApp']);
 });
-define('controller', ['app', 'scroll'], function(app){
+define('controller', ['app', 'scroll', 'audioService'], function(app){
     'use strict';
     app
-    .controller('indexController', ['$scope', 'cfMessage', '$timeout', 'cfDebug', 'cfScroll', function ($scope, cfMessage, $timeout, cfDebug, cfScroll){
+    .controller('indexController', ['$scope', 'cfMessage', '$timeout', 'cfDebug', 'cfScroll', 'cfAudioService', function ($scope, cfMessage, $timeout, cfDebug, cfScroll, cfAudioService){
         if (cfMessage.testSuite) {
             return;
         }
@@ -47283,6 +47442,18 @@ define('controller', ['app', 'scroll'], function(app){
             cfMessage.send('toggleEditorMode', {enable: enable});
             return false;
         };
+        $scope.recordAudioNoWatch = function(event) {
+            var button = $('#recordAudio');
+            var recording = cfAudioService.toggle(button[0], $scope.jobTitle, $scope.currentTask, $scope.currentStep);
+            if (recording) {
+                event.stopPropagation();
+                button.removeClass('btn-info').addClass('btn-danger');
+                return false;
+            } else {
+                button.removeClass('btn-danger').addClass('btn-info');
+                return true;
+            }
+        };
     }]);
 });
 
@@ -47301,7 +47472,7 @@ define('controller', ['app', 'scroll'], function(app){
             reportError('bootstrap message did not come');
         }
     }, 10000);
-    config.gruntBuildTimeStamp='1470155562176';
+    config.gruntBuildTimeStamp='1470177033964';
     window.addEventListener('message', function(event){
         var prefix = 'cartFillerMessage:';
         var isDist = true;
@@ -47375,7 +47546,7 @@ define('controller', ['app', 'scroll'], function(app){
                 if (message.tests) {
                     var x = new XMLHttpRequest();
                     x.onload = function(){
-                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1470155562176') {
+                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1470177033964') {
                             console.log('new version of CartFiller was deployed, switching to it');
                             var hash = window.location.href.split('#');
                             var pc = hash[0].split('?');
@@ -48066,6 +48237,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                         $scope.runTest(index, how, untilTask, untilStep, $event, true);
                     }
                 });
+                return;
             }
             if (untilTask === -1 || untilTask === '-1') {
                 untilTask = untilStep = undefined;
