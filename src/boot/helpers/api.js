@@ -952,6 +952,9 @@
         compareCleanText: function(a, b) {
             return cleanText(a) === cleanText(b);
         },
+        containsCleanText: function(a, b) {
+            return -1 !== cleanText(a).indexOf(cleanText(b));
+        },
         suspendRequests: function(cb) {
             me.modules.dispatcher.onMessage_toggleEditorMode({enable: false, cb: cb});
         }

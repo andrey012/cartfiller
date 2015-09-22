@@ -92,7 +92,7 @@ app.post('/ready/' + sessionKey, function(req, res) {
                 ffmepgWarmup = false;
                 res.end();
             }
-        }
+        };
         ffmpegProcess = childProcess.spawn('ffmpeg', args);
 
         ffmpegProcess.stdout.on('data', function(data) { console.log('ffmpeg stdout: ' + data); ffmpegWarmedUp(); });
@@ -275,11 +275,7 @@ var injectPortIntoUrl = function(url, port) {
     pc[2] = pc[2].replace(/\:\d+$/, '') + ':' + port;
     return pc.join('/');
 };
-
-
-var fileCounter = 0;
-var fs = require('fs');
-var os = require("os");    
+    
 startup.push(function() {
     var url = argv._[0];
     if (argv['serve-http']) {
