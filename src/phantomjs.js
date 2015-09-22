@@ -28,7 +28,8 @@ var args = system.args.filter(function(arg) {
     if ('--video' === arg) {
         page.onConsoleMessage('turning video on');
         setInterval(function() {
-            page.render('/dev/stdout', { format: 'png' });
+            var buffer = page.renderBase64('png');
+            system.stdout.write(buffer);
         }, 25);
         return false;
     }

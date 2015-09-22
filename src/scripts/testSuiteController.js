@@ -565,7 +565,23 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             var test = $scope.discovery.scripts.contents[index];
             $.cartFillerPlugin({'$cartFillerTestUpdate': test, trackWorker: $scope.params.editor});
         };
-        $scope.runTest = function(index, how, untilTask, untilStep, $event) {
+        $scope.runTest = function(index, how, untilTask, untilStep, $event, isBackendReady) {
+            // for case of video record - we need backend to get prepared
+            if ($scope.params.backend && ! isBackendReady) {
+                // wait for backend to get ready
+                backendPendingRequestCounter ++;
+                $.ajax({
+                    url: $scope.params.backend.replace(/\/+$/, '') + '/ready/' + $scope.params.key,
+                    method: 'POST',
+                    data: {
+                        test: $scope.discovery.scripts.urls[index],
+                    },
+                    complete: function() {
+                        backendPendingRequestCounter --;
+                        $scope.runTest(index, how, untilTask, untilStep, $event, true);
+                    }
+                });
+            }
             if (untilTask === -1 || untilTask === '-1') {
                 untilTask = untilStep = undefined;
             }

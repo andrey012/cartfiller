@@ -70,6 +70,39 @@ app.post('/progress/' + sessionKey, function (req, res) {
     res.end();
 });
 
+var ffmpegWarmup = true;
+
+
+app.post('/ready/' + sessionKey, function(req, res) {
+    console.log('testSuiteController says get ready for : ' + req.body.test);
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    if (argv.video) {
+        if (ffmpegProcess) {
+            ffmpegProcess.stdin.end();
+        }
+        var pc = argv.video.split('.');
+        var ext = pc.pop();
+        pc.push(encodeURIComponent(req.body.test));
+        pc.push(ext);
+        var args = ['-c:v', 'png', '-f', 'image2pipe', '-r', '25', '-i', '-', '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', '-y', pc.join('.')];
+        console.log('launching ffmpeg ' + args.join(' '));
+        ffmpegWarmup = true;
+        ffmpegWarmedUp = function() {
+            if (ffmpegWarmup) {
+                ffmepgWarmup = false;
+                res.end();
+            }
+        }
+        ffmpegProcess = childProcess.spawn('ffmpeg', args);
+
+        ffmpegProcess.stdout.on('data', function(data) { console.log('ffmpeg stdout: ' + data); ffmpegWarmedUp(); });
+        ffmpegProcess.stderr.on('data', function(data) { console.log('ffmpeg stderr: ' + data); ffmpegWarmedUp(); });
+
+    } else {
+        res.end();
+    }
+});
+
 var tearDownFn = function(code) {
     var cmds;
     var waterfall = [];
@@ -112,7 +145,7 @@ var tearDownFn = function(code) {
                 waterfall.shift();
                 waterfall[0]();
             });
-            ffmpegProcess.kill();
+            ffmpegProcess.stdin.end();
         });
     }
     waterfall.push(function(){
@@ -243,24 +276,10 @@ var injectPortIntoUrl = function(url, port) {
     return pc.join('/');
 };
 
-var ffmpegWarmup = true;
-var ffmpegWarmedUp = function() {
-    if (ffmpegWarmup) {
-        ffmpegWarmup = false;
-        startup.shift();
-        startup[0]();
-    }
-};
 
-if (0 && argv.video) {
-    startup.push(function() {
-        ffmpegProcess = childProcess.spawn('ffmpeg', ['-c:v', 'png', '-f', 'image2pipe', '-r', '25', '-t', '10', '-i', '-', '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', '-y', argv.video]);
-
-        ffmpegProcess.stdout.on('data', function(data) { console.log('ffmpeg stdout: ' + data); ffmpegWarmedUp(); });
-        ffmpegProcess.stderr.on('data', function(data) { console.log('ffmpeg stderr: ' + data); ffmpegWarmedUp(); });
-    });
-}
-
+var fileCounter = 0;
+var fs = require('fs');
+var os = require("os");    
 startup.push(function() {
     var url = argv._[0];
     if (argv['serve-http']) {
@@ -289,47 +308,31 @@ startup.push(function() {
     url = url + (-1 === url.indexOf('#') ? '#' : '&') + args.join('&');
     if (isPhantomJs) {
         var childArgs;
-        if (argv.video) {
-            var cmd = argv.browser + ' --web-security=false ' + __dirname + '/phantomjs.js --video \'' + url + '\' | ffmpeg -c:v png -f image2pipe -r 25 -t 10 -i - -c:v libx264 -pix_fmt yuv420p -movflags +faststart -y ' + argv.video;
-            console.log('Launching ' + cmd);
-            browserProcess = childProcess.exec(cmd);
-            browserProcess.stdout.on('data', function(data) { console.log('PhantomJs stdout: ' + data); });
-            browserProcess.stderr.on('data', function(data) { console.log('PhantomJs stderr: ' + data); });
-        } else {
-            childArgs = ['--web-security=false', __dirname + '/phantomjs.js'];
-            if (ffmpegProcess) {
-                childArgs.push('--video');
-            }
-            childArgs.push(url);
-            console.log('Launching ' + (argv.browser) + ' ' + childArgs.join(' '));
-            browserProcess = childProcess.spawn(argv.browser, childArgs);
-            if (ffmpegProcess) {
-                console.log('piping');
-                browserProcess.stdout.pipe(ffmpegProcess.stdin);
-            }
-            browserProcess.stdout.on('close', function() {
-                console.log('close');
-            });
-            browserProcess.stdout.on('drain', function() {
-                console.log('drain');
-            });
-            browserProcess.stdout.on('error', function() {
-                console.log('error');
-            });
-            browserProcess.stdout.on('finish', function() {
-                console.log('finish');
-            });
-            browserProcess.stdout.on('pipe', function() {
-                console.log('pipe');
-            });
-            browserProcess.stdout.on('unpipe', function() {
-                console.log('unpipe');
-            });
-            browserProcess.stdout.on('data', function(data) { 
-                console.log('PhantomJs stdout: ' + data); 
-            });
-            browserProcess.stderr.on('data', function(data) { console.log('PhantomJs stderr: ' + data); });
+        var cmd = argv.browser + ' --web-security=false ' + __dirname + '/phantomjs.js --video \'' + url + '\'  ';
+        console.log('Launching ' + cmd);
+        //browserProcess = childProcess.exec(cmd);
+
+
+
+        childArgs = ['--web-security=false', __dirname + '/phantomjs.js'];
+        if (1 || ffmpegProcess) {
+            childArgs.push('--video');
         }
+        childArgs.push(url);
+        console.log('Launching ' + (argv.browser) + ' ' + childArgs.join(' '));
+        browserProcess = childProcess.spawn(argv.browser, childArgs);
+
+
+        browserProcess.stdout.on('data', function(data) { 
+            if (ffmpegProcess) {
+                var buf = Buffer(data.toString(), 'base64');
+                ffmpegProcess.stdin.write(buf);
+            }
+            if (! argv.video) {
+                console.log('PhantomJs stdout: ' + data);
+            }
+        });
+        browserProcess.stderr.on('data', function(data) { console.log('PhantomJs stderr: ' + data); });
     } else {
         console.log('Launching ' + (argv.browser ? argv.browser : 'default browser') + ' with URL: ' + url);
         browserProcess = open(url, argv.browser);
