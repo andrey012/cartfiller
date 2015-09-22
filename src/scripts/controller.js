@@ -1,7 +1,7 @@
-define('controller', ['app', 'scroll'], function(app){
+define('controller', ['app', 'scroll', 'audioService'], function(app){
     'use strict';
     app
-    .controller('indexController', ['$scope', 'cfMessage', '$timeout', 'cfDebug', 'cfScroll', function ($scope, cfMessage, $timeout, cfDebug, cfScroll){
+    .controller('indexController', ['$scope', 'cfMessage', '$timeout', 'cfDebug', 'cfScroll', 'cfAudioService', function ($scope, cfMessage, $timeout, cfDebug, cfScroll, cfAudioService){
         if (cfMessage.testSuite) {
             return;
         }
@@ -734,5 +734,17 @@ define('controller', ['app', 'scroll'], function(app){
             cfMessage.send('toggleEditorMode', {enable: enable});
             return false;
         };
+        $scope.recordAudioNoWatch = function(event) {
+            var button = $('#recordAudio');
+            var recording = cfAudioService.toggle(button[0], $scope.jobTitle, $scope.currentTask, $scope.currentStep);
+            if (recording) {
+                event.stopPropagation();
+                button.removeClass('btn-info').addClass('btn-danger');
+                return false;
+            } else {
+                button.removeClass('btn-danger').addClass('btn-info');
+                return true;
+            }
+        }
     }]);
 });
