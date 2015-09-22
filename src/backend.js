@@ -25,6 +25,8 @@ var argv = require('yargs')
     .describe('record video using ffmpeg into this file (works only with phantomjs')
     .describe('serve-http', 'start another local static http server, which will serve files from this directory')
     .describe('serve-http-port', 'default http port to bind static http server to')
+    .describe('phantomjs-auth', 'Username:password for PhantomJs http authentication')
+    .describe('phantomjs-render', 'filename (.png) to render page 5 seconds after launching to troubleshoot what PhantomJs is doing')
     .argv;
 var express = require('express');
 var open = require('open');
@@ -66,7 +68,7 @@ app.post('/progress/' + sessionKey, function (req, res) {
     if (req.body.result !== 'ok') {
         failures.push(req.body);
     }
-    console.log((req.body.result + '       ').substr(0,8) + (new Date()) + '  ' + req.body.test + ', task ' + (parseInt(req.body.task) + 1) + ': ' + req.body.taskName + ', step ' + (parseInt(req.body.step) + 1) + ': result = ' + req.body.result);
+    console.log((req.body.result + '       ').substr(0,8) + (new Date()) + '  ' + req.body.test + ', task ' + (parseInt(req.body.task) + 1) + ': ' + req.body.taskName + ', step ' + (parseInt(req.body.step) + 1) + ': result = ' + req.body.result + (req.body.videoFrame ? (', frame = ' + req.body.videoFrame) : '') + (req.body.message ? (', message = ' + req.body.message) : ''));
     res.end();
 });
 
@@ -304,14 +306,15 @@ startup.push(function() {
     url = url + (-1 === url.indexOf('#') ? '#' : '&') + args.join('&');
     if (isPhantomJs) {
         var childArgs;
-        var cmd = argv.browser + ' --web-security=false ' + __dirname + '/phantomjs.js --video \'' + url + '\'  ';
-        console.log('Launching ' + cmd);
-        //browserProcess = childProcess.exec(cmd);
-
-
-
-        childArgs = ['--web-security=false', __dirname + '/phantomjs.js'];
-        if (1 || ffmpegProcess) {
+        childArgs = ['--web-security=false'];
+        childArgs.push(__dirname + '/phantomjs.js');
+        if (argv['phantomjs-auth']) {
+            childArgs.push('--auth=' + argv['phantomjs-auth']);
+        }
+        if (argv['phantomjs-render']) {
+            childArgs.push('--render=' + argv['phantomjs-render']);
+        }
+        if (argv.video) {
             childArgs.push('--video');
         }
         childArgs.push(url);

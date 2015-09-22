@@ -565,6 +565,14 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             var test = $scope.discovery.scripts.contents[index];
             $.cartFillerPlugin({'$cartFillerTestUpdate': test, trackWorker: $scope.params.editor});
         };
+        var getVideoFrame = function () {
+            try {
+                if (window.parent && window.parent.callPhantom && ('function' === typeof window.parent.callPhantom)) {
+                    return window.parent.callPhantom({getVideoFrame: true});
+                }
+            } catch (e) {}
+            return '-1';
+        };
         $scope.runTest = function(index, how, untilTask, untilStep, $event, isBackendReady) {
             // for case of video record - we need backend to get prepared
             if ($scope.params.backend && ! isBackendReady) {
@@ -633,7 +641,8 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                             task: data.currentTaskIndex,
                             taskName: $scope.discovery.scripts.contents[index].details[data.currentTaskIndex].task,
                             step: data.currentTaskStepIndex,
-                            result: data.result[data.currentTaskIndex].stepResults[data.currentTaskStepIndex].status
+                            result: data.result[data.currentTaskIndex].stepResults[data.currentTaskStepIndex].status,
+                            videoFrame: getVideoFrame()
                         };
                         if (json.result !== 'ok') {
                             json.message = data.result[data.currentTaskIndex].stepResults[data.currentTaskStepIndex].message;
