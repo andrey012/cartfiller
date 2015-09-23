@@ -184,7 +184,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1470486904644';
+    config.gruntBuildTimeStamp='1470515063026';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -297,22 +297,30 @@
      * @access public
      */
     /** 
-     * Contains worker code for particular worker task, as array
-     * where even members are names of steps, and odd members
-     * are either step functions or arrays of function + parameters object, see example below
-     * where el is any value set using api.highlight or api.arrow in previous step
-     * Array can contain subarrays itself, in this case of course number of non-array
-     * elements should be even.
+     * Contains worker code for particular worker task, as array of steps or
+     * subarrays (nested steps). All subarrays are just flattened. Each step
+     * is 2 array items - a string (name or comment) and a function. Optionally
+     * function can be replaced with an array of [function(){}, parameters]
      * Each function must be of {CartFiller.Api.WorkerTask.workerStepFunction} type
+     * As you can see on the example - results of all previous steps are passed as parameters
+     * in a reverse order. Usually you need to use only result of previous step, but
+     * sometimes you need to find multiple elements on page and then do something 
+     * with all of them. 
+     * 
+     * To return result of a step use api.return(...) function. Two UI methods: 
+     * api.highlight(...) and api.arrow(...) imply api.return(). Note, that only one
+     * returned result is kept in memory, so, if you do api.return(1).return(2), then 2
+     * will be the result. 
+     * 
      * @class CartFiller.Api.WorkerTask
      * @see {CartFiller.Api.WorkerTask.workerStepFunction}
      * @example
      *  [
-     *      'step 1', function(el,env){ ... },
-     *      'step 2', [function(el,env){.. env.params.theParam ...}, {theParam: 2}],
+     *      'step 1', function(){ ... },
+     *      'step 2', [function(resultOfStep1){.. api.env.params.theParam ...}, {theParam: 2}],
      *      [   
-     *          'step 3', function() { ... },
-     *          'step 4', function() { ... }
+     *          'step 3', function(resultOfStep2, resultOfStep1) { ... },
+     *          'step 4', function(resultOfStep3, resultOfStep2, resultOfStep1) { ... }
      *      ]
      *  ]
      */
@@ -324,23 +332,21 @@
      * Funny thing about these functions is that their parameter names are sometimes
      * meaningful and result in some magic. For example having any parameter named 
      * repeatN where N is integer (e.g. function(repeat10) {... or 
-     * function(el, env, repeat15) { ... ) will result in repeating this step N times 
+     * function(el, repeat15) { ... ) will result in repeating this step N times 
      * if it fails, until it succeeds, with interval of 1 second.
      * 
      * @callback CartFiller.Api.WorkerTask.workerStepFunction
-     * @param {jQuery|HtmlElement|Array|undefined} highlightedElement Most recently 
-     * highlighted element is passed back to this callback. Value is same as 
-     * was used in most recent call to api.array() or api.highlight()
-     * @param {CartFiller.Api.StepEnvironment} env Environment utility object
-     * @param {undefined} repeatN Specifies to repeat call N times if it fails, so
-     * parameter name should be e.g. repeat5 or repeat 10
+     * @param {mixed} result of previous step
+     * @param {undefined} magic repeatN Specifies to repeat call N times if it fails, so
+     * parameter name should be e.g. repeat5 or repeat 10. sleepN means sleep N ms
+     * which only happens in slow mode.
      * @example
      * [
-     *      'step name', function(el, env) { ... },
+     *      'step name', function(el) { ... },
      *      'step name', function(el, repeat10) { ... },
      *      'step name', function(repeat5) { ... },
      *      'step name', function() { ... },
-     *      'step name', function(el, env, repeat10) { ... }
+     *      'step name', function(el, repeat10) { ... }
      * ]
      */
     /** 
@@ -433,6 +439,11 @@
     var useDebugger = false;
 
     me.scripts.push({
+        /**
+         * @property {CartFiller.Api.StepEnvironment} CartFiller.Api#env
+         */
+        env: {},
+
         debugger: function(v) {
             if (v) {
                 useDebugger = true;
@@ -684,7 +695,7 @@
         highlight: function(element, allElements, noScroll){
             try {
                 me.modules.ui.highlight(element, allElements, noScroll);
-                me.modules.dispatcher.setHighlightedElement(element);
+                me.modules.dispatcher.setReturnedValueOfStep(element);
             } catch (e) {}
             return this;
         },
@@ -703,8 +714,19 @@
         arrow: function(element, allElements, noScroll){
             try {
                 me.modules.ui.arrowTo(element, allElements, noScroll);
-                me.modules.dispatcher.setHighlightedElement(element);
+                me.modules.dispatcher.setReturnedValueOfStep(element);
             } catch (e){}
+            return this;
+        },
+        /**
+         * remember result. 
+         * @function CartFiller.API#return
+         * @param {mixed} value
+         * @return {CartFiller.Api} for chaining
+         * @access public
+         */
+        return: function(value) {
+            me.modules.dispatcher.setReturnedValueOfStep(value);
             return this;
         },
         /**
@@ -719,7 +741,7 @@
          * @access public
          */
         say: function(message, pre, nextButton){
-            me.modules.ui.say(message, pre, nextButton);
+            me.modules.ui.say(String(message), pre, nextButton);
             return this;
         },
         /**
@@ -1326,11 +1348,16 @@
      */
     var bootstrapped = false;
     /**
-     * See {@link CartFiller.Api#highlight}
-     * @var {jQuery|HtmlElement|false} CartFiller.Dispatcher~highlightedElement 
+     * See {@link CartFiller.Api#highlight}, {@link CartFiller.Api#arrow}
+     * @var {Array} CartFiller.Dispatcher~returnedValuesOfSteps
      * @access private
      */
-    var highlightedElement = false;
+    var returnedValuesOfSteps = [];
+    /**
+     * @var {int} CartFiller.Dispatcher~returnedValuesOfStepsAreForTask
+     * @access private
+     */
+    var returnedValuesOfStepsAreForTask;
     /**
      * Cache job details to give it to worker in full. Purpose is to make it 
      * possible to deliver configuration/environment variables from 
@@ -1414,6 +1441,15 @@
                 }
             }
         }
+    };
+    var getWorkerFnParams = function() {
+        if (returnedValuesOfStepsAreForTask !== workerCurrentTaskIndex) {
+            returnedValuesOfSteps = [returnedValuesOfSteps.pop()];
+            returnedValuesOfStepsAreForTask = workerCurrentTaskIndex;
+        }
+        return returnedValuesOfSteps.filter(function(v,i) {
+            return i <= workerCurrentStepIndex;
+        }).reverse();
     };
     /**
      * Calls registered event callbacks
@@ -2173,7 +2209,8 @@
                         sleepAfterThisStep = undefined;
                         currentStepWorkerFn = workerFn;
                         me.modules.api.debugger(message.debug);
-                        workerFn(highlightedElement, currentStepEnv);
+                        me.modules.api.env = currentStepEnv;
+                        workerFn.apply(me.modules.ui.mainFrameWindow, getWorkerFnParams());
                     }
                 } catch (err){
                     this.reportErrorResult(err);
@@ -2724,7 +2761,7 @@
                 m = magicParamPatterns.repeat.exec(currentStepWorkerFn.toString().split(')')[0]);
                 if (m && parseInt(m[1]) > stepRepeatCounter) {
                     me.modules.api.setTimeout(function() {
-                        currentStepWorkerFn(highlightedElement, currentStepEnv);
+                        currentStepWorkerFn(getWorkerFnParams());
                     }, 1000);
                     return;
                 }
@@ -2786,12 +2823,12 @@
         },
         /**
          * Sets current highlighted element
-         * @function CartFiller.Dispatcher#setHighlightedElement
+         * @function CartFiller.Dispatcher#setReturnedValueOfStep
          * @param {jQuery|HtmlElement} element
          * @access public
          */
-        setHighlightedElement: function(element){
-            highlightedElement = element;
+        setReturnedValueOfStep: function(element){
+            returnedValuesOfSteps[workerCurrentStepIndex + 1] = element;
         },
         /**
          * Registers setTimeout id to be called if step will experience timeout

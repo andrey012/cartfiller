@@ -133,11 +133,16 @@
      */
     var bootstrapped = false;
     /**
-     * See {@link CartFiller.Api#highlight}
-     * @var {jQuery|HtmlElement|false} CartFiller.Dispatcher~highlightedElement 
+     * See {@link CartFiller.Api#highlight}, {@link CartFiller.Api#arrow}
+     * @var {Array} CartFiller.Dispatcher~returnedValuesOfSteps
      * @access private
      */
-    var highlightedElement = false;
+    var returnedValuesOfSteps = [];
+    /**
+     * @var {int} CartFiller.Dispatcher~returnedValuesOfStepsAreForTask
+     * @access private
+     */
+    var returnedValuesOfStepsAreForTask;
     /**
      * Cache job details to give it to worker in full. Purpose is to make it 
      * possible to deliver configuration/environment variables from 
@@ -221,6 +226,15 @@
                 }
             }
         }
+    };
+    var getWorkerFnParams = function() {
+        if (returnedValuesOfStepsAreForTask !== workerCurrentTaskIndex) {
+            returnedValuesOfSteps = [returnedValuesOfSteps.pop()];
+            returnedValuesOfStepsAreForTask = workerCurrentTaskIndex;
+        }
+        return returnedValuesOfSteps.filter(function(v,i) {
+            return i <= workerCurrentStepIndex;
+        }).reverse();
     };
     /**
      * Calls registered event callbacks
@@ -980,7 +994,8 @@
                         sleepAfterThisStep = undefined;
                         currentStepWorkerFn = workerFn;
                         me.modules.api.debugger(message.debug);
-                        workerFn(highlightedElement, currentStepEnv);
+                        me.modules.api.env = currentStepEnv;
+                        workerFn.apply(me.modules.ui.mainFrameWindow, getWorkerFnParams());
                     }
                 } catch (err){
                     this.reportErrorResult(err);
@@ -1531,7 +1546,7 @@
                 m = magicParamPatterns.repeat.exec(currentStepWorkerFn.toString().split(')')[0]);
                 if (m && parseInt(m[1]) > stepRepeatCounter) {
                     me.modules.api.setTimeout(function() {
-                        currentStepWorkerFn(highlightedElement, currentStepEnv);
+                        currentStepWorkerFn(getWorkerFnParams());
                     }, 1000);
                     return;
                 }
@@ -1593,12 +1608,12 @@
         },
         /**
          * Sets current highlighted element
-         * @function CartFiller.Dispatcher#setHighlightedElement
+         * @function CartFiller.Dispatcher#setReturnedValueOfStep
          * @param {jQuery|HtmlElement} element
          * @access public
          */
-        setHighlightedElement: function(element){
-            highlightedElement = element;
+        setReturnedValueOfStep: function(element){
+            returnedValuesOfSteps[workerCurrentStepIndex + 1] = element;
         },
         /**
          * Registers setTimeout id to be called if step will experience timeout

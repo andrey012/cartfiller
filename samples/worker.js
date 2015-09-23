@@ -171,8 +171,8 @@
              * @access public
              */
             clearCart: [
-                'find total amount of items in the cart', [function(el, env){
-                    if (env.params.theParam !== 1) throw "params are passed incorrectly";
+                'find total amount of items in the cart', [function(el){
+                    if (api.env.params.theParam !== 1) throw "params are passed incorrectly";
                     var strong = cartAmountElement();
                     api.highlight(strong).arrow(strong).say(globals.skipMessages?'':'Here is total amount in cart. To start filling the cart we need to make sure, that cart is empty.').result((1 === strong.length) ? "" : "Cant find amount in cart");
                 }, {theParam: 1}],
@@ -264,6 +264,12 @@
                     var searchButton = window.jQuery('input[type="submit"][value="Search"]:visible');
                     api.highlight(searchButton).say(globals.skipMessages?'':'Here is search button').result((1 === searchButton.length) ? "" : "Cant find search button");
                 },
+                'demo: make sure, that we can still access both search box and search buttons as 2nd and 3rd parameters', function(searchButton,searchBox) {
+                    api.arrow(searchBox).arrow(searchButton).result();
+                },
+                'find search button again', function(demoArray,searchButton) {
+                    api.highlight(searchButton).result();
+                },
                 'click search button', function(searchButton){
                     searchButton.each(function(i,el){click(el);});
                     api.waitFor(function(){
@@ -301,8 +307,8 @@
                 },
                 'remember current amount in cart', function(){
                     var cart = cartAmountElement();
-                    globals.currentCartAmount = parseInt(cart.text());
-                    api.highlight(cart).say(globals.skipMessages?'':('We are going to remember current cart amount (' + globals.currentCartAmount + ') and after we\'ll add more items to cart - we are going to check, that cart amount increased accordingly')).result();
+                    var currentCartAmount = parseInt(cart.text());
+                    api.highlight(cart).say(globals.skipMessages?'':('We are going to remember current cart amount (' + currentCartAmount + ') and after we\'ll add more items to cart - we are going to check, that cart amount increased accordingly')).return(currentCartAmount).result();
                 },
                 'find Add to cart button', function(){
                     var add = window.jQuery(suitableRow).find('td:nth-child(5) a:visible');
@@ -317,6 +323,11 @@
                         api.highlight(add).say(globals.skipMessages?'':'Something was added, let\'s check what in the next step').result(r ? "" : "Cant add to cart - total cart amount is not changing");
                     });
                 },
+                'make sure, that cart amount increased properly', function(resultOfClick, addToCartButton, oldCartAmount){
+                    var cart = cartAmountElement();
+                    api.highlight(cart);
+                    api.say(globals.skipMessages?'':'Let\'s make sure, that total cart amount increased appropriately').result(((oldCartAmount + task.quantity) === parseInt(cart.text())) ? "" : "new total cart amount is incorrect");
+                },
                 'make sure, that hint appeared', function(){
                     if (!task.quantity) return api.result();
                     var hint = window.jQuery(suitableRow).next();
@@ -325,11 +336,6 @@
                 'make sure, that quantity on hint is correct', function(hint){
                     var bold = hint.find('strong');
                     api.highlight(bold).say(globals.skipMessages?'':'Let\'s make sure, that amount in the hint is correct').result(((1 === hint.length) && (task.quantity === parseInt(hint.text()))) ? "" : "Hint problems");
-                },
-                'make sure, that cart amount increased properly', function(){
-                    var cart = cartAmountElement();
-                    api.highlight(cart);
-                    api.say(globals.skipMessages?'':'Let\'s make sure, that total cart amount increased appropriately').result(((globals.currentCartAmount + task.quantity) === parseInt(cart.text())) ? "" : "new total cart amount is incorrect");
                 }
             ]
         };
