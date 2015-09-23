@@ -36,6 +36,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
         $scope.params = {};
         $scope.expandedTest = false;
         $scope.showConfigure = false;
+        $scope.selectedTests = {};
         var isLaunchedFromLocalFilesystem = function() {
             return document.getElementById('testSuiteManager').getAttribute('data-local-href') ? true : false;
         };
@@ -44,6 +45,26 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             return localHref ? localHref : cfMessage.hashUrl;
         };
         $scope.maxSimultaneousDownloads = isLaunchedFromLocalFilesystem() ? 1 : 10;
+        var updateRunSelectedTestsButton = function() {
+            var buttonPanelScope = angular.element($('#testsuiteButtonPanel')[0]).scope();
+            if (undefined === buttonPanelScope) {
+                return setTimeout(updateRunSelectedTestsButton, 100);
+            }
+            var selectedTestCountScope = angular.element($('#selectedTestCount')[0]).scope();
+            if (undefined === selectedTestCountScope) {
+                return setTimeout(updateRunSelectedTestsButton, 100);
+            }
+            buttonPanelScope.someTestsAreSelected = false;
+            selectedTestCountScope.selectedTestCount = 0;
+            for (var i in $scope.selectedTests) {
+                if ($scope.selectedTests[i]) {
+                    buttonPanelScope.someTestsAreSelected = true;
+                    selectedTestCountScope.selectedTestCount ++;
+                }
+            }
+            buttonPanelScope.$digest();
+            selectedTestCountScope.$digest();
+        };
         $scope.downloadsInProgress = [];
 
         var parseParams = function() {
@@ -57,10 +78,15 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                     var m = /^globals\[([^\]]+)\]$/.exec(name);
                     $scope.params.globals = $scope.params.globals || {};
                     $scope.params.globals[m[1]] = decodeURIComponent(value);
+                } else if (name === 'selectedTests') {
+                    value.split('.').filter(function(v) {
+                       $scope.selectedTests[v] = true;
+                    }); 
                 } else {
                     $scope.params[name] = decodeURIComponent(value);
                 }
             });
+            updateRunSelectedTestsButton();
             if ($scope.params.editor) {
                 $.cartFillerPlugin({'$preventPageReload': true});
             }
@@ -87,13 +113,35 @@ define('testSuiteController', ['app', 'scroll'], function(app){
         $scope.filterTestsByText = '';
         $scope.filterTasksByText = '';
         $scope.runningAll = false;
-        $scope.runAll = function (index) {
-            $scope.runningAll = true;
+        $scope.runningSelected = false;
+        var getNextTestToRunAll = function(index) {
             index = index ? index : 0;
             while (index < $scope.discovery.scripts.enabled.length && ! $scope.discovery.scripts.enabled[index]) {
                 $scope.discovery.scripts.success[index] = -2;
                 index ++;
             }
+            return index;
+        };
+        $scope.runAll = function (index) {
+            $scope.runningAll = true;
+            $scope.runningSelected = false;
+            index = getNextTestToRunAll(index);
+            if ($scope.discovery.scripts.contents.length) {
+                $scope.runTest(index);
+            }
+        };
+        var getNextTestToRunSelected = function(index) {
+            index = index ? index : 0;
+            while (index < $scope.discovery.scripts.enabled.length && ! $('input[name="select-test-to-run-' + index + '"]').is(':checked')) {
+                $scope.discovery.scripts.success[index] = -2;
+                index ++;
+            }
+            return index;
+        };
+        $scope.runSelected = function (index) {
+            $scope.runningAll = true;
+            $scope.runningSelected = true;
+            index = getNextTestToRunSelected(index);
             if ($scope.discovery.scripts.contents.length) {
                 $scope.runTest(index);
             }
@@ -659,15 +707,17 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                         });
                     }
                     if (data.completed && undefined === untilTask) {
+                        var nextIndex;
                         $scope.discovery.scripts.success[index] = 0 === data.result.filter(function(r){return ! r.complete;}).length ? 1 : -1;
                         if ($scope.runningAll) {
-                            while (index < $scope.discovery.scripts.enabled.length && ! $scope.discovery.scripts.enabled[index + 1]) {
-                                $scope.discovery.scripts.success[index + 1] = -2;
-                                index ++;
+                            if ($scope.runningSelected) {
+                                nextIndex = getNextTestToRunSelected(index + 1);
+                            } else {
+                                nextIndex = getNextTestToRunAll(index + 1);
                             }
                         }
-                        if ($scope.runningAll && index + 1 < $scope.discovery.scripts.contents.length) {
-                            $scope.runTest(index + 1);
+                        if ($scope.runningAll && nextIndex < $scope.discovery.scripts.contents.length) {
+                            $scope.runTest(nextIndex);
                         } else if ($scope.runningAll) {
                             $scope.runningAll = false;
                             $.cartFillerPlugin.showChooseJobFrame();
@@ -864,12 +914,20 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             $scope.showConfigure = ! $scope.showConfigure;
         };
         $scope.updateParams = function() {
+            var selectedTests = [];
+            var i;
+            for (i in $scope.selectedTests) {
+                if ($scope.selectedTests[i]) {
+                    selectedTests.push(i);
+                }
+            }
             var params = {
                 editor: $scope.params.editor ? 1 : '',
-                root: $scope.params.root
+                root: $scope.params.root,
+                selectedTests: selectedTests.join('.')
             };
             if ('object' === typeof $scope.params.globals) {
-                for (var i in $scope.params.globals) {
+                for (i in $scope.params.globals) {
                     params['globals[' + i + ']'] = $scope.params.globals[i];
                 }
             }
@@ -890,6 +948,43 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             options.code = $.cartFillerPlugin.getBookmarkletCode(options);
             return options;
         });
-
+        $scope.previouslyClickedSelectTestCheckbox = undefined;
+        $scope.clickSelectedTestsToRun = function(event, clickedOnTd) {
+            var $this = $(event.target);
+            if (clickedOnTd) {
+                $this = $this.closest('td').find('input[type="checkbox"]');
+            }
+            var index = $this.attr('data-index');
+            var value;
+            if (clickedOnTd) {
+                value = $scope.selectedTests[index] = ! $scope.selectedTests[index];
+                $this.prop('checked', $scope.selectedTests[index]);
+            } else {
+                value = $scope.selectedTests[index] = $this.prop('checked');
+            }
+            if (event.shiftKey) {
+                if (undefined !== $scope.previouslyClickedSelectTestCheckbox) {
+                    for (var i = Math.min($scope.previouslyClickedSelectTestCheckbox, index); i <= Math.max($scope.previouslyClickedSelectTestCheckbox, index); i ++ ){
+                        $('input[name="select-test-to-run-' + i + '"]').prop('checked', value);
+                        $scope.selectedTests[i] = value;
+                    }
+                }
+            } else {
+                $scope.previouslyClickedSelectTestCheckbox = index;
+            }
+            updateRunSelectedTestsButton();
+            event.stopPropagation();
+            $scope.updateParams();
+        };
+        $scope.selectAllTests = function(event, select) {
+            for (var i = 0; i < $scope.discovery.scripts.contents.length; i ++) {
+                $scope.selectedTests[i] = select;
+                $('input[name="select-test-to-run-' + i + '"]').prop('checked', select);
+            }
+            updateRunSelectedTestsButton();
+            $scope.updateParams();
+            event.stopPropagation();
+            return false;
+        };
     }]);
 });

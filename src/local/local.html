@@ -24,7 +24,7 @@
                     <tr>
                         <td>ChooseJob URL:</td>
                         <td><input type="text" id="choosejob"/></td>
-                        <td>Hint: if started with # then testsuite will be started</td>
+                        <td>Hint: if started with # then testsuite will be started, you only may need to put things like job=...&task=...&step=... here if necessary</td>
                     </tr>
                     <tr>
                         <td>Path to testsuite:</td>
@@ -219,7 +219,7 @@
                             }
                         }
                         if (pc.length) {
-                            v += '#' + pc.join('&');
+                            v += ((0 === v.indexOf('#')) ? '&' : '#') + pc.join('&');
                         }
                         $('#generatedChoosejob').text(v);
 
