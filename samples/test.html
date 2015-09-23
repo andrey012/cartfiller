@@ -62,14 +62,12 @@
                     document.getElementsByName('testFrame')[0].onload = function(){
                         console.log('inside processNextBookmarklet');
                         console.log('currentBookmarklet: ' + currentBookmarklet);
-                        var wait = 1;
                         setTimeout(function waitForBookmarkletToAppear() {
                             var bookmarklet = 
                                 testFrame
                                     .jQuery('#bookmarklets a.bookmarklet:nth(' + currentBookmarklet + ')');
                             console.log('bookmarklet: ' + bookmarklet.length);
-                            if (wait || ! bookmarklet.length) {
-                                wait = 0;
+                            if (! bookmarklet.length) {
                                 console.log('bookmarklet not found, waiting');
                                 return setTimeout(waitForBookmarkletToAppear, 1000);
                             }
