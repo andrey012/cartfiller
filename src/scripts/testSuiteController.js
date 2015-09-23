@@ -706,6 +706,9 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                             }
                         });
                     }
+                    if (data.stopTestsuite) {
+                        $scope.runningAll = false;
+                    }
                     if (data.completed && undefined === untilTask) {
                         var nextIndex;
                         $scope.discovery.scripts.success[index] = 0 === data.result.filter(function(r){return ! r.complete;}).length ? 1 : -1;

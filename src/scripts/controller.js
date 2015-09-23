@@ -195,6 +195,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 $scope.jobTaskProgress[details.index].complete = details.nextTaskFlow === 'skipTask' || $scope.updateTaskCompleteMark(details.index);
                 var proceed;
                 var pause = false;
+                var stopTestsuite = false;
                 if ('ok' === details.status){
                     pause = $scope.incrementCurrentStep(false, details.nextTaskFlow);
                     proceed = true;
@@ -204,6 +205,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 } else {
                     if ($('#alertOnErrors').is(':checked') && $scope.running){
                         alert('error');
+                        stopTestsuite = true;
                     }
                     proceed = false;
                 }
@@ -243,7 +245,8 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                         currentTaskIndex: details.index, 
                         currentTaskStepIndex: details.step,
                         running: wasRunning,
-                        completed: ! proceed
+                        completed: ! proceed,
+                        stopTestsuite: stopTestsuite
                     });
                 $scope.workerInProgress = false;
                 if (!proceed){

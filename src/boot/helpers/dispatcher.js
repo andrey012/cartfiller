@@ -196,6 +196,7 @@
     };
     var rememberedHashParams = {};
     var hideHashParam = {};
+    var mainWindowOwnedByTestSuite = window.document.getElementsByTagName('body')[0].getAttribute('data-cartfiller-is-here') ? true : false;
     /**
      * Keeps details about relay subsystem
      * @var {Object} CartFiller.Dispatcher~rel
@@ -456,7 +457,7 @@
                 return match;
             }
         };
-        eval(workerSourceCodes[currentEvaluatedWorker].replace(/(function\([^)]*\)\s*{[ \t]*)([\n\r]*)/g, injectDebuggerFn)); // jshint ignore:line
+        eval(workerSourceCodes[currentEvaluatedWorker].replace(/(function\s*\([^)]*\)\s*{[ \t]*)([\n\r]*)/g, injectDebuggerFn)); // jshint ignore:line
         evaluateNextWorker();
     };
     /**
@@ -1188,6 +1189,9 @@
          * @access public
          */
         onMessage_updateHashUrl: function(details) {
+            if (! mainWindowOwnedByTestSuite) {
+                return;
+            }
             var params = details.params;
             var i;
             for (i in params) {

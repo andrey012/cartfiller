@@ -6784,7 +6784,7 @@ button.close {
         #workerContainer {word-break: break-all;}
     </style>
 </head>
-<body>
+<body data-cartfiller-is-here="1">
     <div id="testSuiteManager" style="display: none;" ng-controller="testSuiteController" data-local-href="" ng-class="'rendered'">
         <div class="col-xs-6">
             <div class="alert alert-danger" ng-if="discovery.state == -1">
@@ -47169,6 +47169,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 $scope.jobTaskProgress[details.index].complete = details.nextTaskFlow === 'skipTask' || $scope.updateTaskCompleteMark(details.index);
                 var proceed;
                 var pause = false;
+                var stopTestsuite = false;
                 if ('ok' === details.status){
                     pause = $scope.incrementCurrentStep(false, details.nextTaskFlow);
                     proceed = true;
@@ -47178,6 +47179,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 } else {
                     if ($('#alertOnErrors').is(':checked') && $scope.running){
                         alert('error');
+                        stopTestsuite = true;
                     }
                     proceed = false;
                 }
@@ -47217,7 +47219,8 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                         currentTaskIndex: details.index, 
                         currentTaskStepIndex: details.step,
                         running: wasRunning,
-                        completed: ! proceed
+                        completed: ! proceed,
+                        stopTestsuite: stopTestsuite
                     });
                 $scope.workerInProgress = false;
                 if (!proceed){
@@ -47738,7 +47741,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
             reportError('bootstrap message did not come');
         }
     }, 10000);
-    config.gruntBuildTimeStamp='1470442297807';
+    config.gruntBuildTimeStamp='1470486904644';
     window.addEventListener('message', function(event){
         var prefix = 'cartFillerMessage:';
         var isDist = true;
@@ -47812,7 +47815,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 if (message.tests) {
                     var x = new XMLHttpRequest();
                     x.onload = function(){
-                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1470442297807') {
+                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1470486904644') {
                             console.log('new version of CartFiller was deployed, switching to it');
                             var hash = window.location.href.split('#');
                             var pc = hash[0].split('?');
@@ -48627,6 +48630,9 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                                 backendPendingRequestCounter --;
                             }
                         });
+                    }
+                    if (data.stopTestsuite) {
+                        $scope.runningAll = false;
                     }
                     if (data.completed && undefined === untilTask) {
                         var nextIndex;
