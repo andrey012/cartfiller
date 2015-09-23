@@ -61,10 +61,23 @@
                 var processNextBookmarklet = function(currentBookmarklet, assert, done){
                     document.getElementsByName('testFrame')[0].onload = function(){
                         console.log('inside processNextBookmarklet');
+                        console.log('currentBookmarklet: ' + currentBookmarklet);
                         var bookmarklet = 
                             testFrame
-                                .jQuery('#bookmarklets a.bookmarklet:nth('+currentBookmarklet+')');
+                                .jQuery('#bookmarklets a.bookmarklet:nth(' + currentBookmarklet + ')');
                         console.log('bookmarklet: ' + bookmarklet.length);
+                        if (! bookmarklet.length) {
+                            console.log('bookmarklet not found');
+                            var bookmarklets = testFrame
+                                .jQuery('#bookmarklets');
+                            if (bookmarklets.length) {
+                                console.log(bookmarklets.html());
+                            } else {
+                                var testFrameHtml = testFrame.jQuery('body').html();
+                                console.log(testFrameHtml);
+                            }
+                            console.log('---');
+                        }
                         bookmarklet.each(function(i,el){ 
 
                             console.log('going to click link');
