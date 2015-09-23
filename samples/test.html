@@ -62,78 +62,74 @@
                     document.getElementsByName('testFrame')[0].onload = function(){
                         console.log('inside processNextBookmarklet');
                         console.log('currentBookmarklet: ' + currentBookmarklet);
-                        var bookmarklet = 
-                            testFrame
-                                .jQuery('#bookmarklets a.bookmarklet:nth(' + currentBookmarklet + ')');
-                        console.log('bookmarklet: ' + bookmarklet.length);
-                        if (! bookmarklet.length) {
-                            console.log('bookmarklet not found');
-                            var bookmarklets = testFrame
-                                .jQuery('#bookmarklets');
-                            if (bookmarklets.length) {
-                                console.log(bookmarklets.html());
-                            } else {
-                                var testFrameHtml = testFrame.jQuery('body').html();
-                                console.log(testFrameHtml);
+                        var wait = 1;
+                        setTimeout(function waitForBookmarkletToAppear() {
+                            var bookmarklet = 
+                                testFrame
+                                    .jQuery('#bookmarklets a.bookmarklet:nth(' + currentBookmarklet + ')');
+                            console.log('bookmarklet: ' + bookmarklet.length);
+                            if (wait || ! bookmarklet.length) {
+                                wait = 0;
+                                console.log('bookmarklet not found, waiting');
+                                return setTimeout(waitForBookmarkletToAppear, 1000);
                             }
-                            console.log('---');
-                        }
-                        bookmarklet.each(function(i,el){ 
+                            bookmarklet.each(function(i,el){ 
 
-                            console.log('going to click link');
-                            var code;
-                            console.log('code: ' + (code = el.getAttribute('href').replace(/^javascript:/, '')));
-                            var script = testFrame.document.createElement('script');
-                            script.textContent = code;
-                            testFrame.document.getElementsByTagName('head')[0].appendChild(script);
+                                console.log('going to click link');
+                                var code;
+                                console.log('code: ' + (code = el.getAttribute('href').replace(/^javascript:/, '')));
+                                var script = testFrame.document.createElement('script');
+                                script.textContent = code;
+                                testFrame.document.getElementsByTagName('head')[0].appendChild(script);
 
-                            console.log('link clicked');
-                        });
-                        console.log('click done');
-                        console.log('step ' + currentBookmarklet + ' (' + bookmarklet.text() + ')')
-                        var tries = 100;
-                        setTimeout(function waitForSubmitLink(){
-                            try {
-                                if (!testFrame.jQuery('iframe[name="cartFillerChooseJobFrame"]:visible').length) throw "";
-                                var loaded = "complete" === testFrame.jQuery('iframe[name="cartFillerChooseJobFrame"]')[0].contentDocument.readyState;
-                                var link = testFrame.frames['cartFillerChooseJobFrame'].document.getElementById('sampleSubmitLink');
-                                var chooseJobButton = testFrame.frames['cartFillerWorkerFrame'].jQuery ? testFrame.frames['cartFillerWorkerFrame'].jQuery('#chooseJobButton') : false
-                                if (link && loaded && chooseJobButton && chooseJobButton.text() === 'Close') {
-                                    console.log('submit link found');
-                                    click(link);
-                                    console.log('submit link clicked');
-                                    setTimeout(function waitForWorkerToLoad() {
-                                        try {
-                                            if (testFrame.frames['cartFillerWorkerFrame'].document.readyState !== "complete") throw "";
-                                            var runButton = testFrame.frames['cartFillerWorkerFrame'].document.getElementById('runButton');
-                                            if (runButton && !runButton.getAttribute('disabled')){
-                                                console.log('run button found');
-                                                click(runButton);
-                                                setTimeout(function waitForCompleted(){
-                                                    try {
-                                                        var finishReached = testFrame.frames['cartFillerWorkerFrame'].document.getElementById('finishReached');
-                                                        if (finishReached && "1" === String(finishReached.style.opacity)) {
-                                                            console.log('complete alert found');
-                                                            assert.ok(true);
-                                                            done();
-                                                            testFrame.postMessage('cartFillerMessage:{"cmd":"closePopup"}', '*');
-                                                            return;
-                                                        } 
-                                                    } catch (e){}
-                                                    setTimeout(waitForCompleted, 100);
+                                console.log('link clicked');
+                            });
+                            console.log('click done');
+                            console.log('step ' + currentBookmarklet + ' (' + bookmarklet.text() + ')')
+                            var tries = 100;
+                            setTimeout(function waitForSubmitLink(){
+                                try {
+                                    if (!testFrame.jQuery('iframe[name="cartFillerChooseJobFrame"]:visible').length) throw "";
+                                    var loaded = "complete" === testFrame.jQuery('iframe[name="cartFillerChooseJobFrame"]')[0].contentDocument.readyState;
+                                    var link = testFrame.frames['cartFillerChooseJobFrame'].document.getElementById('sampleSubmitLink');
+                                    var chooseJobButton = testFrame.frames['cartFillerWorkerFrame'].jQuery ? testFrame.frames['cartFillerWorkerFrame'].jQuery('#chooseJobButton') : false
+                                    if (link && loaded && chooseJobButton && chooseJobButton.text() === 'Close') {
+                                        console.log('submit link found');
+                                        click(link);
+                                        console.log('submit link clicked');
+                                        setTimeout(function waitForWorkerToLoad() {
+                                            try {
+                                                if (testFrame.frames['cartFillerWorkerFrame'].document.readyState !== "complete") throw "";
+                                                var runButton = testFrame.frames['cartFillerWorkerFrame'].document.getElementById('runButton');
+                                                if (runButton && !runButton.getAttribute('disabled')){
+                                                    console.log('run button found');
+                                                    click(runButton);
+                                                    setTimeout(function waitForCompleted(){
+                                                        try {
+                                                            var finishReached = testFrame.frames['cartFillerWorkerFrame'].document.getElementById('finishReached');
+                                                            if (finishReached && "1" === String(finishReached.style.opacity)) {
+                                                                console.log('complete alert found');
+                                                                assert.ok(true);
+                                                                done();
+                                                                testFrame.postMessage('cartFillerMessage:{"cmd":"closePopup"}', '*');
+                                                                return;
+                                                            } 
+                                                        } catch (e){}
+                                                        setTimeout(waitForCompleted, 100);
 
-                                                },0);
-                                                return;
-                                            }
-                                        } catch (e){}
-                                        setTimeout(waitForWorkerToLoad, 100);
-                                    },0);
-                                    return;
-                                }
+                                                    },0);
+                                                    return;
+                                                }
+                                            } catch (e){}
+                                            setTimeout(waitForWorkerToLoad, 100);
+                                        },0);
+                                        return;
+                                    }
 
-                            } catch (e) {}
-                            setTimeout(waitForSubmitLink, 100);
-                        },0);
+                                } catch (e) {}
+                                setTimeout(waitForSubmitLink, 100);
+                            },0);
+                        }, 1000);
                     };
                     var location = testFrame.location.href = testFrameSrc.replace(/sample-shop\.html(\?\d*)?\#/, 'sample-shop.html?' + (reloadCounter++) + '#');
                     console.log('going to reload frame: ' + location);
