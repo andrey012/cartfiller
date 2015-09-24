@@ -1,7 +1,12 @@
 cartfiller = {
+    "globals": {
+        "skipMessages": false
+    },
     "details": [
         "# test 12a",
         {"task": "sayHello"},
+        {"task": "useSharedGoToHome"},
+        {"task": "useSharedSearch", "partno": "123"},
         {"task": "addToCart", "partno": "3333333", "quantity": 2, "price": 1.5}
     ]
 }

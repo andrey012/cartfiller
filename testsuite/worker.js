@@ -3,7 +3,7 @@
  * @class CartFiller.SampleWorker
  */
 (function(window, document, undefined){
-    cartFillerAPI().registerWorker(function(window, document, api, task, job, globals){
+    cartFillerAPI().registerWorker(function(window, document, api, task, job, globals, lib){
         var baseUrl = job.cartFillerInstallationUrl.replace(/\/[^\/]+\/?$/, '') + '/samples/sample-shop.html?noBookmarklets';
         var githubPattern = /^https?\:\/\/andrey012.github.io\/cartfiller\//;
         if (githubPattern.test(job.cartFillerInstallationUrl)) {
@@ -19,6 +19,12 @@
                 'say hello', function() {
                     api.highlight(window.$('#navbar')).say('Hello ' + globals.greeting).result();
                 }
+            ],
+            useSharedGoToHome: [
+                lib('goToHomeStepFactory')
+            ],
+            useSharedSearch: [
+                lib('searchStepFactory', 321)
             ]
         };
     });

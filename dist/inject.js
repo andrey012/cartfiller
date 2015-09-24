@@ -184,7 +184,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1470515063026';
+    config.gruntBuildTimeStamp='1470531519032';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -257,8 +257,30 @@
      * as passed by chooseJob frame
      * @param {Object} globals An object, whoes properties can be set at one step
      * and then reused in the other step
+     * @param {CartFiller.Api.LibFactory} lib A way to share snippets within worker or across several workers. 
+     * You can assign values to lib straightaway lib.foo = ['find input', function() {}] and use them in another worker places
+     * by calling lib('foo')
      * @return {CartFiller.Api.WorkerTasks} 
      * @see CartFiller.SampleWorker~registerCallback
+     */
+
+
+    /**
+     * This function has three completely different ways of usage and scenarios of usage. 
+     * <p>If you just want to share steps, you can do lib.foo = whatever, and then use it. It
+     * will be shared across workers. But mind execution time - you never know order of workers to 
+     * load. To feel safe use lib.foo = ['find foo', function() {...}...] to declare and then
+     * lib('foo') to use when building steps.
+     * <p>If you want to parametrize your factory - do 
+     * lib('foo', 1, 2)(function(p1, p2) { p1 === 1 and p2 === 2 in the task where
+     * you declare it}) to declare, and then lib('foo', 3, 4) in another task. </p>
+     * <p>And finally you may need to share small snippets, that are called from within steps. 
+     * These are declared using lib(function foo() {}) again right inside your task. Then use it just
+     * as lib.foo().</p>
+     * <p>See /samples/worker.js for examples, just search for 'lib' there.</p>
+     * @callback CartFiller.Api.LibFactory
+     * @param {Function|string}
+     * @return {Function|Array}
      */
 
     /**
@@ -1298,11 +1320,63 @@
      * @access private
      */
     var workerGlobals = {};
+    var workerLibResolve = function(arg, promise) {
+        var name;
+
+        if ('function' === typeof arg) {
+            var evaluateArg = false;
+            if (undefined === promise.promiseArgs[0] && 'string' === typeof arg.name && arg.name.length) {
+                name = arg.name;
+            } else if ('string' === typeof promise.promiseArgs[0] && promise.promiseArgs[0].length && ('string' !== typeof arg.name || ! arg.name.length)) {
+                name = promise.promiseArgs[0];
+                evaluateArg = true;
+            } else {
+                throw new Error('invalid lib usage, name of function should either be specified as a parameter or named function should be used');
+            }
+            workerLib[name] = arg;
+            var args = promise.promiseArgs.slice(1);
+            return evaluateArg ? arg.apply({}, args) : [];
+        } else {
+            name = promise.promiseArgs[0];
+            if ('function' === typeof name) {
+                if ('string' !== typeof name.name || ! name.name.length) {
+                    throw new Error('incorrect usage of lib, only named functions should be defined like that');
+                }
+                workerLib[name.name] = name;
+                return [];
+            } else {
+                if (! workerLib.hasOwnProperty(name)) {
+                    throw new Error('lib does not have [' + name + '] entry');
+                }
+                if ('function' === typeof workerLib[name]) {
+                    if ('string' === typeof workerLib[name].name && workerLib[name].name.length) {
+                        // this function is inteded to be used inside steps, not to build steps
+                    } else {
+                        return workerLib[name].apply({}, promise.promiseArgs.slice(1));
+                    }
+                } else {
+                    return workerLib[name];
+                }
+            }
+        }
+    };
+    var workerLib = function() {
+        var result = function cartFillerLibPromiseFunction(arg) {
+            return workerLibResolve(arg, result);
+        };
+        result.promiseArgs = [];
+        for (var i = 0; i < arguments.length ; i ++) {
+            result.promiseArgs.push(arguments[i]);
+        }
+        result.none = [];
+        return result;
+    };
     /**
      * @var {Object} workerEventListeners Registered event listeners, see
      * {@link CartFiller.Dispatcher#registerEventCallback}
      * @access private
      */
+
     var workerEventListeners = {};
     /**
      * Keeps message result name, used to deliver job results to
@@ -2615,6 +2689,7 @@
          * @access public
          */
         registerWorker: function(cb){
+            var i;
             var recursivelyCollectSteps = function(source, taskSteps) {
                 if ('undefined' === typeof taskSteps) {
                     taskSteps = [];
@@ -2642,13 +2717,31 @@
                 }
                 return taskSteps;
             };
+            var resolveLibPromisesInWorker = function() {
+                var found = false;
+                for (var taskName in worker) {
+                    for (i = worker[taskName].length - 1 ; i >= 0 ; i --) {
+                        if ('function' === typeof worker[taskName][i] && worker[taskName][i].name === 'cartFillerLibPromiseFunction') {
+                            found = true;
+                            var params = recursivelyCollectSteps(worker[taskName][i]());
+                            params.unshift(1);
+                            params.unshift(i);
+                            worker[taskName].splice.apply(worker[taskName], params);
+                        }
+                    }
+                }
+                if (found) {
+                    resolveLibPromisesInWorker();
+                }
+            };
             var knownArgs = {
                 window: me.modules.ui.mainFrameWindow,
                 document: undefined,
                 api: me.modules.api,
                 task: workerCurrentTask,
                 job: jobDetailsCache,
-                globals: workerGlobals
+                globals: workerGlobals,
+                lib: workerLib 
             };
             var args = cb.toString().split('(')[1].split(')')[0].split(',').map(function(arg){
                 arg = arg.trim();
@@ -2676,6 +2769,7 @@
             }
             if (! workersToEvaluate.length) {
                 // only do this for last worker
+                resolveLibPromisesInWorker();
                 var list = {};
                 var discoveredParameters = {};
                 var stepDependencies = {};
@@ -2684,7 +2778,7 @@
                     var taskSteps = [];
                     var params = {};
                     var allParams = {};
-                    for (var i = 0 ; i < worker[taskName].length; i++){
+                    for (i = 0 ; i < worker[taskName].length; i++){
                         // this is step name/comment
                         if ('string' === typeof worker[taskName][i]){
                             taskSteps.push(worker[taskName][i]);

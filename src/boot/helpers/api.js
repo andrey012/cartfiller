@@ -27,8 +27,30 @@
      * as passed by chooseJob frame
      * @param {Object} globals An object, whoes properties can be set at one step
      * and then reused in the other step
+     * @param {CartFiller.Api.LibFactory} lib A way to share snippets within worker or across several workers. 
+     * You can assign values to lib straightaway lib.foo = ['find input', function() {}] and use them in another worker places
+     * by calling lib('foo')
      * @return {CartFiller.Api.WorkerTasks} 
      * @see CartFiller.SampleWorker~registerCallback
+     */
+
+
+    /**
+     * This function has three completely different ways of usage and scenarios of usage. 
+     * <p>If you just want to share steps, you can do lib.foo = whatever, and then use it. It
+     * will be shared across workers. But mind execution time - you never know order of workers to 
+     * load. To feel safe use lib.foo = ['find foo', function() {...}...] to declare and then
+     * lib('foo') to use when building steps.
+     * <p>If you want to parametrize your factory - do 
+     * lib('foo', 1, 2)(function(p1, p2) { p1 === 1 and p2 === 2 in the task where
+     * you declare it}) to declare, and then lib('foo', 3, 4) in another task. </p>
+     * <p>And finally you may need to share small snippets, that are called from within steps. 
+     * These are declared using lib(function foo() {}) again right inside your task. Then use it just
+     * as lib.foo().</p>
+     * <p>See /samples/worker.js for examples, just search for 'lib' there.</p>
+     * @callback CartFiller.Api.LibFactory
+     * @param {Function|string}
+     * @return {Function|Array}
      */
 
     /**

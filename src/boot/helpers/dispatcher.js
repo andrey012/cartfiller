@@ -83,11 +83,63 @@
      * @access private
      */
     var workerGlobals = {};
+    var workerLibResolve = function(arg, promise) {
+        var name;
+
+        if ('function' === typeof arg) {
+            var evaluateArg = false;
+            if (undefined === promise.promiseArgs[0] && 'string' === typeof arg.name && arg.name.length) {
+                name = arg.name;
+            } else if ('string' === typeof promise.promiseArgs[0] && promise.promiseArgs[0].length && ('string' !== typeof arg.name || ! arg.name.length)) {
+                name = promise.promiseArgs[0];
+                evaluateArg = true;
+            } else {
+                throw new Error('invalid lib usage, name of function should either be specified as a parameter or named function should be used');
+            }
+            workerLib[name] = arg;
+            var args = promise.promiseArgs.slice(1);
+            return evaluateArg ? arg.apply({}, args) : [];
+        } else {
+            name = promise.promiseArgs[0];
+            if ('function' === typeof name) {
+                if ('string' !== typeof name.name || ! name.name.length) {
+                    throw new Error('incorrect usage of lib, only named functions should be defined like that');
+                }
+                workerLib[name.name] = name;
+                return [];
+            } else {
+                if (! workerLib.hasOwnProperty(name)) {
+                    throw new Error('lib does not have [' + name + '] entry');
+                }
+                if ('function' === typeof workerLib[name]) {
+                    if ('string' === typeof workerLib[name].name && workerLib[name].name.length) {
+                        // this function is inteded to be used inside steps, not to build steps
+                    } else {
+                        return workerLib[name].apply({}, promise.promiseArgs.slice(1));
+                    }
+                } else {
+                    return workerLib[name];
+                }
+            }
+        }
+    };
+    var workerLib = function() {
+        var result = function cartFillerLibPromiseFunction(arg) {
+            return workerLibResolve(arg, result);
+        };
+        result.promiseArgs = [];
+        for (var i = 0; i < arguments.length ; i ++) {
+            result.promiseArgs.push(arguments[i]);
+        }
+        result.none = [];
+        return result;
+    };
     /**
      * @var {Object} workerEventListeners Registered event listeners, see
      * {@link CartFiller.Dispatcher#registerEventCallback}
      * @access private
      */
+
     var workerEventListeners = {};
     /**
      * Keeps message result name, used to deliver job results to
@@ -1400,6 +1452,7 @@
          * @access public
          */
         registerWorker: function(cb){
+            var i;
             var recursivelyCollectSteps = function(source, taskSteps) {
                 if ('undefined' === typeof taskSteps) {
                     taskSteps = [];
@@ -1427,13 +1480,31 @@
                 }
                 return taskSteps;
             };
+            var resolveLibPromisesInWorker = function() {
+                var found = false;
+                for (var taskName in worker) {
+                    for (i = worker[taskName].length - 1 ; i >= 0 ; i --) {
+                        if ('function' === typeof worker[taskName][i] && worker[taskName][i].name === 'cartFillerLibPromiseFunction') {
+                            found = true;
+                            var params = recursivelyCollectSteps(worker[taskName][i]());
+                            params.unshift(1);
+                            params.unshift(i);
+                            worker[taskName].splice.apply(worker[taskName], params);
+                        }
+                    }
+                }
+                if (found) {
+                    resolveLibPromisesInWorker();
+                }
+            };
             var knownArgs = {
                 window: me.modules.ui.mainFrameWindow,
                 document: undefined,
                 api: me.modules.api,
                 task: workerCurrentTask,
                 job: jobDetailsCache,
-                globals: workerGlobals
+                globals: workerGlobals,
+                lib: workerLib 
             };
             var args = cb.toString().split('(')[1].split(')')[0].split(',').map(function(arg){
                 arg = arg.trim();
@@ -1461,6 +1532,7 @@
             }
             if (! workersToEvaluate.length) {
                 // only do this for last worker
+                resolveLibPromisesInWorker();
                 var list = {};
                 var discoveredParameters = {};
                 var stepDependencies = {};
@@ -1469,7 +1541,7 @@
                     var taskSteps = [];
                     var params = {};
                     var allParams = {};
-                    for (var i = 0 ; i < worker[taskName].length; i++){
+                    for (i = 0 ; i < worker[taskName].length; i++){
                         // this is step name/comment
                         if ('string' === typeof worker[taskName][i]){
                             taskSteps.push(worker[taskName][i]);

@@ -9,7 +9,7 @@
      * @see CartFiller.Api.registerCallback
      * @access private
      */
-    var registerCallback = function(window, document, api, task, job, globals){
+    var registerCallback = function(window, document, api, task, job, globals, lib){
         // some state variables
         /**
          * Indicates, that cart is empty. If set to true, then several 
@@ -34,15 +34,6 @@
          */
         var cartAmountElement = function(){
             return window.jQuery('#navbar > div > strong:nth-child(1):visible');
-        }
-        /**
-         * Returns search box element
-         * @function CartFiller.SampleWorker~searchBox
-         * @returns {jQuery}
-         * @access private
-         */
-        var searchBox = function(){
-            return window.jQuery('input[type="text"][name="partNumber"]:visible');
         }
         /**
          * Returns search results heading. Used to detect, that we are on
@@ -171,6 +162,7 @@
              * @access public
              */
             clearCart: [
+                lib('goToHomeStepFactory'),
                 'find total amount of items in the cart', [function(el){
                     if (api.env.params.theParam !== 1) throw "params are passed incorrectly";
                     var strong = cartAmountElement();
@@ -241,31 +233,38 @@
              * @access public
              */
             addToCart: [
-                'go to home', function(){
-                    var homeLink = window.jQuery('#navbar a:contains("Home"):visible');
-                    api.highlight(homeLink).say(globals.skipMessages?'':'This is "Home" link that we will use to search for product').result((1 === homeLink.length) ? "" : "Cant find home link");
-                }, 
-                'click home', function(homeLink){
-                    homeLink.each(function(i,el){click(el);});
-                    api.waitFor(
-                        function(){
-                            return (window.jQuery) && (1 === searchBox().length);
-                        },
-                        function(result){
-                            api.highlight(searchBox()).say(globals.skipMessages?'':'Here is search box, which means, that we came to home page.').result(result ? "" : "Cant navigate to home");
-                        }
-                    );
-                },
-                'find search box', function(){
-                    var input = searchBox();
-                    api.highlight(input).say(globals.skipMessages?'':('Here is search box, let\'s put our number (' + task.partno + ') into it')).result((1 === input.length) ? "" : "Cant find search box");
-                }, api.type('partno'),
-                'find search button', function(){
-                    var searchButton = window.jQuery('input[type="submit"][value="Search"]:visible');
-                    api.highlight(searchButton).say(globals.skipMessages?'':'Here is search button').result((1 === searchButton.length) ? "" : "Cant find search button");
-                },
-                'demo: make sure, that we can still access both search box and search buttons as 2nd and 3rd parameters', function(searchButton,searchBox) {
-                    api.arrow(searchBox).arrow(searchButton).result();
+                lib.goToHomeStepFactory = [
+                    'go to home', function(){
+                        var homeLink = window.jQuery('#navbar a:contains("Home"):visible');
+                        api.highlight(homeLink).say(globals.skipMessages?'':'This is "Home" link that we will use to search for product').result((1 === homeLink.length) ? "" : "Cant find home link");
+                    },
+                    'click home', function(homeLink){
+                        homeLink.each(function(i,el){click(el);});
+                        api.waitFor(
+                            function(){
+                                return (window.jQuery) && (1 === lib.searchBox().length);
+                            },
+                            function(result){
+                                api.highlight(lib.searchBox()).say(globals.skipMessages?'':'Here is search box, which means, that we came to home page.').result(result ? "" : "Cant navigate to home");
+                            }
+                        );
+                    }
+                ],
+                lib(function searchBox(){
+                    return window.jQuery('input[type="text"][name="partNumber"]:visible');
+                }),
+                lib('searchStepFactory', 123)(function (param) { return [
+                    'find search box', function(){
+                        var input = lib.searchBox();
+                        api.highlight(input).say(globals.skipMessages?'':('Here is search box, let\'s put our number (' + task.partno + ') into it. This was parametrised snippet, parameter value: ' + param)).result((1 === input.length) ? "" : "Cant find search box");
+                    }, api.type('partno'),
+                    'find search button', function(){
+                        var searchButton = window.jQuery('input[type="submit"][value="Search"]:visible');
+                        api.highlight(searchButton).say(globals.skipMessages?'':'Here is search button').result((1 === searchButton.length) ? "" : "Cant find search button");
+                    },
+                ]}),
+                'demo: make sure, that we can still access both search box and search buttons as 2nd and 3rd parameters', function(searchButtonElement,searchBoxElement) {
+                    api.arrow(searchBoxElement).arrow(searchButtonElement).result();
                 },
                 'find search button again', function(demoArray,searchButton) {
                     api.highlight(searchButton).result();
