@@ -254,22 +254,24 @@ if (argv['serve-http']) {
 
 
 if (argv.app) {
-    console.log('Launching application: ' + argv.app);
-    childApp = childProcess.spawn(argv.app.split(' ')[0], argv.app.split(' ').slice(1), {cwd: argv.cwd});
-    childApp.stdout.on('data', function(data) {
-        console.log('app stdout: ' + data);
+    startup.push(function() {
+        console.log('Launching application: ' + argv.app);
+        childApp = childProcess.spawn(argv.app.split(' ')[0], argv.app.split(' ').slice(1), {cwd: argv.cwd});
+        childApp.stdout.on('data', function(data) {
+            console.log('app stdout: ' + data);
+        });
+        childApp.stderr.on('data', function(data) {
+            console.log('app stderr: ' + data);
+        });
+        childApp.on('close', function(code) {
+            console.log('exitting, because child process exitted with code ' + code);
+            tearDownFn(code ? code : 1);
+        });
+        setTimeout(function() {
+            startup.shift();
+            startup[0]();
+        }, 4000); //// TBD make this more predictable
     });
-    childApp.stderr.on('data', function(data) {
-        console.log('app stderr: ' + data);
-    });
-    childApp.on('close', function(code) {
-        console.log('exitting, because child process exitted with code ' + code);
-        tearDownFn(code ? code : 1);
-    });
-    setTimeout(function() {
-        startup.shift();
-        startup[0]();
-    }, 4000); //// TBD make this more predictable
 }
 
 var injectPortIntoUrl = function(url, port) {
