@@ -84,28 +84,35 @@
      */
     var workerGlobals = {};
     var workerLibResolve = function(arg, promise) {
-        var name;
+        var name, type;
 
         if ('function' === typeof arg) {
             var evaluateArg = false;
             if (undefined === promise.promiseArgs[0] && 'string' === typeof arg.name && arg.name.length) {
+                // this is case: lib()(function findSomeButton() {...})
+                type = 'fn';
                 name = arg.name;
             } else if ('string' === typeof promise.promiseArgs[0] && promise.promiseArgs[0].length && ('string' !== typeof arg.name || ! arg.name.length)) {
+                // this is case: lib('getSomeSteps')(function() { ... })
+                type = 'step';
                 name = promise.promiseArgs[0];
                 evaluateArg = true;
             } else {
                 throw new Error('invalid lib usage, name of function should either be specified as a parameter or named function should be used');
             }
             workerLib[name] = arg;
+            workerLib[name].cartFillerWorkerLibType = type;
             var args = promise.promiseArgs.slice(1);
             return evaluateArg ? arg.apply({}, args) : [];
         } else {
             name = promise.promiseArgs[0];
             if ('function' === typeof name) {
+                // this is case: lib(function findSomeButton() {...})
                 if ('string' !== typeof name.name || ! name.name.length) {
                     throw new Error('incorrect usage of lib, only named functions should be defined like that');
                 }
                 workerLib[name.name] = name;
+                workerLib[name.name].cartFillerWorkerLibType = 'fn';
                 return [];
             } else {
                 if (! workerLib.hasOwnProperty(name)) {
@@ -134,6 +141,18 @@
         }
         result.none = [];
         return result;
+    };
+    var makeProxyForWorkerLib = function(fn) {
+        return function() {
+            return fn.apply(me.modules.ui.mainFrameWindow.document, arguments);
+        };
+    };
+    var addProxiesToWorkerLib = function() {
+        for (var i in workerLib) {
+            if ('function' === typeof workerLib[i]) {
+                workerLib[i] = makeProxyForWorkerLib(workerLib[i]);
+            }
+        }
     };
     /**
      * @var {Object} workerEventListeners Registered event listeners, see
@@ -285,9 +304,11 @@
             returnedValuesOfSteps = [returnedValuesOfSteps.pop()];
             returnedValuesOfStepsAreForTask = workerCurrentTaskIndex;
         }
-        return returnedValuesOfSteps.filter(function(v,i) {
-            return i <= workerCurrentStepIndex;
-        }).reverse();
+        var result = [];
+        for (var i = workerCurrentStepIndex; i >= 0; i --) {
+            result.push(returnedValuesOfSteps[i]);
+        }
+        return result;
     };
     /**
      * Calls registered event callbacks
@@ -504,6 +525,7 @@
     var workerTaskSources = {};
     var evaluateNextWorker = function() {
         if (! workersToEvaluate.length) {
+            addProxiesToWorkerLib();
             me.modules.dispatcher.postMessageToWorker(
                 'globalsUpdate', 
                 {
@@ -1038,7 +1060,6 @@
                                 currentStepEnv.params = workerFn[1];
                                 workerFn = workerFn[0];
                             } else {
-                                debugger;  // jshint ignore:line
                                 alert('invalid worker - function for ' + message.task + ' step ' + message.step + ' is not a function');
                                 return;
                             }
@@ -1049,7 +1070,7 @@
                         currentStepWorkerFn = workerFn;
                         me.modules.api.debugger(message.debug);
                         me.modules.api.env = currentStepEnv;
-                        workerFn.apply(me.modules.ui.mainFrameWindow, getWorkerFnParams());
+                        workerFn.apply(me.modules.ui.mainFrameWindow.document, getWorkerFnParams());
                     }
                 } catch (err){
                     this.reportErrorResult(err);

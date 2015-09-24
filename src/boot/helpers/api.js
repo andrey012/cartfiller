@@ -568,14 +568,14 @@
                 String(array) === '[object NodeList]'
             ) {
                 for (i = 0 ; i < array.length; i++ ) {
-                    if (resultMeansWeShouldStop(fn(i, array[i]))) {
+                    if (resultMeansWeShouldStop(fn.call(me.modules.ui.mainFrameWindow.document, i, array[i]))) {
                         breaked = true;
                         break;
                     }
                 }
             } else if (null !== array && 'object' === typeof array && 'string' === typeof array.jquery && undefined !== array.length && 'function' === typeof array.each) {
                 array.each(function(i,el){
-                    if (resultMeansWeShouldStop(fn(i,el))) {
+                    if (resultMeansWeShouldStop(fn.call(me.modules.ui.mainFrameWindow.document, i,el))) {
                         breaked = true;
                         return false;
                     }
@@ -583,7 +583,7 @@
             } else {
                 for (i in array) {
                     if (array.hasOwnProperty(i)) {
-                        if (resultMeansWeShouldStop(fn(i, array[i]))) {
+                        if (resultMeansWeShouldStop(fn.call(me.modules.ui.mainFrameWindow.document, i, array[i]))) {
                             breaked = true;
                             break;
                         }

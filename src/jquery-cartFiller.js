@@ -468,8 +468,10 @@
                             trackWorkerContents[originalUrl] = xhr.responseText;
                         }
                     }
-                    if (trackWorker && trackWorkersAllLoaded()) {
-                        setTimeout(function() { loadWorkers(urls, rememberedTrackWorkerId); }, 1000);
+                    if (trackWorker) {
+                        if (trackWorkersAllLoaded()) {
+                            setTimeout(function() { loadWorkers(urls, rememberedTrackWorkerId); }, 1000);
+                        }
                     }
                 },
                 cartFillerTrackSomething: track ? true : false
@@ -739,7 +741,7 @@
             return;
         }
         if (options.cartFillerTrackSomething && (suspendTrackingRequested || suspendTrackingDone)) {
-            options.complete({}); // skip results
+            setTimeout(function() { options.complete({}); }, 0); // skip results
             return;
         }
         var pingFilePopupWindow = function() {
