@@ -124,9 +124,10 @@
         }
     };
     var workerLib = function() {
-        var result = function cartFillerLibPromiseFunction(arg) {
+        var result = function(arg) {
             return workerLibResolve(arg, result);
         };
+        result.cartFillerLibPromiseFunction = true;
         result.promiseArgs = [];
         for (var i = 0; i < arguments.length ; i ++) {
             result.promiseArgs.push(arguments[i]);
@@ -1037,6 +1038,7 @@
                                 currentStepEnv.params = workerFn[1];
                                 workerFn = workerFn[0];
                             } else {
+                                debugger;  // jshint ignore:line
                                 alert('invalid worker - function for ' + message.task + ' step ' + message.step + ' is not a function');
                                 return;
                             }
@@ -1484,7 +1486,7 @@
                 var found = false;
                 for (var taskName in worker) {
                     for (i = worker[taskName].length - 1 ; i >= 0 ; i --) {
-                        if ('function' === typeof worker[taskName][i] && worker[taskName][i].name === 'cartFillerLibPromiseFunction') {
+                        if ('function' === typeof worker[taskName][i] && worker[taskName][i].cartFillerLibPromiseFunction === true) {
                             found = true;
                             var params = recursivelyCollectSteps(worker[taskName][i]());
                             params.unshift(1);
