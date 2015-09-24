@@ -6780,6 +6780,8 @@ button.close {
         .nobr {display: inline-block; white-space: nowrap;}
         #availableTasksOfWorker input, #availableTasksOfWorker textarea {width: 100%;}
         #availableTasksOfWorker .highlighted {background-color: yellow;}
+        #libBrowser input, #libBrowser textarea {width: 100%;}
+        #libBrowser .highlighted {background-color: yellow;}
         #testslist td.task-row {padding: 0px;}
         #testslist td.task-row table {margin: 0px}
         #testslist td.task-row table td {border: 0px;}
@@ -7024,6 +7026,7 @@ button.close {
                 <a class="btn btn-xs btn-success" onclick="var event = arguments[0] || window.event; return angular.element(this).scope().refreshPageNoWatch(event);" href="#" title="Refresh page in the main frame">Refresh</a>
                 <a id="searchButton" class="btn btn-xs btn-success" onclick="return angular.element(this).scope().performSearchNoWatch();" title="Show DOM path for an element and build jQuery selector">Search</a>
                 <a id="suggestButton" class="btn btn-xs btn-success" onclick="return angular.element(this).scope().suggestTaskNameNoWatch();" title="Search for task name from worker">Suggest</a>
+                <a id="libButton" class="btn btn-xs btn-success" onclick="return angular.element(this).scope().browseLibNoWatch();" title="Search for step builders and helpers">Lib</a>
                 <div id="searchResults" ng-repeat="dummy in [0]">
                     <div ng-if="searchVisible">
                         <div>
@@ -7059,6 +7062,40 @@ button.close {
         </div>
         <div ng-if="chooseJobState" id="cartFillerOverlay" style="z-index: 100; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); position: absolute; top: 0px; left: 0px;">
 
+        </div>
+        <div id="libBrowser" style="display: none;" ng-repeat="dummy in [0]">
+            <a class="btn btn-success" onclick="return angular.element(this).scope().browseLibNoWatch();">Close</a>
+            <input id="libBrowserSearch" placeholder="search/filter" type="text" ng-keyup="onSearch()"/>
+            <div class="availableTask" 
+                 ng-repeat="(name, type) in workerLib"
+                 ng-if="-1 !== name.toLowerCase().indexOf(filter)"
+            >
+                <div ng-if="expanded != name">
+                    <a href="#" onclick="return false;" ng-click="expand(name, $event)" onkeypress="return false;" ng-keypress="expand(name, $event)">
+                        <span ng-if="filter.length">
+                            {{name.substr(0, name.toLowerCase().indexOf(filter))}}<span class="highlighted">{{name.substr(name.toLowerCase().indexOf(filter), filter.length)}}</span>{{name.substr(name.toLowerCase().indexOf(filter) + filter.length)}}
+                        </span>
+                        <span ng-if="! filter.length" ng-click="expand(name)">
+                            {{name}}
+                        </span>
+                    </a>
+                    <span>: {{type}}</span>
+                </div>
+                <div ng-if="expanded == name">
+                    <h3 ng-if="filter.length" ng-click="expand(name)">
+                        {{name.substr(0, name.toLowerCase().indexOf(filter))}}<span class="highlighted">{{name.substr(name.toLowerCase().indexOf(filter), filter.length)}}</span>{{name.substr(name.toLowerCase().indexOf(filter) + filter.length)}}: {{type}}
+                    </h3>
+                    <h3 ng-if="! filter.length" ng-click="expand(name)">
+                        {{name}}: {{type}}
+                    </h3>
+                    <span>{{workerLibSources[name]}}</span>
+                    <table class="table" data-name="{{name}}">
+                        <tr>
+                            <td colspan="2"><textarea rows="3" readonly onclick="this.select();" onfocus="this.select();" class="result" onkeyup="var event = arguments[0] || window.event;  angular.element(this).scope().taskExplorerParameterEnteredNoWatch(this, event); this.select();">{{getSuggestForLibBrowser(name)}}</textarea></td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
         </div>
         <div id="availableTasksOfWorker" style="display: none;" ng-repeat="dummy in [0]">
             <a class="btn btn-success" onclick="return angular.element(this).scope().suggestTaskNameNoWatch();">Close</a>
@@ -46804,6 +46841,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
         $scope.jobDetails = [];
         $scope.jobTaskProgress = [];
         $scope.jobTaskDescriptions = {};
+        $scope.workerLib = {};
         $scope.jobTaskDiscoveredParameters = {};
         $scope.indexTitles = {};
         $scope.running = false;
@@ -46941,6 +46979,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 $scope.$apply(function(){
                     $scope.workersLoaded = $scope.workersCounter; // now we push all data from dispatcher at once
                     $scope.jobTaskDescriptions = details.jobTaskDescriptions;
+                    $scope.workerLib = details.workerLib;
                     $scope.jobTaskDiscoveredParameters = details.discoveredParameters;
                     $scope.workerTaskSources = details.workerTaskSources;
                     $scope.stepDependencies = details.stepDependencies;
@@ -47387,6 +47426,35 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 cfMessage.send('highlightElementForQueryBuilder', {path: payload});
             };
         },1000);
+        setTimeout(function initLibBrowserScope() {
+            var scope = angular.element(document.getElementById('libBrowser')).scope();
+            if (! scope) {
+                setTimeout(initLibBrowserScope,1000);
+                return;
+            }
+            scope.filter = '';
+            scope.expanded = '';
+            scope.onSearch = function(){
+                scope.filter = $('#libBrowserSearch').val().toLowerCase();
+                if (event.keyCode === 27) {
+                    $scope.browseLibNoWatch();
+                }
+            };
+            scope.expand = function(name, $event) {
+                scope.expanded = scope.expanded === name ? '' : name;
+                if ($event && $event.target) {
+                    var div = $($event.target).closest('div.availableTask');
+                    setTimeout(function() {
+                        var input = div.find('input').first();
+                        if (! input.length) {
+                            input = div.find('textarea');
+                        }
+                        input.focus();
+                        input[0].select();
+                    }, 0);
+                }
+            };
+        },1000);
         setTimeout(function initAvailableTasksOfWorkerScope() {
             var scope = angular.element(document.getElementById('availableTasksOfWorker')).scope();
             if (! scope) {
@@ -47437,6 +47505,25 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
             }
             return ! $scope.jobTaskDescriptions[task].length;
         };
+        $scope.browseLibNoWatch = function() {
+            if ($('#jobDetails').is(':visible')) {
+                $('#jobDetails').hide();
+                $('#buttonPanel').hide();
+                $('#libBrowser').show().data('scroll', $(window).scrollTop());
+                cfMessage.send('toggleSize', {size: 'big'});
+                $('#libBrowserSearch').focus();
+                $('#libBrowserSearch')[0].select();
+            } else {
+                $('#jobDetails').show();
+                $('#buttonPanel').show();
+                $('#libBrowser').hide();
+                cfMessage.send('toggleSize', {size: 'small'});
+                setTimeout(function() {
+                    window.scrollTo(0, $('#libBrowser').data('scroll'));
+                }, 200);
+            }
+            return false;
+        };
         $scope.suggestTaskNameNoWatch = function() {
             if ($('#jobDetails').is(':visible')) {
                 $('#jobDetails').hide();
@@ -47449,8 +47536,10 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 $('#jobDetails').show();
                 $('#buttonPanel').show();
                 $('#availableTasksOfWorker').hide();
-                window.scrollTo(0, $('#availableTasksOfWorker').data('scroll'));
                 cfMessage.send('toggleSize', {size: 'small'});
+                setTimeout(function() {
+                    window.scrollTo(0, $('#availableTasksOfWorker').data('scroll'));
+                }, 200);
             }
             return false;
         };
@@ -47477,6 +47566,17 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 result = {task: name};
             }
             return '\n        ' + JSON.stringify(result) + ',';
+        };
+        $scope.getSuggestForLibBrowser = function(name) {
+            if ($scope.workerLib[name] === 'step builder' ||
+                $scope.workerLib[name] === 'steps')
+            {
+                return 'lib(\'' + name + '\')';
+            } else if ($scope.workerLib[name] === 'helper') {
+                return 'lib.' + name + '()';
+            } else {
+                return name;
+            }
         };
         setTimeout(function initGlobalsScope() {
             var scope = angular.element(document.getElementById('globalsDiv')).scope();
@@ -47527,7 +47627,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
             reportError('bootstrap message did not come');
         }
     }, 10000);
-    config.gruntBuildTimeStamp='1470567976520';
+    config.gruntBuildTimeStamp='1470589874968';
     window.addEventListener('message', function(event){
         var prefix = 'cartFillerMessage:';
         var isDist = true;
@@ -47601,7 +47701,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 if (message.tests) {
                     var x = new XMLHttpRequest();
                     x.onload = function(){
-                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1470567976520') {
+                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1470589874968') {
                             console.log('new version of CartFiller was deployed, switching to it');
                             var hash = window.location.href.split('#');
                             var pc = hash[0].split('?');
@@ -49172,7 +49272,15 @@ define('jquery-cartFiller', ['jquery'], function() {
                     trackWorkerLoaded[originalUrl] = true;
                     if ('string' === typeof xhr.responseText && xhr.responseText.length) {
                         if ((! track) || xhr.responseText !== trackWorkerContents[originalUrl]) {
-                            window.parent.postMessage('cartFillerMessage:' + JSON.stringify({cmd: 'loadWorker', code: xhr.responseText, src: originalUrl, isFinal: trackWorkersAllLoaded() || track}), '*');
+                            window.parent.postMessage(
+                                'cartFillerMessage:' + JSON.stringify({
+                                    cmd: 'loadWorker', 
+                                    code: xhr.responseText, 
+                                    src: originalUrl, 
+                                    isFinal: trackWorkersAllLoaded() || track
+                                }), 
+                                '*'
+                            );
                             trackWorkerContents[originalUrl] = xhr.responseText;
                         }
                     }

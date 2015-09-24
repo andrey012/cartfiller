@@ -44,6 +44,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
         $scope.jobDetails = [];
         $scope.jobTaskProgress = [];
         $scope.jobTaskDescriptions = {};
+        $scope.workerLib = {};
         $scope.jobTaskDiscoveredParameters = {};
         $scope.indexTitles = {};
         $scope.running = false;
@@ -181,6 +182,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 $scope.$apply(function(){
                     $scope.workersLoaded = $scope.workersCounter; // now we push all data from dispatcher at once
                     $scope.jobTaskDescriptions = details.jobTaskDescriptions;
+                    $scope.workerLib = details.workerLib;
                     $scope.jobTaskDiscoveredParameters = details.discoveredParameters;
                     $scope.workerTaskSources = details.workerTaskSources;
                     $scope.stepDependencies = details.stepDependencies;
@@ -627,6 +629,35 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 cfMessage.send('highlightElementForQueryBuilder', {path: payload});
             };
         },1000);
+        setTimeout(function initLibBrowserScope() {
+            var scope = angular.element(document.getElementById('libBrowser')).scope();
+            if (! scope) {
+                setTimeout(initLibBrowserScope,1000);
+                return;
+            }
+            scope.filter = '';
+            scope.expanded = '';
+            scope.onSearch = function(){
+                scope.filter = $('#libBrowserSearch').val().toLowerCase();
+                if (event.keyCode === 27) {
+                    $scope.browseLibNoWatch();
+                }
+            };
+            scope.expand = function(name, $event) {
+                scope.expanded = scope.expanded === name ? '' : name;
+                if ($event && $event.target) {
+                    var div = $($event.target).closest('div.availableTask');
+                    setTimeout(function() {
+                        var input = div.find('input').first();
+                        if (! input.length) {
+                            input = div.find('textarea');
+                        }
+                        input.focus();
+                        input[0].select();
+                    }, 0);
+                }
+            };
+        },1000);
         setTimeout(function initAvailableTasksOfWorkerScope() {
             var scope = angular.element(document.getElementById('availableTasksOfWorker')).scope();
             if (! scope) {
@@ -677,6 +708,25 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
             }
             return ! $scope.jobTaskDescriptions[task].length;
         };
+        $scope.browseLibNoWatch = function() {
+            if ($('#jobDetails').is(':visible')) {
+                $('#jobDetails').hide();
+                $('#buttonPanel').hide();
+                $('#libBrowser').show().data('scroll', $(window).scrollTop());
+                cfMessage.send('toggleSize', {size: 'big'});
+                $('#libBrowserSearch').focus();
+                $('#libBrowserSearch')[0].select();
+            } else {
+                $('#jobDetails').show();
+                $('#buttonPanel').show();
+                $('#libBrowser').hide();
+                cfMessage.send('toggleSize', {size: 'small'});
+                setTimeout(function() {
+                    window.scrollTo(0, $('#libBrowser').data('scroll'));
+                }, 200);
+            }
+            return false;
+        };
         $scope.suggestTaskNameNoWatch = function() {
             if ($('#jobDetails').is(':visible')) {
                 $('#jobDetails').hide();
@@ -689,8 +739,10 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 $('#jobDetails').show();
                 $('#buttonPanel').show();
                 $('#availableTasksOfWorker').hide();
-                window.scrollTo(0, $('#availableTasksOfWorker').data('scroll'));
                 cfMessage.send('toggleSize', {size: 'small'});
+                setTimeout(function() {
+                    window.scrollTo(0, $('#availableTasksOfWorker').data('scroll'));
+                }, 200);
             }
             return false;
         };
@@ -717,6 +769,17 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 result = {task: name};
             }
             return '\n        ' + JSON.stringify(result) + ',';
+        };
+        $scope.getSuggestForLibBrowser = function(name) {
+            if ($scope.workerLib[name] === 'step builder' ||
+                $scope.workerLib[name] === 'steps')
+            {
+                return 'lib(\'' + name + '\')';
+            } else if ($scope.workerLib[name] === 'helper') {
+                return 'lib.' + name + '()';
+            } else {
+                return name;
+            }
         };
         setTimeout(function initGlobalsScope() {
             var scope = angular.element(document.getElementById('globalsDiv')).scope();

@@ -464,7 +464,15 @@
                     trackWorkerLoaded[originalUrl] = true;
                     if ('string' === typeof xhr.responseText && xhr.responseText.length) {
                         if ((! track) || xhr.responseText !== trackWorkerContents[originalUrl]) {
-                            window.parent.postMessage('cartFillerMessage:' + JSON.stringify({cmd: 'loadWorker', code: xhr.responseText, src: originalUrl, isFinal: trackWorkersAllLoaded() || track}), '*');
+                            window.parent.postMessage(
+                                'cartFillerMessage:' + JSON.stringify({
+                                    cmd: 'loadWorker', 
+                                    code: xhr.responseText, 
+                                    src: originalUrl, 
+                                    isFinal: trackWorkersAllLoaded() || track
+                                }), 
+                                '*'
+                            );
                             trackWorkerContents[originalUrl] = xhr.responseText;
                         }
                     }

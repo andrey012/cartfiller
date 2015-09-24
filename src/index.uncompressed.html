@@ -18,6 +18,8 @@
         .nobr {display: inline-block; white-space: nowrap;}
         #availableTasksOfWorker input, #availableTasksOfWorker textarea {width: 100%;}
         #availableTasksOfWorker .highlighted {background-color: yellow;}
+        #libBrowser input, #libBrowser textarea {width: 100%;}
+        #libBrowser .highlighted {background-color: yellow;}
         #testslist td.task-row {padding: 0px;}
         #testslist td.task-row table {margin: 0px}
         #testslist td.task-row table td {border: 0px;}
@@ -247,6 +249,7 @@
                 <a class="btn btn-xs btn-success" onclick="var event = arguments[0] || window.event; return angular.element(this).scope().refreshPageNoWatch(event);" href="#" title="Refresh page in the main frame">Refresh</a>
                 <a id="searchButton" class="btn btn-xs btn-success" onclick="return angular.element(this).scope().performSearchNoWatch();" title="Show DOM path for an element and build jQuery selector">Search</a>
                 <a id="suggestButton" class="btn btn-xs btn-success" onclick="return angular.element(this).scope().suggestTaskNameNoWatch();" title="Search for task name from worker">Suggest</a>
+                <a id="libButton" class="btn btn-xs btn-success" onclick="return angular.element(this).scope().browseLibNoWatch();" title="Search for step builders and helpers">Lib</a>
                 <div id="searchResults" ng-repeat="dummy in [0]">
                     <div ng-if="searchVisible">
                         <div>
@@ -282,6 +285,40 @@
         </div>
         <div ng-if="chooseJobState" id="cartFillerOverlay" style="z-index: 100; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); position: absolute; top: 0px; left: 0px;">
 
+        </div>
+        <div id="libBrowser" style="display: none;" ng-repeat="dummy in [0]">
+            <a class="btn btn-success" onclick="return angular.element(this).scope().browseLibNoWatch();">Close</a>
+            <input id="libBrowserSearch" placeholder="search/filter" type="text" ng-keyup="onSearch()"/>
+            <div class="availableTask" 
+                 ng-repeat="(name, type) in workerLib"
+                 ng-if="-1 !== name.toLowerCase().indexOf(filter)"
+            >
+                <div ng-if="expanded != name">
+                    <a href="#" onclick="return false;" ng-click="expand(name, $event)" onkeypress="return false;" ng-keypress="expand(name, $event)">
+                        <span ng-if="filter.length">
+                            {{name.substr(0, name.toLowerCase().indexOf(filter))}}<span class="highlighted">{{name.substr(name.toLowerCase().indexOf(filter), filter.length)}}</span>{{name.substr(name.toLowerCase().indexOf(filter) + filter.length)}}
+                        </span>
+                        <span ng-if="! filter.length" ng-click="expand(name)">
+                            {{name}}
+                        </span>
+                    </a>
+                    <span>: {{type}}</span>
+                </div>
+                <div ng-if="expanded == name">
+                    <h3 ng-if="filter.length" ng-click="expand(name)">
+                        {{name.substr(0, name.toLowerCase().indexOf(filter))}}<span class="highlighted">{{name.substr(name.toLowerCase().indexOf(filter), filter.length)}}</span>{{name.substr(name.toLowerCase().indexOf(filter) + filter.length)}}: {{type}}
+                    </h3>
+                    <h3 ng-if="! filter.length" ng-click="expand(name)">
+                        {{name}}: {{type}}
+                    </h3>
+                    <span>{{workerLibSources[name]}}</span>
+                    <table class="table" data-name="{{name}}">
+                        <tr>
+                            <td colspan="2"><textarea rows="3" readonly onclick="this.select();" onfocus="this.select();" class="result" onkeyup="var event = arguments[0] || window.event;  angular.element(this).scope().taskExplorerParameterEnteredNoWatch(this, event); this.select();">{{getSuggestForLibBrowser(name)}}</textarea></td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
         </div>
         <div id="availableTasksOfWorker" style="display: none;" ng-repeat="dummy in [0]">
             <a class="btn btn-success" onclick="return angular.element(this).scope().suggestTaskNameNoWatch();">Close</a>

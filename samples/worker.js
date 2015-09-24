@@ -250,9 +250,9 @@
                         );
                     }
                 ],
-                lib(function searchBox(){
+                lib.searchBox = function searchBox(){
                     return window.jQuery('input[type="text"][name="partNumber"]:visible');
-                }),
+                },
                 lib('searchStepFactory', 123)(function (param) { return [
                     'find search box', function(){
                         var input = lib.searchBox();

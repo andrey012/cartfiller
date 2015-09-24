@@ -184,7 +184,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1470567976520';
+    config.gruntBuildTimeStamp='1470589874968';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -911,7 +911,7 @@
          */
         click: function(whatNext) {
             return [
-                'click', function(el, env){
+                'click', function(el){
                     if (! el) {
                         // do nothing
                         return me.modules.api.result();
@@ -927,7 +927,7 @@
                     } else if (whatNext === me.modules.api.onload) {
                         me.modules.api.onload();
                     } else {
-                        whatNext(el, env);
+                        whatNext(el);
                     }
                 }
             ];
@@ -992,14 +992,14 @@
         type: function(value, whatNext, dontClear, failOnErrors) {
             var r = [
                 'type key sequence',
-                function(el, env) {
+                function(el) {
                     var finish = function() {
                         if (undefined === whatNext || whatNext === me.modules.api.result) {
                             me.modules.api.result();
                         } else if (whatNext === me.modules.api.onload) {
                             me.modules.api.onload();
                         } else {
-                            whatNext(el, env);
+                            whatNext(el);
                         }
                     };
                     var elementNode;
@@ -1320,25 +1320,25 @@
      * @access private
      */
     var workerGlobals = {};
-    var workerLibResolve = function(arg, promise) {
+    var workerLibResolve = function(arg, promise, path) {
         var name, type;
 
         if ('function' === typeof arg) {
             var evaluateArg = false;
             if (undefined === promise.promiseArgs[0] && 'string' === typeof arg.name && arg.name.length) {
                 // this is case: lib()(function findSomeButton() {...})
-                type = 'fn';
+                type = 'helper';
                 name = arg.name;
             } else if ('string' === typeof promise.promiseArgs[0] && promise.promiseArgs[0].length && ('string' !== typeof arg.name || ! arg.name.length)) {
                 // this is case: lib('getSomeSteps')(function() { ... })
-                type = 'step';
+                type = 'step builder';
                 name = promise.promiseArgs[0];
                 evaluateArg = true;
             } else {
                 throw new Error('invalid lib usage, name of function should either be specified as a parameter or named function should be used');
             }
-            workerLib[name] = arg;
-            workerLib[name].cartFillerWorkerLibType = type;
+            workerLibByWorkerPath[path][name] = arg;
+            workerLibByWorkerPath[path][name].cartFillerWorkerLibType = type;
             var args = promise.promiseArgs.slice(1);
             return evaluateArg ? arg.apply({}, args) : [];
         } else {
@@ -1348,48 +1348,113 @@
                 if ('string' !== typeof name.name || ! name.name.length) {
                     throw new Error('incorrect usage of lib, only named functions should be defined like that');
                 }
-                workerLib[name.name] = name;
-                workerLib[name.name].cartFillerWorkerLibType = 'fn';
+                workerLibByWorkerPath[path][name.name] = name;
+                workerLibByWorkerPath[path][name.name].cartFillerWorkerLibType = 'helper';
                 return [];
             } else {
-                if (! workerLib.hasOwnProperty(name)) {
+                if (! workerLibByWorkerPath[path].hasOwnProperty(name)) {
                     throw new Error('lib does not have [' + name + '] entry');
                 }
-                if ('function' === typeof workerLib[name]) {
-                    if ('string' === typeof workerLib[name].name && workerLib[name].name.length) {
+                if ('function' === typeof workerLibByWorkerPath[path][name]) {
+                    if ('string' === typeof workerLibByWorkerPath[path][name].name && workerLibByWorkerPath[path][name].name.length) {
                         // this function is inteded to be used inside steps, not to build steps
                     } else {
-                        return workerLib[name].apply({}, promise.promiseArgs.slice(1));
+                        return workerLibByWorkerPath[path][name].apply({}, promise.promiseArgs.slice(1));
                     }
                 } else {
-                    return workerLib[name];
+                    return workerLibByWorkerPath[path][name];
                 }
             }
         }
     };
-    var workerLib = function() {
-        var result = function(arg) {
-            return workerLibResolve(arg, result);
+    var workerLibByWorkerPath;
+    var workerLib;
+    var workerLibFactory = function(path) {
+        var workerLibFn = function() {
+            var result = function(arg) {
+                return workerLibResolve(arg, result, path.join('.'));
+            };
+            result.cartFillerLibPromiseFunction = true;
+            result.promiseArgs = [];
+            for (var i = 0; i < arguments.length ; i ++) {
+                result.promiseArgs.push(arguments[i]);
+            }
+            result.none = [];
+            return result;
         };
-        result.cartFillerLibPromiseFunction = true;
-        result.promiseArgs = [];
-        for (var i = 0; i < arguments.length ; i ++) {
-            result.promiseArgs.push(arguments[i]);
-        }
-        result.none = [];
-        return result;
+        workerLibFn.cartFillerWorkerLibFn = true;
+        return workerLibFn;
     };
     var makeProxyForWorkerLib = function(fn) {
-        return function() {
+        var result = function() {
             return fn.apply(me.modules.ui.mainFrameWindow.document, arguments);
         };
+        result.cartFillerWorkerLibType = fn.cartFillerWorkerLibType;
+        if (result.cartFillerWorkerLibType !== 'step builder') {
+            result.cartFillerWorkerLibType = 'helper';
+        }
+        fn.cartFillerWorkerLibType = result.cartFillerWorkerLibType;
+        return result;
     };
-    var addProxiesToWorkerLib = function() {
-        for (var i in workerLib) {
-            if ('function' === typeof workerLib[i]) {
-                workerLib[i] = makeProxyForWorkerLib(workerLib[i]);
+    var workerLibBrief = {};
+    var resetWorkerLib = function () {
+        workerLib = workerLibFactory([]);
+        workerLibByWorkerPath = {};
+        workerLibBrief = {};
+    };
+    var ambiguousWorkerLibProxyFunctionFactory = function(name) {
+        return function(){
+            throw new Error('[' + name + '] is ambiguous inside lib, use fully qualified name');
+        };
+    };
+
+    var processWorkerLibByPath = function(lib, path) {
+        for (var i in lib) {
+            if (lib.hasOwnProperty(i)) {
+                if ('function' === typeof lib[i]) {
+                    lib[i] = makeProxyForWorkerLib(lib[i]);
+                } else if ('object' === typeof lib[i]) {
+                    lib[i].cartFillerWorkerLibType = 'steps';
+                }
+                if (workerLib.hasOwnProperty(i)) {
+                    workerLib[i] = ambiguousWorkerLibProxyFunctionFactory(i);
+                } else {
+                    workerLib[i] = lib[i];
+                }
+                if (lib[i].cartFillerWorkerLibType) {
+                    workerLibBrief[path + '.' + i] = lib[i].cartFillerWorkerLibType;
+                }
             }
         }
+        var $this = workerLib;
+        var thisPath = [];
+        path.filter(function(item, i) {
+            thisPath.push(item);
+            if (undefined === $this[item]) {
+                $this[item] = (i === path.length - 1) ? lib : workerLibFactory(thisPath);
+            } else if ($this[item].cartFillerWorkerLibFn) {
+                // that's ok except for last piece
+                if (i === path.length - 1) {
+                    throw new Error('can\'t replace workerLib on this path: [' + thisPath.join('.') + ']');
+                }
+            } else {
+                throw new Error('naming conflict, can\'t put workerLib on this path: [' + thisPath.join('.') + ']');
+            }
+            $this = $this[item];
+        });
+    };
+    var postProcessWorkerLibs = function() {
+        for (var i in workerLibByWorkerPath) {
+            for (var j in workerLib) {
+                if (workerLib.hasOwnProperty(j) && ! workerLibByWorkerPath[i].hasOwnProperty(j)) {
+                    workerLibByWorkerPath[i][j] = workerLib[j];
+                }
+            }
+        }
+    };
+    var makeLibPathFromWorkerPath = function(workerUrl) {
+        var pc = workerUrl.split(/\/tests\//);
+        return pc.pop().replace(/\/workers\//g, '/').replace(/\.js$/, '').split('/');
     };
     /**
      * @var {Object} workerEventListeners Registered event listeners, see
@@ -1762,7 +1827,6 @@
     var workerTaskSources = {};
     var evaluateNextWorker = function() {
         if (! workersToEvaluate.length) {
-            addProxiesToWorkerLib();
             me.modules.dispatcher.postMessageToWorker(
                 'globalsUpdate', 
                 {
@@ -1797,6 +1861,7 @@
         for (var i in workerSourceCodes) {
             workersToEvaluate.push(i);
         }
+        resetWorkerLib();
         evaluateNextWorker();
     };
     /**
@@ -2744,12 +2809,17 @@
                 var found = false;
                 for (var taskName in worker) {
                     for (i = worker[taskName].length - 1 ; i >= 0 ; i --) {
-                        if ('function' === typeof worker[taskName][i] && worker[taskName][i].cartFillerLibPromiseFunction === true) {
-                            found = true;
-                            var params = recursivelyCollectSteps(worker[taskName][i]());
-                            params.unshift(1);
-                            params.unshift(i);
-                            worker[taskName].splice.apply(worker[taskName], params);
+                        if ('function' === typeof worker[taskName][i]) {
+                            if (worker[taskName][i].cartFillerLibPromiseFunction === true) {
+                                found = true;
+                                var params = recursivelyCollectSteps(worker[taskName][i]());
+                                params.unshift(1);
+                                params.unshift(i);
+                                worker[taskName].splice.apply(worker[taskName], params);
+                            } else if (worker[taskName][i].cartFillerWorkerLibType === 'helper') {
+                                // ignore it
+                                worker[taskName].splice(i, 1);
+                            }
                         }
                     }
                 }
@@ -2757,6 +2827,9 @@
                     resolveLibPromisesInWorker();
                 }
             };
+            var workerLibPath = makeLibPathFromWorkerPath(currentEvaluatedWorker);
+            var workerLibOfThisWorker = workerLibFactory(workerLibPath);
+            workerLibByWorkerPath[workerLibPath.join('.')] = workerLibOfThisWorker;
             var knownArgs = {
                 window: me.modules.ui.mainFrameWindow,
                 document: undefined,
@@ -2764,7 +2837,7 @@
                 task: workerCurrentTask,
                 job: jobDetailsCache,
                 globals: workerGlobals,
-                lib: workerLib 
+                lib: workerLibOfThisWorker 
             };
             var args = cb.toString().split('(')[1].split(')')[0].split(',').map(function(arg){
                 arg = arg.trim();
@@ -2784,6 +2857,7 @@
                 };
             });
             var thisWorker = cb.apply(undefined, args);
+            processWorkerLibByPath(workerLibOfThisWorker, workerLibPath);
             for (var taskName in thisWorker){
                 if (thisWorker.hasOwnProperty(taskName)){
                     worker[taskName] = recursivelyCollectSteps(thisWorker[taskName]);
@@ -2792,6 +2866,7 @@
             }
             if (! workersToEvaluate.length) {
                 // only do this for last worker
+                postProcessWorkerLibs();
                 resolveLibPromisesInWorker();
                 var list = {};
                 var discoveredParameters = {};
@@ -2819,7 +2894,8 @@
                     jobTaskDescriptions: list, 
                     discoveredParameters: discoveredParameters, 
                     workerTaskSources: workerTaskSources,
-                    stepDependencies: stepDependencies
+                    stepDependencies: stepDependencies,
+                    workerLib: workerLibBrief
                 });
             }
         },

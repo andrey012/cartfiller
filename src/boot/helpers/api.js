@@ -681,7 +681,7 @@
          */
         click: function(whatNext) {
             return [
-                'click', function(el, env){
+                'click', function(el){
                     if (! el) {
                         // do nothing
                         return me.modules.api.result();
@@ -697,7 +697,7 @@
                     } else if (whatNext === me.modules.api.onload) {
                         me.modules.api.onload();
                     } else {
-                        whatNext(el, env);
+                        whatNext(el);
                     }
                 }
             ];
@@ -762,14 +762,14 @@
         type: function(value, whatNext, dontClear, failOnErrors) {
             var r = [
                 'type key sequence',
-                function(el, env) {
+                function(el) {
                     var finish = function() {
                         if (undefined === whatNext || whatNext === me.modules.api.result) {
                             me.modules.api.result();
                         } else if (whatNext === me.modules.api.onload) {
                             me.modules.api.onload();
                         } else {
-                            whatNext(el, env);
+                            whatNext(el);
                         }
                     };
                     var elementNode;
