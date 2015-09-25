@@ -184,7 +184,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1470602557359';
+    config.gruntBuildTimeStamp='1470604466589';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -1865,6 +1865,57 @@
         eval(workerSourceCodes[currentEvaluatedWorker].replace(/(function\s*\([^)]*\)\s*{[ \t]*)([\n\r]*)/g, injectDebuggerFn)); // jshint ignore:line
         evaluateNextWorker();
     };
+    
+
+    var recursivelyCollectSteps = function(source, taskSteps) {
+        if ('undefined' === typeof taskSteps) {
+            taskSteps = [];
+        }
+        for (var i = 0 ; i < source.length ; i ++) {
+            if (source[i] === me.modules.api) {
+                // do nothing
+            } else if (
+                source[i] instanceof Array && 
+                (
+                    (source[i].length === 0) || 
+                    (
+                        source[i].length > 0 && 
+                        (
+                            ('string' === typeof source[i][0]) || 
+                            (source[i][0] instanceof Array)
+                        )
+                    )
+                )
+            ) {
+                recursivelyCollectSteps(source[i], taskSteps);
+            } else {
+                taskSteps.push(source[i]);
+            }
+        }
+        return taskSteps;
+    };
+    var resolveLibPromisesInWorker = function() {
+        var found = false;
+        for (var taskName in worker) {
+            for (var i = worker[taskName].length - 1 ; i >= 0 ; i --) {
+                if ('function' === typeof worker[taskName][i]) {
+                    if (worker[taskName][i].cartFillerLibPromiseFunction === true) {
+                        found = true;
+                        var params = recursivelyCollectSteps(worker[taskName][i]());
+                        params.unshift(1);
+                        params.unshift(i);
+                        worker[taskName].splice.apply(worker[taskName], params);
+                    } else if (worker[taskName][i].cartFillerWorkerLibType === 'helper') {
+                        // ignore it
+                        worker[taskName].splice(i, 1);
+                    }
+                }
+            }
+        }
+        if (found) {
+            resolveLibPromisesInWorker();
+        }
+    };
     /**
      * Evaluate worker code sorting out dependencies
      * @function CartFiller.Dispatcher~evaluateWorkers
@@ -1878,6 +1929,38 @@
         }
         resetWorkerLib();
         evaluateNextWorker();
+
+        postProcessWorkerLibs();
+        resolveLibPromisesInWorker();
+        var list = {};
+        var discoveredParameters = {};
+        var stepDependencies = {};
+        for (var taskName in worker) {
+            stepDependencies[taskName] = {};
+            var taskSteps = [];
+            var params = {};
+            var allParams = {};
+            for (i = 0 ; i < worker[taskName].length; i++){
+                // this is step name/comment
+                if ('string' === typeof worker[taskName][i]){
+                    taskSteps.push(worker[taskName][i]);
+                    if (worker[taskName][i+1] instanceof Function) {
+                        params[taskSteps.length - 1] = discoverTaskParameters(worker[taskName][i+1], allParams);
+                        stepDependencies[taskName][taskSteps.length - 1] = discoverStepDependencies(worker[taskName][i+1]);
+                    }
+                }
+            }
+            params.all = allParams;
+            list[taskName] = taskSteps;
+            discoveredParameters[taskName] = params;
+        }
+        me.modules.dispatcher.postMessageToWorker('workerRegistered', {
+            jobTaskDescriptions: list, 
+            discoveredParameters: discoveredParameters, 
+            workerTaskSources: workerTaskSources,
+            stepDependencies: stepDependencies,
+            workerLib: workerLibBrief
+        });
     };
     /**
      * Discovers if a step depends on result of previous step.
@@ -2794,56 +2877,6 @@
          * @access public
          */
         registerWorker: function(cb){
-            var i;
-            var recursivelyCollectSteps = function(source, taskSteps) {
-                if ('undefined' === typeof taskSteps) {
-                    taskSteps = [];
-                }
-                for (var i = 0 ; i < source.length ; i ++) {
-                    if (source[i] === me.modules.api) {
-                        // do nothing
-                    } else if (
-                        source[i] instanceof Array && 
-                        (
-                            (source[i].length === 0) || 
-                            (
-                                source[i].length > 0 && 
-                                (
-                                    ('string' === typeof source[i][0]) || 
-                                    (source[i][0] instanceof Array)
-                                )
-                            )
-                        )
-                    ) {
-                        recursivelyCollectSteps(source[i], taskSteps);
-                    } else {
-                        taskSteps.push(source[i]);
-                    }
-                }
-                return taskSteps;
-            };
-            var resolveLibPromisesInWorker = function() {
-                var found = false;
-                for (var taskName in worker) {
-                    for (i = worker[taskName].length - 1 ; i >= 0 ; i --) {
-                        if ('function' === typeof worker[taskName][i]) {
-                            if (worker[taskName][i].cartFillerLibPromiseFunction === true) {
-                                found = true;
-                                var params = recursivelyCollectSteps(worker[taskName][i]());
-                                params.unshift(1);
-                                params.unshift(i);
-                                worker[taskName].splice.apply(worker[taskName], params);
-                            } else if (worker[taskName][i].cartFillerWorkerLibType === 'helper') {
-                                // ignore it
-                                worker[taskName].splice(i, 1);
-                            }
-                        }
-                    }
-                }
-                if (found) {
-                    resolveLibPromisesInWorker();
-                }
-            };
             var workerLibPath = makeLibPathFromWorkerPath(currentEvaluatedWorker);
             var workerLibOfThisWorker = workerLibFactory(workerLibPath);
             workerLibByWorkerPath[workerLibPath.join('.')] = workerLibOfThisWorker;
@@ -2880,40 +2913,6 @@
                     worker[taskName] = recursivelyCollectSteps(thisWorker[taskName]);
                     workerTaskSources[taskName] = currentEvaluatedWorker;
                 }
-            }
-            if (! workersToEvaluate.length) {
-                // only do this for last worker
-                postProcessWorkerLibs();
-                resolveLibPromisesInWorker();
-                var list = {};
-                var discoveredParameters = {};
-                var stepDependencies = {};
-                for (taskName in worker) {
-                    stepDependencies[taskName] = {};
-                    var taskSteps = [];
-                    var params = {};
-                    var allParams = {};
-                    for (i = 0 ; i < worker[taskName].length; i++){
-                        // this is step name/comment
-                        if ('string' === typeof worker[taskName][i]){
-                            taskSteps.push(worker[taskName][i]);
-                            if (worker[taskName][i+1] instanceof Function) {
-                                params[taskSteps.length - 1] = discoverTaskParameters(worker[taskName][i+1], allParams);
-                                stepDependencies[taskName][taskSteps.length - 1] = discoverStepDependencies(worker[taskName][i+1]);
-                            }
-                        }
-                    }
-                    params.all = allParams;
-                    list[taskName] = taskSteps;
-                    discoveredParameters[taskName] = params;
-                }
-                this.postMessageToWorker('workerRegistered', {
-                    jobTaskDescriptions: list, 
-                    discoveredParameters: discoveredParameters, 
-                    workerTaskSources: workerTaskSources,
-                    stepDependencies: stepDependencies,
-                    workerLib: workerLibBrief
-                });
             }
         },
         /**
