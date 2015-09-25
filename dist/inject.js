@@ -184,7 +184,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1470601232763';
+    config.gruntBuildTimeStamp='1470602557359';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -1530,6 +1530,8 @@
      * @access private
      */
     var returnedValuesOfStepsAreForTask;
+    var mostRecentReturnedValueOfStep;
+
     /**
      * Cache job details to give it to worker in full. Purpose is to make it 
      * possible to deliver configuration/environment variables from 
@@ -2328,6 +2330,8 @@
                 }
                 workerCurrentTaskIndex = message.index;
                 workerCurrentStepIndex = message.step;
+                // by default inherit previous returned value
+                this.setReturnedValueOfStep(mostRecentReturnedValueOfStep);
                 /**
                  * Environment utility class - will contain various information,
                  * that can be rarely used by worker step callbacks
@@ -3034,7 +3038,7 @@
          * @access public
          */
         setReturnedValueOfStep: function(element){
-            returnedValuesOfSteps[workerCurrentStepIndex + 1] = element;
+            returnedValuesOfSteps[workerCurrentStepIndex + 1] = mostRecentReturnedValueOfStep = element;
         },
         /**
          * Registers setTimeout id to be called if step will experience timeout
