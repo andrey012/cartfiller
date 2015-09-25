@@ -160,10 +160,24 @@
         return result;
     };
     var workerLibBrief = {};
+    var workerUrlsCommonPart;
     var resetWorkerLib = function () {
         workerLib = workerLibFactory([]);
         workerLibByWorkerPath = {};
         workerLibBrief = {};
+        workerUrlsCommonPart = false;
+        for (var i in workerSourceCodes) {
+            if (false === workerUrlsCommonPart) {
+                workerUrlsCommonPart = i; 
+                continue;
+            }
+            for (var j = workerUrlsCommonPart.length ; j >= 0 ; j --) {
+                if (workerUrlsCommonPart.substr(0,j) === i.substr(0,j)) {
+                    break;
+                }
+            }
+            workerUrlsCommonPart = workerUrlsCommonPart.substr(0,j);
+        }
     };
     var ambiguousWorkerLibProxyFunctionFactory = function(name) {
         return function(){
@@ -185,7 +199,7 @@
                     workerLib[i] = lib[i];
                 }
                 if (lib[i].cartFillerWorkerLibType) {
-                    workerLibBrief[path + '.' + i] = lib[i].cartFillerWorkerLibType;
+                    workerLibBrief[path.join('.') + '.' + i] = lib[i].cartFillerWorkerLibType;
                 }
             }
         }
@@ -216,8 +230,7 @@
         }
     };
     var makeLibPathFromWorkerPath = function(workerUrl) {
-        var pc = workerUrl.split(/\/tests\//);
-        return pc.pop().replace(/\/workers\//g, '/').replace(/\.js$/, '').split('/');
+        return workerUrl.substr(workerUrlsCommonPart.length).replace(/(^|\/)workers\//g, function(m,a){return a;}).replace(/\.js$/, '').split('/');
     };
     /**
      * @var {Object} workerEventListeners Registered event listeners, see

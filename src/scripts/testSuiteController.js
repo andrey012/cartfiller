@@ -208,7 +208,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             return processConditionals(result, tweaks, map);
         };
         var getTestIndexByName = function(name, ref) {
-            var currentDir = ref.replace(/\/?[^\/]*$/, '/');
+            var currentDir = ref.split('?')[0].split('#')[0].replace(/\/?[^\/]*$/, '/');
             if (currentDir === '/') {
                 currentDir = '';
             }

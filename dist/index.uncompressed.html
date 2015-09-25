@@ -47612,7 +47612,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
             reportError('bootstrap message did not come');
         }
     }, 10000);
-    config.gruntBuildTimeStamp='1470589874968';
+    config.gruntBuildTimeStamp='1470601232763';
     window.addEventListener('message', function(event){
         var prefix = 'cartFillerMessage:';
         var isDist = true;
@@ -47686,7 +47686,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 if (message.tests) {
                     var x = new XMLHttpRequest();
                     x.onload = function(){
-                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1470589874968') {
+                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1470601232763') {
                             console.log('new version of CartFiller was deployed, switching to it');
                             var hash = window.location.href.split('#');
                             var pc = hash[0].split('?');
@@ -48004,7 +48004,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             return processConditionals(result, tweaks, map);
         };
         var getTestIndexByName = function(name, ref) {
-            var currentDir = ref.replace(/\/?[^\/]*$/, '/');
+            var currentDir = ref.split('?')[0].split('#')[0].replace(/\/?[^\/]*$/, '/');
             if (currentDir === '/') {
                 currentDir = '';
             }
