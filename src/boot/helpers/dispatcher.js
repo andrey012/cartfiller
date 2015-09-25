@@ -115,8 +115,16 @@
                 workerLibByWorkerPath[path][name.name].cartFillerWorkerLibType = 'helper';
                 return [];
             } else {
-                if (! workerLibByWorkerPath[path].hasOwnProperty(name)) {
-                    throw new Error('lib does not have [' + name + '] entry');
+                var pc = name.split('.');
+                name = pc.pop();
+                var lib = workerLibByWorkerPath[path];
+                pc.filter(function(item, index) {
+                    if ((! lib[item]) || (! lib[item].cartFillerWorkerLibFn)) {
+                        throw new Error('lib [' + path + ']->[' + pc.slice(0, index).join('.') + '] does not have [' + item + '] sublib');
+                    }
+                });
+                if (! lib.hasOwnProperty(name)) {
+                    throw new Error('lib [' + path + ']->[' + pc.join('.') + '] does not have [' + name + '] entry');
                 }
                 if ('function' === typeof workerLibByWorkerPath[path][name]) {
                     if ('string' === typeof workerLibByWorkerPath[path][name].name && workerLibByWorkerPath[path][name].name.length) {
@@ -615,17 +623,17 @@
         }
         currentEvaluatedWorker = workersToEvaluate.shift();
         var apiIsThere = false;
-        var injectDebuggerFn = function(match, fn, nl) {
+        var injectDebuggerFn = function(match, fn) {
             if ((! apiIsThere) && /\,\s*api\s*\,/.test(match)) {
                 apiIsThere = true;
             }
             if (apiIsThere) {
-                return fn + ' if(api.debugger()) debugger;' + (-1 === nl.indexOf('\n') ? '\n' : nl);
+                return fn + ' if(api.debugger()) debugger;';
             } else {
                 return match;
             }
         };
-        eval(workerSourceCodes[currentEvaluatedWorker].replace(/(function\s*\([^)]*\)\s*{[ \t]*)([\n\r]*)/g, injectDebuggerFn)); // jshint ignore:line
+        eval(workerSourceCodes[currentEvaluatedWorker].replace(/(function\s*\([^)]*\)\s*{[ \t]*)/g, injectDebuggerFn)); // jshint ignore:line
         evaluateNextWorker();
     };
     

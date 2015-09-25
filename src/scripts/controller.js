@@ -643,6 +643,9 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                     $scope.browseLibNoWatch();
                 }
             };
+            scope.shortName = function(name) {
+                return name.split('.').pop();
+            };
             scope.expand = function(name, $event) {
                 scope.expanded = scope.expanded === name ? '' : name;
                 if ($event && $event.target) {
@@ -812,5 +815,10 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 return true;
             }
         };
+        $(document).on('click focus keyup', '.copy-to-clipboard', function(event) {
+            event.target.select();
+            document.execCommand('copy');
+            event.stopPropagation();
+        });
     }]);
 });

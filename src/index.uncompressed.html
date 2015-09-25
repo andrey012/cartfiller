@@ -316,6 +316,11 @@
                         <tr>
                             <td colspan="2"><textarea rows="3" readonly onclick="this.select();" onfocus="this.select();" class="result" onkeyup="var event = arguments[0] || window.event;  angular.element(this).scope().taskExplorerParameterEnteredNoWatch(this, event); this.select();">{{getSuggestForLibBrowser(name)}}</textarea></td>
                         </tr>
+                        <tr>
+                            <td colspan="2">
+                                <input class="copy-to-clipboard" ng-value="shortName(name)" readonly/>
+                            </td>
+                        </tr>
                     </table>
                 </div>
             </div>
@@ -352,6 +357,11 @@
                         </tr>
                         <tr>
                             <td colspan="2"><textarea rows="3" readonly onclick="this.select();" onfocus="this.select();" class="result" onkeyup="var event = arguments[0] || window.event;  angular.element(this).scope().taskExplorerParameterEnteredNoWatch(this, event); this.select();">{{getSuggestTaskJsonForTask(name)}}</textarea></td>
+                        </tr>
+                        <tr>
+                            <td colspan="2">
+                                <input class="copy-to-clipboard" ng-value="name" readonly/>
+                            </td>
                         </tr>
                     </table>
                     <ol>
