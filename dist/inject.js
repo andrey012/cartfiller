@@ -184,7 +184,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1470692127466';
+    config.gruntBuildTimeStamp='1470731430172';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -2480,7 +2480,9 @@
                         currentStepWorkerFn = workerFn;
                         me.modules.api.debugger(message.debug);
                         me.modules.api.env = currentStepEnv;
-                        workerFn.apply(me.modules.ui.mainFrameWindow.document, getWorkerFnParams());
+                        var mainFrameWindowDocument;
+                        try { mainFrameWindowDocument = me.modules.ui.mainFrameWindow.document; } catch (e) {}
+                        workerFn.apply(mainFrameWindowDocument, getWorkerFnParams());
                     }
                 } catch (err){
                     this.reportErrorResult(err);

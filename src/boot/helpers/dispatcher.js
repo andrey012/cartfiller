@@ -1243,7 +1243,9 @@
                         currentStepWorkerFn = workerFn;
                         me.modules.api.debugger(message.debug);
                         me.modules.api.env = currentStepEnv;
-                        workerFn.apply(me.modules.ui.mainFrameWindow.document, getWorkerFnParams());
+                        var mainFrameWindowDocument;
+                        try { mainFrameWindowDocument = me.modules.ui.mainFrameWindow.document; } catch (e) {}
+                        workerFn.apply(mainFrameWindowDocument, getWorkerFnParams());
                     }
                 } catch (err){
                     this.reportErrorResult(err);
