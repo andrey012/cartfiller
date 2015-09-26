@@ -184,7 +184,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1470775934726';
+    config.gruntBuildTimeStamp='1470781722933';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -763,7 +763,7 @@
          * @access public
          */
         say: function(message, pre, nextButton){
-            me.modules.ui.say(String(message), pre, nextButton);
+            me.modules.ui.say((message === undefined || message === null) ? message : String(message), pre, nextButton);
             return this;
         },
         /**
@@ -3548,6 +3548,10 @@
         for (var i = divs.length - 1; i >= 0; i --) {
             divs[i].parentNode.removeChild(divs[i]);
         }
+        divs = overlayWindow().document.getElementsByClassName(overlayClassName + ' ' + overlayClassName + (type ? type : ''));
+        for ( i = divs.length - 1; i >= 0; i --) {
+            divs[i].parentNode.removeChild(divs[i]);
+        }
     };
     /**
      * Draws vertical arrow line
@@ -4300,7 +4304,7 @@
          * @access public
          */
         say: function(text, pre, nextButton){
-            messageToSay = undefined === text ? '' : text;
+            messageToSay = (undefined === text || null === text) ? '' : text;
             messageToSayOptions.nextButton = nextButton;
             wrapMessageToSayWithPre = pre;
             currentMessageDivWidth = Math.max(100, Math.round(getInnerWidth() * 0.5));

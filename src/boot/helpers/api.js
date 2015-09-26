@@ -533,7 +533,7 @@
          * @access public
          */
         say: function(message, pre, nextButton){
-            me.modules.ui.say(String(message), pre, nextButton);
+            me.modules.ui.say((message === undefined || message === null) ? message : String(message), pre, nextButton);
             return this;
         },
         /**

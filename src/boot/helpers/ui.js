@@ -173,6 +173,10 @@
         for (var i = divs.length - 1; i >= 0; i --) {
             divs[i].parentNode.removeChild(divs[i]);
         }
+        divs = overlayWindow().document.getElementsByClassName(overlayClassName + ' ' + overlayClassName + (type ? type : ''));
+        for ( i = divs.length - 1; i >= 0; i --) {
+            divs[i].parentNode.removeChild(divs[i]);
+        }
     };
     /**
      * Draws vertical arrow line
@@ -925,7 +929,7 @@
          * @access public
          */
         say: function(text, pre, nextButton){
-            messageToSay = undefined === text ? '' : text;
+            messageToSay = (undefined === text || null === text) ? '' : text;
             messageToSayOptions.nextButton = nextButton;
             wrapMessageToSayWithPre = pre;
             currentMessageDivWidth = Math.max(100, Math.round(getInnerWidth() * 0.5));
