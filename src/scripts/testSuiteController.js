@@ -13,11 +13,14 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             return;
         }
         var parseJson = function(s){
-            s = s.replace(/^\s*cartfiller\s*=\s*/, '').replace(/\,[ \t\n\r]*\]/g, ']').replace(/\,[ \t\n\r]*\}/g, '}').replace(/\t/g, '\\t').replace(/\r/g, '');
-            var m;
-            while (m = /([\{,]\s*\"(\\\"|[^"\n])*)\n/.exec(s)) {
-                s = s.replace(m[0], m[1] + '\\n');
-            }
+            s = s.replace(/^\s*cartfiller\s*=\s*/, '')
+                .replace(/\,[ \t\n\r]*\]/g, ']')
+                .replace(/\,[ \t\n\r]*\}/g, '}')
+                .replace(/\r/g, '')
+                .replace(/<\!\[CDATA\[(([^\]]|\][^\]]|\]\][^\>])*)\]\]\>/g, function(m,data) {
+                    data = JSON.stringify(data);
+                    return data.substr(1,data.length-2);
+                });
             return JSON.parse(s);
         };
         var testsToCheck = [];
@@ -159,10 +162,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                 throw new Error('invalid case');
             }
         };
-        var processIncludes = function(details, myIndex, tweaks, map) {
-            if (undefined === map) {
-                map = {};
-            }
+        var processIncludesRecursive = function(details, myIndex, tweaks, map) {
             var result = [];
             details.filter(function(detail) {
                 var i;
@@ -187,8 +187,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                     }
                     testDependencies[myIndex][includedTestIndex] = true;
                     var saved = $scope.discovery.currentProcessedTestURL;
-                    $scope.discovery.currentProcessedTestURL = 
-                $scope.discovery.currentProcessedTestURL = $scope.discovery.scripts.hrefs[includedTestIndex];
+                    $scope.discovery.currentProcessedTestURL = $scope.discovery.currentProcessedTestURL = $scope.discovery.scripts.hrefs[includedTestIndex];
                     var tasksToInclude = processIncludes(parseJson($scope.discovery.scripts.rawContents[includedTestIndex]).details, includedTestIndex, tweaks, thisMap);
                     $scope.discovery.currentProcessedTestURL = saved;
                     
@@ -202,9 +201,24 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                         result.push(task);
                     });
                 } else {
+                    if (undefined === detail.task && undefined !== detail.if) {
+                        if (undefined !== detail.then) {
+                            detail.then = processIncludesRecursive(detail.then, myIndex, tweaks, map);
+                        }
+                        if (undefined !== detail.else) {
+                            detail.else = processIncludesRecursive(detail.else, myIndex, tweaks, map);
+                        }
+                    }
                     result.push(detail);
                 }
             });
+            return result;
+        };
+        var processIncludes = function(details, myIndex, tweaks, map) {
+            if (undefined === map) {
+                map = {};
+            }
+            var result = processIncludesRecursive(details, myIndex, tweaks, map);
             return processConditionals(result, tweaks, map);
         };
         var getTestIndexByName = function(name, ref) {
@@ -247,7 +261,9 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                     if (result[i].level < 4) {
                         result[i].heading = headingLevelCounters.slice(0, result[i].level).filter(function(v){return v;}).join('.') + '. ' + result[i].heading.replace(/^(\d+\.)+\s*/, '');
                     } else {
-                        result[i].heading = result[i].heading.replace(/^(\d+\.)+\s*/, '');
+                        result[i].heading = result[i].heading.replace(/^(\d+\.)+\s*/, '').replace(/^\s+/, function(m) {
+                            return m.replace(/./g, '\xa0');
+                        });
                     }
                 }
             }

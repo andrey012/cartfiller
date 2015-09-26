@@ -40,6 +40,9 @@ cartfiller = {
             "singleLevelDynamic?y2=12&y1": false,
             "singleLevelDynamic?y1&x1&x2=10&y2=12": false,
             "singleLevelDynamic?y1&x1&x2=12&y2=12": false,
-        }
+        },
+        "cdataTests": {
+            "cdata": false,
+        },
     }
 }
