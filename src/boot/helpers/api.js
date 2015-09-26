@@ -682,6 +682,9 @@
         click: function(whatNext) {
             return [
                 'click', function(el){
+                    if (me.modules.api.debugger()) {
+                        debugger; // jshint ignore:line
+                    }
                     if (! el) {
                         // do nothing
                         return me.modules.api.result();
@@ -763,6 +766,9 @@
             var r = [
                 'type key sequence',
                 function(el) {
+                    if (me.modules.api.debugger()) {
+                        debugger; // jshint ignore:line
+                    }
                     var finish = function() {
                         if (undefined === whatNext || whatNext === me.modules.api.result) {
                             me.modules.api.result();
