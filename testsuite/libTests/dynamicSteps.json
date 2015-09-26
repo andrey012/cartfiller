@@ -1,0 +1,6 @@
+{
+    "title": "dynamic steps: lib('mySteps')(function(){ return ['find link', function() { ... }...]})",
+    "details": [
+        {"task": "testDynamicSteps"},
+    ]
+}

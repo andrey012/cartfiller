@@ -1,0 +1,6 @@
+{
+    "title": "static steps: lib.mySteps=['find link', function() { ... }...]",
+    "details": [
+        {"task": "testStaticSteps"},
+    ]
+}

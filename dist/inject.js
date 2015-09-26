@@ -184,7 +184,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1470731430172';
+    config.gruntBuildTimeStamp='1470771417473';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -1359,18 +1359,15 @@
                     if ((! lib[item]) || (! lib[item].cartFillerWorkerLibFn)) {
                         throw new Error('lib [' + path + ']->[' + pc.slice(0, index).join('.') + '] does not have [' + item + '] sublib');
                     }
+                    lib = lib[item];
                 });
                 if (! lib.hasOwnProperty(name)) {
                     throw new Error('lib [' + path + ']->[' + pc.join('.') + '] does not have [' + name + '] entry');
                 }
-                if ('function' === typeof workerLibByWorkerPath[path][name]) {
-                    if ('string' === typeof workerLibByWorkerPath[path][name].name && workerLibByWorkerPath[path][name].name.length) {
-                        // this function is inteded to be used inside steps, not to build steps
-                    } else {
-                        return workerLibByWorkerPath[path][name].apply({}, promise.promiseArgs.slice(1));
-                    }
+                if ('function' === typeof lib[name]) {
+                    return lib[name].apply({}, promise.promiseArgs.slice(1));
                 } else {
-                    return workerLibByWorkerPath[path][name];
+                    return lib[name];
                 }
             }
         }
@@ -1391,6 +1388,7 @@
             return result;
         };
         workerLibFn.cartFillerWorkerLibFn = true;
+        workerLibFn.cartFillerWorkerLibPath = path.join('.');
         return workerLibFn;
     };
     var makeProxyForWorkerLib = function(fn) {
@@ -1890,7 +1888,11 @@
                         source[i].length > 0 && 
                         (
                             ('string' === typeof source[i][0]) || 
-                            (source[i][0] instanceof Array)
+                            (source[i][0] instanceof Array) ||
+                            (
+                                'function' === typeof source[i][0] &&
+                                source[i][0].cartFillerLibPromiseFunction
+                            )
                         )
                     )
                 )

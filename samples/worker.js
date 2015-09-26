@@ -140,7 +140,7 @@
              * @access public
              */
             clearCart: [
-                lib('goToHomeStepFactory'),
+                lib('goToHomeSteps'),
                 'find total amount of items in the cart', [function(el){
                     if (api.env.params.theParam !== 1) throw "params are passed incorrectly";
                     var strong = lib.cartAmountElement();
@@ -206,12 +206,17 @@
              * @member {Array} CartFiller.SampleWorker.SampleWorkerTasks#addToCart
              * @access public
              */
-            addToCart: [
-                lib.goToHomeStepFactory = [
+            goToHome: [
+                lib.goToHome = [
                     'go to home', function(){
                         var homeLink = window.jQuery('#navbar a:contains("Home"):visible');
                         api.highlight(homeLink).say(globals.skipMessages?'':'This is "Home" link that we will use to search for product').result((1 === homeLink.length) ? "" : "Cant find home link");
-                    },
+                    }
+                ]
+            ],
+            addToCart: [
+                lib.goToHomeSteps = [
+                    lib('goToHome'),
                     'click home', function(homeLink){
                         homeLink.each(function(i,el){lib.click(el);});
                         api.waitFor(
@@ -309,6 +314,21 @@
                 'make sure, that quantity on hint is correct', function(hint){
                     var bold = hint.find('strong');
                     api.highlight(bold).say(globals.skipMessages?'':'Let\'s make sure, that amount in the hint is correct').result(((1 === hint.length) && (task.quantity === parseInt(hint.text()))) ? "" : "Hint problems");
+                }
+            ],
+            dummyStepsStorageOfSamples: [
+                lib.staticSteps1 = [
+                    'static samples step 1 1', function() {
+                        api.return('static samples step 1 1').result();
+                    }
+                ],
+                lib('dynamicStep1')(function(param) { return [
+                    'dynamic samples step', function() {
+                        api.return('dynamic samples step ' + param).result();
+                    }
+                ]}),
+                lib.theHelper = function() {
+                    return 'helperOfSamples';
                 }
             ]
         };
