@@ -156,7 +156,9 @@
     };
     var makeProxyForWorkerLib = function(fn) {
         var result = function() {
-            return fn.apply(me.modules.ui.mainFrameWindow.document, arguments);
+            var mainFrameWindowDocument;
+            try { mainFrameWindowDocument = me.modules.ui.mainFrameWindow.document; } catch (e) {}
+            return fn.apply(mainFrameWindowDocument, arguments);
         };
         result.cartFillerWorkerLibType = fn.cartFillerWorkerLibType;
         if (result.cartFillerWorkerLibType !== 'step builder') {
@@ -205,7 +207,7 @@
                     workerLib[i] = lib[i];
                 }
                 if (lib[i].cartFillerWorkerLibType) {
-                    workerLibBrief[path.join('.') + '.' + i] = lib[i].cartFillerWorkerLibType;
+                    workerLibBrief[(path.join('.') + '.' + i).replace(/^\./, '')] = lib[i].cartFillerWorkerLibType;
                 }
             }
         }
