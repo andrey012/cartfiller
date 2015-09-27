@@ -675,7 +675,7 @@
         click: function(whatNext) {
             return [
                 'click', function(el){
-                    if (me.modules.api.debugger()) {
+                    if(me.modules.api.debug && (1 || me.modules.api.debug.stop)) {
                         debugger; // jshint ignore:line
                     }
                     if (! el) {
@@ -760,7 +760,7 @@
                 'type key sequence',
                 function(el) {
                     var args = el;
-                    if (me.modules.api.debugger()) {
+                    if (me.modules.api.debug && (1 || me.modules.api.debug.stop)) {
                         debugger; // jshint ignore:line
                     }
                     var finish = function() {
