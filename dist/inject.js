@@ -184,7 +184,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1470934398983';
+    config.gruntBuildTimeStamp='1471416225760';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -459,6 +459,14 @@
         return String(value).replace(/\s+/g, ' ').trim().toLowerCase();
     };
     var useDebugger = false;
+    
+    var getDocument = function() {
+        var doc;
+        try {
+            doc = me.modules.ui.mainFrameWindow.document;
+        } catch (e) {}
+        return doc;
+    };
 
     me.scripts.push({
         /**
@@ -930,7 +938,7 @@
                     } else if (whatNext === me.modules.api.onload) {
                         me.modules.api.onload();
                     } else {
-                        whatNext(el);
+                        whatNext.apply(getDocument(), arguments);
                     }
                 }
             ];
@@ -996,6 +1004,7 @@
             var r = [
                 'type key sequence',
                 function(el) {
+                    var args = el;
                     if (me.modules.api.debugger()) {
                         debugger; // jshint ignore:line
                     }
@@ -1005,7 +1014,7 @@
                         } else if (whatNext === me.modules.api.onload) {
                             me.modules.api.onload();
                         } else {
-                            whatNext(el);
+                            whatNext.apply(getDocument(), args);
                         }
                     };
                     var elementNode;

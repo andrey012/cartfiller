@@ -1,13 +1,13 @@
 CACHE MANIFEST
-# config.gruntBuildTimeStamp='1470934398983';
+# config.gruntBuildTimeStamp='1471416225760';
 
 CACHE:
 index.html
-index.html?1470934398983
+index.html?1471416225760
 inject.js
-inject.js?1470934398983
+inject.js?1471416225760
 inject.min.js
-inject.min.js?1470934398983
+inject.min.js?1471416225760
 
 NETWORK:
 *
