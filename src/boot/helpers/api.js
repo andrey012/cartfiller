@@ -228,8 +228,7 @@
     var cleanText = function(value) {
         return String(value).replace(/\s+/g, ' ').trim().toLowerCase();
     };
-    var useDebugger = false;
-    
+
     var getDocument = function() {
         var doc;
         try {
@@ -243,21 +242,7 @@
          * @property {CartFiller.Api.StepEnvironment} CartFiller.Api#env
          */
         env: {},
-
-        debugger: function(v) {
-            if (v) {
-                useDebugger = true;
-                return;
-            } else {
-                if (useDebugger) {
-                    useDebugger = false;
-                    return true;
-                } else {
-                    return false;
-                }
-            }
-        },
-            
+        debug: false,
         /**
          * Returns name used by loader to organize modules
          * @function CartFiller.Api#getName 

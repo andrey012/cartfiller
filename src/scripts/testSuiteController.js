@@ -155,7 +155,12 @@ define('testSuiteController', ['app', 'scroll'], function(app){
         var deepMapGlobalReferences = function(param, map) {
             if ((param instanceof Array) && (1 === param.length) && (! (param[0] instanceof Array))) {
                 // this is reference
-                return map[param[0]];
+                if (undefined === map[param[0]]) {
+                    // no mapping, leave unchanged
+                    return param;
+                } else {
+                    return map[param[0]];
+                }
             } else if (param instanceof Array) {
                 return param.map(function(v) { return deepMapGlobalReferences(v, map); });
             } else {

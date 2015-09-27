@@ -628,7 +628,7 @@
                 apiIsThere = true;
             }
             if (apiIsThere) {
-                return fn + ' if(api.debugger()) debugger;';
+                return fn + ' if(api.debug && (1 || api.debug.stop)) debugger; ';
             } else {
                 return match;
             }
@@ -1245,7 +1245,16 @@
                         registerWorkerWatchdog();
                         sleepAfterThisStep = undefined;
                         currentStepWorkerFn = workerFn;
-                        me.modules.api.debugger(message.debug);
+                        me.modules.api.debug = message.debug;
+                        if (message.debug) {
+                            me.modules.api.debug = {};
+                            try {
+                                Object.defineProperty(me.modules.api.debug, 'stop', {get: function() { me.modules.api.debug = false; return 'debugging stopped'; }});
+                            } catch (e) {
+                                me.modules.api.debug.stop = 'can\'t attach getter';
+                            }
+                            console.log('to stop debugging of this step type api.debug = 0; in console, or hover over any api.debug.stop property');
+                        }
                         me.modules.api.env = currentStepEnv;
                         var mainFrameWindowDocument;
                         try { mainFrameWindowDocument = me.modules.ui.mainFrameWindow.document; } catch (e) {}

@@ -469,6 +469,10 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
             if (! fromAutorun) {
                 $scope.runUntilTask = $scope.runUntilStep = false;
             }
+            if ($scope.currentTask >= $scope.jobDetails.length) {
+                $scope.currentTask = $scope.currentStep = 0;
+                skipHeadings();
+            }
             run(slow);
             return false;
         };
