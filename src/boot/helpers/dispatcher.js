@@ -389,12 +389,22 @@
     };
     var getWorkerFnParams = function() {
         if (returnedValuesOfStepsAreForTask !== workerCurrentTaskIndex) {
+            // this is the case when we switch to next task - we keep 
+            // result of previous task as the only parameter
             returnedValuesOfSteps = [returnedValuesOfSteps.pop()];
             returnedValuesOfStepsAreForTask = workerCurrentTaskIndex;
         }
         var result = [];
+        var repeat = 1;
         for (var i = workerCurrentStepIndex; i >= 0; i --) {
-            result.push(returnedValuesOfSteps[i]);
+            if (i in returnedValuesOfSteps) {
+                while (repeat --) {
+                    result.push(returnedValuesOfSteps[i]);
+                }
+                repeat = 1;
+            } else {
+                repeat ++;
+            }
         }
         return result;
     };
