@@ -1303,6 +1303,11 @@
             if (! noScroll) {
                 element.scrollIntoView();
             }
+        },
+        getMainFrameWindowDocument: function() {
+            var mainFrameWindowDocument;
+            try { mainFrameWindowDocument = me.modules.ui.mainFrameWindow.document; } catch (e) {}
+            return mainFrameWindowDocument;
         }
     });
 }).call(this, document, window);

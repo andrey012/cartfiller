@@ -828,9 +828,11 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             params.step = (stepIndex + 1);
             var pc = [];
             for (i in params) {
-                pc.push(i+'='+encodeURIComponent(params[i]));
+                if ('string' === typeof i && i.length) {
+                    pc.push(i+'='+encodeURIComponent(params[i]));
+                }
             }
-            return window.location.href.replace('/src/index.uncompressed.html', '/dist/').split(/[#?]/)[0] + 
+            return window.location.href.split(/[#?]/)[0].replace(/\/src(\/(index.html)?)?$/, '/dist/') + 
                 '#' + pc.join('&');
         };
         $scope.searchForTestNoWatch = function() {

@@ -171,7 +171,7 @@ module.exports = function(grunt) {
                     }
                 },
                 files : [
-                    {expand: true, cwd: "src/", src: ["index.uncompressed.html"], dest: "build/", rename: function() { return "build/index.html"; }},
+                    {expand: true, cwd: "src/", src: ["index.html"], dest: "build/", rename: function() { return "build/index.html"; }},
                 ]
             },
             workerFrameUncompressed: {
@@ -181,7 +181,7 @@ module.exports = function(grunt) {
                     }
                 },
                 files : [
-                    {expand: true, cwd: "src/", src: ["index.uncompressed.html"], dest: "build/"},
+                    {expand: true, cwd: "src/", src: ["index.html"], dest: "build/", rename: function() { return "build/index.uncompressed.html"; }},
                 ]
             },
             workerFrameWithGA: {
@@ -196,7 +196,7 @@ module.exports = function(grunt) {
                     }
                 },
                 files : [
-                    {expand: true, cwd: "src/", src: ["index.uncompressed.html"], dest: "dist/", rename: function() { return "build/index.ga.html"; }},
+                    {expand: true, cwd: "src/", src: ["index.html"], dest: "dist/", rename: function() { return "build/index.ga.html"; }},
                 ]
             },
             workerFrameWithGAUncompressed: {
@@ -211,7 +211,7 @@ module.exports = function(grunt) {
                     }
                 },
                 files : [
-                    {expand: true, cwd: "src/", src: ["index.uncompressed.html"], dest: "dist/", rename: function() { return "build/index.ga.uncompressed.html"; }},
+                    {expand: true, cwd: "src/", src: ["index.html"], dest: "dist/", rename: function() { return "build/index.ga.uncompressed.html"; }},
                 ]
             }
 

@@ -1266,9 +1266,7 @@
                             console.log('to stop debugging of this step type api.debug = 0; in console, or hover over any api.debug.stop property');
                         }
                         me.modules.api.env = currentStepEnv;
-                        var mainFrameWindowDocument;
-                        try { mainFrameWindowDocument = me.modules.ui.mainFrameWindow.document; } catch (e) {}
-                        workerFn.apply(mainFrameWindowDocument, getWorkerFnParams());
+                        workerFn.apply(me.modules.ui.getMainFrameWindowDocument(), getWorkerFnParams());
                     }
                 } catch (err){
                     this.reportErrorResult(err);
@@ -1754,7 +1752,6 @@
             } else {
                 throw new Error('invalid message type ' + typeof(message));
             }
-            removeWatchdogHandler();
             clearRegisteredTimeoutsAndIntervals();
             // tell UI that now it can tell all slaves what to draw
             this.onMessage_bubbleRelayMessage({
@@ -1766,7 +1763,7 @@
                 m = magicParamPatterns.repeat.exec(currentStepWorkerFn.toString().split(')')[0]);
                 if (m && parseInt(m[1]) > stepRepeatCounter) {
                     me.modules.api.setTimeout(function() {
-                        currentStepWorkerFn(getWorkerFnParams());
+                        currentStepWorkerFn.apply(me.modules.ui.getMainFrameWindowDocument(), getWorkerFnParams());
                     }, 1000);
                     return;
                 }
@@ -1779,6 +1776,7 @@
                     }
                 }
             }
+            removeWatchdogHandler();
             var messageForWorker = {
                 index: workerCurrentTaskIndex, 
                 step: workerCurrentStepIndex, 
