@@ -768,7 +768,7 @@
      * @access private
      */
     var getWorkerFrameSrc = function(){
-        return me['data-wfu'] ? me['data-wfu'] : (me.baseUrl + '/index' + (me.concatenated ? '' : '.uncompressed') + '.html' + (me.gruntBuildTimeStamp ? ('?' + me.gruntBuildTimeStamp) : ''));
+        return me['data-wfu'] ? me['data-wfu'] : (me.baseUrl + '/index' + (me.concatenated ? '' : (/\/src$/.test(me.baseUrl) ? '' : '.uncompressed')) + '.html' + (me.gruntBuildTimeStamp ? ('?' + me.gruntBuildTimeStamp) : ''));
     };
     /**
      * Returns z-index for overlay divs. 
