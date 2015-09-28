@@ -184,7 +184,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1473062870669';
+    config.gruntBuildTimeStamp='1473189233834';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -572,6 +572,16 @@
          */
         repeatTask: function() {
             me.modules.dispatcher.manageTaskFlow('repeatTask');
+            return this;
+        },
+        /**
+         * Tells to repeat whole job from start
+         * @function CartFiller.Api#repeatJob
+         * @return {CartFiller.Api} for chaining
+         * @access public
+         */
+        repeatJob: function() {
+            me.modules.dispatcher.manageTaskFlow('repeatJob');
             return this;
         },
         /**

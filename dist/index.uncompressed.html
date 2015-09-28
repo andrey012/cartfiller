@@ -47323,7 +47323,12 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 $scope.currentStep ++;
             }
             var oldCurrentTask = $scope.currentTask;
-            if (skip || nextTaskFlow === 'skipTask' || nextTaskFlow === 'repeatTask' || $scope.jobTaskDescriptions[$scope.jobDetails[$scope.currentTask].task].length <= $scope.currentStep){
+            if (nextTaskFlow === 'repeatJob') {
+                $scope.currentTask = 0; 
+                $scope.currentStep = 0;
+                skipHeadings();
+                digestTask(oldCurrentTask);
+            } else if (skip || nextTaskFlow === 'skipTask' || nextTaskFlow === 'repeatTask' || $scope.jobTaskDescriptions[$scope.jobDetails[$scope.currentTask].task].length <= $scope.currentStep){
                 while ($scope.currentStep < $scope.jobTaskDescriptions[$scope.jobDetails[$scope.currentTask].task].length) {
                     if ($scope.pausePoints[$scope.currentTask] && $scope.pausePoints[$scope.currentTask][$scope.currentStep]) {
                         pause = true;
@@ -47863,7 +47868,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
             reportError('bootstrap message did not come');
         }
     }, 10000);
-    config.gruntBuildTimeStamp='1473062870669';
+    config.gruntBuildTimeStamp='1473189233834';
     window.addEventListener('message', function(event){
         var prefix = 'cartFillerMessage:';
         var isDist = true;
@@ -47937,7 +47942,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 if (message.tests) {
                     var x = new XMLHttpRequest();
                     x.onload = function(){
-                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1473062870669') {
+                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1473189233834') {
                             console.log('new version of CartFiller was deployed, switching to it');
                             var hash = window.location.href.split('#');
                             var pc = hash[0].split('?');

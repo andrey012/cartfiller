@@ -345,6 +345,16 @@
             return this;
         },
         /**
+         * Tells to repeat whole job from start
+         * @function CartFiller.Api#repeatJob
+         * @return {CartFiller.Api} for chaining
+         * @access public
+         */
+        repeatJob: function() {
+            me.modules.dispatcher.manageTaskFlow('repeatJob');
+            return this;
+        },
+        /**
          * Tells that this step should be repeated. After using this function
          * you still have to call api.result, and it is important to call
          * api.repeatStep first and api.result then

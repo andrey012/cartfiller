@@ -302,7 +302,12 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 $scope.currentStep ++;
             }
             var oldCurrentTask = $scope.currentTask;
-            if (skip || nextTaskFlow === 'skipTask' || nextTaskFlow === 'repeatTask' || $scope.jobTaskDescriptions[$scope.jobDetails[$scope.currentTask].task].length <= $scope.currentStep){
+            if (nextTaskFlow === 'repeatJob') {
+                $scope.currentTask = 0; 
+                $scope.currentStep = 0;
+                skipHeadings();
+                digestTask(oldCurrentTask);
+            } else if (skip || nextTaskFlow === 'skipTask' || nextTaskFlow === 'repeatTask' || $scope.jobTaskDescriptions[$scope.jobDetails[$scope.currentTask].task].length <= $scope.currentStep){
                 while ($scope.currentStep < $scope.jobTaskDescriptions[$scope.jobDetails[$scope.currentTask].task].length) {
                     if ($scope.pausePoints[$scope.currentTask] && $scope.pausePoints[$scope.currentTask][$scope.currentStep]) {
                         pause = true;
