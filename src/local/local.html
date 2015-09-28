@@ -70,7 +70,8 @@
                 var parent = window.opener;
                 var bootstrapped = false;
                 var log = function(msg) {
-                    document.getElementById('log').textContent += msg + '\n';
+                    var pre = document.getElementById('log');
+                    pre.textContent = pre.textContent.split('\n').slice(-100).join('\n') + msg + '\n';
                 };
                 var init = function() {
                     log('sending init');
