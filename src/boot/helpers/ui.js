@@ -908,6 +908,7 @@
                     if (!allElements) {
                         return false;
                     }
+                    noScroll = true; // only scroll to first found element;
                 });
             } else if (element instanceof Array) {
                 for (var i = 0; i < element.length; i++){
@@ -915,6 +916,7 @@
                     if (!allElements) {
                         break;
                     }
+                    noScroll = true; // only scroll to first found element;
                 }
             } else if (undefined !== element) {
                 this.addElementToTrack('arrow', element, noScroll);
