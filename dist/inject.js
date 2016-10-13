@@ -184,7 +184,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1473636317606';
+    config.gruntBuildTimeStamp='1473703912319';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -1061,7 +1061,7 @@
             var r = [
                 'type key sequence',
                 function(el) {
-                    var args = el;
+                    var args = arguments;
                     if (me.modules.api.debug && (1 || me.modules.api.debug.stop)) {
                         debugger; // jshint ignore:line
                     }

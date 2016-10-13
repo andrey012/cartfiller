@@ -831,7 +831,7 @@
             var r = [
                 'type key sequence',
                 function(el) {
-                    var args = el;
+                    var args = arguments;
                     if (me.modules.api.debug && (1 || me.modules.api.debug.stop)) {
                         debugger; // jshint ignore:line
                     }
