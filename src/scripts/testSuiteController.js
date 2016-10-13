@@ -241,7 +241,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             if (pretendents.length) {
                 return pretendents[0];
             }
-            throw new Error('unable to find included test: [' + name + ']');
+            throw new Error('unable to find included test: [' + name + '] inside [' + currentDir + '/]');
         };
         var processHeadings = function(result) {
             var headingLevelCounters = [];

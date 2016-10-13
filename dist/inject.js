@@ -184,7 +184,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1473272434642';
+    config.gruntBuildTimeStamp='1473636317606';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -699,6 +699,17 @@
             return this;
         },
         /**
+         * Factory for api.waitFor
+         * @function CartFiller.Api#waiter
+         * @return {CartFiller.Api} for chaining
+         * @access public
+         */
+        waiter: function(checkCallback, resultCallback, timeout, period){
+            return function() {
+                me.modules.api.waitFor(checkCallback, resultCallback, timeout, period);
+            };
+        },
+        /**
          * Highlights element by adding a gray semi-transparent overlay over 
          * the target website page, which has a rectangular hole over
          * this element + some padding around
@@ -905,18 +916,30 @@
             me.modules.dispatcher.registerWorkerSetInterval(setInterval(me.modules.api.applier(fn), timeout));
         },
         /**
-         * Helper function to construct workers - return array ['click', function(el){ el[0].click(); api.result; }]
+         * Will be deprecated, use api.clicker()
+         * 
          * @function CartFiller.Api#click
+         */
+        click: function(whatNext) {
+            return me.modules.api.clicker(whatNext);
+        },
+        /**
+         * Helper function to construct workers - return array ['click', function(el){ el[0].click(); api.result; }]
+         * @function CartFiller.Api#clicker
          * @param {Function} what to do after click, gets same parameters as normal
          *          worker functions////
+         * @param {Function} what to do before click, useful to replace window.prompt and window.confirm
          * @return {Array} ready for putting into step list
          * @access public
          */
-        click: function(whatNext) {
+        clicker: function(whatNext, whatBefore) {
             return [
                 'click', function(el){
                     if(me.modules.api.debug && (1 || me.modules.api.debug.stop)) {
                         debugger; // jshint ignore:line
+                    }
+                    if (whatBefore) {
+                        whatBefore.apply(getDocument(), arguments);
                     }
                     if (! el) {
                         // do nothing
@@ -937,6 +960,37 @@
                     }
                 }
             ];
+        },
+        confirmer: function(cb, shouldAgree, expectedMessageOrRegExp) {
+            return ['confirm', function() {
+                me.modules.api.confirm('function' === typeof cb ? cb : cb[1], shouldAgree, expectedMessageOrRegExp, arguments);
+            }];
+        },
+        confirm: function(cb, shouldAgree, expectedMessageOrRegExp, args) {
+            // to be done properly
+            if(me.modules.api.debug && (1 || me.modules.api.debug.stop)) {
+                debugger; // jshint ignore:line
+            }
+            var oldConfirm = me.modules.ui.mainFrameWindow.confirm;
+            var confirmCalled = false;
+            var match = false;
+            var confirmMessage; 
+            me.modules.ui.mainFrameWindow.confirm = function(msg) {
+                confirmCalled = true;
+                confirmMessage = msg;
+                if ('undefined' !== typeof expectedMessageOrRegExp) {
+                    if ('object' === typeof expectedMessageOrRegExp) {
+                        match = expectedMessageOrRegExp.test(msg);
+                    } else {
+                        match = String(expectedMessageOrRegExp) === String(msg);
+                    }
+                } else {
+                    match = true;
+                }
+                me.modules.ui.mainFrameWindow.confirm = oldConfirm;
+                return (shouldAgree || ('undefined' === typeof shouldAgree));
+            };
+            cb.apply(getDocument(), args);
         },
         /**
          * Opens relay window. If url points to the cartFiller distribution
@@ -965,6 +1019,14 @@
             return this;
         },
         /**
+         * Will be deprecated, use typer
+         * 
+         * @function CartFiller.Api#type
+         */
+        type: function(value, whatNext, dontClear, failOnErrors) {
+            return me.modules.api.typer(value, whatNext, dontClear, failOnErrors);
+        },
+        /**
          * Types a string into currently highlighted/arrowed element by issuing multiple keydown/keypress/keyup events. See example below.
          * @example
          *   'some steps of your worker', function() {
@@ -987,7 +1049,7 @@
          *              input.val().trim()
          *          )
          *      );
-         * @function CartFiller.Api#type
+         * @function CartFiller.Api#typer
          * @param {string|Function} value or callback to get value
          * @param {Function} whatNext callback after this task is 
          * @param {boolean} dontClear by default this function will clear input before typing
@@ -995,7 +1057,7 @@
          * @return {Array} ready for putting into worker array
          * @access public
          */
-        type: function(value, whatNext, dontClear, failOnErrors) {
+        typer: function(value, whatNext, dontClear, failOnErrors) {
             var r = [
                 'type key sequence',
                 function(el) {
