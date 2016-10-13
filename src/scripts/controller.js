@@ -609,7 +609,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                         r += ':visible';
                     }
                     r +=
-                        (el.selectIndex ? ('\').filter(function(i,el,x,c){ c = ' + (el.index - 1) + '; for (x = el.previousSibling; x; x = x.previousSibling) c -= x.nodeName === el.nodeName ? 1 : 0; return c === 0; ;}).find(\'') : '');
+                        (el.selectIndex ? ('\').filter(function(i,el,x,c){ c = 0; for (x = el.previousSibling; x; x = x.previousSibling) c += x.nodeName === el.nodeName ? 1 : 0; return c === ' + (el.index - 1) + ';}).find(\'') : '');
                     return r +
                         (el.selectText ? ('\').filter(function(i,el){ return api.compareCleanText(' + JSON.stringify(el.text.trim()) + ', el.textContent);}).find(\'') : '')
                     ;

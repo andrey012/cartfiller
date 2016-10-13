@@ -47416,7 +47416,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                         r += ':visible';
                     }
                     r +=
-                        (el.selectIndex ? ('\').filter(function(i,el,x,c){ c = ' + (el.index - 1) + '; for (x = el.previousSibling; x; x = x.previousSibling) c -= x.nodeName === el.nodeName ? 1 : 0; return c === 0; ;}).find(\'') : '');
+                        (el.selectIndex ? ('\').filter(function(i,el,x,c){ c = 0; for (x = el.previousSibling; x; x = x.previousSibling) c += x.nodeName === el.nodeName ? 1 : 0; return c === ' + (el.index - 1) + ';}).find(\'') : '');
                     return r +
                         (el.selectText ? ('\').filter(function(i,el){ return api.compareCleanText(' + JSON.stringify(el.text.trim()) + ', el.textContent);}).find(\'') : '')
                     ;
@@ -47654,7 +47654,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
             reportError('bootstrap message did not come');
         }
     }, 10000);
-    config.gruntBuildTimeStamp='1473802784187';
+    config.gruntBuildTimeStamp='1474273377336';
     window.addEventListener('message', function(event){
         var prefix = 'cartFillerMessage:';
         var isDist = true;
@@ -47728,7 +47728,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 if (message.tests) {
                     var x = new XMLHttpRequest();
                     x.onload = function(){
-                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1473802784187') {
+                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1474273377336') {
                             console.log('new version of CartFiller was deployed, switching to it');
                             var hash = window.location.href.split('#');
                             var pc = hash[0].split('?');
