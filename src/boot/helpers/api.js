@@ -626,7 +626,7 @@
             var p = function(v) { r.push(v); };
             var u = function(v) { r.unshift(v); };
             me.modules.api.each(array, function(i,v) {
-                return fn(i, v, p, u);
+                return fn.apply(r, [i, v, p, u]);
             }, otherwise ? function() {
                 return otherwise(p, u);
             } : undefined);

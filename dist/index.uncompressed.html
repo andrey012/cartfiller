@@ -36776,7 +36776,7 @@ function ngViewFillContentFactory($compile, $controller, $route) {
 define("angular-route", function(){});
 
 /*!
- * jQuery JavaScript Library v2.2.1
+ * jQuery JavaScript Library v2.2.3
  * http://jquery.com/
  *
  * Includes Sizzle.js
@@ -36786,7 +36786,7 @@ define("angular-route", function(){});
  * Released under the MIT license
  * http://jquery.org/license
  *
- * Date: 2016-02-22T19:11Z
+ * Date: 2016-04-05T19:26Z
  */
 
 (function( global, factory ) {
@@ -36842,7 +36842,7 @@ var support = {};
 
 
 var
-	version = "2.2.1",
+	version = "2.2.3",
 
 	// Define a local copy of jQuery
 	jQuery = function( selector, context ) {
@@ -37053,6 +37053,7 @@ jQuery.extend( {
 	},
 
 	isPlainObject: function( obj ) {
+		var key;
 
 		// Not plain objects:
 		// - Any object or value whose internal [[Class]] property is not "[object Object]"
@@ -37062,14 +37063,18 @@ jQuery.extend( {
 			return false;
 		}
 
+		// Not own constructor property must be Object
 		if ( obj.constructor &&
-				!hasOwn.call( obj.constructor.prototype, "isPrototypeOf" ) ) {
+				!hasOwn.call( obj, "constructor" ) &&
+				!hasOwn.call( obj.constructor.prototype || {}, "isPrototypeOf" ) ) {
 			return false;
 		}
 
-		// If the function hasn't returned already, we're confident that
-		// |obj| is a plain object, created by {} or constructed with new Object
-		return true;
+		// Own properties are enumerated firstly, so to speed up,
+		// if last one is own, then all properties are own
+		for ( key in obj ) {}
+
+		return key === undefined || hasOwn.call( obj, key );
 	},
 
 	isEmptyObject: function( obj ) {
@@ -44102,6 +44107,12 @@ jQuery.extend( {
 	}
 } );
 
+// Support: IE <=11 only
+// Accessing the selectedIndex property
+// forces the browser to respect setting selected
+// on the option
+// The getter ensures a default option is selected
+// when in an optgroup
 if ( !support.optSelected ) {
 	jQuery.propHooks.selected = {
 		get: function( elem ) {
@@ -44110,6 +44121,16 @@ if ( !support.optSelected ) {
 				parent.parentNode.selectedIndex;
 			}
 			return null;
+		},
+		set: function( elem ) {
+			var parent = elem.parentNode;
+			if ( parent ) {
+				parent.selectedIndex;
+
+				if ( parent.parentNode ) {
+					parent.parentNode.selectedIndex;
+				}
+			}
 		}
 	};
 }
@@ -44304,7 +44325,8 @@ jQuery.fn.extend( {
 
 
 
-var rreturn = /\r/g;
+var rreturn = /\r/g,
+	rspaces = /[\x20\t\r\n\f]+/g;
 
 jQuery.fn.extend( {
 	val: function( value ) {
@@ -44380,9 +44402,15 @@ jQuery.extend( {
 		option: {
 			get: function( elem ) {
 
-				// Support: IE<11
-				// option.value not trimmed (#14858)
-				return jQuery.trim( elem.value );
+				var val = jQuery.find.attr( elem, "value" );
+				return val != null ?
+					val :
+
+					// Support: IE10-11+
+					// option.text throws exceptions (#14686, #14858)
+					// Strip and collapse whitespace
+					// https://html.spec.whatwg.org/#strip-and-collapse-whitespace
+					jQuery.trim( jQuery.text( elem ) ).replace( rspaces, " " );
 			}
 		},
 		select: {
@@ -44435,7 +44463,7 @@ jQuery.extend( {
 				while ( i-- ) {
 					option = options[ i ];
 					if ( option.selected =
-							jQuery.inArray( jQuery.valHooks.option.get( option ), values ) > -1
+						jQuery.inArray( jQuery.valHooks.option.get( option ), values ) > -1
 					) {
 						optionSet = true;
 					}
@@ -46130,18 +46158,6 @@ jQuery.ajaxPrefilter( "json jsonp", function( s, originalSettings, jqXHR ) {
 
 
 
-// Support: Safari 8+
-// In Safari 8 documents created via document.implementation.createHTMLDocument
-// collapse sibling forms: the second one becomes a child of the first one.
-// Because of that, this security measure has to be disabled in Safari 8.
-// https://bugs.webkit.org/show_bug.cgi?id=137337
-support.createHTMLDocument = ( function() {
-	var body = document.implementation.createHTMLDocument( "" ).body;
-	body.innerHTML = "<form></form><form></form>";
-	return body.childNodes.length === 2;
-} )();
-
-
 // Argument "data" should be string of html
 // context (optional): If specified, the fragment will be created in this context,
 // defaults to document
@@ -46154,12 +46170,7 @@ jQuery.parseHTML = function( data, context, keepScripts ) {
 		keepScripts = context;
 		context = false;
 	}
-
-	// Stop scripts or inline event handlers from being executed immediately
-	// by using document.implementation
-	context = context || ( support.createHTMLDocument ?
-		document.implementation.createHTMLDocument( "" ) :
-		document );
+	context = context || document;
 
 	var parsed = rsingleTag.exec( data ),
 		scripts = !keepScripts && [];
@@ -46241,7 +46252,7 @@ jQuery.fn.load = function( url, params, callback ) {
 		// If it fails, this function gets "jqXHR", "status", "error"
 		} ).always( callback && function( jqXHR, status ) {
 			self.each( function() {
-				callback.apply( self, response || [ jqXHR.responseText, status, jqXHR ] );
+				callback.apply( this, response || [ jqXHR.responseText, status, jqXHR ] );
 			} );
 		} );
 	}
@@ -47392,7 +47403,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                     r +=
                         (el.selectIndex ? ('\').filter(function(i,el,x,c){ c = ' + (el.index - 1) + '; for (x = el.previousSibling; x; x = x.previousSibling) c -= x.nodeName === el.nodeName ? 1 : 0; return c === 0; ;}).find(\'') : '');
                     return r +
-                        (el.selectText ? ('\').filter(function(i,el){ return api.compareCleanText(' + JSON.stringify(el.text) + ', el.textContent);}).find(\'') : '')
+                        (el.selectText ? ('\').filter(function(i,el){ return api.compareCleanText(' + JSON.stringify(el.text.trim()) + ', el.textContent);}).find(\'') : '')
                     ;
                 })
                          .filter(function(v) { return v.trim().length; })
@@ -47628,7 +47639,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
             reportError('bootstrap message did not come');
         }
     }, 10000);
-    config.gruntBuildTimeStamp='1473703912319';
+    config.gruntBuildTimeStamp='1473802784187';
     window.addEventListener('message', function(event){
         var prefix = 'cartFillerMessage:';
         var isDist = true;
@@ -47702,7 +47713,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 if (message.tests) {
                     var x = new XMLHttpRequest();
                     x.onload = function(){
-                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1473703912319') {
+                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1473802784187') {
                             console.log('new version of CartFiller was deployed, switching to it');
                             var hash = window.location.href.split('#');
                             var pc = hash[0].split('?');
@@ -47979,6 +47990,15 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                 throw new Error('invalid case');
             }
         };
+        var convertNewStyleTaskDetailsIntoOldStyleTaskDetails = function(detail) {
+            for (var taskName in detail) {
+                if (detail.hasOwnProperty(taskName)) {
+                    detail[taskName].task = taskName;
+                    return detail[taskName];
+                }
+            }
+            throw new Error('invalid object having no properties found in test details');
+        };
         var processIncludesRecursive = function(details, myIndex, tweaks, map) {
             var result = [];
             details.filter(function(detail) {
@@ -48018,12 +48038,16 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                         result.push(task);
                     });
                 } else {
-                    if (undefined === detail.task && undefined !== detail.if) {
-                        if (undefined !== detail.then) {
-                            detail.then = processIncludesRecursive(detail.then, myIndex, tweaks, map);
-                        }
-                        if (undefined !== detail.else) {
-                            detail.else = processIncludesRecursive(detail.else, myIndex, tweaks, map);
+                    if (undefined === detail.task) {
+                        if (undefined !== detail.if) {
+                            if (undefined !== detail.then) {
+                                detail.then = processIncludesRecursive(detail.then, myIndex, tweaks, map);
+                            }
+                            if (undefined !== detail.else) {
+                                detail.else = processIncludesRecursive(detail.else, myIndex, tweaks, map);
+                            }
+                        } else if ('object' === typeof detail) {
+                            detail = convertNewStyleTaskDetailsIntoOldStyleTaskDetails(detail);
                         }
                     }
                     result.push(detail);

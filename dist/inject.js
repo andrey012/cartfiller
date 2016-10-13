@@ -184,7 +184,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1473703912319';
+    config.gruntBuildTimeStamp='1473802784187';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -856,7 +856,7 @@
             var p = function(v) { r.push(v); };
             var u = function(v) { r.unshift(v); };
             me.modules.api.each(array, function(i,v) {
-                return fn(i, v, p, u);
+                return fn.apply(r, [i, v, p, u]);
             }, otherwise ? function() {
                 return otherwise(p, u);
             } : undefined);
@@ -4604,7 +4604,14 @@
                         i++;
                     }
                 }
-                stack.unshift({element: el.nodeName.toLowerCase(), attrs: attrs, classes: el.className.split(' ').filter(function(v){return v;}), id: 'string' === typeof el.id ? el.id : undefined, index: i, text: String(el.textContent).length < 200 ? String(el.textContent) : ''});
+                stack.unshift({
+                    element: el.nodeName.toLowerCase(), 
+                    attrs: attrs, 
+                    classes: ('string' === typeof el.className) ? el.className.split(' ').filter(function(v){return v;}) : [], 
+                    id: 'string' === typeof el.id ? el.id : undefined, 
+                    index: i,
+                    text: String(el.textContent).length < 200 ? String(el.textContent) : ''
+                });
                 el = el.parentNode;
             }
             me.modules.dispatcher.postMessageToWorker('mousePointer', {x: x, y: y, stack: stack});

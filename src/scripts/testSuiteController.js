@@ -167,6 +167,15 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                 throw new Error('invalid case');
             }
         };
+        var convertNewStyleTaskDetailsIntoOldStyleTaskDetails = function(detail) {
+            for (var taskName in detail) {
+                if (detail.hasOwnProperty(taskName)) {
+                    detail[taskName].task = taskName;
+                    return detail[taskName];
+                }
+            }
+            throw new Error('invalid object having no properties found in test details');
+        };
         var processIncludesRecursive = function(details, myIndex, tweaks, map) {
             var result = [];
             details.filter(function(detail) {
@@ -206,12 +215,16 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                         result.push(task);
                     });
                 } else {
-                    if (undefined === detail.task && undefined !== detail.if) {
-                        if (undefined !== detail.then) {
-                            detail.then = processIncludesRecursive(detail.then, myIndex, tweaks, map);
-                        }
-                        if (undefined !== detail.else) {
-                            detail.else = processIncludesRecursive(detail.else, myIndex, tweaks, map);
+                    if (undefined === detail.task) {
+                        if (undefined !== detail.if) {
+                            if (undefined !== detail.then) {
+                                detail.then = processIncludesRecursive(detail.then, myIndex, tweaks, map);
+                            }
+                            if (undefined !== detail.else) {
+                                detail.else = processIncludesRecursive(detail.else, myIndex, tweaks, map);
+                            }
+                        } else if ('object' === typeof detail) {
+                            detail = convertNewStyleTaskDetailsIntoOldStyleTaskDetails(detail);
                         }
                     }
                     result.push(detail);
