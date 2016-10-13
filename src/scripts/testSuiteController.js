@@ -858,6 +858,16 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             $scope.expandedTest = false;
             angular.element($('#testslist')[0]).scope().$digest();
         };
+        $scope.clearTestFilterNoWatch = function() {
+            $scope.filterTestsByText = '';
+            $('#testsearch').val('');
+            angular.element($('#testslist')[0]).scope().$digest();
+        };
+        $scope.clearTaskFilterNoWatch = function() {
+            $scope.filterTasksByText = '';
+            $('#tasksearch').val('');
+            angular.element($('#testslist')[0]).scope().$digest();
+        };
         var taskMatchesFilter = function(task, taskFilter) {
             return ((
                 (task.task && -1 !== task.task.toLowerCase().indexOf(taskFilter)) ||

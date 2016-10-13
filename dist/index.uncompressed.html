@@ -6787,6 +6787,8 @@ button.close {
         #testslist td.task-row table td {border: 0px;}
         #testslist td.task-line-number {background-color: #f5f5f5; width: 70px; text-align: right;}
         #workerContainer {word-break: break-all;}
+        #testsearch { margin-right: -20px; }
+        #tasksearch { margin-right: -20px; }
     </style>
 </head>
 <body data-cartfiller-is-here="1">
@@ -6815,8 +6817,8 @@ button.close {
                 </table>
             </div>
             <div>
-                <input id="testsearch" type="text" style="width: 100%" placeholder="search for test" onkeyup="var event = arguments[0] || window.event; return angular.element(this).scope().searchForTestNoWatch(event);" ng-class="'rendered'"/><br/>
-                <input id="tasksearch" type="text" style="width: 100%" placeholder="search for task inside test" onkeyup="var event = arguments[0] || window.event; return angular.element(this).scope().searchForTaskNoWatch(event);"/>
+                <input id="testsearch" type="text" style="width: 100%" placeholder="search for test" onkeyup="var event = arguments[0] || window.event; return angular.element(this).scope().searchForTestNoWatch(event);" ng-class="'rendered'"/><a href="#" onclick="var event = arguments[0] || window.event; return angular.element(this).scope().clearTestFilterNoWatch(event);">(x)</a><br/>
+                <input id="tasksearch" type="text" style="width: 100%" placeholder="search for task inside test" onkeyup="var event = arguments[0] || window.event; return angular.element(this).scope().searchForTaskNoWatch(event);"/><a href="#" onclick="var event = arguments[0] || window.event; return angular.element(this).scope().clearTaskFilterNoWatch(event);">(x)</a>
             </div>
         </div>
         <div class="col-xs-6" style="text-align: right;" id="testsuiteButtonPanel" ng-repeat="dummy in [0]">
@@ -47452,10 +47454,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 if ($event && $event.target) {
                     var div = $($event.target).closest('div.availableTask');
                     setTimeout(function() {
-                        var input = div.find('input').first();
-                        if (! input.length) {
-                            input = div.find('textarea');
-                        }
+                        var input = div.find('input, textarea').first();
                         input.focus();
                         input[0].select();
                     }, 0);
@@ -47481,10 +47480,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 if ($event && $event.target) {
                     var div = $($event.target).closest('div.availableTask');
                     setTimeout(function() {
-                        var input = div.find('input').first();
-                        if (! input.length) {
-                            input = div.find('textarea');
-                        }
+                        var input = div.find('input, textarea').first();
                         input.focus();
                         input[0].select();
                     }, 0);
@@ -47639,7 +47635,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
             reportError('bootstrap message did not come');
         }
     }, 10000);
-    config.gruntBuildTimeStamp='1474273377336';
+    config.gruntBuildTimeStamp='1474477535943';
     window.addEventListener('message', function(event){
         var prefix = 'cartFillerMessage:';
         var isDist = true;
@@ -47713,7 +47709,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 if (message.tests) {
                     var x = new XMLHttpRequest();
                     x.onload = function(){
-                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1474273377336') {
+                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1474477535943') {
                             console.log('new version of CartFiller was deployed, switching to it');
                             var hash = window.location.href.split('#');
                             var pc = hash[0].split('?');
@@ -48679,6 +48675,16 @@ define('testSuiteController', ['app', 'scroll'], function(app){
         $scope.searchForTaskNoWatch = function() {
             $scope.filterTasksByText = $('#tasksearch').val();
             $scope.expandedTest = false;
+            angular.element($('#testslist')[0]).scope().$digest();
+        };
+        $scope.clearTestFilterNoWatch = function() {
+            $scope.filterTestsByText = '';
+            $('#testsearch').val('');
+            angular.element($('#testslist')[0]).scope().$digest();
+        };
+        $scope.clearTaskFilterNoWatch = function() {
+            $scope.filterTasksByText = '';
+            $('#tasksearch').val('');
             angular.element($('#testslist')[0]).scope().$digest();
         };
         var taskMatchesFilter = function(task, taskFilter) {

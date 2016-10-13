@@ -660,10 +660,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 if ($event && $event.target) {
                     var div = $($event.target).closest('div.availableTask');
                     setTimeout(function() {
-                        var input = div.find('input').first();
-                        if (! input.length) {
-                            input = div.find('textarea');
-                        }
+                        var input = div.find('input, textarea').first();
                         input.focus();
                         input[0].select();
                     }, 0);
@@ -689,10 +686,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 if ($event && $event.target) {
                     var div = $($event.target).closest('div.availableTask');
                     setTimeout(function() {
-                        var input = div.find('input').first();
-                        if (! input.length) {
-                            input = div.find('textarea');
-                        }
+                        var input = div.find('input, textarea').first();
                         input.focus();
                         input[0].select();
                     }, 0);
