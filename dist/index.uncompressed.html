@@ -47635,7 +47635,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
             reportError('bootstrap message did not come');
         }
     }, 10000);
-    config.gruntBuildTimeStamp='1477317028694';
+    config.gruntBuildTimeStamp='1477320420254';
     window.addEventListener('message', function(event){
         var prefix = 'cartFillerMessage:';
         var isDist = true;
@@ -47709,7 +47709,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 if (message.tests) {
                     var x = new XMLHttpRequest();
                     x.onload = function(){
-                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1477317028694') {
+                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1477320420254') {
                             console.log('new version of CartFiller was deployed, switching to it');
                             var hash = window.location.href.split('#');
                             var pc = hash[0].split('?');
@@ -48653,7 +48653,13 @@ define('testSuiteController', ['app', 'scroll'], function(app){
         $scope.getTaskUrl = function(testIndex, taskIndex, stepIndex) {
             var params = {};
             for (var i in $scope.params) {
-                params[i] = $scope.params[i];
+                if (i === 'globals') {
+                    for (var j in $scope.params[i]) {
+                        params['globals[' + j + ']'] = $scope.params[i][j];
+                    }
+                } else {
+                    params[i] = $scope.params[i];
+                }
             }
             params.job = $scope.discovery.scripts.urls[testIndex];
             params.task = (taskIndex + 1);
@@ -48661,7 +48667,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             var pc = [];
             for (i in params) {
                 if ('string' === typeof i && i.length) {
-                    pc.push(i+'='+encodeURIComponent(params[i]));
+                    pc.push(encodeURIComponent(i)+'='+encodeURIComponent(params[i]));
                 }
             }
             return window.location.href.split(/[#?]/)[0].replace(/\/src(\/(index.html)?)?$/, '/dist/') + 

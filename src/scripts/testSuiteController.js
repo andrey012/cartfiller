@@ -834,7 +834,13 @@ define('testSuiteController', ['app', 'scroll'], function(app){
         $scope.getTaskUrl = function(testIndex, taskIndex, stepIndex) {
             var params = {};
             for (var i in $scope.params) {
-                params[i] = $scope.params[i];
+                if (i === 'globals') {
+                    for (var j in $scope.params[i]) {
+                        params['globals[' + j + ']'] = $scope.params[i][j];
+                    }
+                } else {
+                    params[i] = $scope.params[i];
+                }
             }
             params.job = $scope.discovery.scripts.urls[testIndex];
             params.task = (taskIndex + 1);
@@ -842,7 +848,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             var pc = [];
             for (i in params) {
                 if ('string' === typeof i && i.length) {
-                    pc.push(i+'='+encodeURIComponent(params[i]));
+                    pc.push(encodeURIComponent(i)+'='+encodeURIComponent(params[i]));
                 }
             }
             return window.location.href.split(/[#?]/)[0].replace(/\/src(\/(index.html)?)?$/, '/dist/') + 
