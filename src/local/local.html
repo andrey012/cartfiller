@@ -29,6 +29,7 @@
                     <tr>
                         <td>Path to testsuite:</td>
                         <td><input type="text" id="root"/></td>
+                        <td>Hint: start with file:///./ or file:///../ to say, that testsuite is located relatively to local.html</td>
                     </tr>
                     <tr>
                         <td>Editor mode:</td>
@@ -61,6 +62,14 @@
         <p>
             Of course you should replace /home/user/cartfiller with where cartfiller is on your local disk, and where the testsuite is.
         </p>
+        <p>
+            <a id="pack" href="#">Pack</a> : <a id="download">Download</a>
+        </p>
+        <h3>
+            Known data:
+        </h3>
+        <ul id="knownData">
+        </ul>
         <h3>
             Log
         </h3>
@@ -69,6 +78,35 @@
             (function() {
                 var parent = window.opener;
                 var bootstrapped = false;
+                var requesting;
+                var knownData = {};
+                var packedData, packedHash;
+                var unpackHash = function(hash, result) {
+                    hash.replace(/^#/, '').split('&').filter(function(v) {
+                        var pc = v.split('=');
+                        var key = pc.shift();
+                        var value = pc.join('=');
+                        result[key] = value;
+                    });
+                };
+                var packHash = function(hash) {
+                    var pc = [];
+                    for (var i in hash) {
+                        if (hash.hasOwnProperty(i)) {
+                            pc.push(i + '=' + hash[i]);
+                        }
+                    }
+                    return pc.join('&');
+                };
+                var combineHash = function(packedHash, windowHash) {
+                    var hash = {};
+                    unpackHash(packedHash, hash);
+                    unpackHash(windowHash, hash);
+                    return packHash(hash);
+                };
+                if (undefined !== packedHash) {
+                    window.location.hash = combineHash(packedHash, window.location.hash);
+                }
                 var log = function(msg) {
                     var pre = document.getElementById('log');
                     pre.textContent = pre.textContent.split('\n').slice(-100).join('\n') + msg + '\n';
@@ -85,11 +123,21 @@
                 window.addEventListener('message', function(event) {
                     var p = /^cartFillerFilePopupUrl:(.*)$/;
                     if (p.test(event.data)) {
-                        var s = document.createElement('script');
-                        var url = p.exec(event.data)[1];
-                        s.setAttribute('src', url);
-                        document.getElementsByTagName('body')[0].appendChild(s);
-                        document.getElementById('log').textContent += 'requesting: ' + url + '\n';
+                        var url = p.exec(event.data)[1].replace(/^file:\/\/\/\./, '.');
+                        requesting = url.replace(/\?\d+$/, '');
+                        if (undefined !== packedData) {
+                            if (undefined === packedData[requesting]) {
+                                alert('wrong package - file missing: [' + requesting + ']');
+                                parent.postMessage('cartFillerFilePopupData:', '*');
+                            } else {
+                                parent.postMessage('cartFillerFilePopupData:' + packedData[requesting], '*');
+                            }
+                        } else {
+                            var s = document.createElement('script');
+                            s.setAttribute('src', url);
+                            document.getElementsByTagName('body')[0].appendChild(s);
+                            document.getElementById('log').textContent += 'requesting: ' + url + '\n';
+                        }
                     } else if (event.data === 'cartFillerFilePopupPing') {
                         if (! event.source) {
                             log('ping received, but source is not set');
@@ -119,9 +167,18 @@
                         parent.postMessage('\'cartFillerEval\';this.cartFillerEval[2]=' + JSON.stringify($('#generatedChoosejob').text()) + ';' + injectjs, '*');
                     }
                 }, false);
+                var addKnownData = function(data) {
+                    if (undefined === knownData[requesting]) {
+                        var li = document.createElement('li');
+                        li.textContent = requesting;
+                        document.getElementById('knownData').appendChild(li);
+                    }
+                    knownData[requesting] = data;
+                };
                 Object.defineProperty(window, 'cartfiller', {set: function(v) {
                     var json = JSON.stringify(v);
                     log('received: ' + json.length + ' bytes, parent is ' + (parent ? 'not null' : 'null') + '\n');
+                    addKnownData(json);
                     parent.postMessage('cartFillerFilePopupData:' + json, '*');
                 }});
                 window.cartFillerAPI = function() {
@@ -129,6 +186,7 @@
                         registerWorker: function(callback) {
                             var code = '(function(window, document, undefined){cartFillerAPI().registerWorker(' + callback.toString() + ')})(window, document);';
                             log('received: ' + code.length + ' bytes, parent is ' + (parent ? 'not null' : 'null') + '\n');
+                            addKnownData(code); 
                             parent.postMessage('cartFillerFilePopupData:' + code, '*');
                         }
                     }
@@ -166,6 +224,29 @@
                 }
 
                 var injectjs = '';
+                document.getElementById('pack').onclick = function() {
+                    var blob = new Blob(
+                        [
+                            '<!DOCTYPE html>' + 
+                            document.documentElement.outerHTML.replace(
+                                'var packedData, packedHash;',
+                                'var packedData = '
+                                + JSON.stringify(knownData)
+                                + '; packedHash = '
+                                + JSON.stringify(window.location.hash)
+                                + ';'
+                            )
+                        ],
+                        {type : 'text/html'}
+                    ); 
+                    var a = new FileReader();
+                    a.onload = function(e) {
+                        document.getElementById('download').setAttribute('href', e.target.result);
+                        document.getElementById('download').setAttribute('download', document.getElementById('url').value.split('/')[2] + '-cartfiller-' + (new Date().getFullYear()) + '-' + (new Date().getMonth() + 1) + '-' + (new Date().getDate()) + '-' + (new Date().getHours()) + '-' + (new Date().getMinutes()) + '-' + (new Date().getSeconds()) + '.html');
+                    };
+                    a.readAsDataURL(blob);
+                    return false;
+                }
             })();
         </script>
         <script src="../../lib/requirejs/require.js"></script>
