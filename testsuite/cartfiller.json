@@ -7,17 +7,17 @@ cartfiller = {
         "skipMessages": true
     },
     "tests": {
-        "libTests": {
-            "staticSteps": true,
-            "dynamicSteps": true,
-            "helpers": true,
-        },
         "suite1": {
             "test11": true,
             "test12": false
         },
         "suite2": {
             "test22": true
+        },
+        "libTests": {
+            "staticSteps": true,
+            "dynamicSteps": true,
+            "helpers": true,
         },
         "utils": {
             "addToCart": false,
