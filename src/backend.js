@@ -304,7 +304,12 @@ startup.push(function() {
     if (wait) {
         args.push('wait=' + wait);
     }
+    var hash = url.split('#')[1];
+    url = url.split('#')[0];
     url = -1 === url.indexOf('?') ? (url + '?' + (new Date()).getTime()) : (url.replace('?', '?' + (new Date()).getTime() + '&'));
+    if (undefined !== hash) {
+        url += '#' + hash;
+    }
     url = url + (-1 === url.indexOf('#') ? '#' : '&') + args.join('&');
     if (isPhantomJs) {
         var childArgs;
