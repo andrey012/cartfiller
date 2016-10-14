@@ -228,6 +228,13 @@
     var cleanText = function(value) {
         return String(value).replace(/\s+/g, ' ').trim().toLowerCase();
     };
+    var copyArguments = function(args) {
+        var result = [];
+        for (var i = 0; i < args.length ; i ++) {
+            result.push(args[i]);
+        }
+        return result;
+    };
 
     var getDocument = function() {
         var doc;
@@ -411,11 +418,13 @@
          * @param {integer} timeout Measured in milliseconds. Default value
          * (if timeout is undefined) 20000 ms
          * @param {integer} period Poll period, measured in milliseconds, 
+         * @param {Array} args Arguments to be passed to checkCallback and resultCalback
          * default value (if undefined) is 200 ms
          * @return {CartFiller.Api} for chaining
          * @access public
          */
-        waitFor: function(checkCallback, resultCallback, timeout, period){
+        waitFor: function(checkCallback, resultCallback, timeout, period, args){
+            args = args || [];
             if (undefined === timeout){
                 timeout = 20000;
             }
@@ -436,7 +445,7 @@
             var fn = function(){
                 var result;
                 try {
-                    result = checkCallback();
+                    result = checkCallback.apply(getDocument(), args);
                 } catch (e) {
                     me.modules.dispatcher.reportErrorResult(e);
                     return;
@@ -446,7 +455,8 @@
                 } 
                 if (result) {
                     try {
-                        resultCallback(result);
+                        args.unshift(result);
+                        resultCallback.apply(getDocument(), args);
                     } catch (e) {
                         me.modules.dispatcher.reportErrorResult(e);
                         return;
@@ -457,7 +467,8 @@
                         me.modules.api.setTimeout(fn, period);
                     } else {
                         try {
-                            resultCallback(false);
+                            args.unshift(false);
+                            resultCallback.apply(getDocument(), args);
                         } catch (e) {
                             me.modules.dispatcher.reportErrorResult(e);
                             return;
@@ -476,7 +487,7 @@
          */
         waiter: function(checkCallback, resultCallback, timeout, period){
             return function() {
-                me.modules.api.waitFor(checkCallback, resultCallback, timeout, period);
+                me.modules.api.waitFor(checkCallback, resultCallback, timeout, period, copyArguments(arguments));
             };
         },
         /**
