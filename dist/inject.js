@@ -184,7 +184,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1477320420254';
+    config.gruntBuildTimeStamp='1479241915465';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -566,6 +566,16 @@
                 n = 1;
             }
             me.modules.dispatcher.manageTaskFlow('skipStep,' + n);
+            return this;
+        },
+        /**
+         * Tells, that this job should be skipped altogether
+         * @function CartFiller.Api#skipJob
+         * @return {CartFiller.Api} for chaining
+         * @access public
+         */
+        skipJob: function() {
+            me.modules.dispatcher.manageTaskFlow('skipJob');
             return this;
         },
         /**

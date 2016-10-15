@@ -339,6 +339,16 @@
             return this;
         },
         /**
+         * Tells, that this job should be skipped altogether
+         * @function CartFiller.Api#skipJob
+         * @return {CartFiller.Api} for chaining
+         * @access public
+         */
+        skipJob: function() {
+            me.modules.dispatcher.manageTaskFlow('skipJob');
+            return this;
+        },
+        /**
          * Tells that this task should be repeated, so cartFiller will
          * proceed with first step of this task. After using this function
          * you still have to call api.result, and it is important to call

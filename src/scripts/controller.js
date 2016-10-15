@@ -287,7 +287,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
             $scope.jobTaskProgress[task].stepResults[step] = {status: status, message: message, response: response};
         };
         $scope.incrementCurrentStep = function(skip, nextTaskFlow){
-            var pause = false, i;
+            var pause = false, i, j;
             if ('string' === typeof nextTaskFlow && 0 === nextTaskFlow.indexOf('skipStep,')) {
                 var steps = (1 + parseInt(nextTaskFlow.replace('skipStep,', '')));
                 for (i = 0; i < steps && $scope.currentStep < $scope.jobTaskDescriptions[$scope.jobDetails[$scope.currentTask].task].length; i ++ ) {
@@ -306,7 +306,16 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 $scope.currentTask = 0; 
                 $scope.currentStep = 0;
                 skipHeadings();
-                digestTask(oldCurrentTask);
+            } else if (nextTaskFlow === 'skipJob') {
+                for (i = $scope.currentTask; i < $scope.jobDetails.length; i ++) {
+                    for (j = i === $scope.currentTask ? $scope.currentStep : 0; j < $scope.jobTaskDescriptions[$scope.jobDetails[i].task].length; j ++) {
+                        setStepStatus(i, j, 'skipped', '');
+                    }
+                    $scope.jobTaskProgress[i].complete = true;
+                    digestTask(i);
+                }
+                $scope.currentTask = $scope.jobDetails.length;
+                $scope.currentStep = 0;
             } else if (skip || nextTaskFlow === 'skipTask' || nextTaskFlow === 'repeatTask' || $scope.jobTaskDescriptions[$scope.jobDetails[$scope.currentTask].task].length <= $scope.currentStep){
                 while ($scope.currentStep < $scope.jobTaskDescriptions[$scope.jobDetails[$scope.currentTask].task].length) {
                     if ($scope.pausePoints[$scope.currentTask] && $scope.pausePoints[$scope.currentTask][$scope.currentStep]) {
@@ -327,27 +336,27 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                     $scope.repeatedTaskCounter[$scope.currentTask] = 0;
                 }
                 skipHeadings();
-                if ($scope.currentTask >= $scope.jobDetails.length){
-                    $scope.finishReached = true;
-                    setTimeout(function(){
-                        cfMessage.send(
-                            'sendStatus', 
-                            {
-                                result: $scope.jobTaskProgress, 
-                                tasks: $scope.jobDetails,
-                                currentTaskIndex: false, 
-                                currentTaskStepIndex: false,
-                                running: $scope.running,
-                                completed: true
-                            });
-                    },0);
-                    digestFinishReached();
-                    setTimeout(function(){
-                        cfScroll(jQuery('#finishReached')[0]);
-                    },0);
-                }
-                digestTask(oldCurrentTask);
             }
+            if ($scope.currentTask >= $scope.jobDetails.length){
+                $scope.finishReached = true;
+                setTimeout(function(){
+                    cfMessage.send(
+                        'sendStatus', 
+                        {
+                            result: $scope.jobTaskProgress, 
+                            tasks: $scope.jobDetails,
+                            currentTaskIndex: false, 
+                            currentTaskStepIndex: false,
+                            running: $scope.running,
+                            completed: true
+                        });
+                },0);
+                digestFinishReached();
+                setTimeout(function(){
+                    cfScroll(jQuery('#finishReached')[0]);
+                },0);
+            }
+            digestTask(oldCurrentTask);
             digestTask($scope.currentTask);
             updateTopWindowHash();
             if ($scope.pausePoints[$scope.currentTask] && $scope.pausePoints[$scope.currentTask][$scope.currentStep]) {
