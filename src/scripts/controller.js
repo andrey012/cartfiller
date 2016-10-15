@@ -182,6 +182,12 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 $scope.$apply(function(){
                     $scope.workersLoaded = $scope.workersCounter; // now we push all data from dispatcher at once
                     $scope.jobTaskDescriptions = details.jobTaskDescriptions;
+                    // remove pause points for those worker steps, that do not exist
+                    for (var i in $scope.pausePoints) {
+                        if (undefined === $scope.jobDetails[i].task || undefined ===  $scope.jobTaskDescriptions[$scope.jobDetails[i].task]) {
+                            delete $scope.pausePoints[i];
+                        }
+                    }
                     $scope.workerLib = details.workerLib;
                     $scope.jobTaskDiscoveredParameters = details.discoveredParameters;
                     $scope.workerTaskSources = details.workerTaskSources;
@@ -366,6 +372,9 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
         };
         $scope.getNextStepToDo = function(index){
             var steps = $scope.jobTaskDescriptions[$scope.jobDetails[index].task];
+            if (undefined === steps) {
+                return 0;
+            }
             for (var i = 0; i < steps.length; i++){
                 var result = $scope.jobTaskProgress[index].stepResults[i];
                 if (angular.isUndefined(result) || ('ok' !== result.status && 'skipped' !== result.status)){

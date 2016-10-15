@@ -1171,6 +1171,7 @@
          * @access public
          */
         onMessage_invokeWorker: function(message){
+            var err;
             currentInvokeWorkerMessage = message;
             if (message.globals) {
                 fillWorkerGlobals(message.globals);
@@ -1187,7 +1188,7 @@
                 return;
             }
             if (false !== workerCurrentStepIndex){
-                var err = 'ERROR: worker task is in still in progress';
+                err = 'ERROR: worker task is in still in progress';
                 alert(err);
             } else {
                 stepRepeatCounter = 0;
@@ -1237,9 +1238,13 @@
                 };
                 try {
                     if (undefined === worker[message.task]) {
-                        alert('invalid worker - no function for ' + message.task + ' exist');
+                        alert(err = 'invalid worker - no function for ' + message.task + ' exist');
+                        me.modules.api.result(err, false);
+                        return;
                     } else if (undefined === worker[message.task][(message.step * 2) + 1]){
-                        alert('invalid worker - function for ' + message.task + ' step ' + message.step + ' does not exist');
+                        alert(err = 'invalid worker - function for ' + message.task + ' step ' + message.step + ' does not exist');
+                        me.modules.api.result(err, false);
+                        return;
                     } else {
                         var workerFn = worker[message.task][(message.step * 2) + 1];
                         if ('function' !== typeof workerFn){
@@ -1247,7 +1252,8 @@
                                 currentStepEnv.params = workerFn[1];
                                 workerFn = workerFn[0];
                             } else {
-                                alert('invalid worker - function for ' + message.task + ' step ' + message.step + ' is not a function');
+                                alert(err = 'invalid worker - function for ' + message.task + ' step ' + message.step + ' is not a function');
+                                me.modules.api.result(err, false);
                                 return;
                             }
                         }
