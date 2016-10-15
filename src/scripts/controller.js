@@ -772,14 +772,16 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
         };
         $scope.taskExplorerParameterEnteredNoWatch = function(input, event){
             var task = $(input).closest('table');
-            var result = {task: task.attr('data-name')};
+            var result = {};
+            var taskName = task.attr('data-name');
+            result[taskName] = {};
             if (! $(input).is('.result')) {
                 task.find('input').each(function(i,el){
                     el = $(el);
                     var name = el.attr('name');
                     var value = el.val();
                     if (value.length && name) {
-                        result[name] = value;
+                        result[taskName][name] = value;
                     }
                 });
                 task.find('textarea.result').val($scope.getSuggestTaskJsonForTask('', result));
@@ -794,7 +796,8 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
         };
         $scope.getSuggestTaskJsonForTask = function (name, result) {
             if ('undefined' === typeof result) {
-                result = {task: name};
+                result = {};
+                result[name] = {};
             }
             return '\n        ' + JSON.stringify(result) + ',';
         };

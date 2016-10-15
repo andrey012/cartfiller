@@ -6901,15 +6901,15 @@ button.close {
                             <strong>{{discovery.scripts.contents[index].title ? discovery.scripts.contents[index].title : testPath.join('/')}}</strong><span ng-repeat="(name, value) in discovery.scripts.tweaks[index]">, {{name}}: <strong>{{value}}</strong></span>
                         </td>
                         <td>
-                            <button class="btn btn-xs btn-success" ng-click="runTest(index, 'fast')">
+                            <a class="btn btn-xs btn-success" ng-click="runTest(index, 'fast', false, false, $event)" href="{{getTaskUrl(index, -1, 0)}}">
                                 Run
-                            </button>
+                            </a>
                             <button class="btn btn-xs btn-success" ng-click="runAll(index)" title="Run all tests from here on">
                                 >>
                             </button>
-                            <button class="btn btn-xs btn-success" ng-click="runTest(index, 'slow')">
+                            <a class="btn btn-xs btn-success" ng-click="runTest(index, 'slow', false, false, $event)" href="{{getTaskUrl(index, -1, 0, 'slow')}}">
                                 Slow
-                            </button>
+                            </a>
                             <button class="btn btn-xs btn-success" ng-click="runTest(index, 'load')">
                                 Load
                             </button>
@@ -47581,14 +47581,16 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
         };
         $scope.taskExplorerParameterEnteredNoWatch = function(input, event){
             var task = $(input).closest('table');
-            var result = {task: task.attr('data-name')};
+            var result = {};
+            var taskName = task.attr('data-name');
+            result[taskName] = {};
             if (! $(input).is('.result')) {
                 task.find('input').each(function(i,el){
                     el = $(el);
                     var name = el.attr('name');
                     var value = el.val();
                     if (value.length && name) {
-                        result[name] = value;
+                        result[taskName][name] = value;
                     }
                 });
                 task.find('textarea.result').val($scope.getSuggestTaskJsonForTask('', result));
@@ -47603,7 +47605,8 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
         };
         $scope.getSuggestTaskJsonForTask = function (name, result) {
             if ('undefined' === typeof result) {
-                result = {task: name};
+                result = {};
+                result[name] = {};
             }
             return '\n        ' + JSON.stringify(result) + ',';
         };
@@ -47672,7 +47675,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
             reportError('bootstrap message did not come');
         }
     }, 10000);
-    config.gruntBuildTimeStamp='1479402833952';
+    config.gruntBuildTimeStamp='1480324646918';
     window.addEventListener('message', function(event){
         var prefix = 'cartFillerMessage:';
         var isDist = true;
@@ -47746,7 +47749,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 if (message.tests) {
                     var x = new XMLHttpRequest();
                     x.onload = function(){
-                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1479402833952') {
+                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1480324646918') {
                             console.log('new version of CartFiller was deployed, switching to it');
                             var hash = window.location.href.split('#');
                             var pc = hash[0].split('?');
@@ -48687,7 +48690,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             }
             return false;
         };
-        $scope.getTaskUrl = function(testIndex, taskIndex, stepIndex) {
+        $scope.getTaskUrl = function(testIndex, taskIndex, stepIndex, how) {
             var params = {};
             for (var i in $scope.params) {
                 if (i === 'globals') {
@@ -48706,6 +48709,9 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                 if ('string' === typeof i && i.length) {
                     pc.push(encodeURIComponent(i)+'='+encodeURIComponent(params[i]));
                 }
+            }
+            if (how === 'slow') {
+                pc.push('slow=1');
             }
             return window.location.href.split(/[#?]/)[0].replace(/\/src(\/(index.html)?)?$/, '/dist/') + 
                 '#' + pc.join('&');

@@ -124,15 +124,15 @@
                             <strong>{{discovery.scripts.contents[index].title ? discovery.scripts.contents[index].title : testPath.join('/')}}</strong><span ng-repeat="(name, value) in discovery.scripts.tweaks[index]">, {{name}}: <strong>{{value}}</strong></span>
                         </td>
                         <td>
-                            <button class="btn btn-xs btn-success" ng-click="runTest(index, 'fast')">
+                            <a class="btn btn-xs btn-success" ng-click="runTest(index, 'fast', false, false, $event)" href="{{getTaskUrl(index, -1, 0)}}">
                                 Run
-                            </button>
+                            </a>
                             <button class="btn btn-xs btn-success" ng-click="runAll(index)" title="Run all tests from here on">
                                 >>
                             </button>
-                            <button class="btn btn-xs btn-success" ng-click="runTest(index, 'slow')">
+                            <a class="btn btn-xs btn-success" ng-click="runTest(index, 'slow', false, false, $event)" href="{{getTaskUrl(index, -1, 0, 'slow')}}">
                                 Slow
-                            </button>
+                            </a>
                             <button class="btn btn-xs btn-success" ng-click="runTest(index, 'load')">
                                 Load
                             </button>

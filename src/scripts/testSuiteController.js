@@ -831,7 +831,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             }
             return false;
         };
-        $scope.getTaskUrl = function(testIndex, taskIndex, stepIndex) {
+        $scope.getTaskUrl = function(testIndex, taskIndex, stepIndex, how) {
             var params = {};
             for (var i in $scope.params) {
                 if (i === 'globals') {
@@ -850,6 +850,9 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                 if ('string' === typeof i && i.length) {
                     pc.push(encodeURIComponent(i)+'='+encodeURIComponent(params[i]));
                 }
+            }
+            if (how === 'slow') {
+                pc.push('slow=1');
             }
             return window.location.href.split(/[#?]/)[0].replace(/\/src(\/(index.html)?)?$/, '/dist/') + 
                 '#' + pc.join('&');
