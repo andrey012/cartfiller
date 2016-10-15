@@ -320,7 +320,7 @@
                         </tr>
                         <tr>
                             <td colspan="2">
-                                <input class="copy-to-clipboard" ng-value="shortName(name)" readonly/>
+                                <input class="copy-to-clipboard" ng-value="shortName(name)" onkeyup="var event = arguments[0] || window.event;  angular.element(this).scope().taskExplorerParameterEnteredNoWatch(this, event); this.select();" readonly/>
                             </td>
                         </tr>
                     </table>

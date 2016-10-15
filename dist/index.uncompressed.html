@@ -7082,7 +7082,7 @@ button.close {
                         </tr>
                         <tr>
                             <td colspan="2">
-                                <input class="copy-to-clipboard" ng-value="shortName(name)" readonly/>
+                                <input class="copy-to-clipboard" ng-value="shortName(name)" onkeyup="var event = arguments[0] || window.event;  angular.element(this).scope().taskExplorerParameterEnteredNoWatch(this, event); this.select();" readonly/>
                             </td>
                         </tr>
                     </table>
@@ -47579,7 +47579,11 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 task.find('textarea.result').val($scope.getSuggestTaskJsonForTask('', result));
             }
             if (event.keyCode === 27) {
-                $scope.browseLibNoWatch();
+                if ($('#libBrowser').is(':visible')) {
+                    $scope.browseLibNoWatch();
+                } else if ($('#availableTasksOfWorker').is(':visible')) {
+                    $scope.suggestTaskNameNoWatch();
+                }
             }
         };
         $scope.getSuggestTaskJsonForTask = function (name, result) {
@@ -47653,7 +47657,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
             reportError('bootstrap message did not come');
         }
     }, 10000);
-    config.gruntBuildTimeStamp='1479396648829';
+    config.gruntBuildTimeStamp='1479402833952';
     window.addEventListener('message', function(event){
         var prefix = 'cartFillerMessage:';
         var isDist = true;
@@ -47727,7 +47731,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 if (message.tests) {
                     var x = new XMLHttpRequest();
                     x.onload = function(){
-                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1479396648829') {
+                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1479402833952') {
                             console.log('new version of CartFiller was deployed, switching to it');
                             var hash = window.location.href.split('#');
                             var pc = hash[0].split('?');

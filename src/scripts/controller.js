@@ -785,7 +785,11 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 task.find('textarea.result').val($scope.getSuggestTaskJsonForTask('', result));
             }
             if (event.keyCode === 27) {
-                $scope.browseLibNoWatch();
+                if ($('#libBrowser').is(':visible')) {
+                    $scope.browseLibNoWatch();
+                } else if ($('#availableTasksOfWorker').is(':visible')) {
+                    $scope.suggestTaskNameNoWatch();
+                }
             }
         };
         $scope.getSuggestTaskJsonForTask = function (name, result) {
