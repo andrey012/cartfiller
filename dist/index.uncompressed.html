@@ -6886,13 +6886,13 @@ button.close {
                             <strong>{{discovery.scripts.contents[index].title ? discovery.scripts.contents[index].title : testPath.join('/')}}</strong><span ng-repeat="(name, value) in discovery.scripts.tweaks[index]">, {{name}}: <strong>{{value}}</strong></span>
                         </td>
                         <td>
-                            <a class="btn btn-xs btn-success" ng-click="runTest(index, 'fast', false, false, $event)" href="{{getTaskUrl(index, -1, 0)}}">
+                            <a class="btn btn-xs btn-success" ng-click="runTest(index, 'fast', -1, -1, $event)" href="{{getTaskUrl(index, -1, 0)}}" onclick="return false;">
                                 Run
                             </a>
                             <button class="btn btn-xs btn-success" ng-click="runAll(index)" title="Run all tests from here on">
                                 >>
                             </button>
-                            <a class="btn btn-xs btn-success" ng-click="runTest(index, 'slow', false, false, $event)" href="{{getTaskUrl(index, -1, 0, 'slow')}}">
+                            <a class="btn btn-xs btn-success" ng-click="runTest(index, 'slow', -1, -1, $event)" href="{{getTaskUrl(index, -1, 0, 'slow')}}" onclick="return false;">
                                 Slow
                             </a>
                             <button class="btn btn-xs btn-success" ng-click="runTest(index, 'load')">
@@ -47660,7 +47660,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
             reportError('bootstrap message did not come');
         }
     }, 10000);
-    config.gruntBuildTimeStamp='1480324646918';
+    config.gruntBuildTimeStamp='1481483753526';
     window.addEventListener('message', function(event){
         var prefix = 'cartFillerMessage:';
         var isDist = true;
@@ -47734,7 +47734,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 if (message.tests) {
                     var x = new XMLHttpRequest();
                     x.onload = function(){
-                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1480324646918') {
+                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1481483753526') {
                             console.log('new version of CartFiller was deployed, switching to it');
                             var hash = window.location.href.split('#');
                             var pc = hash[0].split('?');
