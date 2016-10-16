@@ -184,7 +184,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1481483753526';
+    config.gruntBuildTimeStamp='1481918475877';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -1074,7 +1074,7 @@
          * @param {string|Function} value or callback to get value
          * @param {Function} whatNext callback after this task is 
          * @param {boolean} dontClear by default this function will clear input before typing
-         * @param {failOnErrors} set to true to fail on errors during attempts to set keyCode and charCode values
+         * @param {boolean} failOnErrors set to true to fail on errors during attempts to set keyCode and charCode values
          * @return {Array} ready for putting into worker array
          * @access public
          */
@@ -2850,7 +2850,11 @@
             }
             var hashString = hash.join('&');
             if (hashString.length < 4096) {
-                window.location.hash = hashString;
+                if (window.history && window.history.replaceState) {
+                    window.history.replaceState(undefined, undefined, '#' + hashString);
+                } else {
+                    window.location.hash = hashString;
+                }
             }
         },
         /**

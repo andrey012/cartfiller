@@ -398,21 +398,21 @@
                        ng-repeat="(jobTaskStepIndex, jobTaskStep) in jobTaskDescriptions[jobTask.task] track by $index"
                     >
                         <div class="nobr">
-                            <a id="{{'pauseButton_' + jobTaskIndex + '_' + jobTaskStepIndex}}"
-                               class="pause"
+                            <button id="{{'pauseButton_' + jobTaskIndex + '_' + jobTaskStepIndex}}"
+                               class="pause btn-link"
                                href="#" ng-class="pausePoints[jobTaskIndex][jobTaskStepIndex] ? 'pause-active' : ''"
                                onclick="var event = arguments[0] || window.event; return angular.element(this).scope().togglePause(this, event);"
                                ondblclick="var event = arguments[0] || window.event; return angular.element(this).scope().togglePause(this, event, true);"
                                title="click to toggle pause at this point"
-                            >||</a>
-                            <a id="{{'stepButton_' + jobTaskIndex + '_' + jobTaskStepIndex}}"
+                            >||</button>
+                            <button id="{{'stepButton_' + jobTaskIndex + '_' + jobTaskStepIndex}}"
                                href="#"
                                title="{{jobTaskStep + ': ' + jobTaskProgress[jobTaskIndex].stepResults[jobTaskStepIndex].message}}"
                                class="btn"
                                ng-class="getStepClass(jobTaskIndex, jobTaskStepIndex)"
                                onmousedown="var event = arguments[0] || window.event; angular.element(this).scope().mouseDown(event);"
                                onclick="var event = arguments[0] || window.event; return angular.element(this).scope().clickOnStepNoWatch(this, event);"
-                            >{{indexTitles[jobTask.task][jobTaskStepIndex]}}</a>
+                            >{{indexTitles[jobTask.task][jobTaskStepIndex]}}</button>
                         </div>
                         {{jobTaskProgress[jobTaskIndex].stepResults[jobTaskStepIndex].message}}
                     </span>

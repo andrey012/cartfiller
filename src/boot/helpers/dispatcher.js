@@ -1520,7 +1520,11 @@
             }
             var hashString = hash.join('&');
             if (hashString.length < 4096) {
-                window.location.hash = hashString;
+                if (window.history && window.history.replaceState) {
+                    window.history.replaceState(undefined, undefined, '#' + hashString);
+                } else {
+                    window.location.hash = hashString;
+                }
             }
         },
         /**

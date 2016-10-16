@@ -844,7 +844,7 @@
          * @param {string|Function} value or callback to get value
          * @param {Function} whatNext callback after this task is 
          * @param {boolean} dontClear by default this function will clear input before typing
-         * @param {failOnErrors} set to true to fail on errors during attempts to set keyCode and charCode values
+         * @param {boolean} failOnErrors set to true to fail on errors during attempts to set keyCode and charCode values
          * @return {Array} ready for putting into worker array
          * @access public
          */

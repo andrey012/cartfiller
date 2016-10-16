@@ -7175,21 +7175,21 @@ button.close {
                        ng-repeat="(jobTaskStepIndex, jobTaskStep) in jobTaskDescriptions[jobTask.task] track by $index"
                     >
                         <div class="nobr">
-                            <a id="{{'pauseButton_' + jobTaskIndex + '_' + jobTaskStepIndex}}"
-                               class="pause"
+                            <button id="{{'pauseButton_' + jobTaskIndex + '_' + jobTaskStepIndex}}"
+                               class="pause btn-link"
                                href="#" ng-class="pausePoints[jobTaskIndex][jobTaskStepIndex] ? 'pause-active' : ''"
                                onclick="var event = arguments[0] || window.event; return angular.element(this).scope().togglePause(this, event);"
                                ondblclick="var event = arguments[0] || window.event; return angular.element(this).scope().togglePause(this, event, true);"
                                title="click to toggle pause at this point"
-                            >||</a>
-                            <a id="{{'stepButton_' + jobTaskIndex + '_' + jobTaskStepIndex}}"
+                            >||</button>
+                            <button id="{{'stepButton_' + jobTaskIndex + '_' + jobTaskStepIndex}}"
                                href="#"
                                title="{{jobTaskStep + ': ' + jobTaskProgress[jobTaskIndex].stepResults[jobTaskStepIndex].message}}"
                                class="btn"
                                ng-class="getStepClass(jobTaskIndex, jobTaskStepIndex)"
                                onmousedown="var event = arguments[0] || window.event; angular.element(this).scope().mouseDown(event);"
                                onclick="var event = arguments[0] || window.event; return angular.element(this).scope().clickOnStepNoWatch(this, event);"
-                            >{{indexTitles[jobTask.task][jobTaskStepIndex]}}</a>
+                            >{{indexTitles[jobTask.task][jobTaskStepIndex]}}</button>
                         </div>
                         {{jobTaskProgress[jobTaskIndex].stepResults[jobTaskStepIndex].message}}
                     </span>
@@ -36793,7 +36793,7 @@ function ngViewFillContentFactory($compile, $controller, $route) {
 define("angular-route", function(){});
 
 /*!
- * jQuery JavaScript Library v2.2.3
+ * jQuery JavaScript Library v2.2.2
  * http://jquery.com/
  *
  * Includes Sizzle.js
@@ -36803,7 +36803,7 @@ define("angular-route", function(){});
  * Released under the MIT license
  * http://jquery.org/license
  *
- * Date: 2016-04-05T19:26Z
+ * Date: 2016-03-17T17:51Z
  */
 
 (function( global, factory ) {
@@ -36859,7 +36859,7 @@ var support = {};
 
 
 var
-	version = "2.2.3",
+	version = "2.2.2",
 
 	// Define a local copy of jQuery
 	jQuery = function( selector, context ) {
@@ -46269,7 +46269,7 @@ jQuery.fn.load = function( url, params, callback ) {
 		// If it fails, this function gets "jqXHR", "status", "error"
 		} ).always( callback && function( jqXHR, status ) {
 			self.each( function() {
-				callback.apply( this, response || [ jqXHR.responseText, status, jqXHR ] );
+				callback.apply( self, response || [ jqXHR.responseText, status, jqXHR ] );
 			} );
 		} );
 	}
@@ -47675,7 +47675,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
             reportError('bootstrap message did not come');
         }
     }, 10000);
-    config.gruntBuildTimeStamp='1481483753526';
+    config.gruntBuildTimeStamp='1481918475877';
     window.addEventListener('message', function(event){
         var prefix = 'cartFillerMessage:';
         var isDist = true;
@@ -47749,7 +47749,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 if (message.tests) {
                     var x = new XMLHttpRequest();
                     x.onload = function(){
-                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1481483753526') {
+                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1481918475877') {
                             console.log('new version of CartFiller was deployed, switching to it');
                             var hash = window.location.href.split('#');
                             var pc = hash[0].split('?');
