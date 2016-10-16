@@ -6773,10 +6773,9 @@ button.close {
         #jobDetails .pause {padding: 6px 5px 9px 5px; }
         #jobDetails .alert {padding: 5px; margin-bottom: 5px;}
         #jobDetails h1, #jobDetails h2, #jobDetails h3, #jobDetails h4 {margin: 0px;}
-        .pause-active {background-color: red;}
         #jobDetails .btn.dependent-step {opacity: 0.5;}
         #testslist h1, #testslist h2, #testslist h3, #testslist h4, #testslist h5 {margin: 0px;}
-        .pause-active {background-color: red;}
+        .pause-active, .pause-active:hover, .pause-active:focus, .pause-active:active, .pause-active:visited  {background-color: red;}
         .nobr {display: inline-block; white-space: nowrap;}
         #availableTasksOfWorker input, #availableTasksOfWorker textarea {width: 100%;}
         #availableTasksOfWorker .highlighted {background-color: yellow;}
@@ -36793,7 +36792,7 @@ function ngViewFillContentFactory($compile, $controller, $route) {
 define("angular-route", function(){});
 
 /*!
- * jQuery JavaScript Library v2.2.3
+ * jQuery JavaScript Library v2.2.2
  * http://jquery.com/
  *
  * Includes Sizzle.js
@@ -36803,7 +36802,7 @@ define("angular-route", function(){});
  * Released under the MIT license
  * http://jquery.org/license
  *
- * Date: 2016-04-05T19:26Z
+ * Date: 2016-03-17T17:51Z
  */
 
 (function( global, factory ) {
@@ -36859,7 +36858,7 @@ var support = {};
 
 
 var
-	version = "2.2.3",
+	version = "2.2.2",
 
 	// Define a local copy of jQuery
 	jQuery = function( selector, context ) {
@@ -46269,7 +46268,7 @@ jQuery.fn.load = function( url, params, callback ) {
 		// If it fails, this function gets "jqXHR", "status", "error"
 		} ).always( callback && function( jqXHR, status ) {
 			self.each( function() {
-				callback.apply( this, response || [ jqXHR.responseText, status, jqXHR ] );
+				callback.apply( self, response || [ jqXHR.responseText, status, jqXHR ] );
 			} );
 		} );
 	}
@@ -47683,7 +47682,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
             reportError('bootstrap message did not come');
         }
     }, 10000);
-    config.gruntBuildTimeStamp='1482605982650';
+    config.gruntBuildTimeStamp='1482702241922';
     window.addEventListener('message', function(event){
         var prefix = 'cartFillerMessage:';
         var isDist = true;
@@ -47757,7 +47756,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 if (message.tests) {
                     var x = new XMLHttpRequest();
                     x.onload = function(){
-                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1482605982650') {
+                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1482702241922') {
                             console.log('new version of CartFiller was deployed, switching to it');
                             var hash = window.location.href.split('#');
                             var pc = hash[0].split('?');
