@@ -218,6 +218,9 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                         alert('error');
                         stopTestsuite = true;
                     }
+                    if ($scope.noTaskSteps($scope.jobDetails[$scope.currentTask])) {
+                        $('#taskDiv_' + $scope.currentTask + ' textarea').focus().select();
+                    }
                     proceed = false;
                 }
                 if ($scope.runUntilTask !== false && $scope.runUntilStep !== false && ($scope.runUntilTask < $scope.currentTask || ($scope.runUntilStep <= $scope.currentStep && $scope.runUntilTask === $scope.currentTask))) {
@@ -664,6 +667,9 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 cfMessage.send('highlightElementForQueryBuilder', {path: payload});
             };
         },1000);
+        $scope.shortName = function(name) {
+            return name.split('.').pop();
+        };
         setTimeout(function initLibBrowserScope() {
             var scope = angular.element(document.getElementById('libBrowser')).scope();
             if (! scope) {
@@ -677,9 +683,6 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 if (event.keyCode === 27) {
                     $scope.browseLibNoWatch();
                 }
-            };
-            scope.shortName = function(name) {
-                return name.split('.').pop();
             };
             scope.expand = function(name, $event) {
                 scope.expanded = scope.expanded === name ? '' : name;
@@ -795,10 +798,15 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 task.find('textarea.result').val($scope.getSuggestTaskJsonForTask('', result));
             }
             if (event.keyCode === 27) {
+                if ($('#availableTasksOfWorker').is(':visible')) {
+                    $scope.suggestTaskNameNoWatch();
+                }
+            }
+        };
+        $scope.libBrowserKeyUpNoWatch = function(input, event) {
+            if (event.keyCode === 27) {
                 if ($('#libBrowser').is(':visible')) {
                     $scope.browseLibNoWatch();
-                } else if ($('#availableTasksOfWorker').is(':visible')) {
-                    $scope.suggestTaskNameNoWatch();
                 }
             }
         };
@@ -809,15 +817,16 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
             }
             return '\n        ' + JSON.stringify(result) + ',';
         };
-        $scope.getSuggestForLibBrowser = function(name) {
+        $scope.getSuggestForLibBrowser = function(name, full) {
+            var displayName = full ? name : $scope.shortName(name);
             if ($scope.workerLib[name] === 'step builder' ||
                 $scope.workerLib[name] === 'steps')
             {
-                return 'lib(\'' + name + '\')';
+                return 'lib(\'' + displayName + '\')';
             } else if ($scope.workerLib[name] === 'helper') {
-                return 'lib.' + name + '()';
+                return 'lib.' + displayName + '()';
             } else {
-                return name;
+                return displayName;
             }
         };
         setTimeout(function initGlobalsScope() {

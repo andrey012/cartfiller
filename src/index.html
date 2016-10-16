@@ -315,11 +315,14 @@
                     <span>{{workerLibSources[name]}}</span>
                     <table class="table" data-name="{{name}}">
                         <tr>
-                            <td colspan="2"><textarea rows="3" readonly onclick="this.select();" onfocus="this.select();" class="result" onkeyup="var event = arguments[0] || window.event;  angular.element(this).scope().taskExplorerParameterEnteredNoWatch(this, event); this.select();">{{getSuggestForLibBrowser(name)}}</textarea></td>
+                            <td colspan="2"><textarea rows="3" readonly onclick="this.select();" onfocus="this.select();" class="result" onkeyup="var event = arguments[0] || window.event;  angular.element(this).scope().libBrowserKeyUpNoWatch(this, event); this.select();">{{getSuggestForLibBrowser(name, false)}}</textarea></td>
+                        </tr>
+                        <tr>
+                            <td colspan="2"><textarea rows="3" readonly onclick="this.select();" onfocus="this.select();" class="result" onkeyup="var event = arguments[0] || window.event;  angular.element(this).scope().libBrowserKeyUpNoWatch(this, event); this.select();">{{getSuggestForLibBrowser(name, true)}}</textarea></td>
                         </tr>
                         <tr>
                             <td colspan="2">
-                                <input class="copy-to-clipboard" ng-value="shortName(name)" onkeyup="var event = arguments[0] || window.event;  angular.element(this).scope().taskExplorerParameterEnteredNoWatch(this, event); this.select();" readonly/>
+                                <input class="copy-to-clipboard" ng-value="shortName(name)" readonly onkeyup="var event = arguments[0] || window.event;  angular.element(this).scope().libBrowserKeyUpNoWatch(this, event); this.select();"/>
                             </td>
                         </tr>
                     </table>

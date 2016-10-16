@@ -7077,11 +7077,14 @@ button.close {
                     <span>{{workerLibSources[name]}}</span>
                     <table class="table" data-name="{{name}}">
                         <tr>
-                            <td colspan="2"><textarea rows="3" readonly onclick="this.select();" onfocus="this.select();" class="result" onkeyup="var event = arguments[0] || window.event;  angular.element(this).scope().taskExplorerParameterEnteredNoWatch(this, event); this.select();">{{getSuggestForLibBrowser(name)}}</textarea></td>
+                            <td colspan="2"><textarea rows="3" readonly onclick="this.select();" onfocus="this.select();" class="result" onkeyup="var event = arguments[0] || window.event;  angular.element(this).scope().libBrowserKeyUpNoWatch(this, event); this.select();">{{getSuggestForLibBrowser(name, false)}}</textarea></td>
+                        </tr>
+                        <tr>
+                            <td colspan="2"><textarea rows="3" readonly onclick="this.select();" onfocus="this.select();" class="result" onkeyup="var event = arguments[0] || window.event;  angular.element(this).scope().libBrowserKeyUpNoWatch(this, event); this.select();">{{getSuggestForLibBrowser(name, true)}}</textarea></td>
                         </tr>
                         <tr>
                             <td colspan="2">
-                                <input class="copy-to-clipboard" ng-value="shortName(name)" onkeyup="var event = arguments[0] || window.event;  angular.element(this).scope().taskExplorerParameterEnteredNoWatch(this, event); this.select();" readonly/>
+                                <input class="copy-to-clipboard" ng-value="shortName(name)" readonly onkeyup="var event = arguments[0] || window.event;  angular.element(this).scope().libBrowserKeyUpNoWatch(this, event); this.select();"/>
                             </td>
                         </tr>
                     </table>
@@ -36777,7 +36780,7 @@ function ngViewFillContentFactory($compile, $controller, $route) {
 define("angular-route", function(){});
 
 /*!
- * jQuery JavaScript Library v2.2.2
+ * jQuery JavaScript Library v2.2.3
  * http://jquery.com/
  *
  * Includes Sizzle.js
@@ -36787,7 +36790,7 @@ define("angular-route", function(){});
  * Released under the MIT license
  * http://jquery.org/license
  *
- * Date: 2016-03-17T17:51Z
+ * Date: 2016-04-05T19:26Z
  */
 
 (function( global, factory ) {
@@ -36843,7 +36846,7 @@ var support = {};
 
 
 var
-	version = "2.2.2",
+	version = "2.2.3",
 
 	// Define a local copy of jQuery
 	jQuery = function( selector, context ) {
@@ -46253,7 +46256,7 @@ jQuery.fn.load = function( url, params, callback ) {
 		// If it fails, this function gets "jqXHR", "status", "error"
 		} ).always( callback && function( jqXHR, status ) {
 			self.each( function() {
-				callback.apply( self, response || [ jqXHR.responseText, status, jqXHR ] );
+				callback.apply( this, response || [ jqXHR.responseText, status, jqXHR ] );
 			} );
 		} );
 	}
@@ -47011,6 +47014,9 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                         alert('error');
                         stopTestsuite = true;
                     }
+                    if ($scope.noTaskSteps($scope.jobDetails[$scope.currentTask])) {
+                        $('#taskDiv_' + $scope.currentTask + ' textarea').focus().select();
+                    }
                     proceed = false;
                 }
                 if ($scope.runUntilTask !== false && $scope.runUntilStep !== false && ($scope.runUntilTask < $scope.currentTask || ($scope.runUntilStep <= $scope.currentStep && $scope.runUntilTask === $scope.currentTask))) {
@@ -47457,6 +47463,9 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 cfMessage.send('highlightElementForQueryBuilder', {path: payload});
             };
         },1000);
+        $scope.shortName = function(name) {
+            return name.split('.').pop();
+        };
         setTimeout(function initLibBrowserScope() {
             var scope = angular.element(document.getElementById('libBrowser')).scope();
             if (! scope) {
@@ -47470,9 +47479,6 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 if (event.keyCode === 27) {
                     $scope.browseLibNoWatch();
                 }
-            };
-            scope.shortName = function(name) {
-                return name.split('.').pop();
             };
             scope.expand = function(name, $event) {
                 scope.expanded = scope.expanded === name ? '' : name;
@@ -47588,10 +47594,15 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 task.find('textarea.result').val($scope.getSuggestTaskJsonForTask('', result));
             }
             if (event.keyCode === 27) {
+                if ($('#availableTasksOfWorker').is(':visible')) {
+                    $scope.suggestTaskNameNoWatch();
+                }
+            }
+        };
+        $scope.libBrowserKeyUpNoWatch = function(input, event) {
+            if (event.keyCode === 27) {
                 if ($('#libBrowser').is(':visible')) {
                     $scope.browseLibNoWatch();
-                } else if ($('#availableTasksOfWorker').is(':visible')) {
-                    $scope.suggestTaskNameNoWatch();
                 }
             }
         };
@@ -47602,15 +47613,16 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
             }
             return '\n        ' + JSON.stringify(result) + ',';
         };
-        $scope.getSuggestForLibBrowser = function(name) {
+        $scope.getSuggestForLibBrowser = function(name, full) {
+            var displayName = full ? name : $scope.shortName(name);
             if ($scope.workerLib[name] === 'step builder' ||
                 $scope.workerLib[name] === 'steps')
             {
-                return 'lib(\'' + name + '\')';
+                return 'lib(\'' + displayName + '\')';
             } else if ($scope.workerLib[name] === 'helper') {
-                return 'lib.' + name + '()';
+                return 'lib.' + displayName + '()';
             } else {
-                return name;
+                return displayName;
             }
         };
         setTimeout(function initGlobalsScope() {
@@ -47667,7 +47679,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
             reportError('bootstrap message did not come');
         }
     }, 10000);
-    config.gruntBuildTimeStamp='1482702241922';
+    config.gruntBuildTimeStamp='1484585569485';
     window.addEventListener('message', function(event){
         var prefix = 'cartFillerMessage:';
         var isDist = true;
@@ -47741,7 +47753,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 if (message.tests) {
                     var x = new XMLHttpRequest();
                     x.onload = function(){
-                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1482702241922') {
+                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1484585569485') {
                             console.log('new version of CartFiller was deployed, switching to it');
                             var hash = window.location.href.split('#');
                             var pc = hash[0].split('?');

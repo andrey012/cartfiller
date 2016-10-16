@@ -86,24 +86,34 @@
     var workerLibResolve = function(arg, promise, path) {
         var name, type;
 
-        if ('function' === typeof arg) {
+        if ('function' === typeof arg || arg instanceof Array) {
             var evaluateArg = false;
-            if (undefined === promise.promiseArgs[0] && 'string' === typeof arg.name && arg.name.length) {
+            if (undefined === promise.promiseArgs[0] && 'function' === typeof arg && 'string' === typeof arg.name && arg.name.length) {
                 // this is case: lib()(function findSomeButton() {...})
                 type = 'helper';
                 name = arg.name;
-            } else if ('string' === typeof promise.promiseArgs[0] && promise.promiseArgs[0].length && ('string' !== typeof arg.name || ! arg.name.length)) {
+            } else if ('string' === typeof promise.promiseArgs[0] && promise.promiseArgs[0].length && ('function' !== typeof arg || 'string' !== typeof arg.name || ! arg.name.length)) {
                 // this is case: lib('getSomeSteps')(function() { ... })
+                // or lib('getSomeSteps')([ 'step1', ... ])
                 type = 'step builder';
                 name = promise.promiseArgs[0];
                 evaluateArg = true;
             } else {
                 throw new Error('invalid lib usage, name of function should either be specified as a parameter or named function should be used');
             }
-            workerLibByWorkerPath[path][name] = arg;
-            workerLibByWorkerPath[path][name].cartFillerWorkerLibType = type;
             var args = promise.promiseArgs.slice(1);
-            return evaluateArg ? arg.apply({}, args) : [];
+            if ('function' === typeof arg) {
+                // this is case: lib('getSomeSteps')(function() { ... })
+                workerLibByWorkerPath[path][name] = arg;
+                workerLibByWorkerPath[path][name].cartFillerWorkerLibType = type;
+                return evaluateArg ? arg.apply({}, args) : [];
+            } else {
+                workerLibByWorkerPath[path][name] = function() {
+                    return arg;
+                };
+                workerLibByWorkerPath[path][name].cartFillerWorkerLibType = type;
+                return arg;
+            }
         } else {
             name = promise.promiseArgs[0];
             if ('function' === typeof name) {
