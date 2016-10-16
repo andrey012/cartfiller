@@ -20,8 +20,11 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
         var digestFinishReached = function(){
             angular.element(document.getElementById('finishReached')).scope().$digest();
         };
+        var isTaskAHeading = function(index) {
+            return undefined === $scope.jobDetails[index].task && undefined !== $scope.jobDetails[index].heading;
+        };
         var skipHeadings = function() {
-            while ($scope.jobDetails[$scope.currentTask] && undefined === $scope.jobDetails[$scope.currentTask].task && undefined !== $scope.jobDetails[$scope.currentTask].heading) {
+            while ($scope.jobDetails[$scope.currentTask] && isTaskAHeading($scope.currentTask)) {
                 $scope.jobTaskProgress[$scope.currentTask].complete = true;
                 $scope.currentTask ++;
             }
@@ -317,8 +320,10 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 skipHeadings();
             } else if (nextTaskFlow === 'skipJob') {
                 for (i = $scope.currentTask; i < $scope.jobDetails.length; i ++) {
-                    for (j = i === $scope.currentTask ? $scope.currentStep : 0; j < $scope.jobTaskDescriptions[$scope.jobDetails[i].task].length; j ++) {
-                        setStepStatus(i, j, 'skipped', '');
+                    if (! isTaskAHeading(i)) {
+                        for (j = i === $scope.currentTask ? $scope.currentStep : 0; j < $scope.jobTaskDescriptions[$scope.jobDetails[i].task].length; j ++) {
+                            setStepStatus(i, j, 'skipped', '');
+                        }
                     }
                     $scope.jobTaskProgress[i].complete = true;
                     digestTask(i);
