@@ -46998,7 +46998,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                     $scope.jobTaskDescriptions = details.jobTaskDescriptions;
                     // remove pause points for those worker steps, that do not exist
                     for (var i in $scope.pausePoints) {
-                        if (undefined === $scope.jobDetails[i].task || undefined ===  $scope.jobTaskDescriptions[$scope.jobDetails[i].task]) {
+                        if (undefined === $scope.jobDetails[i] || undefined === $scope.jobDetails[i].task || undefined ===  $scope.jobTaskDescriptions[$scope.jobDetails[i].task]) {
                             delete $scope.pausePoints[i];
                         }
                     }
@@ -47694,7 +47694,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
             reportError('bootstrap message did not come');
         }
     }, 10000);
-    config.gruntBuildTimeStamp='1484585569485';
+    config.gruntBuildTimeStamp='1485016826141';
     window.addEventListener('message', function(event){
         var prefix = 'cartFillerMessage:';
         var isDist = true;
@@ -47768,7 +47768,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 if (message.tests) {
                     var x = new XMLHttpRequest();
                     x.onload = function(){
-                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1484585569485') {
+                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1485016826141') {
                             console.log('new version of CartFiller was deployed, switching to it');
                             var hash = window.location.href.split('#');
                             var pc = hash[0].split('?');
@@ -47836,7 +47836,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
         }
     }, false);
 
-    if (window.parent && window.parent !== window) {
+    if (window.parent && window.parent !== window && ! /\#?\/?launchSlaveInFrame$/.test(window.location.hash)) {
         window.parent.postMessage('cartFillerMessage:{"cmd":"register"}', '*');
     } else {
         setTimeout(function(){

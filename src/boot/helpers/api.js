@@ -1098,6 +1098,33 @@
         },
         suspendRequests: function(cb) {
             me.modules.dispatcher.onMessage_toggleEditorMode({enable: false, cb: cb});
+        },
+        /**
+         * @function CartFiller.Api#setAdditionalWindows
+         * @param {Object[]} descriptors Array of window descriptors, each item is an object
+         * having two keys: 'url' and 'slave', where 'slave' points to cartFiller distribution
+         * that will act as slave. 
+         * This function will call api.result as soon as all windows will be loaded, slaves
+         * initialized, etc
+         * This only works in framed mode
+         * @return {CartFiller.Api} for chaining
+         * @access public
+         */
+        setAdditionalWindows: function(descriptors) {
+            descriptors = descriptors || [];
+            me.modules.dispatcher.setAdditionalWindows(descriptors);
+            return this;
+        },
+        /**
+         * @function CartFiller.Api#switchToWindow
+         * @param {integer} index Window to be set as active (0-based, 0 is default window, 1 is
+         * first additional window)
+         * @return {CartFiller.Api} for chaining
+         * @access public
+         */
+        switchToWindow: function(index) {
+            me.modules.dispatcher.switchToWindow(index);
+            return this;
         }
     });
 }).call(this, document, window);

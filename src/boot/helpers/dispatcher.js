@@ -378,6 +378,9 @@
      */
     var relay = {
         isSlave: false,
+        slaveCounter: 0,
+        parent: false,
+        currentMainFrameWindow: 0,
         nextRelay: false,
         nextRelayRegistered: false,
         nextRelayQueue: [],
@@ -385,7 +388,7 @@
         igniteFromLocal: false,
         bubbleMessage: function(message) {
             if (this.isSlave) {
-                postMessage(window.opener, 'bubbleRelayMessage', message);
+                postMessage(this.parent, 'bubbleRelayMessage', message);
             }
             if (this.nextRelay) {
                 if (this.nextRelayRegistered) {
@@ -875,7 +878,7 @@
                         if (message.cmd === 'workerStepResult') {
                             fillWorkerGlobals(message.globals);
                         }
-                        postMessage(relay.isSlave ? window.opener : me.modules.ui.workerFrameWindow, message.cmd, message);
+                        postMessage(relay.isSlave ? relay.parent : me.modules.ui.workerFrameWindow, message.cmd, message);
                     } else {
                         var fn = 'onMessage_' + message.cmd;
                         if (undefined !== dispatcher[fn] && dispatcher[fn] instanceof Function){
@@ -948,6 +951,9 @@
          * @access public
          */
         onMessage_register: function(message, source){
+            if (message.registerFromSlave) {
+                relay.nextRelay = source;
+            }
             if (source === me.modules.ui.workerFrameWindow) {
                 // skip other requests
                 workerFrameLoaded = true;
@@ -1019,12 +1025,17 @@
          * @access public
          */
         onMessage_chooseJob: function(details){
-            me.modules.ui.showHideChooseJobFrame(true);
-            this.postMessageToWorker('chooseJobShown');
-            if (details.hideHashDetails) {
-                hideHashParam = {job: 1, task: 1, step: 1};
+            if (! relay.isSlave) {
+                me.modules.ui.showHideChooseJobFrame(true);
+                this.postMessageToWorker('chooseJobShown');
+                if (details.hideHashDetails) {
+                    hideHashParam = {job: 1, task: 1, step: 1};
+                }
+                this.onMessage_updateHashUrl({params: {}});
+            } else {
+                details.notToChildren = true;
+                this.onMessage_bubbleRelayMessage(details);
             }
-            this.onMessage_updateHashUrl({params: {}});
         },
         /**
          * Hides Choose Job frame
@@ -1032,10 +1043,15 @@
          * @access public
          */
         onMessage_chooseJobCancel: function(){
-            me.modules.ui.showHideChooseJobFrame(false);
-            this.postMessageToWorker('chooseJobHidden');
-            hideHashParam = {};
-            this.onMessage_updateHashUrl({params: {}});
+            if (! relay.isSlave) {
+                me.modules.ui.showHideChooseJobFrame(false);
+                this.postMessageToWorker('chooseJobHidden');
+                hideHashParam = {};
+                this.onMessage_updateHashUrl({params: {}});
+            } else {
+                details.notToChildren = true;
+                this.onMessage_bubbleRelayMessage(details);
+            }
         },
         /**
          * Passes job details from Choose Job frame to worker (job progress)
@@ -1146,6 +1162,12 @@
                 workerSourceCodes[message.src] = message.code;
                 if (message.isFinal) {
                     evaluateWorkers();
+                    if (relay.isSlave) {
+                        this.onMessage_bubbleRelayMessage({
+                            message: 'slaveReady',
+                            notToChildren: true
+                        });
+                    }
                 }
                 if (relay.nextRelay) {
                     message.jobDetailsCache = jobDetailsCache;
@@ -1181,6 +1203,9 @@
          * @access public
          */
         onMessage_invokeWorker: function(message){
+            if (! relay.isSlave) {
+                message.currentMainFrameWindow = me.modules.ui.currentMainFrameWindow;
+            }
             var err;
             currentInvokeWorkerMessage = message;
             if (message.globals) {
@@ -1401,8 +1426,8 @@
          */
         onMessage_bubbleRelayMessage: function(details, source) {
             details.cmd = 'bubbleRelayMessage';
-            if (relay.isSlave && source !== window.opener && ! details.notToParents) {
-                postMessage(window.opener, details.cmd, details);
+            if (relay.isSlave && source !== relay.parent && ! details.notToParents) {
+                postMessage(relay.parent, details.cmd, details);
             }
             if (relay.nextRelay && source !== relay.nextRelay && ! details.notToChildren) {
                 if (relay.nextRelayRegistered) {
@@ -1434,12 +1459,27 @@
             } else if (details.message === 'tellWhatYouHaveToDraw') {
                 me.modules.ui.tellWhatYouHaveToDraw();
             } else if (details.message === 'sendStatus' && source && (! relay.isSlave)) {
-                //////
                 me.modules.dispatcher.onMessage_sendStatus(details);
             } else if (details.message === 'clearCurrentUrl' && source) {
                 me.modules.dispatcher.onMessage_clearCurrentUrl();
             } else if (details.message === 'prepareToClearOverlays') {
                 me.modules.ui.prepareToClearOverlays();
+            } else if (details.message === 'setAdditionalWindows' && ! relay.isSlave) {
+                me.modules.dispatcher.setAdditionalWindows(details.descriptors, details);
+            } else if (details.message === 'switchToWindow' && ! relay.isSlave) {
+                me.modules.dispatcher.switchToWindow(details.index);
+            } else if (details.message === 'slaveReady' && ! relay.isSlave) {
+                relay.slaveCounter ++;
+                me.modules.dispatcher.onMessage_bubbleRelayMessage({
+                    message: 'updateSlaveCounter',
+                    slaveCounter: relay.slaveCounter
+                });
+            } else if (details.message === 'chooseJob' && ! relay.isSlave) {
+                me.modules.dispatcher.onMessage_chooseJob(details);
+            } else if (details.message === 'chooseJobCancel' && ! relay.isSlave) {
+                me.modules.dispatcher.onMessage_chooseJobCancel(details);
+            } else if (details.message === 'updateSlaveCounter') {
+                relay.slaveCounter = details.slaveCounter;
             }
         },
         /**
@@ -1914,7 +1954,7 @@
          * @access public
          */
         reflectMessage: function(message, framesPath) {
-            if (this.haveAccess(framesPath)) {
+            if (this.haveAccess(framesPath) && (relay.currentMainFrameWindow === message.currentMainFrameWindow)) {
                 return false;
             }
             if (message.cmd === 'invokeWorker') {
@@ -1935,6 +1975,7 @@
                 body.removeChild(body.children[0]);
             }
             var link = document.createElement('a');
+            var i, frame;
             try {
                 link.textContent = 'This tab is used by cartFiller as slave, DO NOT CLOSE IT!, click this message to locate original tab.';
                 link.style.color = 'red';
@@ -1942,7 +1983,7 @@
                 link.style.padding = '20px';
                 link.setAttribute('href', '#');
                 link.onclick = function() {
-                    window.opener.postMessage('cartFillerMessage:{"cmd":"locate"}', '*');
+                    relay.parent.postMessage('cartFillerMessage:{"cmd":"locate"}', '*');
                 };
             } catch (e) {}
             body.appendChild(link);
@@ -1951,17 +1992,38 @@
             } catch (e) {}
             // initialize
             worker = {};
-            me.modules.dispatcher.init(true);
-            window.opener.postMessage('cartFillerMessage:{"cmd":"register"}', '*');
-            me.modules.ui.chooseJobFrameWindow = me.modules.ui.workerFrameWindow = window.opener;
-            try { // this can fail when Cartfiller tab is opened from local/index.html
-                for (var opener = window.opener; opener && opener !== opener.opener; opener = opener.opener) {
-                    try {
-                        if (opener.frames.cartFillerMainFrame) {
-                            me.modules.ui.mainFrameWindow = opener.frames.cartFillerMainFrame;
+            if (window.opener) {
+                relay.parent = window.opener;
+            } else if (window.parent) {
+                // we are opened as frame, we are going to find last slave and 
+                // make it our parent
+                relay.parent = window.parent;
+                try {
+                    for (i = 1; frame = window.parent.frames['cartFillerMainFrame-s' + i]; i++) {
+                        if (frame === window) {
+                            relay.currentMainFrameWindow = i;
+                            me.modules.ui.mainFrameWindow = window.parent.frames['cartFillerMainFrame-' + i];
+                            if (i > 1) {
+                                relay.parent = window.parent.frames['cartFillerMainFrame-s' + (i - 1)];
+                            } 
                             break;
                         }
-                    } catch (e) {}
+                    }
+                } catch (e) {}
+            }
+            me.modules.dispatcher.init(true);
+            relay.parent.postMessage('cartFillerMessage:{"cmd":"register","registerFromSlave":1}', '*');
+            me.modules.ui.chooseJobFrameWindow = me.modules.ui.workerFrameWindow = relay.parent;
+            try { // this can fail when Cartfiller tab is opened from local/index.html
+                if (relay.parent === window.opener) {
+                    for (var opener = window.opener; opener && opener !== opener.opener; opener = opener.opener) {
+                        try {
+                            if (opener.frames['cartFillerMainFrame-0']) {
+                                me.modules.ui.mainFrameWindow = opener.frames['cartFillerMainFrame-0'];
+                                break;
+                            }
+                        } catch (e) {}
+                    }
                 }
             } catch (e) {
                 return; 
@@ -2104,6 +2166,47 @@
         },
         isSlave: function() {
             return relay.isSlave;
+        },
+        resetRelays: function() {
+            relay.nextRelay = relay.nextRelayRegistered = false;
+            relay.nextRelayQueue = [];
+            relay.knownUrls = {};
+            relay.slaveCounter = 0;
+        },
+        getSlaveCounter: function() { return relay.slaveCounter; },
+        setAdditionalWindows: function(descriptors, details) {
+            if (relay.isSlave) {
+                this.onMessage_bubbleRelayMessage({
+                    message: 'setAdditionalWindows',
+                    descriptors: descriptors,
+                    notToChildren: true, 
+                    workerCurrentStepIndex: workerCurrentStepIndex,
+                    workerCurrentTaskIndex: workerCurrentTaskIndex,
+                    nextTaskFlow: nextTaskFlow,
+                    sleepAfterThisStep: sleepAfterThisStep,
+                    workerGlobals: workerGlobals
+                });
+            } else {
+                me.modules.ui.setAdditionalWindows(descriptors);
+                if (details) {
+                    workerCurrentTaskIndex = details.workerCurrentTaskIndex;
+                    workerCurrentStepIndex = details.workerCurrentStepIndex;
+                    nextTaskFlow = details.nextTaskFlow;
+                    sleepAfterThisStep = details.sleepAfterThisStep;
+                    workerGlobals = details.workerGlobals;
+                }
+            }
+        },
+        switchToWindow: function(index) {
+            if (relay.isSlave) {
+                this.onMessage_bubbleRelayMessage({
+                    message: 'switchToWindow',
+                    index: index,
+                    notToChildren: true
+                });
+            } else {
+                me.modules.ui.switchToWindow(index);
+            }
         }
     });
 }).call(this, document, window);

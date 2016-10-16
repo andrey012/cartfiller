@@ -114,7 +114,7 @@
         if (document.getElementsByTagName('body')[0].getAttribute('data-old-cartfiller-version-detected')) {
             return; // no launch
         }
-        if ((! ignoreOpener) && window.opener && window.opener !== window) {
+        if (((! ignoreOpener) && window.opener && window.opener !== window) || (window.parent && /\#?\/?launchSlaveInFrame$/.test(window.location.hash))) {
             this.modules.dispatcher.startSlaveMode();
         } else {
             if (! config.uiLaunched) {
@@ -184,7 +184,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1484585569485';
+    config.gruntBuildTimeStamp='1485016826141';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -1328,6 +1328,33 @@
         },
         suspendRequests: function(cb) {
             me.modules.dispatcher.onMessage_toggleEditorMode({enable: false, cb: cb});
+        },
+        /**
+         * @function CartFiller.Api#setAdditionalWindows
+         * @param {Object[]} descriptors Array of window descriptors, each item is an object
+         * having two keys: 'url' and 'slave', where 'slave' points to cartFiller distribution
+         * that will act as slave. 
+         * This function will call api.result as soon as all windows will be loaded, slaves
+         * initialized, etc
+         * This only works in framed mode
+         * @return {CartFiller.Api} for chaining
+         * @access public
+         */
+        setAdditionalWindows: function(descriptors) {
+            descriptors = descriptors || [];
+            me.modules.dispatcher.setAdditionalWindows(descriptors);
+            return this;
+        },
+        /**
+         * @function CartFiller.Api#switchToWindow
+         * @param {integer} index Window to be set as active (0-based, 0 is default window, 1 is
+         * first additional window)
+         * @return {CartFiller.Api} for chaining
+         * @access public
+         */
+        switchToWindow: function(index) {
+            me.modules.dispatcher.switchToWindow(index);
+            return this;
         }
     });
 }).call(this, document, window);
@@ -1712,6 +1739,9 @@
      */
     var relay = {
         isSlave: false,
+        slaveCounter: 0,
+        parent: false,
+        currentMainFrameWindow: 0,
         nextRelay: false,
         nextRelayRegistered: false,
         nextRelayQueue: [],
@@ -1719,7 +1749,7 @@
         igniteFromLocal: false,
         bubbleMessage: function(message) {
             if (this.isSlave) {
-                postMessage(window.opener, 'bubbleRelayMessage', message);
+                postMessage(this.parent, 'bubbleRelayMessage', message);
             }
             if (this.nextRelay) {
                 if (this.nextRelayRegistered) {
@@ -2209,7 +2239,7 @@
                         if (message.cmd === 'workerStepResult') {
                             fillWorkerGlobals(message.globals);
                         }
-                        postMessage(relay.isSlave ? window.opener : me.modules.ui.workerFrameWindow, message.cmd, message);
+                        postMessage(relay.isSlave ? relay.parent : me.modules.ui.workerFrameWindow, message.cmd, message);
                     } else {
                         var fn = 'onMessage_' + message.cmd;
                         if (undefined !== dispatcher[fn] && dispatcher[fn] instanceof Function){
@@ -2282,6 +2312,9 @@
          * @access public
          */
         onMessage_register: function(message, source){
+            if (message.registerFromSlave) {
+                relay.nextRelay = source;
+            }
             if (source === me.modules.ui.workerFrameWindow) {
                 // skip other requests
                 workerFrameLoaded = true;
@@ -2353,12 +2386,17 @@
          * @access public
          */
         onMessage_chooseJob: function(details){
-            me.modules.ui.showHideChooseJobFrame(true);
-            this.postMessageToWorker('chooseJobShown');
-            if (details.hideHashDetails) {
-                hideHashParam = {job: 1, task: 1, step: 1};
+            if (! relay.isSlave) {
+                me.modules.ui.showHideChooseJobFrame(true);
+                this.postMessageToWorker('chooseJobShown');
+                if (details.hideHashDetails) {
+                    hideHashParam = {job: 1, task: 1, step: 1};
+                }
+                this.onMessage_updateHashUrl({params: {}});
+            } else {
+                details.notToChildren = true;
+                this.onMessage_bubbleRelayMessage(details);
             }
-            this.onMessage_updateHashUrl({params: {}});
         },
         /**
          * Hides Choose Job frame
@@ -2366,10 +2404,15 @@
          * @access public
          */
         onMessage_chooseJobCancel: function(){
-            me.modules.ui.showHideChooseJobFrame(false);
-            this.postMessageToWorker('chooseJobHidden');
-            hideHashParam = {};
-            this.onMessage_updateHashUrl({params: {}});
+            if (! relay.isSlave) {
+                me.modules.ui.showHideChooseJobFrame(false);
+                this.postMessageToWorker('chooseJobHidden');
+                hideHashParam = {};
+                this.onMessage_updateHashUrl({params: {}});
+            } else {
+                details.notToChildren = true;
+                this.onMessage_bubbleRelayMessage(details);
+            }
         },
         /**
          * Passes job details from Choose Job frame to worker (job progress)
@@ -2480,6 +2523,12 @@
                 workerSourceCodes[message.src] = message.code;
                 if (message.isFinal) {
                     evaluateWorkers();
+                    if (relay.isSlave) {
+                        this.onMessage_bubbleRelayMessage({
+                            message: 'slaveReady',
+                            notToChildren: true
+                        });
+                    }
                 }
                 if (relay.nextRelay) {
                     message.jobDetailsCache = jobDetailsCache;
@@ -2515,6 +2564,9 @@
          * @access public
          */
         onMessage_invokeWorker: function(message){
+            if (! relay.isSlave) {
+                message.currentMainFrameWindow = me.modules.ui.currentMainFrameWindow;
+            }
             var err;
             currentInvokeWorkerMessage = message;
             if (message.globals) {
@@ -2735,8 +2787,8 @@
          */
         onMessage_bubbleRelayMessage: function(details, source) {
             details.cmd = 'bubbleRelayMessage';
-            if (relay.isSlave && source !== window.opener && ! details.notToParents) {
-                postMessage(window.opener, details.cmd, details);
+            if (relay.isSlave && source !== relay.parent && ! details.notToParents) {
+                postMessage(relay.parent, details.cmd, details);
             }
             if (relay.nextRelay && source !== relay.nextRelay && ! details.notToChildren) {
                 if (relay.nextRelayRegistered) {
@@ -2768,12 +2820,27 @@
             } else if (details.message === 'tellWhatYouHaveToDraw') {
                 me.modules.ui.tellWhatYouHaveToDraw();
             } else if (details.message === 'sendStatus' && source && (! relay.isSlave)) {
-                //////
                 me.modules.dispatcher.onMessage_sendStatus(details);
             } else if (details.message === 'clearCurrentUrl' && source) {
                 me.modules.dispatcher.onMessage_clearCurrentUrl();
             } else if (details.message === 'prepareToClearOverlays') {
                 me.modules.ui.prepareToClearOverlays();
+            } else if (details.message === 'setAdditionalWindows' && ! relay.isSlave) {
+                me.modules.dispatcher.setAdditionalWindows(details.descriptors, details);
+            } else if (details.message === 'switchToWindow' && ! relay.isSlave) {
+                me.modules.dispatcher.switchToWindow(details.index);
+            } else if (details.message === 'slaveReady' && ! relay.isSlave) {
+                relay.slaveCounter ++;
+                me.modules.dispatcher.onMessage_bubbleRelayMessage({
+                    message: 'updateSlaveCounter',
+                    slaveCounter: relay.slaveCounter
+                });
+            } else if (details.message === 'chooseJob' && ! relay.isSlave) {
+                me.modules.dispatcher.onMessage_chooseJob(details);
+            } else if (details.message === 'chooseJobCancel' && ! relay.isSlave) {
+                me.modules.dispatcher.onMessage_chooseJobCancel(details);
+            } else if (details.message === 'updateSlaveCounter') {
+                relay.slaveCounter = details.slaveCounter;
             }
         },
         /**
@@ -3248,7 +3315,7 @@
          * @access public
          */
         reflectMessage: function(message, framesPath) {
-            if (this.haveAccess(framesPath)) {
+            if (this.haveAccess(framesPath) && (relay.currentMainFrameWindow === message.currentMainFrameWindow)) {
                 return false;
             }
             if (message.cmd === 'invokeWorker') {
@@ -3269,6 +3336,7 @@
                 body.removeChild(body.children[0]);
             }
             var link = document.createElement('a');
+            var i, frame;
             try {
                 link.textContent = 'This tab is used by cartFiller as slave, DO NOT CLOSE IT!, click this message to locate original tab.';
                 link.style.color = 'red';
@@ -3276,7 +3344,7 @@
                 link.style.padding = '20px';
                 link.setAttribute('href', '#');
                 link.onclick = function() {
-                    window.opener.postMessage('cartFillerMessage:{"cmd":"locate"}', '*');
+                    relay.parent.postMessage('cartFillerMessage:{"cmd":"locate"}', '*');
                 };
             } catch (e) {}
             body.appendChild(link);
@@ -3285,17 +3353,38 @@
             } catch (e) {}
             // initialize
             worker = {};
-            me.modules.dispatcher.init(true);
-            window.opener.postMessage('cartFillerMessage:{"cmd":"register"}', '*');
-            me.modules.ui.chooseJobFrameWindow = me.modules.ui.workerFrameWindow = window.opener;
-            try { // this can fail when Cartfiller tab is opened from local/index.html
-                for (var opener = window.opener; opener && opener !== opener.opener; opener = opener.opener) {
-                    try {
-                        if (opener.frames.cartFillerMainFrame) {
-                            me.modules.ui.mainFrameWindow = opener.frames.cartFillerMainFrame;
+            if (window.opener) {
+                relay.parent = window.opener;
+            } else if (window.parent) {
+                // we are opened as frame, we are going to find last slave and 
+                // make it our parent
+                relay.parent = window.parent;
+                try {
+                    for (i = 1; frame = window.parent.frames['cartFillerMainFrame-s' + i]; i++) {
+                        if (frame === window) {
+                            relay.currentMainFrameWindow = i;
+                            me.modules.ui.mainFrameWindow = window.parent.frames['cartFillerMainFrame-' + i];
+                            if (i > 1) {
+                                relay.parent = window.parent.frames['cartFillerMainFrame-s' + (i - 1)];
+                            } 
                             break;
                         }
-                    } catch (e) {}
+                    }
+                } catch (e) {}
+            }
+            me.modules.dispatcher.init(true);
+            relay.parent.postMessage('cartFillerMessage:{"cmd":"register","registerFromSlave":1}', '*');
+            me.modules.ui.chooseJobFrameWindow = me.modules.ui.workerFrameWindow = relay.parent;
+            try { // this can fail when Cartfiller tab is opened from local/index.html
+                if (relay.parent === window.opener) {
+                    for (var opener = window.opener; opener && opener !== opener.opener; opener = opener.opener) {
+                        try {
+                            if (opener.frames['cartFillerMainFrame-0']) {
+                                me.modules.ui.mainFrameWindow = opener.frames['cartFillerMainFrame-0'];
+                                break;
+                            }
+                        } catch (e) {}
+                    }
                 }
             } catch (e) {
                 return; 
@@ -3438,6 +3527,47 @@
         },
         isSlave: function() {
             return relay.isSlave;
+        },
+        resetRelays: function() {
+            relay.nextRelay = relay.nextRelayRegistered = false;
+            relay.nextRelayQueue = [];
+            relay.knownUrls = {};
+            relay.slaveCounter = 0;
+        },
+        getSlaveCounter: function() { return relay.slaveCounter; },
+        setAdditionalWindows: function(descriptors, details) {
+            if (relay.isSlave) {
+                this.onMessage_bubbleRelayMessage({
+                    message: 'setAdditionalWindows',
+                    descriptors: descriptors,
+                    notToChildren: true, 
+                    workerCurrentStepIndex: workerCurrentStepIndex,
+                    workerCurrentTaskIndex: workerCurrentTaskIndex,
+                    nextTaskFlow: nextTaskFlow,
+                    sleepAfterThisStep: sleepAfterThisStep,
+                    workerGlobals: workerGlobals
+                });
+            } else {
+                me.modules.ui.setAdditionalWindows(descriptors);
+                if (details) {
+                    workerCurrentTaskIndex = details.workerCurrentTaskIndex;
+                    workerCurrentStepIndex = details.workerCurrentStepIndex;
+                    nextTaskFlow = details.nextTaskFlow;
+                    sleepAfterThisStep = details.sleepAfterThisStep;
+                    workerGlobals = details.workerGlobals;
+                }
+            }
+        },
+        switchToWindow: function(index) {
+            if (relay.isSlave) {
+                this.onMessage_bubbleRelayMessage({
+                    message: 'switchToWindow',
+                    index: index,
+                    notToChildren: true
+                });
+            } else {
+                me.modules.ui.switchToWindow(index);
+            }
         }
     });
 }).call(this, document, window);
@@ -4144,7 +4274,7 @@
      * @function CartFiller.UI~adjustFrameCoordinates
      * @access private
      */
-    var adjustFrameCoordinates = function(){
+    var adjustFrameCoordinates = function(forceRedraw){
         var windowWidth = window.innerWidth,
             windowHeight = window.innerHeight,
             outerWidth = isFramed ? false : window.outerWidth,
@@ -4164,23 +4294,32 @@
             currentWindowDimensions.height !== windowHeight ||
             currentWindowDimensions.outerWidth !== outerWidth ||
             currentWindowDimensions.outerHeight !== outerHeight ||
-            currentWindowDimensions.workerFrameSize !== currentWorkerFrameSize) {
+            currentWindowDimensions.workerFrameSize !== currentWorkerFrameSize ||
+            forceRedraw) {
             (function() {
                 var mainFrameWidthBig = windowWidth * 0.8 - 1,
                     mainFrameWidthSmall = windowWidth * 0.2 - 1,
                     workerFrameWidthBig = windowWidth * 0.8 - 1,
                     workerFrameWidthSmall = windowWidth * 0.2 - 1,
-                    framesHeight = windowHeight - 15,
+                    slaveFramesHeight = 40,
+                    mainFramesHeight = Math.floor((windowHeight - 15 - (isFramed ? 1 : (me.modules.ui.mainFrames.length - 1)) * slaveFramesHeight) / (isFramed ? me.modules.ui.mainFrames.length : 1)),
+                    mainFramesStep = mainFramesHeight + slaveFramesHeight,
+                    workerFrameHeight = windowHeight - 15,
                     chooseJobFrameLeft = 0.02 * windowWidth + (isFramed ? 0 : 200),
                     chooseJobFrameWidth = 0.76 * windowWidth - (isFramed ? 0 : 200),
                     chooseJobFrameTop = 0.02 * windowHeight,
                     chooseJobFrameHeight = 0.96 * windowHeight;
 
                     if (isFramed) {
-                        me.modules.ui.mainFrame.style.height = framesHeight + 'px';
+                        me.modules.ui.mainFrames.filter(function(mainFrame, index) {
+                            mainFrame.style.height = mainFramesHeight + 'px';
+                            if (index > 0) {
+                                me.modules.ui.slaveFrames[index].style.height = slaveFramesHeight + 'px';
+                            }
+                        });
                     }
                     try {
-                        me.modules.ui.workerFrame.style.height = framesHeight + 'px';
+                        me.modules.ui.workerFrame.style.height = workerFrameHeight + 'px';
                     } catch (e) {}
                     try {
                         me.modules.ui.chooseJobFrame.style.height = chooseJobFrameHeight + 'px';
@@ -4188,15 +4327,32 @@
                         me.modules.ui.chooseJobFrame.style.left = chooseJobFrameLeft + 'px';
                         me.modules.ui.chooseJobFrame.style.width = chooseJobFrameWidth + 'px';
                     } catch (e) {}
+                    if (isFramed) {
+                        me.modules.ui.mainFrames.filter(function(mainFrame, index) {
+                            try {
+                                mainFrame.style.top = (mainFramesStep * index) + 'px';
+                                if (index > 0) {
+                                    me.modules.ui.slaveFrames[index].style.top = (mainFramesStep * index - slaveFramesHeight) + 'px';
+                                }
+                            } catch (e) {}
+                        });
+                    }
+
                     if (currentWorkerFrameSize === 'big') {
                         if (isFramed) {
                             try {
                                 me.modules.ui.workerFrame.style.width = workerFrameWidthBig + 'px';
                                 me.modules.ui.workerFrame.style.left = mainFrameWidthSmall + 'px';
                             } catch (e) {}
-                            try {
-                                me.modules.ui.mainFrame.style.width = mainFrameWidthSmall + 'px';
-                            } catch (e) {}
+                            me.modules.ui.mainFrames.filter(function(mainFrame, index) {
+                                try {
+                                    mainFrame.style.width = mainFrameWidthSmall + 'px';
+
+                                    if (index > 0) {
+                                        me.modules.ui.slaveFrames[index].style.width = mainFrameWidthSmall + 'px';
+                                    }
+                                } catch (e) {}
+                            });
                         } else {
                             try {
                                 me.modules.ui.mainFrameWindow.resizeTo(1,1);
@@ -4212,9 +4368,14 @@
                                 me.modules.ui.workerFrame.style.width = workerFrameWidthSmall + 'px';
                                 me.modules.ui.workerFrame.style.left = mainFrameWidthBig + 'px';
                             } catch (e) {}
-                            try {
-                                me.modules.ui.mainFrame.style.width = mainFrameWidthBig + 'px';
-                            } catch (e) {}
+                            me.modules.ui.mainFrames.filter(function(mainFrame, index) {
+                                try {
+                                    mainFrame.style.width = mainFrameWidthBig + 'px';
+                                    if (index > 0) {
+                                        me.modules.ui.slaveFrames[index].style.width = mainFrameWidthBig + 'px';
+                                    }
+                                } catch (e) {}
+                            });
                         } else {
                             try {
                                 me.modules.ui.mainFrameWindow.resizeTo(Math.round(outerWidth*0.8 - 10), Math.round(outerHeight));
@@ -4310,6 +4471,28 @@
             }
         } catch(e) {}
         return soFar;
+    };
+    
+    var setMainFrameWindow = function(index) {
+        index = index || 0;
+        me.modules.ui.currentMainFrameWindow = index;
+        me.modules.ui.mainFrameWindow = me.modules.ui.mainFrameWindows[0]; // always set to first
+        if (isFramed) {
+            // adjust borders
+            if (me.modules.ui.mainFrames && me.modules.ui.mainFrames.length > 1) {
+                for (var i = me.modules.ui.mainFrames.length - 1 ; i >= 0; i --) {
+                    var frame = me.modules.ui.mainFrames[i];
+                    frame.style.borderWidth = '5px';
+                    if (i === index) {
+                        frame.style.borderColor = 'red';
+                    } else {
+                        frame.style.borderColor = 'transparent';
+                    }
+                }
+            } else {
+                me.modules.ui.mainFrames[0].style.borderWidth = '0px';
+            }
+        }
     };
 
     me.scripts.push({
@@ -4499,7 +4682,11 @@
          */
         popup: function(document, window){
             me.modules.dispatcher.init();
-            this.mainFrameWindow = window.open(window.location.href, '_blank', 'resizable=1, height=1, width=1, scrollbars=1');
+            this.mainFrameWindows = [
+                window.open(window.location.href, '_blank', 'resizable=1, height=1, width=1, scrollbars=1')
+            ];
+            setMainFrameWindow();
+            this.mainFrameWindow = this.mainFrameWindows[0];
             this.closePopup = function(){
                 this.mainFrameWindow.close();
             };
@@ -4568,13 +4755,14 @@
             while (body.children.length) {
                 body.removeChild(body.children[0]);
             }
-            this.mainFrame = document.createElement('iframe');
-            this.mainFrame.setAttribute('name', mainFrameName);
-            this.mainFrame.style.height = '0px';
-            this.mainFrame.style.position = 'fixed';
-            this.mainFrame.style.left = '0px';
-            this.mainFrame.style.top = '0px';
-            this.mainFrame.style.borderWidth = '0px';
+            this.mainFrames = [document.createElement('iframe')];
+            this.mainFrames[0].setAttribute('name', mainFrameName + '-0');
+            this.mainFrames[0].style.height = '0px';
+            this.mainFrames[0].style.position = 'fixed';
+            this.mainFrames[0].style.left = '0px';
+            this.mainFrames[0].style.top = '0px';
+            this.mainFrames[0].style.borderWidth = '0px';
+            this.slaveFrames = [undefined];
 
             this.workerFrame = document.createElement('iframe');
             this.workerFrame.setAttribute('name', workerFrameName);
@@ -4592,8 +4780,9 @@
             this.chooseJobFrame.style.position = 'fixed';
             this.chooseJobFrame.style.background = 'white';
             this.chooseJobFrame.style.zIndex = '10000002';
-            body.appendChild(this.mainFrame);
-            this.mainFrameWindow = window.frames[mainFrameName];
+            body.appendChild(this.mainFrames[0]);
+            this.mainFrameWindows = [window.frames[mainFrameName + '-0']];
+            setMainFrameWindow();
 
             me.modules.dispatcher.registerLoadWatcher();
             this.mainFrameWindow.location.href=mainFrameSrc;
@@ -4826,6 +5015,70 @@
             var mainFrameWindowDocument;
             try { mainFrameWindowDocument = me.modules.ui.mainFrameWindow.document; } catch (e) {}
             return mainFrameWindowDocument;
+        },
+        setAdditionalWindows: function(descriptors) {
+            if (! isFramed) {
+                throw new Error('this function is only availabled in framed mode');
+            }
+            for (var i = this.mainFrames.length - 1; i >= 1; i --) {
+                this.mainFrames[i].parentNode.removeChild(this.mainFrames[i]);
+                this.slaveFrames[i].parentNode.removeChild(this.slaveFrames[i]);
+            }
+            this.mainFrames.splice(1);
+            this.slaveFrames.splice(1);
+            this.mainFrameWindows.splice(1);
+            me.modules.dispatcher.resetRelays();
+            var body = document.getElementsByTagName('body')[0];
+            var currentSlavesLoaded = -1;
+            var waitForNextSlaveToLoad = function() {
+                return me.modules.dispatcher.getSlaveCounter() === currentSlavesLoaded + 1;
+            };
+            var actWhenWaitForFinished = function(result) {
+                if (! result) {
+                    me.modules.api.result('Unable to load slave');
+                } else {
+                    currentSlavesLoaded ++;
+                    if (currentSlavesLoaded === descriptors.length) {
+                        me.modules.api.result();
+                    } else {
+                        window.frames[mainFrameName + '-s' + (currentSlavesLoaded + 1)].location.href = descriptors[currentSlavesLoaded].slave + '#launchSlaveInFrame';
+                        me.modules.api.waitFor(waitForNextSlaveToLoad, actWhenWaitForFinished);
+                    }
+                }
+            };
+            // now let's create additional windows
+            for (i = 1; i <= descriptors.length; i ++){
+                var mainFrame = document.createElement('iframe');
+                mainFrame.setAttribute('name', mainFrameName + '-' + i);
+                mainFrame.style.height = '0px';
+                mainFrame.style.position = 'fixed';
+                mainFrame.style.left = '0px';
+                mainFrame.style.top = '0px';
+                mainFrame.style.borderWidth = '0px';
+                this.mainFrames[i] = mainFrame;
+
+                body.appendChild(mainFrame);
+                this.mainFrameWindows[i] = window.frames[mainFrameName + '-' + i];
+                this.mainFrameWindows[i].location.href = descriptors[i-1].url;
+
+                var slaveFrame = document.createElement('iframe');
+                slaveFrame.setAttribute('name', mainFrameName + '-s' + i);
+                slaveFrame.style.height = '0px';
+                slaveFrame.style.position = 'fixed';
+                slaveFrame.style.left = '0px';
+                slaveFrame.style.top = '0px';
+                slaveFrame.style.borderWidth = '1px';
+                slaveFrame.style.borderColor = '#ccc';
+                this.slaveFrames[i] = slaveFrame;
+
+                body.appendChild(slaveFrame);
+            }
+            setMainFrameWindow();
+            adjustFrameCoordinates(true);
+            actWhenWaitForFinished(true);
+        },
+        switchToWindow: function(index) {
+            setMainFrameWindow(index);
         }
     });
 }).call(this, document, window);

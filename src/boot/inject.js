@@ -101,7 +101,7 @@
         if (document.getElementsByTagName('body')[0].getAttribute('data-old-cartfiller-version-detected')) {
             return; // no launch
         }
-        if ((! ignoreOpener) && window.opener && window.opener !== window) {
+        if (((! ignoreOpener) && window.opener && window.opener !== window) || (window.parent && /\#?\/?launchSlaveInFrame$/.test(window.location.hash))) {
             this.modules.dispatcher.startSlaveMode();
         } else {
             if (! config.uiLaunched) {

@@ -1,0 +1,38 @@
+{
+    "globals": {
+        "thisHost": "127.0.0.1",
+        "otherHost": "127.0.0.2",
+        "thirdHost": "127.0.0.3"
+    },
+    "details": [
+        {"open home": {}},
+
+        "# 2 Windows",
+        {"start 2-window mode": {}},
+        {"switch to window": {"window": 1}},
+        {"make sure, that Hello World is there": {"host": ["otherHost"]}},
+        {"switch to window": {"window": 0}},
+        {"make sure, that Hello World is there": {"host": ["thisHost"]}},
+        {"switch to window": {"window": 1}},
+        {"make sure, that Hello World is there": {"host": ["otherHost"]}},
+        {"switch to window": {"window": 0}},
+        {"make sure, that Hello World is there": {"host": ["thisHost"]}},
+
+        "# 3 Windows",
+        {"start 3-window mode": {}},
+        {"switch to window": {"window": 2}},
+        {"make sure, that Hello World is there": {"host": ["thirdHost"]}},
+        {"switch to window": {"window": 1}},
+        {"make sure, that Hello World is there": {"host": ["otherHost"]}},
+        {"switch to window": {"window": 0}},
+        {"make sure, that Hello World is there": {"host": ["thisHost"]}},
+        {"switch to window": {"window": 2}},
+        {"make sure, that Hello World is there": {"host": ["thirdHost"]}},
+        {"switch to window": {"window": 1}},
+        {"make sure, that Hello World is there": {"host": ["otherHost"]}},
+        {"switch to window": {"window": 0}},
+        {"make sure, that Hello World is there": {"host": ["thisHost"]}},
+
+
+    ]
+}

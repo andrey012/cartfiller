@@ -1,0 +1,6 @@
+cartfiller={
+    "worker": "worker.js",
+    "tests": {
+        "multiwindow": true,
+    },
+}

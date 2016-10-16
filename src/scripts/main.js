@@ -155,7 +155,7 @@
         }
     }, false);
 
-    if (window.parent && window.parent !== window) {
+    if (window.parent && window.parent !== window && ! /\#?\/?launchSlaveInFrame$/.test(window.location.hash)) {
         window.parent.postMessage('cartFillerMessage:{"cmd":"register"}', '*');
     } else {
         setTimeout(function(){

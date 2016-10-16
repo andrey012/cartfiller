@@ -187,7 +187,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                     $scope.jobTaskDescriptions = details.jobTaskDescriptions;
                     // remove pause points for those worker steps, that do not exist
                     for (var i in $scope.pausePoints) {
-                        if (undefined === $scope.jobDetails[i].task || undefined ===  $scope.jobTaskDescriptions[$scope.jobDetails[i].task]) {
+                        if (undefined === $scope.jobDetails[i] || undefined === $scope.jobDetails[i].task || undefined ===  $scope.jobTaskDescriptions[$scope.jobDetails[i].task]) {
                             delete $scope.pausePoints[i];
                         }
                     }
