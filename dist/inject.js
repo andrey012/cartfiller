@@ -184,7 +184,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1481918475877';
+    config.gruntBuildTimeStamp='1482306365443';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -606,11 +606,15 @@
          * you still have to call api.result, and it is important to call
          * api.repeatStep first and api.result then
          * @function CartFiller.Api#repeatStep
+         * @param {integer} n default = 1 means repeat current step
          * @return {CartFiller.Api} for chaining
          * @access public
          */
-        repeatStep: function() {
-            me.modules.dispatcher.manageTaskFlow('repeatStep');
+        repeatStep: function(n) {
+            if (undefined === n) {
+                n = 1;
+            }
+            me.modules.dispatcher.manageTaskFlow('repeatStep,' + String(n));
             return this;
         },
         /**

@@ -304,7 +304,10 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                         pause = true;
                     }
                 }
-            } else if (nextTaskFlow !== 'repeatStep') {
+            } else if (0 === nextTaskFlow.indexOf('repeatStep')) {
+                var n = parseInt(nextTaskFlow.split(',')[1]);
+                $scope.currentStep = $scope.currentStep + 1 - n;
+            } else {
                 $scope.currentStep ++;
             }
             var oldCurrentTask = $scope.currentTask;

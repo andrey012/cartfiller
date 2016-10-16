@@ -376,11 +376,15 @@
          * you still have to call api.result, and it is important to call
          * api.repeatStep first and api.result then
          * @function CartFiller.Api#repeatStep
+         * @param {integer} n default = 1 means repeat current step
          * @return {CartFiller.Api} for chaining
          * @access public
          */
-        repeatStep: function() {
-            me.modules.dispatcher.manageTaskFlow('repeatStep');
+        repeatStep: function(n) {
+            if (undefined === n) {
+                n = 1;
+            }
+            me.modules.dispatcher.manageTaskFlow('repeatStep,' + String(n));
             return this;
         },
         /**
