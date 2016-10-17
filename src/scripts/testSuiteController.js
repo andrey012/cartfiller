@@ -802,7 +802,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                             if (undefined === $scope.discovery.scripts.errors[index][data.currentTaskIndex]) {
                                 $scope.discovery.scripts.errors[index][data.currentTaskIndex] = {};
                             }
-                            $scope.discovery.scripts.errors[index][data.currentTaskIndex][data.currentTaskStepIndex] = message;
+                            $scope.discovery.scripts.errors[index][data.currentTaskIndex][data.currentTaskStepIndex] = data.result[data.currentTaskIndex].stepResults[data.currentTaskStepIndex].title + ': ' + message;
                             $scope.$digest();
                         }
                     }

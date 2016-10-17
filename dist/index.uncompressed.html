@@ -47329,7 +47329,12 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
             }
         });
         var setStepStatus = function(task, step, status, message, response) {
-            $scope.jobTaskProgress[task].stepResults[step] = {status: status, message: message, response: response};
+            $scope.jobTaskProgress[task].stepResults[step] = {
+                status: status, 
+                message: message, 
+                response: response, 
+                title: $scope.jobTaskDescriptions[$scope.jobDetails[task].task][step]
+            };
         };
         $scope.incrementCurrentStep = function(skip, nextTaskFlow){
             var pause = false, i, j;
@@ -47934,7 +47939,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
             reportError('bootstrap message did not come');
         }
     }, 10000);
-    config.gruntBuildTimeStamp='1485550724532';
+    config.gruntBuildTimeStamp='1485605229327';
     window.addEventListener('message', function(event){
         var prefix = 'cartFillerMessage:';
         var isDist = true;
@@ -48008,7 +48013,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 if (message.tests) {
                     var x = new XMLHttpRequest();
                     x.onload = function(){
-                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1485550724532') {
+                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1485605229327') {
                             console.log('new version of CartFiller was deployed, switching to it');
                             var hash = window.location.href.split('#');
                             var pc = hash[0].split('?');
@@ -48920,7 +48925,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                             if (undefined === $scope.discovery.scripts.errors[index][data.currentTaskIndex]) {
                                 $scope.discovery.scripts.errors[index][data.currentTaskIndex] = {};
                             }
-                            $scope.discovery.scripts.errors[index][data.currentTaskIndex][data.currentTaskStepIndex] = message;
+                            $scope.discovery.scripts.errors[index][data.currentTaskIndex][data.currentTaskStepIndex] = data.result[data.currentTaskIndex].stepResults[data.currentTaskStepIndex].title + ': ' + message;
                             $scope.$digest();
                         }
                     }

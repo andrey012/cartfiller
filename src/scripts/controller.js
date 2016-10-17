@@ -304,7 +304,12 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
             }
         });
         var setStepStatus = function(task, step, status, message, response) {
-            $scope.jobTaskProgress[task].stepResults[step] = {status: status, message: message, response: response};
+            $scope.jobTaskProgress[task].stepResults[step] = {
+                status: status, 
+                message: message, 
+                response: response, 
+                title: $scope.jobTaskDescriptions[$scope.jobDetails[task].task][step]
+            };
         };
         $scope.incrementCurrentStep = function(skip, nextTaskFlow){
             var pause = false, i, j;
