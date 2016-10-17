@@ -256,7 +256,7 @@
                         <div>
                             <a class="btn btn-xs btn-success" ng-click="toggleSearch()">Close</a>
                         </div>
-                        <div style="max-height: 70vh; overflow: scroll">
+                        <div style="max-height: 60vh; overflow: scroll">
                             <div ng-repeat="(elementIndex, element) in stack">
                                 <button data-index="{{elementIndex}}" class="btn btn-xs" ng-class="element.selectNodeName ? 'btn-success' : 'btn-warning'" ng-click="toggle('selectNodeName', element)" onmouseenter="angular.element(this).scope().highlight(this);">
                                     {{element.element}}

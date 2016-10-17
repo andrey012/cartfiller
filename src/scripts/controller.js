@@ -72,6 +72,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
         $scope.stepDependencies = {};
         $scope.currentMainFrameWindow = 0;
         $scope.currentUrls = [false];
+        var rememberedScrollPositionBeforeSearch;
         var autorunSpeed;
         var mouseDownTime;
         var suspendEditorMode;
@@ -310,7 +311,6 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
             if ('string' === typeof nextTaskFlow && 0 === nextTaskFlow.indexOf('skipStep,')) {
                 var steps = (1 + parseInt(nextTaskFlow.replace('skipStep,', '')));
                 for (i = 0; i < steps && $scope.currentStep < $scope.jobTaskDescriptions[$scope.jobDetails[$scope.currentTask].task].length; i ++ ) {
-                    ////
                     $scope.currentStep ++;
                     setStepStatus($scope.currentTask, $scope.currentStep, 'skipped', '');
                     if ($scope.pausePoints[$scope.currentTask] && $scope.pausePoints[$scope.currentTask][$scope.currentStep]) {
@@ -345,7 +345,6 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                     if ($scope.pausePoints[$scope.currentTask] && $scope.pausePoints[$scope.currentTask][$scope.currentStep]) {
                         pause = true;
                     }
-                    ////
                     setStepStatus($scope.currentTask, $scope.currentStep, 'skipped', '');
                     $scope.currentStep ++;
                 }
@@ -603,6 +602,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
         };
         $scope.performSearchNoWatch = function() {
             cfMessage.send('startReportingMousePointer');
+            rememberedScrollPositionBeforeSearch = window.scrollY;
         };
         setTimeout(function initSearchScope() {
             var scope = angular.element(document.getElementById('searchResults')).scope();
@@ -627,6 +627,19 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 }, 0);
             };
             scope.getCssSelector = function(){
+                var generateCompareCleanTextExpression = function(s) {
+                    for (var i in $scope.jobDetails[$scope.currentTask]) {
+                        var accessor = /^[a-zA-Z_][a-zA-Z_0-9]*$/.test(i) ? i : ('['  + JSON.stringify('i') + ']');
+                        if ($scope.jobDetails[$scope.currentTask][i] === s) {
+                            return 'task.' + accessor + ', el.textContent';
+                        } else if ($scope.jobDetails[$scope.currentTask][i] === s.trim()) {
+                            return 'task.' + accessor + '.trim(), el.textContent';
+                        } else if ($scope.jobDetails[$scope.currentTask][i].toLowerCase() === s.toLowerCase()) {
+                            return 'task.' + accessor + '.trim().toLowerCase(), el.textContent.toLowerCase()';
+                        }
+                    }
+                    return JSON.stringify(s);
+                };
                 var r = ('(\'' + scope.stack.map(function(el){
                     var r = '' +
                         (el.selectNodeName ? el.element : '') +
@@ -647,7 +660,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                     r +=
                         (el.selectIndex ? ('\').filter(function(i,el,x,c){ c = 0; for (x = el.previousSibling; x; x = x.previousSibling) c += x.nodeName === el.nodeName ? 1 : 0; return c === ' + (el.index - 1) + ';}).find(\'') : '');
                     return r +
-                        (el.selectText ? ('\').filter(function(i,el){ return api.compareCleanText(' + JSON.stringify(el.text.trim()) + ', el.textContent);}).find(\'') : '')
+                        (el.selectText ? ('\').filter(function(i,el){ return api.compareCleanText(' + generateCompareCleanTextExpression(el.text.trim()) + ');}).find(\'') : '')
                     ;
                 })
                          .filter(function(v) { return v.trim().length; })
@@ -656,6 +669,9 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
             };
             scope.toggleSearch = function() {
                 scope.searchVisible = ! scope.searchVisible;
+                if (! scope.searchVisible) {
+                    window.scrollTo(0, rememberedScrollPositionBeforeSearch);
+                }
             };
             scope.textareaKeyUp = function($event){
                 if ($event.keyCode === 27) {
