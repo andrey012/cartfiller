@@ -72,7 +72,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
         $scope.stepDependencies = {};
         $scope.currentMainFrameWindow = 0;
         $scope.currentUrls = [false];
-        var rememberedScrollPositionBeforeSearch;
+        var rememberedScrollPositionBeforeSearch = false;
         var autorunSpeed;
         var mouseDownTime;
         var suspendEditorMode;
@@ -308,7 +308,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 status: status, 
                 message: message, 
                 response: response, 
-                title: $scope.jobTaskDescriptions[$scope.jobDetails[task].task][step]
+                title: $scope.jobTaskDescriptions[$scope.jobDetails[task].task] ? $scope.jobTaskDescriptions[$scope.jobDetails[task].task][step] : undefined
             };
         };
         $scope.incrementCurrentStep = function(skip, nextTaskFlow){
@@ -607,7 +607,10 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
         };
         $scope.performSearchNoWatch = function() {
             cfMessage.send('startReportingMousePointer');
-            rememberedScrollPositionBeforeSearch = window.scrollY;
+            var scope = angular.element(document.getElementById('searchResults')).scope();
+            if (! scope.searchVisible) {
+                rememberedScrollPositionBeforeSearch = window.scrollY;
+            }
         };
         setTimeout(function initSearchScope() {
             var scope = angular.element(document.getElementById('searchResults')).scope();
@@ -633,17 +636,18 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
             };
             scope.getCssSelector = function(){
                 var generateCompareCleanTextExpression = function(s) {
+                    s = String(s);
                     for (var i in $scope.jobDetails[$scope.currentTask]) {
                         var accessor = /^[a-zA-Z_][a-zA-Z_0-9]*$/.test(i) ? i : ('['  + JSON.stringify('i') + ']');
-                        if ($scope.jobDetails[$scope.currentTask][i] === s) {
+                        if (String($scope.jobDetails[$scope.currentTask][i]) === s) {
                             return 'task.' + accessor + ', el.textContent';
                         } else if ($scope.jobDetails[$scope.currentTask][i] === s.trim()) {
-                            return 'task.' + accessor + '.trim(), el.textContent';
-                        } else if ($scope.jobDetails[$scope.currentTask][i].toLowerCase() === s.toLowerCase()) {
-                            return 'task.' + accessor + '.trim().toLowerCase(), el.textContent.toLowerCase()';
+                            return 'task.' + accessor + ', el.textContent';
+                        } else if (String($scope.jobDetails[$scope.currentTask][i]).toLowerCase() === s.toLowerCase()) {
+                            return 'String(task.' + accessor + ').toLowerCase(), el.toLowerCase()';
                         }
                     }
-                    return JSON.stringify(s);
+                    return JSON.stringify(s) + ', el.textContent';
                 };
                 var r = ('(\'' + scope.stack.map(function(el){
                     var r = '' +
@@ -659,7 +663,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                         }).map(function(a){
                             return '[' + a.n + '="' + a.v + '"' + ']';
                         }).join(''));
-                    if (r.trim().length) {
+                    if (r.trim().length && ! /option$/.test(r.trim())) {
                         r += ':visible';
                     }
                     r +=

@@ -1216,6 +1216,17 @@
             var el = me.modules.ui.mainFrameWindow.document.elementFromPoint(x,y);
             var prev;
             var i, n;
+            if (el.nodeName === 'SELECT') {
+                // we'd rather report an option for this select, this way user can 
+                // build selector for either select element or an option - whichever he likes
+                var selectChildren = el.childNodes;
+                for (i = selectChildren.length - 1; i >=0 ; i --) {
+                    if (selectChildren[i].nodeName === 'OPTION' && selectChildren[i].selected) {
+                        el = selectChildren[i]; 
+                        break;
+                    }
+                }
+            }
             while (el && el.nodeName !== 'BODY' && el.nodeName !== 'HTML' && el !== document) {
                 var attrs = [];
                 for (i = el.attributes.length - 1 ; i >= 0 ; i -- ) {
