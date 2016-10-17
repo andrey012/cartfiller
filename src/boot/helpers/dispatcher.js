@@ -1203,6 +1203,10 @@
          * @access public
          */
         onMessage_invokeWorker: function(message){
+            if (message.index === 0 && message.step === 0 && me.modules.ui.currentMainFrameWindow > 0) {
+                // for first step of first task we force switch to primary winodow
+                this.switchToWindow(0);
+            }
             if (! relay.isSlave) {
                 message.currentMainFrameWindow = me.modules.ui.currentMainFrameWindow;
             }

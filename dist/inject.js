@@ -184,7 +184,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1485155434970';
+    config.gruntBuildTimeStamp='1485201331453';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -2564,6 +2564,10 @@
          * @access public
          */
         onMessage_invokeWorker: function(message){
+            if (message.index === 0 && message.step === 0 && me.modules.ui.currentMainFrameWindow > 0) {
+                // for first step of first task we force switch to primary winodow
+                this.switchToWindow(0);
+            }
             if (! relay.isSlave) {
                 message.currentMainFrameWindow = me.modules.ui.currentMainFrameWindow;
             }
