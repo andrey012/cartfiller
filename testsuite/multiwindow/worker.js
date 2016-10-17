@@ -42,9 +42,33 @@
             ],
             'make sure, that Hello World is there': [
                 '', function() {
-                    api.result(api.compare(task.host, this.getElementById('domainname').textContent));
+                    var e = this.getElementById('domainname');
+                    api.arrow(e).result(api.compare(task.host, e.textContent.split(':')[0]));
+                }
+            ],
+            'check marshalling return values between windows': [
+                'switch to source window', function() {
+                    api.switchToWindow(task.src).result();
+                }, 'return value', function() {
+                    api.return(task.value).result();
+                }, 'switch to dst window', function() {
+                    api.switchToWindow(task.dst).result();
+                }, 'verify result', function(x, y){
+                    api.result(api.compare(task.value, y));
+                }
+            ],
+            'start 1-window mode': [
+                'switch to 1st window', function(){
+                    api.switchToWindow(0).result();
+                },
+                '', function() {
+                    api.setAdditionalWindows();
                 }
             ]
+
+
+
+
 
 
         };

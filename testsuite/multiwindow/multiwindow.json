@@ -17,6 +17,8 @@
         {"make sure, that Hello World is there": {"host": ["otherHost"]}},
         {"switch to window": {"window": 0}},
         {"make sure, that Hello World is there": {"host": ["thisHost"]}},
+        {"check marshalling return values between windows": {"src": 0, "dst": 1, "value": 12345}},
+        {"check marshalling return values between windows": {"src": 1, "dst": 0, "value": 123456}},
 
         "# 3 Windows",
         {"start 3-window mode": {}},
@@ -32,6 +34,14 @@
         {"make sure, that Hello World is there": {"host": ["otherHost"]}},
         {"switch to window": {"window": 0}},
         {"make sure, that Hello World is there": {"host": ["thisHost"]}},
+        {"check marshalling return values between windows": {"src": 0, "dst": 1, "value": 123451}},
+        {"check marshalling return values between windows": {"src": 0, "dst": 2, "value": 123452}},
+        {"check marshalling return values between windows": {"src": 1, "dst": 0, "value": 123453}},
+        {"check marshalling return values between windows": {"src": 1, "dst": 2, "value": 123454}},
+        {"check marshalling return values between windows": {"src": 2, "dst": 0, "value": 123455}},
+        {"check marshalling return values between windows": {"src": 2, "dst": 1, "value": 123456}},
+        
+        {"start 1-window mode": {}},
 
 
     ]

@@ -210,7 +210,7 @@ var startup = [];
 startup.push(function() {
     server = http.createServer(app);
     server
-        .listen(port, '127.0.0.1', function(err){
+        .listen(port, '0.0.0.0', function(err){
             if (! err) {
                 console.log('Launched successfully on port ' + port);
                 startup.shift();
@@ -233,7 +233,7 @@ if (argv['serve-http']) {
     startup.push(function() {
         serveHttpServer = http.createServer(serveHttpApp);
         serveHttpServer
-            .listen(serveHttpPort, '127.0.0.1', function(err){
+            .listen(serveHttpPort, '0.0.0.0', function(err){
                 if (! err) {
                     console.log('ServeHttp launched successfully on port ' + serveHttpPort);
                     startup.shift();

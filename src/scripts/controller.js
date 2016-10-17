@@ -70,6 +70,8 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
         $scope.jobName = '';
         $scope.jobTitle = '';
         $scope.stepDependencies = {};
+        $scope.currentMainFrameWindow = 0;
+        $scope.currentUrls = [false];
         var autorunSpeed;
         var mouseDownTime;
         var suspendEditorMode;
@@ -102,7 +104,10 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
             }
         };
         cfMessage.register(function(cmd, details){
-            if (cmd === 'toggleEditorModeResponse') {
+            if (cmd === 'switchToWindow') {
+                $scope.currentMainFrameWindow = details.currentMainFrameWindow;
+                $scope.updateCurrentUrl();
+            } else if (cmd === 'toggleEditorModeResponse') {
                 suspendEditorMode = ! details.enabled;
                 $('#suspendEditorMode').prop('checked', suspendEditorMode);
             } else if (cmd === 'jobDetails'){
@@ -283,12 +288,14 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 $scope.chooseJobState = false;
                 digestButtonPanel();
             } else if (cmd === 'currentUrl') {
-                $('#currentUrl').text(details.url).attr('href', details.url);
+                $scope.currentUrls[details.currentMainFrameWindow] = details.url;
+                $scope.updateCurrentUrl();
             } else if (cmd === 'mousePointer') {
                 (function(){
                     var scope = angular.element(document.getElementById('searchResults')).scope();
                     scope.searchVisible = true;
                     scope.stack = details.stack;
+                    scope.window = details.w;
                     scope.$digest();
                 })();
             } else if (cmd === 'cssSelectorEvaluateResult') {
@@ -613,7 +620,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                     where[what][index] = ! where[what][index];
                 }
                 scope.cssSelector = scope.getCssSelector();
-                cfMessage.send('evaluateCssSelector', {selector: scope.cssSelector});
+                cfMessage.send('evaluateCssSelector', {selector: scope.cssSelector, currentMainFrameWindow: scope.window});
                 $('#selectorSearchQueryInput')[0].focus();
                 setTimeout(function() {
                     $('#selectorSearchQueryInput')[0].select();
@@ -664,7 +671,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                     var node = scope.stack[i];
                     payload.push([node.element, node.index - 1]);
                 }
-                cfMessage.send('highlightElementForQueryBuilder', {path: payload});
+                cfMessage.send('highlightElementForQueryBuilder', {path: payload, currentMainFrameWindow: scope.window});
             };
         },1000);
         $scope.shortName = function(name) {
@@ -865,5 +872,8 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
             document.execCommand('copy');
             event.stopPropagation();
         });
+        $scope.updateCurrentUrl = function() {
+            $('#currentUrl').text($scope.currentUrls[$scope.currentMainFrameWindow]).attr('href', $scope.currentUrls[$scope.currentMainFrameWindow]);
+        };
     }]);
 });

@@ -983,7 +983,7 @@
                     }
                 }
                 for (var i = codeToSend.length - 1; i >= 0 ; i --) {
-                    relay.nextRelayQueue.unshift({cmd: 'loadWorker', jobDetailsCache: jobDetailsCache, url: codeToSend[i], code: workerSourceCodes[codeToSend[i]], isFinal: (i === codeToSend.length - 1)});
+                    relay.nextRelayQueue.unshift({cmd: 'loadWorker', jobDetailsCache: jobDetailsCache, src: codeToSend[i], code: workerSourceCodes[codeToSend[i]], isFinal: (i === codeToSend.length - 1)});
                 }
                 // now we can send all queued messages to relay
                 var msg;
@@ -1480,6 +1480,20 @@
                 me.modules.dispatcher.onMessage_chooseJobCancel(details);
             } else if (details.message === 'updateSlaveCounter') {
                 relay.slaveCounter = details.slaveCounter;
+            } else if (details.message === 'broadcastReturnedValues' && source) {
+                if (details.returnedValuesOfStepsAreForTask !== returnedValuesOfStepsAreForTask) {
+                    returnedValuesOfSteps = [undefined];
+                    returnedValuesOfStepsAreForTask = details.returnedValuesOfStepsAreForTask;
+                }
+                details.values.filter(function(value, index) {
+                    if (undefined !== value) {
+                        returnedValuesOfSteps[index] = value;
+                    }
+                });
+            } else if (details.message === 'reportingMousePointerClickForWindow' && source) {
+                if (details.currentMainFrameWindow === relay.currentMainFrameWindow) {
+                    me.modules.ui.reportingMousePointerClickForWindow(details.x, details.y);
+                }
             }
         },
         /**
@@ -1892,6 +1906,17 @@
          */
         setReturnedValueOfStep: function(element){
             returnedValuesOfSteps[workerCurrentStepIndex + 1] = mostRecentReturnedValueOfStep = element;
+            this.onMessage_bubbleRelayMessage({
+                message: 'broadcastReturnedValues', 
+                values: returnedValuesOfSteps.map(function(v) {
+                    if ('string' === typeof v || 'number' === typeof v) {
+                        return v;
+                    } else {
+                        return undefined;
+                    }
+                }),
+                returnedValuesOfStepsAreForTask: returnedValuesOfStepsAreForTask
+            });
         },
         /**
          * Registers setTimeout id to be called if step will experience timeout
@@ -1919,7 +1944,7 @@
          */
         updateCurrentUrl: function(url) {
             if (workerCurrentUrl !== url) {
-                this.postMessageToWorker('currentUrl', {url: url});
+                this.postMessageToWorker('currentUrl', {url: url, currentMainFrameWindow: me.modules.ui.currentMainFrameWindow});
                 this.onMessage_bubbleRelayMessage({message: 'clearCurrentUrl'});
                 workerCurrentUrl = url;
             }
@@ -1954,7 +1979,7 @@
          * @access public
          */
         reflectMessage: function(message, framesPath) {
-            if (this.haveAccess(framesPath) && (relay.currentMainFrameWindow === message.currentMainFrameWindow)) {
+            if (this.haveAccess(framesPath) && ((! message.hasOwnProperty('currentMainFrameWindow')) || relay.currentMainFrameWindow === message.currentMainFrameWindow)) {
                 return false;
             }
             if (message.cmd === 'invokeWorker') {
@@ -2175,6 +2200,9 @@
         },
         getSlaveCounter: function() { return relay.slaveCounter; },
         setAdditionalWindows: function(descriptors, details) {
+            if (relay.currentMainFrameWindow > 0) {
+                throw new Error('setAdditionalWindows is only allowed when worker is switched to primary window (0)');
+            }
             if (relay.isSlave) {
                 this.onMessage_bubbleRelayMessage({
                     message: 'setAdditionalWindows',
@@ -2206,7 +2234,9 @@
                 });
             } else {
                 me.modules.ui.switchToWindow(index);
+                this.postMessageToWorker('switchToWindow', {currentMainFrameWindow: index});
             }
-        }
+        },
+        getFrameWindowIndex: function(){ return relay.currentMainFrameWindow; }
     });
 }).call(this, document, window);

@@ -184,7 +184,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1485016826141';
+    config.gruntBuildTimeStamp='1485155434970';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -2344,7 +2344,7 @@
                     }
                 }
                 for (var i = codeToSend.length - 1; i >= 0 ; i --) {
-                    relay.nextRelayQueue.unshift({cmd: 'loadWorker', jobDetailsCache: jobDetailsCache, url: codeToSend[i], code: workerSourceCodes[codeToSend[i]], isFinal: (i === codeToSend.length - 1)});
+                    relay.nextRelayQueue.unshift({cmd: 'loadWorker', jobDetailsCache: jobDetailsCache, src: codeToSend[i], code: workerSourceCodes[codeToSend[i]], isFinal: (i === codeToSend.length - 1)});
                 }
                 // now we can send all queued messages to relay
                 var msg;
@@ -2841,6 +2841,20 @@
                 me.modules.dispatcher.onMessage_chooseJobCancel(details);
             } else if (details.message === 'updateSlaveCounter') {
                 relay.slaveCounter = details.slaveCounter;
+            } else if (details.message === 'broadcastReturnedValues' && source) {
+                if (details.returnedValuesOfStepsAreForTask !== returnedValuesOfStepsAreForTask) {
+                    returnedValuesOfSteps = [undefined];
+                    returnedValuesOfStepsAreForTask = details.returnedValuesOfStepsAreForTask;
+                }
+                details.values.filter(function(value, index) {
+                    if (undefined !== value) {
+                        returnedValuesOfSteps[index] = value;
+                    }
+                });
+            } else if (details.message === 'reportingMousePointerClickForWindow' && source) {
+                if (details.currentMainFrameWindow === relay.currentMainFrameWindow) {
+                    me.modules.ui.reportingMousePointerClickForWindow(details.x, details.y);
+                }
             }
         },
         /**
@@ -3253,6 +3267,17 @@
          */
         setReturnedValueOfStep: function(element){
             returnedValuesOfSteps[workerCurrentStepIndex + 1] = mostRecentReturnedValueOfStep = element;
+            this.onMessage_bubbleRelayMessage({
+                message: 'broadcastReturnedValues', 
+                values: returnedValuesOfSteps.map(function(v) {
+                    if ('string' === typeof v || 'number' === typeof v) {
+                        return v;
+                    } else {
+                        return undefined;
+                    }
+                }),
+                returnedValuesOfStepsAreForTask: returnedValuesOfStepsAreForTask
+            });
         },
         /**
          * Registers setTimeout id to be called if step will experience timeout
@@ -3280,7 +3305,7 @@
          */
         updateCurrentUrl: function(url) {
             if (workerCurrentUrl !== url) {
-                this.postMessageToWorker('currentUrl', {url: url});
+                this.postMessageToWorker('currentUrl', {url: url, currentMainFrameWindow: me.modules.ui.currentMainFrameWindow});
                 this.onMessage_bubbleRelayMessage({message: 'clearCurrentUrl'});
                 workerCurrentUrl = url;
             }
@@ -3315,7 +3340,7 @@
          * @access public
          */
         reflectMessage: function(message, framesPath) {
-            if (this.haveAccess(framesPath) && (relay.currentMainFrameWindow === message.currentMainFrameWindow)) {
+            if (this.haveAccess(framesPath) && ((! message.hasOwnProperty('currentMainFrameWindow')) || relay.currentMainFrameWindow === message.currentMainFrameWindow)) {
                 return false;
             }
             if (message.cmd === 'invokeWorker') {
@@ -3536,6 +3561,9 @@
         },
         getSlaveCounter: function() { return relay.slaveCounter; },
         setAdditionalWindows: function(descriptors, details) {
+            if (relay.currentMainFrameWindow > 0) {
+                throw new Error('setAdditionalWindows is only allowed when worker is switched to primary window (0)');
+            }
             if (relay.isSlave) {
                 this.onMessage_bubbleRelayMessage({
                     message: 'setAdditionalWindows',
@@ -3567,8 +3595,10 @@
                 });
             } else {
                 me.modules.ui.switchToWindow(index);
+                this.postMessageToWorker('switchToWindow', {currentMainFrameWindow: index});
             }
-        }
+        },
+        getFrameWindowIndex: function(){ return relay.currentMainFrameWindow; }
     });
 }).call(this, document, window);
 
@@ -3991,8 +4021,10 @@
                 }
             }
         };
+        var currentMainFrameWindowFilter = function(el) { return el.currentMainFrameWindow === me.modules.dispatcher.getFrameWindowIndex(); };
         for (var path in elementsToDrawByPath) {
             elementsToDrawByPath[path]
+                .filter(currentMainFrameWindowFilter)
                 .filter(findScrollPretendent);
         }
         if (scrollPretendent) {
@@ -4037,6 +4069,7 @@
         var top, left, bottom;
         elements
         .filter(function(el) { return 'arrow' === el.type && ! el.deleted; })
+        .filter(function(el) { return el.currentMainFrameWindow === me.modules.dispatcher.getFrameWindowIndex(); })
         .map(addFrameCoordinatesMap)
         .filter(function(el, i) {
             var div = getOverlayDiv2('arrow');
@@ -4085,9 +4118,11 @@
             top = undefined === top ? el.rect.top : Math.min(top, el.rect.top);
             bottom = undefined === bottom ? (el.rect.top + el.rect.height) : Math.max(bottom, (el.rect.top + el.rect.height));
         };
+        var currentMainFrameWindowFilter = function(el) { return el.currentMainFrameWindow === me.modules.dispatcher.getFrameWindowIndex(); };
         for (var path in elementsToDrawByPath) {
             elementsToDrawByPath[path]
             .filter(filter)
+            .filter(currentMainFrameWindowFilter)
             .map(addFrameCoordinatesMap)
             .filter(calc);
         }
@@ -4220,7 +4255,8 @@
                     path: e.path,
                     scroll: e.scroll,
                     ts: e.ts,
-                    deleted: e.deleted
+                    deleted: e.deleted,
+                    currentMainFrameWindow: e.currentMainFrameWindow
                 };
             };
             var r = {};
@@ -4302,7 +4338,9 @@
                     workerFrameWidthBig = windowWidth * 0.8 - 1,
                     workerFrameWidthSmall = windowWidth * 0.2 - 1,
                     slaveFramesHeight = 40,
-                    mainFramesHeight = Math.floor((windowHeight - 15 - (isFramed ? 1 : (me.modules.ui.mainFrames.length - 1)) * slaveFramesHeight) / (isFramed ? me.modules.ui.mainFrames.length : 1)),
+                    mainFramesHeight = Math.floor(
+                        (windowHeight - 15 - (isFramed ? ((me.modules.ui.mainFrames.length - 1) * slaveFramesHeight) : 0)) / (isFramed ? me.modules.ui.mainFrames.length : 1)
+                    ),
                     mainFramesStep = mainFramesHeight + slaveFramesHeight,
                     workerFrameHeight = windowHeight - 15,
                     chooseJobFrameLeft = 0.02 * windowWidth + (isFramed ? 0 : 200),
@@ -4820,8 +4858,31 @@
          * ////
          */
         reportingMousePointerClick: function(x, y) {
-            var el = me.modules.ui.mainFrameWindow.document.elementFromPoint(x,y);
+            // let's see whether it comes to our frame or not
+            var frame = window.document.elementFromPoint(x,y);
+            if (frame) {
+                var match = /^cartFillerMainFrame-(\d+)$/.exec(frame.getAttribute('name'));
+                if (match) {
+                    var mainFrameWindowIndex = parseInt(match[1]);
+                    if (mainFrameWindowIndex !== me.modules.dispatcher.getFrameWindowIndex()) {
+                        var frameRect = frame.getBoundingClientRect();
+                        me.modules.dispatcher.onMessage_bubbleRelayMessage({
+                            message: 'reportingMousePointerClickForWindow',
+                            currentMainFrameWindow: mainFrameWindowIndex,
+                            x: x - frameRect.left,
+                            y: y - frameRect.top
+                        });
+                    } else {
+                        this.reportingMousePointerClickForWindow(x, y);
+                    }
+                    return;
+                }
+            }
+            me.modules.dispatcher.postMessageToWorker('mousePointer', {x: x, y: y, stack: [], w: me.modules.dispatcher.getFrameWindowIndex()});
+        },
+        reportingMousePointerClickForWindow: function(x, y) {
             var stack = [];
+            var el = me.modules.ui.mainFrameWindow.document.elementFromPoint(x,y);
             var prev;
             var i, n;
             while (el && el.nodeName !== 'BODY' && el.nodeName !== 'HTML' && el !== document) {
@@ -4848,7 +4909,7 @@
                 });
                 el = el.parentNode;
             }
-            me.modules.dispatcher.postMessageToWorker('mousePointer', {x: x, y: y, stack: stack});
+            me.modules.dispatcher.postMessageToWorker('mousePointer', {x: x, y: y, stack: stack, w: me.modules.dispatcher.getFrameWindowIndex()});
         },
         /**
          * Starts reporting mouse pointer - on each mousemove dispatcher 
@@ -5005,7 +5066,8 @@
                 type: type, 
                 scroll: ! noScroll, 
                 path: discoverPathForElement(element.ownerDocument.defaultView, addPath),
-                ts: (new Date()).getTime()
+                ts: (new Date()).getTime(),
+                currentMainFrameWindow: me.modules.dispatcher.getFrameWindowIndex()
             });
             if (! noScroll) {
                 element.scrollIntoView();
