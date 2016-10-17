@@ -576,6 +576,20 @@
             return this;
         },
         /**
+         * Simple way to interact with user
+         * @function CartFiller.Api#modal
+         * @param {String} html
+         * @param {Function} callback being called when modal is constructed from html, so, that
+         * you can put some data and set event handlers. Callback will receive wrapper div html
+         * element as a parameter
+         * @return {CartFiller.Api} for chaining
+         * @access public
+         */
+        modal: function(html, callback) {
+            me.modules.ui.say(html, undefined, undefined, true, callback);
+            return this;
+        },
+        /**
          * Just another for-each implementation, jQuery style
          * @function CartFiller.Api#each
          * @param {Array|Object|HtmlCollection} array Array to iterate through

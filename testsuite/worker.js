@@ -137,6 +137,23 @@
                 'check result', function() {
                     api.result(api.compare(lib.testsuite.worker.theHelper(), 'helperOfTestsuite'));
                 },
+            ],
+            'show modal dialog': [
+                '', function() {
+                    api.modal('<textarea id="modalTextareaToModify"></textarea><br/><button id="modalButtonToClick">ok</button>', function(modal) {
+                        var ta = modal.getElementsByTagName('textarea')[0];
+                        ta.value = 'here is some data';
+                        modal.getElementsByTagName('button')[0].onclick = function(){
+                            api.result(api.compare('new data', window.document.getElementById('modalTextareaToModify').value));
+                        };
+                    });
+                    api.setTimeout(function(){
+                        window.document.getElementById('modalTextareaToModify').value = 'new data';
+                        api.setTimeout(function(){
+                            window.document.getElementById('modalButtonToClick').click();
+                        }, 1000);
+                    }, 1000);
+                }
             ]
         };
     });

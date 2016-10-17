@@ -184,7 +184,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1485717435028';
+    config.gruntBuildTimeStamp='1485758555577';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -803,6 +803,20 @@
          */
         say: function(message, pre, nextButton){
             me.modules.ui.say((message === undefined || message === null) ? message : String(message), pre, nextButton);
+            return this;
+        },
+        /**
+         * Simple way to interact with user
+         * @function CartFiller.Api#modal
+         * @param {String} html
+         * @param {Function} callback being called when modal is constructed from html, so, that
+         * you can put some data and set event handlers. Callback will receive wrapper div html
+         * element as a parameter
+         * @return {CartFiller.Api} for chaining
+         * @access public
+         */
+        modal: function(html, callback) {
+            me.modules.ui.say(html, undefined, undefined, true, callback);
             return this;
         },
         /**
@@ -4194,7 +4208,9 @@
 
             var innerDiv = overlayWindow().document.createElement(wrapMessageToSayWithPre ? 'pre' : 'div');
             messageDiv.appendChild(innerDiv);
-            if (wrapMessageToSayWithPre) {
+            if (messageToSayOptions.html) {
+                innerDiv.innerHTML = messageToSay;
+            } else if (wrapMessageToSayWithPre) {
                 innerDiv.textContent = messageToSay;
             } else {
                 messageToSay.split('\n').filter(function(lineToSay, i) {
@@ -4233,6 +4249,9 @@
             overlayWindow().document.getElementsByTagName('body')[0].appendChild(messageDiv);
             messageAdjustmentRemainingAttempts = 100;
             me.modules.ui.adjustMessageDiv(messageDiv);
+            if (messageToSayOptions.callback) {
+                messageToSayOptions.callback.apply(getDocument(), [messageDiv]);
+            }
         }
         currentMessageOnScreen = messageToSay;
     };
@@ -4662,11 +4681,15 @@
          * @param {String} text
          * @param {boolean} pre
          * @param {String|undefined} nextButton
+         * @param {boolean} html if set to true then text will be put into innerHtml of wrapper div
+         * @param {Function} callback if set then will be called each time div is drawn
          * @access public
          */
-        say: function(text, pre, nextButton){
+        say: function(text, pre, nextButton, html, callback){
             messageToSay = (undefined === text || null === text) ? '' : text;
             messageToSayOptions.nextButton = nextButton;
+            messageToSayOptions.html = html;
+            messageToSayOptions.callback = callback;
             wrapMessageToSayWithPre = pre;
             currentMessageDivWidth = Math.max(100, Math.round(getInnerWidth() * 0.5));
             currentMessageDivTopShift = 0;

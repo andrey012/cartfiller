@@ -521,7 +521,9 @@
 
             var innerDiv = overlayWindow().document.createElement(wrapMessageToSayWithPre ? 'pre' : 'div');
             messageDiv.appendChild(innerDiv);
-            if (wrapMessageToSayWithPre) {
+            if (messageToSayOptions.html) {
+                innerDiv.innerHTML = messageToSay;
+            } else if (wrapMessageToSayWithPre) {
                 innerDiv.textContent = messageToSay;
             } else {
                 messageToSay.split('\n').filter(function(lineToSay, i) {
@@ -560,6 +562,9 @@
             overlayWindow().document.getElementsByTagName('body')[0].appendChild(messageDiv);
             messageAdjustmentRemainingAttempts = 100;
             me.modules.ui.adjustMessageDiv(messageDiv);
+            if (messageToSayOptions.callback) {
+                messageToSayOptions.callback.apply(getDocument(), [messageDiv]);
+            }
         }
         currentMessageOnScreen = messageToSay;
     };
@@ -989,11 +994,15 @@
          * @param {String} text
          * @param {boolean} pre
          * @param {String|undefined} nextButton
+         * @param {boolean} html if set to true then text will be put into innerHtml of wrapper div
+         * @param {Function} callback if set then will be called each time div is drawn
          * @access public
          */
-        say: function(text, pre, nextButton){
+        say: function(text, pre, nextButton, html, callback){
             messageToSay = (undefined === text || null === text) ? '' : text;
             messageToSayOptions.nextButton = nextButton;
+            messageToSayOptions.html = html;
+            messageToSayOptions.callback = callback;
             wrapMessageToSayWithPre = pre;
             currentMessageDivWidth = Math.max(100, Math.round(getInnerWidth() * 0.5));
             currentMessageDivTopShift = 0;

@@ -44,5 +44,8 @@ cartfiller = {
         "cdataTests": {
             "cdata": false,
         },
+        "modals": {
+            "modalTest": true,
+        },
     }
 }
