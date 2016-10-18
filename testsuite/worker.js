@@ -142,6 +142,7 @@
             'say foo value': [
                 '', function() {
                     api.say('The foo value is: ' + task.value).sleep(5000).result();
+                },
             ],
             'show modal dialog': [
                 '', function() {

@@ -601,14 +601,16 @@
      * @access private
      */
     var openRelay = function(url, message, noFocus) {
-        relay.knownUrls[url.split('/').slice(0,3).join('/')] = true;
+        if (url !== '') {
+            relay.knownUrls[url.split('/').slice(0,3).join('/')] = true;
+        }
         if (relay.nextRelay && message) {
             if (relay.nextRelayRegistered) {
                 postMessage(relay.nextRelay, message.cmd, message);
             } else {
                 relay.nextRelayQueue.push(message);
             }
-        } else {
+        } else if (url !== '') {
             relay.nextRelay = window.open(url, '_blank', 'toolbar=yes, location=yes, status=yes, menubar=yes, scrollbars=yes');
             if (noFocus) {
                 setTimeout(function(){
@@ -1352,7 +1354,7 @@
          */
         onMessage_resetWorker: function(message){
             if (relay.nextRelay) {
-                openRelay('about:blank', message);
+                openRelay('', message);
             }
             resetWorker();
         },
@@ -1989,7 +1991,7 @@
             if (message.cmd === 'invokeWorker') {
                 message.globals = workerGlobals;
             }
-            openRelay('about:blank', message);
+            openRelay('', message);
             return true;
         },
         /**

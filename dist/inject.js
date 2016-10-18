@@ -184,7 +184,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1485973382390';
+    config.gruntBuildTimeStamp='1485984168741';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -1995,14 +1995,16 @@
      * @access private
      */
     var openRelay = function(url, message, noFocus) {
-        relay.knownUrls[url.split('/').slice(0,3).join('/')] = true;
+        if (url !== '') {
+            relay.knownUrls[url.split('/').slice(0,3).join('/')] = true;
+        }
         if (relay.nextRelay && message) {
             if (relay.nextRelayRegistered) {
                 postMessage(relay.nextRelay, message.cmd, message);
             } else {
                 relay.nextRelayQueue.push(message);
             }
-        } else {
+        } else if (url !== '') {
             relay.nextRelay = window.open(url, '_blank', 'toolbar=yes, location=yes, status=yes, menubar=yes, scrollbars=yes');
             if (noFocus) {
                 setTimeout(function(){
@@ -2746,7 +2748,7 @@
          */
         onMessage_resetWorker: function(message){
             if (relay.nextRelay) {
-                openRelay('about:blank', message);
+                openRelay('', message);
             }
             resetWorker();
         },
@@ -3383,7 +3385,7 @@
             if (message.cmd === 'invokeWorker') {
                 message.globals = workerGlobals;
             }
-            openRelay('about:blank', message);
+            openRelay('', message);
             return true;
         },
         /**
