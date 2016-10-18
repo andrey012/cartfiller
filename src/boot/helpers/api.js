@@ -315,11 +315,13 @@
          * api.result, and it is important to call api.skipTask first and 
          * api.result then. 
          * @function CartFiller.Api#skipTask
+         * @param {integer} number defaults to 1
          * @return {CartFiller.Api} for chaining
          * @access public
          */
-        skipTask: function() {
-            me.modules.dispatcher.manageTaskFlow('skipTask');
+        skipTask: function(number) {
+            number = number || 1;
+            me.modules.dispatcher.manageTaskFlow('skipTask,' + number);
             return this;
         },
         /**
@@ -354,11 +356,13 @@
          * you still have to call api.result, and it is important to call
          * api.repeatTask first and api.result then.
          * @function CartFiller.Api#repeatTask
+         * @param {integer} number defaults to 1
          * @return {CartFiller.Api} for chaining
          * @access public
          */
-        repeatTask: function() {
-            me.modules.dispatcher.manageTaskFlow('repeatTask');
+        repeatTask: function(number) {
+            number = number || 1;
+            me.modules.dispatcher.manageTaskFlow('repeatTask,' + number);
             return this;
         },
         /**

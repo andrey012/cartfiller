@@ -1197,26 +1197,29 @@
         /**
          * ////
          */
-        reportingMousePointerClick: function(x, y) {
+        reportingMousePointerClick: function(x, y, mainFrameWindowIndex, frameLeft, frameTop) {
             // let's see whether it comes to our frame or not
-            var frame = window.document.elementFromPoint(x,y);
-            if (frame) {
-                var match = /^cartFillerMainFrame-(\d+)$/.exec(frame.getAttribute('name'));
-                if (match) {
-                    var mainFrameWindowIndex = parseInt(match[1]);
-                    if (mainFrameWindowIndex !== me.modules.dispatcher.getFrameWindowIndex()) {
-                        var frameRect = frame.getBoundingClientRect();
-                        me.modules.dispatcher.onMessage_bubbleRelayMessage({
-                            message: 'reportingMousePointerClickForWindow',
-                            currentMainFrameWindow: mainFrameWindowIndex,
-                            x: x - frameRect.left,
-                            y: y - frameRect.top
-                        });
-                    } else {
-                        this.reportingMousePointerClickForWindow(x, y);
+            if (mainFrameWindowIndex === undefined) {
+                var frame = window.document.elementFromPoint(x,y);
+                if (frame) {
+                    var match = /^cartFillerMainFrame-(\d+)$/.exec(frame.getAttribute('name'));
+                    if (match) {
+                        mainFrameWindowIndex = parseInt(match[1]);
                     }
-                    return;
                 }
+            }
+            if (mainFrameWindowIndex !== undefined) {
+                if (mainFrameWindowIndex !== me.modules.dispatcher.getFrameWindowIndex()) {
+                    me.modules.dispatcher.onMessage_bubbleRelayMessage({
+                        message: 'reportingMousePointerClickForWindow',
+                        currentMainFrameWindow: mainFrameWindowIndex,
+                        x: x - frameLeft,
+                        y: y - frameTop
+                    });
+                } else {
+                    this.reportingMousePointerClickForWindow(x, y);
+                }
+                return;
             }
             me.modules.dispatcher.postMessageToWorker('mousePointer', {x: x, y: y, stack: [], w: me.modules.dispatcher.getFrameWindowIndex()});
         },
@@ -1291,11 +1294,20 @@
                 },false);
                 div.addEventListener('click', function() {
                     document.getElementsByTagName('body')[0].removeChild(reportMousePointer);
+                    var windowIndex;
+                    var frame = window.document.elementFromPoint(x,y);
+                    if (frame) {
+                        var match = /^cartFillerMainFrame-(\d+)$/.exec(frame.getAttribute('name'));
+                        if (match) {
+                            windowIndex = parseInt(match[1]);
+                        }
+                    }
+                    var frameRect = frame.getBoundingClientRect();
                     reportMousePointer = false;
-                    if (me.modules.dispatcher.reflectMessage({cmd: 'reportingMousePointerClick', x: x, y: y})) {
+                    if (me.modules.dispatcher.reflectMessage({cmd: 'reportingMousePointerClick', x: x, y: y, w: windowIndex, ft: frameRect.top, fl: frameRect.left})) {
                         return;
                     }
-                    me.modules.ui.reportingMousePointerClick(x, y);
+                    me.modules.ui.reportingMousePointerClick(x, y, windowIndex, frameRect.left, frameRect.top);
                 });
             }
         },

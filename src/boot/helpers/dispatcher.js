@@ -601,7 +601,7 @@
      * @access private
      */
     var openRelay = function(url, message, noFocus) {
-        relay.knownUrls[url] = true;
+        relay.knownUrls[url.split('/').slice(0,3).join('/')] = true;
         if (relay.nextRelay && message) {
             if (relay.nextRelayRegistered) {
                 postMessage(relay.nextRelay, message.cmd, message);
@@ -1230,7 +1230,7 @@
                 err = 'ERROR: worker task is in still in progress';
                 alert(err);
             } else {
-                stepRepeatCounter = 0;
+                stepRepeatCounter = message.stepRepeatCounter;
                 onLoadHappened = false;
                 nextTaskFlow = 'normal';
                 if (workerCurrentTaskIndex !== message.index){
@@ -1443,8 +1443,8 @@
             if (details.message === 'onMainFrameLoaded') {
                 me.modules.dispatcher.onMainFrameLoaded(details.args[0], true);
             } else if (details.message === 'openRelayOnHead' && ! relay.isSlave) {
-                if (! relay.knownUrls[details.args[0]]) {
-                    relay.knownUrls[details.args[0]] = true;
+                if (! relay.knownUrls[details.args[0].split('/').slice(0,3).join('/')]) {
+                    relay.knownUrls[details.args[0].split('/').slice(0,3).join('/')] = true;
                     me.modules.dispatcher.onMessage_bubbleRelayMessage({message: 'openRelayOnTail', args: details.args, notToParents: true});
                 }
             } else if (details.message === 'openRelayOnTail' && ! relay.nextRelay) {
@@ -1510,7 +1510,7 @@
             if (me.modules.dispatcher.reflectMessage(details)) {
                 return;
             }
-            me.modules.ui.reportingMousePointerClick(details.x, details.y);
+            me.modules.ui.reportingMousePointerClick(details.x, details.y, details.w, details.fl, details.ft);
         },
         /**
          * Dispatches event issued by postMessage and captured by Dispatcher by mistake
@@ -1841,7 +1841,7 @@
                 m = magicParamPatterns.repeat.exec(currentStepWorkerFn.toString().split(')')[0]);
                 if (m && parseInt(m[1]) > stepRepeatCounter) {
                     me.modules.api.setTimeout(function() {
-                        currentStepWorkerFn.apply(me.modules.ui.getMainFrameWindowDocument(), getWorkerFnParams());
+                        me.modules.api.repeatStep().result();
                     }, 1000);
                     return;
                 }

@@ -76,6 +76,9 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
         var autorunSpeed;
         var mouseDownTime;
         var suspendEditorMode;
+        var repeatStepCounter = 0;
+        var repeatStepCounterTask = false;
+        var repeatStepCounterStep = false;
         var isLongClick = function($event){
             var now = $event.timeStamp ? $event.timeStamp : (new Date()).getTime();
             return (now - mouseDownTime) > 1000;
@@ -105,6 +108,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
             }
         };
         cfMessage.register(function(cmd, details){
+            var i;
             if (cmd === 'switchToWindow') {
                 $scope.currentMainFrameWindow = details.currentMainFrameWindow;
                 $scope.updateCurrentUrl();
@@ -209,7 +213,16 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
             } else if (cmd === 'workerStepResult'){
                 $scope.jobTaskProgress[details.index].stepsInProgress[details.step] = false;
                 setStepStatus(details.index, details.step, details.status, details.message, details.response);
-                $scope.jobTaskProgress[details.index].complete = details.nextTaskFlow === 'skipTask' || $scope.updateTaskCompleteMark(details.index);
+                if (-1 !== details.nextTaskFlow.indexOf('skipTask')) {
+                    var tasksToSkip = parseInt(details.nextTaskFlow.split(',')[1]);
+                    for (i = details.index; i < details.index + tasksToSkip; i ++ ) {
+                        $scope.jobTaskProgress[i].complete = true;
+                    }
+                } else if ($scope.updateTaskCompleteMark(details.index)) {
+                    $scope.jobTaskProgress[details.index].complete = true;
+                } else {
+                    $scope.jobTaskProgress[details.index].complete = false;
+                }
                 var proceed;
                 var pause = false;
                 var stopTestsuite = false;
@@ -274,7 +287,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 }
                 digestButtonPanel();
                 if ('object' === typeof details.globals) {
-                    for (var i in details.globals) {
+                    for (i in details.globals) {
                         if (details.globals.hasOwnProperty(i)){
                             $scope.workerGlobals = details.globals;
                             digestGlobals();
@@ -345,7 +358,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 }
                 $scope.currentTask = $scope.jobDetails.length;
                 $scope.currentStep = 0;
-            } else if (skip || nextTaskFlow === 'skipTask' || nextTaskFlow === 'repeatTask' || $scope.jobTaskDescriptions[$scope.jobDetails[$scope.currentTask].task].length <= $scope.currentStep){
+            } else if (skip || -1 !== nextTaskFlow.indexOf('skipTask') || -1 !== nextTaskFlow.indexOf('repeatTask') || $scope.jobTaskDescriptions[$scope.jobDetails[$scope.currentTask].task].length <= $scope.currentStep){
                 while ($scope.currentStep < $scope.jobTaskDescriptions[$scope.jobDetails[$scope.currentTask].task].length) {
                     if ($scope.pausePoints[$scope.currentTask] && $scope.pausePoints[$scope.currentTask][$scope.currentStep]) {
                         pause = true;
@@ -354,11 +367,28 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                     $scope.currentStep ++;
                 }
                 $scope.currentStep = 0;
-                if (nextTaskFlow === 'repeatTask') {
-                    if (undefined === $scope.repeatedTaskCounter[$scope.currentTask]) {
-                        $scope.repeatedTaskCounter[$scope.currentTask] = 0;
+                if (-1 !== nextTaskFlow.indexOf('repeatTask')) {
+                    var tasksToRepeat = parseInt(nextTaskFlow.split(',')[1]);
+                    for (i = $scope.currentTask; i > $scope.currentTask - tasksToRepeat; i --) {
+                        if (undefined === $scope.repeatedTaskCounter[i]) {
+                            $scope.repeatedTaskCounter[i] = 0;
+                        }
+                        $scope.repeatedTaskCounter[i] ++;
                     }
-                    $scope.repeatedTaskCounter[$scope.currentTask] ++;
+                    $scope.currentTask = Math.max(0, $scope.currentTask - tasksToRepeat + 1);
+                } else if (-1 !== nextTaskFlow.indexOf('skipTask')) {
+                    var tasksToSkip = parseInt(nextTaskFlow.split(',')[1]);
+                    for (i = $scope.currentStep + 1; i < $scope.currentStep + tasksToSkip; i ++ ) {
+                        for (j = 0; j < $scope.jobTaskDescriptions[$scope.jobDetails[$scope.currentTask].task].length; j ++) {
+                            if ($scope.pausePoints[i] && $scope.pausePoints[i][j]) {
+                                pause = true;
+                            }
+                            setStepStatus(i, j, 'skipped', '');
+                        }
+                        $scope.repeatedTaskCounter[i] = 0;
+                    }
+                    $scope.currentTask += tasksToSkip;
+                    $scope.repeatedTaskCounter[$scope.currentTask] = 0;
                 } else {
                     $scope.currentTask ++;
                     $scope.repeatedTaskCounter[$scope.currentTask] = 0;
@@ -462,6 +492,13 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
             var details = $scope.jobDetails[taskIndex];
             var taskName = details.task;
             $scope.workerInProgress = true;
+            if (taskIndex === repeatStepCounterTask && stepIndex === repeatStepCounterStep) {
+                repeatStepCounter ++;
+            } else {
+                repeatStepCounter = 0;
+                repeatStepCounterTask = taskIndex;
+                repeatStepCounterStep = stepIndex;
+            }
             cfMessage.send('invokeWorker', {
                 index: taskIndex, 
                 task: taskName, 
@@ -469,6 +506,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 details: details, 
                 debug: debug, 
                 repeatCounter: $scope.repeatedTaskCounter[taskIndex] || 0,
+                stepRepeatCounter: repeatStepCounter,
                 running: $scope.running
             });
             digestButtonPanel();

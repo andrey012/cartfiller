@@ -184,7 +184,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1485758555577';
+    config.gruntBuildTimeStamp='1485810492858';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -545,11 +545,13 @@
          * api.result, and it is important to call api.skipTask first and 
          * api.result then. 
          * @function CartFiller.Api#skipTask
+         * @param {integer} number defaults to 1
          * @return {CartFiller.Api} for chaining
          * @access public
          */
-        skipTask: function() {
-            me.modules.dispatcher.manageTaskFlow('skipTask');
+        skipTask: function(number) {
+            number = number || 1;
+            me.modules.dispatcher.manageTaskFlow('skipTask,' + number);
             return this;
         },
         /**
@@ -584,11 +586,13 @@
          * you still have to call api.result, and it is important to call
          * api.repeatTask first and api.result then.
          * @function CartFiller.Api#repeatTask
+         * @param {integer} number defaults to 1
          * @return {CartFiller.Api} for chaining
          * @access public
          */
-        repeatTask: function() {
-            me.modules.dispatcher.manageTaskFlow('repeatTask');
+        repeatTask: function(number) {
+            number = number || 1;
+            me.modules.dispatcher.manageTaskFlow('repeatTask,' + number);
             return this;
         },
         /**
@@ -1976,7 +1980,7 @@
      * @access private
      */
     var openRelay = function(url, message, noFocus) {
-        relay.knownUrls[url] = true;
+        relay.knownUrls[url.split('/').slice(0,3).join('/')] = true;
         if (relay.nextRelay && message) {
             if (relay.nextRelayRegistered) {
                 postMessage(relay.nextRelay, message.cmd, message);
@@ -2605,7 +2609,7 @@
                 err = 'ERROR: worker task is in still in progress';
                 alert(err);
             } else {
-                stepRepeatCounter = 0;
+                stepRepeatCounter = message.stepRepeatCounter;
                 onLoadHappened = false;
                 nextTaskFlow = 'normal';
                 if (workerCurrentTaskIndex !== message.index){
@@ -2818,8 +2822,8 @@
             if (details.message === 'onMainFrameLoaded') {
                 me.modules.dispatcher.onMainFrameLoaded(details.args[0], true);
             } else if (details.message === 'openRelayOnHead' && ! relay.isSlave) {
-                if (! relay.knownUrls[details.args[0]]) {
-                    relay.knownUrls[details.args[0]] = true;
+                if (! relay.knownUrls[details.args[0].split('/').slice(0,3).join('/')]) {
+                    relay.knownUrls[details.args[0].split('/').slice(0,3).join('/')] = true;
                     me.modules.dispatcher.onMessage_bubbleRelayMessage({message: 'openRelayOnTail', args: details.args, notToParents: true});
                 }
             } else if (details.message === 'openRelayOnTail' && ! relay.nextRelay) {
@@ -2885,7 +2889,7 @@
             if (me.modules.dispatcher.reflectMessage(details)) {
                 return;
             }
-            me.modules.ui.reportingMousePointerClick(details.x, details.y);
+            me.modules.ui.reportingMousePointerClick(details.x, details.y, details.w, details.fl, details.ft);
         },
         /**
          * Dispatches event issued by postMessage and captured by Dispatcher by mistake
@@ -3216,7 +3220,7 @@
                 m = magicParamPatterns.repeat.exec(currentStepWorkerFn.toString().split(')')[0]);
                 if (m && parseInt(m[1]) > stepRepeatCounter) {
                     me.modules.api.setTimeout(function() {
-                        currentStepWorkerFn.apply(me.modules.ui.getMainFrameWindowDocument(), getWorkerFnParams());
+                        me.modules.api.repeatStep().result();
                     }, 1000);
                     return;
                 }
@@ -4884,26 +4888,29 @@
         /**
          * ////
          */
-        reportingMousePointerClick: function(x, y) {
+        reportingMousePointerClick: function(x, y, mainFrameWindowIndex, frameLeft, frameTop) {
             // let's see whether it comes to our frame or not
-            var frame = window.document.elementFromPoint(x,y);
-            if (frame) {
-                var match = /^cartFillerMainFrame-(\d+)$/.exec(frame.getAttribute('name'));
-                if (match) {
-                    var mainFrameWindowIndex = parseInt(match[1]);
-                    if (mainFrameWindowIndex !== me.modules.dispatcher.getFrameWindowIndex()) {
-                        var frameRect = frame.getBoundingClientRect();
-                        me.modules.dispatcher.onMessage_bubbleRelayMessage({
-                            message: 'reportingMousePointerClickForWindow',
-                            currentMainFrameWindow: mainFrameWindowIndex,
-                            x: x - frameRect.left,
-                            y: y - frameRect.top
-                        });
-                    } else {
-                        this.reportingMousePointerClickForWindow(x, y);
+            if (mainFrameWindowIndex === undefined) {
+                var frame = window.document.elementFromPoint(x,y);
+                if (frame) {
+                    var match = /^cartFillerMainFrame-(\d+)$/.exec(frame.getAttribute('name'));
+                    if (match) {
+                        mainFrameWindowIndex = parseInt(match[1]);
                     }
-                    return;
                 }
+            }
+            if (mainFrameWindowIndex !== undefined) {
+                if (mainFrameWindowIndex !== me.modules.dispatcher.getFrameWindowIndex()) {
+                    me.modules.dispatcher.onMessage_bubbleRelayMessage({
+                        message: 'reportingMousePointerClickForWindow',
+                        currentMainFrameWindow: mainFrameWindowIndex,
+                        x: x - frameLeft,
+                        y: y - frameTop
+                    });
+                } else {
+                    this.reportingMousePointerClickForWindow(x, y);
+                }
+                return;
             }
             me.modules.dispatcher.postMessageToWorker('mousePointer', {x: x, y: y, stack: [], w: me.modules.dispatcher.getFrameWindowIndex()});
         },
@@ -4978,11 +4985,20 @@
                 },false);
                 div.addEventListener('click', function() {
                     document.getElementsByTagName('body')[0].removeChild(reportMousePointer);
+                    var windowIndex;
+                    var frame = window.document.elementFromPoint(x,y);
+                    if (frame) {
+                        var match = /^cartFillerMainFrame-(\d+)$/.exec(frame.getAttribute('name'));
+                        if (match) {
+                            windowIndex = parseInt(match[1]);
+                        }
+                    }
+                    var frameRect = frame.getBoundingClientRect();
                     reportMousePointer = false;
-                    if (me.modules.dispatcher.reflectMessage({cmd: 'reportingMousePointerClick', x: x, y: y})) {
+                    if (me.modules.dispatcher.reflectMessage({cmd: 'reportingMousePointerClick', x: x, y: y, w: windowIndex, ft: frameRect.top, fl: frameRect.left})) {
                         return;
                     }
-                    me.modules.ui.reportingMousePointerClick(x, y);
+                    me.modules.ui.reportingMousePointerClick(x, y, windowIndex, frameRect.left, frameRect.top);
                 });
             }
         },

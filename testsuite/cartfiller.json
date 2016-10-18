@@ -47,5 +47,12 @@ cartfiller = {
         "modals": {
             "modalTest": true,
         },
+        "taskFlow": {
+            "repeatTask": true,
+            "skipTask": true,
+        },
+        "magicParams": {
+            "repeat": true,
+        }
     }
 }

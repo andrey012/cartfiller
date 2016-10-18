@@ -154,6 +154,90 @@
                         }, 1000);
                     }, 1000);
                 }
+            ],
+            repeatTask1: [
+                'initialize globals', function(){
+                    globals.passes = 10000000;
+                    api.result();
+                }
+            ],
+            repeatTask2: [
+                'step1', function(){
+                    globals.passes += 100000; api.result();
+                },
+                'step2', function(){
+                    globals.passes += 10000; api.result();
+                }
+            ],
+            repeatTask3: [
+                'step1', function(){
+                    globals.passes += 1000; api.result();
+                },
+                'step2', function(){
+                    globals.passes += 100; api.result();
+                }
+            ],
+            repeatTask4: [
+                'step1', function(){
+                    globals.passes += 10; 
+                    if (globals.passes === 10111110) return api.repeatTask(3).nop();
+                    if (globals.passes === 10222220) return api.repeatTask(2).nop();
+                    if (globals.passes === 10223330) return api.repeatTask(1).nop();
+                    if (globals.passes === 10223340) return api.repeatTask().nop();
+                    if (globals.passes === 10223350) return api.result();
+                    api.result(String(globals.passes));
+                },
+                'step2', function(){
+                    globals.passes += 1; 
+                    api.result(api.compare(10223351, globals.passes));
+                }
+            ],
+            skipTask1: [
+                'init', function(){
+                    globals.passes = 0; api.result();
+                }
+            ],
+            skipTask2: [
+                '', function(){
+                    globals.passes += 1000000000; api.skipTask().result();
+                },
+                '', function(){
+                    globals.passes += 100000000; api.result();
+                }
+            ],
+            skipTask3: [
+                '', function(){
+                    globals.passes += 10000000; api.skipTask(2).result();
+                }, 
+                '', function(){
+                    globals.passes += 1000000; api.result();
+                }
+            ], 
+            skipTask4: [
+                '', function(){
+                    globals.passes += 100000; api.result();
+                }, 
+                '', function(){
+                    globals.passes += 10000; api.result();
+                }
+            ],
+            skipTask5: [
+                '', function(){
+                    globals.passes += 1000; api.result();
+                }
+            ],
+            skipTask6: [
+                '', function(){
+                    api.result(api.compare(1010001000, globals.passes));
+                }
+            ],
+            magicParamRepeatTask1: [
+                'step1', function() {
+                    globals.passes = 0; api.result();
+                }, 'step2', function(repeat20) {
+                    globals.passes ++;
+                    api.result(globals.passes > 10 ? '' : 'error');
+                }
             ]
         };
     });
