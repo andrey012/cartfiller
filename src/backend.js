@@ -1,9 +1,11 @@
+'use strict';
 var argv = require('yargs')
     .help('help')
     .usage('Usage: $0 [options] <cartFiller url> [test file(s) or path(s)]\n<testsuite url> is the URL where cartFiller is installed inside your project, it should end with .../dist/ or .../src/ if you are going to debug cartFiller. Note, that if --serve-http is used then port will be automatically added to this url.')
     .demand(1, 'Please specify testsuite URL')
     .describe('suite', 'testsuite name to run, default = root testsuite (all tests)')
     .alias('s', 'suite')
+    .describe('test', 'test to run, by default runs all tests')
     .describe('browser', 'name of browser to use, eg chrome or firefox, default = default OS browser')
     .alias('b', 'browser')
     .describe('editor', 'launch interactive editor mode (test(s) will not be auto run)')
@@ -22,11 +24,14 @@ var argv = require('yargs')
     .alias('w', 'wait')
     .describe('wait', 'seconds to wait before tests will be launched, used for browser to settle and stabilize, etc')
     .alias('v', 'video')
-    .describe('record video using ffmpeg into this file (works only with phantomjs')
+    .describe('video', 'record video using ffmpeg into this file (works only with phantomjs')
+    .alias('f', 'frames')
+    .describe('frames', 'save frames to subfolders of this folder for each test to build a video')
     .describe('serve-http', 'start another local static http server, which will serve files from this directory')
     .describe('serve-http-port', 'default http port to bind static http server to')
     .describe('phantomjs-auth', 'Username:password for PhantomJs http authentication')
     .describe('phantomjs-render', 'filename (.png) to render page 5 seconds after launching to troubleshoot what PhantomJs is doing')
+    .describe('debug-frame-folder', 'Save captured video frames to this folder')
     .argv;
 var express = require('express');
 var open = require('open');
@@ -36,9 +41,11 @@ var http = require('http');
 var crypto = require('crypto');
 var bodyParser = require('body-parser');
 var childProcess = require('child_process');
+var fs = require('fs');
 app.use( bodyParser.json() );
 app.use(bodyParser.urlencoded({ extended: true }));
 var isPhantomJs = ('string' === typeof argv.browser) && (-1 !== argv.browser.indexOf('phantomjs'));
+var previousFrameBase64 = '';
 
 var stats = {
     totalTests: 0,
@@ -57,6 +64,18 @@ var failures = [];
 var pulseTime = (new Date()).getTime();
 
 var ffmpegProcess;
+var ffmpegProcessShuttingDown;
+var firstFrameOfThisTest;
+var currentFfmpegVideoFileBase;
+var frameMap = {};
+var frameCompressionMap = {};
+var currentPhantomJsFrame = 0;
+var currentFfmpegFrame = 1;
+var ffmpegWarmup;
+var browserStdoutPaused = false;
+var currentTestBeingExecuted = '';
+var currentFrameFolder = false;
+var currentFrameIndex = 1;
 
 app.get('/', function (req, res) {
   res.send('<!DOCTYPE html><html><head></head><body><pre>Hello, this is cartFiller backend, you should not ever interact with it directly, here are current stats: ' + JSON.stringify(stats, null, 4) + '</pre></body></html>');
@@ -68,37 +87,153 @@ app.post('/progress/' + sessionKey, function (req, res) {
     if (req.body.result !== 'ok') {
         failures.push(req.body);
     }
-    console.log((req.body.result + '       ').substr(0,8) + (new Date()) + '  ' + req.body.test + ', task ' + (parseInt(req.body.task) + 1) + ': ' + req.body.taskName + ', step ' + (parseInt(req.body.step) + 1) + ': result = ' + req.body.result + (req.body.videoFrame ? (', frame = ' + req.body.videoFrame) : '') + (req.body.message ? (', message = ' + req.body.message) : ''));
+    var task = (parseInt(req.body.task) + 1);
+    var step = (parseInt(req.body.step) + 1);
+    var frameMapTask = String(parseInt(req.body.nextTask) + 1);
+    var frameMapStep = String(parseInt(req.body.nextStep) + 1);
+    console.log('setting frameMap for ' + frameMapTask + '.' + frameMapStep);
+    frameMap[frameMapTask + '.' + frameMapStep] = [parseInt(req.body.nextVideoFrame), parseInt(req.body.nextSleep)];
+
+    console.log((req.body.result + '       ').substr(0,8) + (new Date()) + '  ' + req.body.test + ', task ' + task + ': ' + req.body.taskName + ', step ' + step + ': result = ' + req.body.result + (req.body.videoFrame ? (', frame = ' + req.body.videoFrame) : '') + (req.body.message ? (', message = ' + req.body.message) : ''));
     res.end();
 });
 
-var ffmpegWarmup = true;
+var endFfmpegProcess = function(cb) {
+    var endFn = function() {
+        cb();
+    };
+    ffmpegProcess.on('close', function() {
+        ffmpegProcess = false;
+        console.log('ffmpegProcess closed');
+        endFn();
+    });
+    ffmpegProcessShuttingDown = true;
+    console.log('sending stdin.end to ffmpeg');
+    ffmpegProcess.stdin.end();
+    var frameMapFile = currentFfmpegVideoFileBase + '.json';
+    console.log('writing framemap to ' + frameMapFile);
+    fs.writeFileSync(frameMapFile, JSON.stringify(getConvertedFrameMap()));
+};
 
+var getConvertedFrameMap = function() {
+    frameMap['0.0'] = [firstFrameOfThisTest + 2, 2000]; // small startup pause on video
+    var convertedFrameMap = [];
+    for (var i = firstFrameOfThisTest; undefined !== frameCompressionMap[i]; i ++) {
+        if (undefined === convertedFrameMap[frameCompressionMap[i]]) {
+            convertedFrameMap[frameCompressionMap[i]] = ['', '', frameCompressionMap[i], 0];
+        } else {
+            convertedFrameMap[frameCompressionMap[i]][3] += 40; // 40 ms delay for each next frame
+        }
+    }
+    for (i in frameMap) {
+        var internalFrameNumber = frameCompressionMap[frameMap[i][0]];
+        convertedFrameMap[internalFrameNumber] = [i.split('.')[0], i.split('.')[1], internalFrameNumber, frameMap[i][1]];
+    }
+    convertedFrameMap.sort(function(a, b) {
+        return a[2] - b[2];
+    });
+
+    return convertedFrameMap;
+};
+
+var writeFrameMapToFrameFolder = function() {
+    // we are going to write frameMap here
+    console.log('writing frameMap.json to ' + currentFrameFolder);
+    fs.writeFileSync(currentFrameFolder + '/frameMap.json', JSON.stringify(getConvertedFrameMap()));
+};
 
 app.post('/ready/' + sessionKey, function(req, res) {
     console.log('testSuiteController says get ready for : ' + req.body.test);
     res.setHeader('Access-Control-Allow-Origin', '*');
-    if (argv.video) {
-        if (ffmpegProcess) {
-            ffmpegProcess.stdin.end();
+    currentTestBeingExecuted = req.body.test;
+    if (argv.frames) {
+        if (currentFrameFolder) {
+            writeFrameMapToFrameFolder();
         }
-        var pc = argv.video.split('.');
-        var ext = pc.pop();
-        pc.push(encodeURIComponent(req.body.test));
-        pc.push(ext);
-        var args = ['-c:v', 'png', '-f', 'image2pipe', '-r', '25', '-i', '-', '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', '-y', pc.join('.')];
-        console.log('launching ffmpeg ' + args.join(' '));
-        ffmpegWarmup = true;
-        ffmpegWarmedUp = function() {
-            if (ffmpegWarmup) {
-                ffmepgWarmup = false;
-                res.end();
+        console.log('resetting frameMap');
+        firstFrameOfThisTest = false;
+        frameMap = {};
+        frameCompressionMap = {};
+        // make sure that directory exists
+        currentFrameFolder = argv.frames.replace(/\/+$/, '') + '/' + currentTestBeingExecuted;
+        console.log('preparing folder for frames: ' + currentFrameFolder);
+        var stat;
+        try {
+            stat = fs.statSync(currentFrameFolder);
+        } catch (e) {}
+        if (stat && ! stat.isDirectory()) {
+            console.log('unable to save frames in specified directory: ' + currentFrameFolder + ' because it is a file');
+            currentFrameFolder = false;
+        } else if (! stat) {
+            try {
+                fs.mkdirSync(currentFrameFolder);
+            } catch (e) {
+                console.log(e);
             }
-        };
-        ffmpegProcess = childProcess.spawn('ffmpeg', args);
+            try {
+                stat = fs.statSync(currentFrameFolder);
+            } catch (e) {}
+            if ((! stat) || (! stat.isDirectory())) {
+                console.log('tried to created folder to save frames to: ' + currentFrameFolder + ' but did not succeed');
+                currentFrameFolder = false;
+            }
+        } else if (stat && stat.isDirectory()) {
+            console.log('frame folder already exists: ' + currentFrameFolder);
+        }
+        currentFrameIndex = 1;
+    }
 
-        ffmpegProcess.stdout.on('data', function(data) { console.log('ffmpeg stdout: ' + data); ffmpegWarmedUp(); });
-        ffmpegProcess.stderr.on('data', function(data) { console.log('ffmpeg stderr: ' + data); ffmpegWarmedUp(); });
+    if (argv.video) {
+        var next = function() {
+            var pc = argv.video.split('.');
+            var ext = pc.pop();
+            var name = pc.pop();
+            pc.push(name + '___' + req.body.test);
+            currentFfmpegVideoFileBase = pc.join('.');
+            pc.push(ext);
+            var args = ['-c:v', 'png', '-f', 'image2pipe', '-r', '25', '-i', '-', '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', '-y', pc.join('.')];
+            console.log('launching ffmpeg ' + args.join(' '));
+            ffmpegWarmup = true;
+            var ffmpegWarmedUp = function() {
+                if (ffmpegWarmup) {
+                    ffmpegWarmup = false;
+                    previousFrameBase64 = '';
+                    setTimeout(function() {
+                        res.end();
+                    }, 20000);
+                }
+            };
+            ffmpegProcessShuttingDown = false;
+            ffmpegProcess = childProcess.spawn('ffmpeg', args);
+            currentFfmpegFrame = 1;
+            firstFrameOfThisTest = false;
+            frameMap = {};
+            frameCompressionMap = {};
+
+            ffmpegProcess.stdout.on('data', function(data) { 
+                console.log('ffmpeg stdout: ' + data); 
+                ffmpegWarmedUp(); 
+            });
+
+            ffmpegProcess.stderr.on('data', function(data) { 
+                console.log('ffmpeg stderr: ' + data); 
+                ffmpegWarmedUp(); 
+            });
+            
+            ffmpegProcess.stdin.on('drain', function() {
+                console.log('ffmpegProcess.stdin: drain event received');
+                if (browserStdoutPaused) {
+                    console.log('browserProcess.stdout is paused, resuing');
+                    browserProcess.stdout.resume();
+                    browserStdoutPaused = false;
+                }
+            });
+        };
+        if (ffmpegProcess) {
+            endFfmpegProcess(next);
+        } else {
+            next();
+        }
 
     } else {
         res.end();
@@ -143,11 +278,17 @@ var tearDownFn = function(code) {
     if (ffmpegProcess) {
         waterfall.push(function() {
             console.log('killing ffmpeg process');
-            ffmpegProcess.on('close', function() {
+            endFfmpegProcess(function() {
                 waterfall.shift();
                 waterfall[0]();
             });
-            ffmpegProcess.stdin.end();
+        });
+    }
+    if (argv.frames) {
+        waterfall.push(function() {
+            writeFrameMapToFrameFolder();
+            waterfall.shift();
+            waterfall[0]();
         });
     }
     waterfall.push(function(){
@@ -204,6 +345,7 @@ var serveHttpPort = argv['serve-http-port'] ? argv['serve-http-port'] : 3001;
 var serveHttpServer;
 var browserProcess = false;
 var childApp = false;
+var phantomJsStdoutBuffer = '';
 
 var startup = [];
 
@@ -292,6 +434,13 @@ startup.push(function() {
     var args = [];
     args.push('backend=' + encodeURIComponent(backendUrl));
     args.push('key=' + encodeURIComponent(sessionKey));
+    if (argv.test) {
+        args.push(
+            'job=' + encodeURIComponent(argv.test),
+            'task=0',
+            'step=1'
+        );
+    }
     if (editor) {
         args.push('editor=1');
     }
@@ -321,7 +470,7 @@ startup.push(function() {
         if (argv['phantomjs-render']) {
             childArgs.push('--render=' + argv['phantomjs-render']);
         }
-        if (argv.video) {
+        if (argv.video || argv.frames) {
             childArgs.push('--video');
         }
         childArgs.push(url);
@@ -330,15 +479,85 @@ startup.push(function() {
 
 
         browserProcess.stdout.on('data', function(data) { 
-            if (ffmpegProcess) {
-                var buf = Buffer(data.toString(), 'base64');
-                ffmpegProcess.stdin.write(buf);
-            }
-            if (! argv.video) {
+            if (argv.video || argv.frames) {
+                phantomJsStdoutBuffer += data.toString();
+                while (true) {
+                    var firstStart = phantomJsStdoutBuffer.indexOf('$start$');
+                    if (-1 === firstStart) {
+                        break;
+                    }
+                    var firstFinish = phantomJsStdoutBuffer.indexOf('$finish$', firstStart);
+                    if (-1 === firstFinish) {
+                        break;
+                    }
+                    currentPhantomJsFrame = parseInt(phantomJsStdoutBuffer.substr(firstStart + 7, 8).trim());
+                    var frameContents = phantomJsStdoutBuffer.substr(firstStart + 16, firstFinish - firstStart - 16);
+                    phantomJsStdoutBuffer = phantomJsStdoutBuffer.substr(firstFinish + 8);
+                    if (argv.video) {
+                        frameCompressionMap[currentPhantomJsFrame] = currentFfmpegFrame;
+                    } else if (argv.frames) {
+                        frameCompressionMap[currentPhantomJsFrame] = currentFrameIndex;
+                    }
+                    if (previousFrameBase64 === frameContents) {
+                        console.log('skipping frame ' + currentPhantomJsFrame + ' because it is exactly same as previous');
+                        continue;
+                    }
+                    if (false === firstFrameOfThisTest) {
+                        console.log('setting firstFrameOfThisTest to ' + currentPhantomJsFrame);
+                        firstFrameOfThisTest = currentPhantomJsFrame;
+                    }
+
+                    previousFrameBase64 = frameContents;
+                    var sendToFfmpeg = (ffmpegProcess && (! ffmpegProcessShuttingDown) && (! ffmpegWarmup));
+                    if (sendToFfmpeg || argv['debug-frame-folder'] || currentFrameFolder) {
+                        var buf = new Buffer(frameContents, 'base64');
+                        if (sendToFfmpeg) {
+                            console.log('sending frame ' + currentPhantomJsFrame + ' to ffmpeg as frame ' + currentFfmpegFrame);
+                            if (! ffmpegProcess.stdin.write(buf)) {
+                                console.log('ffmpegProcess.stdin.write returned false, pausing browserProcess.stdout');
+                                browserProcess.stdout.pause();
+                                browserStdoutPaused = true;
+                            }
+                            currentFfmpegFrame ++;
+                        } else if (argv.video) {
+                            if (ffmpegProcess) {
+                                if (ffmpegProcessShuttingDown) {
+                                    console.log('skipping frame because of ffmpegProcessShuttingDown');
+                                }
+                                if (ffmpegWarmup) {
+                                    console.log('skipping frame because of ffmpegWarmup');
+                                }
+                            } else {
+                                console.log('skipping frame because ffmpegProcess is not running');
+                            }
+                        }
+                        if (sendToFfmpeg && argv['debug-frame-folder']) {
+                            var debugFrameFile = argv['debug-frame-folder'] + '/0000000'.substr(0, 8 - String(currentPhantomJsFrame).length) + String(currentPhantomJsFrame) + '.png';
+                            console.log('saving frame to ' + debugFrameFile);
+                            fs.writeFileSync(debugFrameFile, buf);
+                        }
+                        if (currentFrameFolder) {
+                            var frameFileName = currentFrameFolder + '/0000000'.substr(0, 8 - String(currentFrameIndex).length) + String(currentFrameIndex) + '.png';
+                            console.log('saving frame to ' + frameFileName);
+                            fs.writeFileSync(frameFileName, buf);
+                            currentFrameIndex ++;
+                        }
+                    }
+                }
+            } else {
                 console.log('PhantomJs stdout: ' + data);
             }
         });
-        browserProcess.stderr.on('data', function(data) { console.log('PhantomJs stderr: ' + data); });
+        browserProcess.stderr.on('data', function(data) { 
+            var match = /phantomjs\.js have rendered frame \[(\d+)\]/.exec(data);
+            if (match) {
+                if (false === firstFrameOfThisTest) {
+                    firstFrameOfThisTest = parseInt(match[1]);
+                }
+            } else {
+                console.log('PhantomJs stderr: ' + data);
+            }
+        });
     } else {
         console.log('Launching ' + (argv.browser ? argv.browser : 'default browser') + ' with URL: ' + url);
         browserProcess = open(url, argv.browser);

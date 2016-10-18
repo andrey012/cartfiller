@@ -12,7 +12,7 @@ cartfiller = {
             "test12": false
         },
         "suite2": {
-            "test22": true
+            "test22?foo=bar": true
         },
         "libTests": {
             "staticSteps": true,

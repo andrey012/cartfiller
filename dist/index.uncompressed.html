@@ -46863,7 +46863,7 @@ define('app', ['angular', 'angular-route'], function(){
     return angular.module('cartFillerApp', ['ngRoute']);
 });
 define('audioService', ['app', 'audioService'], function(app){
-    app.service('cfAudioService', function(){
+    app.service('cfAudioService', ['cfDebug', function(cfDebug){
         var recording = false;
         var initialized;
         var AudioContext;
@@ -47011,13 +47011,13 @@ define('audioService', ['app', 'audioService'], function(app){
                     link.href = url;
                     var now = (new Date()).getTime();
                     var duration = now - recording;
-                    link.download = testName + '_' + (1 + task) + '_' + (1 + step) + '_' + duration + '_' + now + ' .wav';
+                    link.download = 'cartFillerAudio_' + cfDebug.makeFilesystemSafeTestName(testName) + '___' + (1 + task) + '_' + (1 + step) + '_' + duration + '_' + now + '.wav';
                     recording = false;
                 }
                 return recording;
             }
         };
-    });
+    }]);
 });
 
 define('bootstrap', ['app', 'controller', 'cfMessageService', 'testSuiteController'], function(){
@@ -47285,11 +47285,26 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                         $scope.doingOneStep = true;
                     }
                 }
+                var nextStepTimeout = 0;
                 if ($scope.running || ($scope.doingOneStep && ($scope.clickedWhileWorkerWasInProgress === 'step' || true === details.nop))){
                     if (proceed){
-                        setTimeout(function(){
-                            $scope.doNextStep();
-                        }, (($scope.running === 'slow') && (true !== details.nop)) ? (('undefined' !== typeof details.sleep) ? details.sleep : 1000) : 0);
+                        nextStepTimeout = (($scope.running === 'slow' || cfDebug.callPhantom) && (true !== details.nop)) ?
+                            (('undefined' !== typeof details.sleep) ? details.sleep : 1000) : 
+                            0;
+                        if (cfDebug.callPhantom) {
+                            cfDebug.callPhantom({preventRenderingUntilNextFrame: true});
+                            setTimeout(function() {
+                                cfDebug.callPhantom({renderNextFrame: true});
+                                $scope.doNextStep();
+                            }, 100); // give it some time to stabilize
+                        } else {
+                            setTimeout(
+                                function(){
+                                    $scope.doNextStep();
+                                }, 
+                                nextStepTimeout
+                            );
+                        }
                     } else {
                         $scope.running = $scope.doingOneStep = false;
                     }
@@ -47304,7 +47319,10 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                         currentTaskStepIndex: details.step,
                         running: wasRunning,
                         completed: ! proceed,
-                        stopTestsuite: stopTestsuite
+                        stopTestsuite: stopTestsuite,
+                        nextTaskIndex: $scope.currentTask,
+                        nextTaskStepIndex: $scope.currentStep,
+                        nextTaskSleep: nextStepTimeout
                     });
                 $scope.workerInProgress = false;
                 if (!proceed){
@@ -47943,7 +47961,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
         };
         $scope.recordAudioNoWatch = function(event) {
             var button = $('#recordAudio');
-            var recording = cfAudioService.toggle(button[0], $scope.jobTitle, $scope.currentTask, $scope.currentStep);
+            var recording = cfAudioService.toggle(button[0], $scope.jobName, $scope.currentTask, $scope.currentStep);
             if (recording) {
                 event.stopPropagation();
                 button.removeClass('btn-info').addClass('btn-danger');
@@ -47979,7 +47997,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
             reportError('bootstrap message did not come');
         }
     }, 10000);
-    config.gruntBuildTimeStamp='1485887993063';
+    config.gruntBuildTimeStamp='1485930411021';
     window.addEventListener('message', function(event){
         var prefix = 'cartFillerMessage:';
         var isDist = true;
@@ -48021,10 +48039,46 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 });
                 define('cfMessageService', ['app'], function(app){
                     app.service('cfDebug', function(){
+                        var callPhantom = false;
+                        try {
+
+                            if (window.parent && window.parent.callPhantom && ('function' === typeof window.parent.callPhantom)) {
+                                callPhantom = window.parent.callPhantom;
+                            }
+                        } catch (e) {}
                         return {
                             debugEnabled: message.debug,
                             src: message.src,
                             useSource: ! isDist,
+                            callPhantom: callPhantom,
+                            makeFilesystemSafeTestName: function(testName) {
+                                var pc = testName.split('?');
+                                var name = encodeURIComponent(pc.shift());
+                                if (! pc.length) {
+                                    return name;
+                                }
+                                var params = encodeURIComponent(pc.join('?'));
+                                if (params.length > 64) {
+                                    // we need some extremely simple hashing for everything after 32 chars
+                                    var first = params.substr(0, 32);
+                                    var toHash = params.substr(32).split('').map(function(c){ return c.charCodeAt(0);});
+                                    for (var i = 24; i < toHash.length; i ++ ) {
+                                        toHash[i % 24] += toHash[i];
+                                    }
+                                    var second = btoa(
+                                        String.fromCharCode.apply(
+                                            null, 
+                                            new Uint8Array(
+                                                toHash.slice(0, 24).map(function(v){
+                                                    return v % 256;
+                                                })
+                                            )
+                                        )
+                                    );
+                                    params = first + second;
+                                }
+                                return name + encodeURIComponent('?') + params;
+                            }
                         };
                     }),
                     app.service('cfMessage', function(){
@@ -48053,7 +48107,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 if (message.tests) {
                     var x = new XMLHttpRequest();
                     x.onload = function(){
-                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1485887993063') {
+                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1485930411021') {
                             console.log('new version of CartFiller was deployed, switching to it');
                             var hash = window.location.href.split('#');
                             var pc = hash[0].split('?');
@@ -48298,7 +48352,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
         };
         var getNextTestToRunSelected = function(index) {
             index = index ? index : 0;
-            while (index < $scope.discovery.scripts.enabled.length && ! $('input[name="select-test-to-run-' + index + '"]').is(':checked')) {
+            while (index < $scope.discovery.scripts.enabled.length && ! $scope.selectedTests[index]) {
                 $scope.discovery.scripts.success[index] = -2;
                 index ++;
             }
@@ -48642,7 +48696,20 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             $scope.$digest();
             if ($scope.params.backend && ! $scope.params.editor) {
                 setTimeout(function(){
-                    $scope.runAll();
+                    if ('undefined' !== typeof $scope.params.job && 
+                           'undefined' !== typeof $scope.params.task && 
+                           'undefined' !== typeof $scope.params.step
+                    ) {
+
+                        for (i = 0; i < $scope.discovery.scripts.urls.length; i ++) {
+                            if ($scope.discovery.scripts.urls[i] === $scope.params.job) {
+                                $scope.selectedTests[i] = true;
+                            }
+                        }
+                        $scope.runSelected();
+                    } else {
+                        $scope.runAll();
+                    }
                 }, $scope.params.wait ? ($scope.params.wait * 1000) : 0);
             } else if ($scope.params.goto && ! $scope.alreadyWentTo) {
                 $scope.alreadyWentTo = true;
@@ -48811,12 +48878,11 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             $.cartFillerPlugin({'$cartFillerTestUpdate': test, trackWorker: $scope.params.editor});
         };
         var getVideoFrame = function () {
-            try {
-                if (window.parent && window.parent.callPhantom && ('function' === typeof window.parent.callPhantom)) {
-                    return window.parent.callPhantom({getVideoFrame: true});
-                }
-            } catch (e) {}
-            return '-1';
+            if (cfDebug.callPhantom) {
+                return cfDebug.callPhantom({getVideoFrame: true});
+            } else {
+                return '-1';
+            }
         };
         $scope.runTest = function(index, how, untilTask, untilStep, $event, isBackendReady) {
             // for case of video record - we need backend to get prepared
@@ -48827,7 +48893,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                     url: $scope.params.backend.replace(/\/+$/, '') + '/ready/' + $scope.params.key,
                     method: 'POST',
                     data: {
-                        test: $scope.discovery.scripts.urls[index],
+                        test: cfDebug.makeFilesystemSafeTestName($scope.discovery.scripts.urls[index]),
                     },
                     complete: function() {
                         backendPendingRequestCounter --;
@@ -48881,13 +48947,18 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                 false,
                 function(data) {
                     if ($scope.params.backend && false !== data.currentTaskIndex && false !== data.currentTaskStepIndex) {
+                        var videoFrame = getVideoFrame();
                         var json = {
                             test: $scope.discovery.scripts.urls[index],
                             task: data.currentTaskIndex,
                             taskName: $scope.discovery.scripts.contents[index].details[data.currentTaskIndex].task,
                             step: data.currentTaskStepIndex,
                             result: data.result[data.currentTaskIndex].stepResults[data.currentTaskStepIndex].status,
-                            videoFrame: getVideoFrame()
+                            videoFrame: videoFrame + 2,
+                            nextTask: data.nextTaskIndex,
+                            nextStep: data.nextTaskStepIndex,
+                            nextVideoFrame: videoFrame + 1,
+                            nextSleep: data.nextTaskSleep
                         };
                         if (json.result !== 'ok') {
                             json.message = data.result[data.currentTaskIndex].stepResults[data.currentTaskStepIndex].message;

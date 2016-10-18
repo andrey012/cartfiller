@@ -260,11 +260,26 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                         $scope.doingOneStep = true;
                     }
                 }
+                var nextStepTimeout = 0;
                 if ($scope.running || ($scope.doingOneStep && ($scope.clickedWhileWorkerWasInProgress === 'step' || true === details.nop))){
                     if (proceed){
-                        setTimeout(function(){
-                            $scope.doNextStep();
-                        }, (($scope.running === 'slow') && (true !== details.nop)) ? (('undefined' !== typeof details.sleep) ? details.sleep : 1000) : 0);
+                        nextStepTimeout = (($scope.running === 'slow' || cfDebug.callPhantom) && (true !== details.nop)) ?
+                            (('undefined' !== typeof details.sleep) ? details.sleep : 1000) : 
+                            0;
+                        if (cfDebug.callPhantom) {
+                            cfDebug.callPhantom({preventRenderingUntilNextFrame: true});
+                            setTimeout(function() {
+                                cfDebug.callPhantom({renderNextFrame: true});
+                                $scope.doNextStep();
+                            }, 100); // give it some time to stabilize
+                        } else {
+                            setTimeout(
+                                function(){
+                                    $scope.doNextStep();
+                                }, 
+                                nextStepTimeout
+                            );
+                        }
                     } else {
                         $scope.running = $scope.doingOneStep = false;
                     }
@@ -279,7 +294,10 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                         currentTaskStepIndex: details.step,
                         running: wasRunning,
                         completed: ! proceed,
-                        stopTestsuite: stopTestsuite
+                        stopTestsuite: stopTestsuite,
+                        nextTaskIndex: $scope.currentTask,
+                        nextTaskStepIndex: $scope.currentStep,
+                        nextTaskSleep: nextStepTimeout
                     });
                 $scope.workerInProgress = false;
                 if (!proceed){
@@ -918,7 +936,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
         };
         $scope.recordAudioNoWatch = function(event) {
             var button = $('#recordAudio');
-            var recording = cfAudioService.toggle(button[0], $scope.jobTitle, $scope.currentTask, $scope.currentStep);
+            var recording = cfAudioService.toggle(button[0], $scope.jobName, $scope.currentTask, $scope.currentStep);
             if (recording) {
                 event.stopPropagation();
                 button.removeClass('btn-info').addClass('btn-danger');

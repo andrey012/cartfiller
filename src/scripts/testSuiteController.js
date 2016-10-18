@@ -135,7 +135,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
         };
         var getNextTestToRunSelected = function(index) {
             index = index ? index : 0;
-            while (index < $scope.discovery.scripts.enabled.length && ! $('input[name="select-test-to-run-' + index + '"]').is(':checked')) {
+            while (index < $scope.discovery.scripts.enabled.length && ! $scope.selectedTests[index]) {
                 $scope.discovery.scripts.success[index] = -2;
                 index ++;
             }
@@ -479,7 +479,20 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             $scope.$digest();
             if ($scope.params.backend && ! $scope.params.editor) {
                 setTimeout(function(){
-                    $scope.runAll();
+                    if ('undefined' !== typeof $scope.params.job && 
+                           'undefined' !== typeof $scope.params.task && 
+                           'undefined' !== typeof $scope.params.step
+                    ) {
+
+                        for (i = 0; i < $scope.discovery.scripts.urls.length; i ++) {
+                            if ($scope.discovery.scripts.urls[i] === $scope.params.job) {
+                                $scope.selectedTests[i] = true;
+                            }
+                        }
+                        $scope.runSelected();
+                    } else {
+                        $scope.runAll();
+                    }
                 }, $scope.params.wait ? ($scope.params.wait * 1000) : 0);
             } else if ($scope.params.goto && ! $scope.alreadyWentTo) {
                 $scope.alreadyWentTo = true;
@@ -648,12 +661,11 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             $.cartFillerPlugin({'$cartFillerTestUpdate': test, trackWorker: $scope.params.editor});
         };
         var getVideoFrame = function () {
-            try {
-                if (window.parent && window.parent.callPhantom && ('function' === typeof window.parent.callPhantom)) {
-                    return window.parent.callPhantom({getVideoFrame: true});
-                }
-            } catch (e) {}
-            return '-1';
+            if (cfDebug.callPhantom) {
+                return cfDebug.callPhantom({getVideoFrame: true});
+            } else {
+                return '-1';
+            }
         };
         $scope.runTest = function(index, how, untilTask, untilStep, $event, isBackendReady) {
             // for case of video record - we need backend to get prepared
@@ -664,7 +676,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                     url: $scope.params.backend.replace(/\/+$/, '') + '/ready/' + $scope.params.key,
                     method: 'POST',
                     data: {
-                        test: $scope.discovery.scripts.urls[index],
+                        test: cfDebug.makeFilesystemSafeTestName($scope.discovery.scripts.urls[index]),
                     },
                     complete: function() {
                         backendPendingRequestCounter --;
@@ -718,13 +730,18 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                 false,
                 function(data) {
                     if ($scope.params.backend && false !== data.currentTaskIndex && false !== data.currentTaskStepIndex) {
+                        var videoFrame = getVideoFrame();
                         var json = {
                             test: $scope.discovery.scripts.urls[index],
                             task: data.currentTaskIndex,
                             taskName: $scope.discovery.scripts.contents[index].details[data.currentTaskIndex].task,
                             step: data.currentTaskStepIndex,
                             result: data.result[data.currentTaskIndex].stepResults[data.currentTaskStepIndex].status,
-                            videoFrame: getVideoFrame()
+                            videoFrame: videoFrame + 2,
+                            nextTask: data.nextTaskIndex,
+                            nextStep: data.nextTaskStepIndex,
+                            nextVideoFrame: videoFrame + 1,
+                            nextSleep: data.nextTaskSleep
                         };
                         if (json.result !== 'ok') {
                             json.message = data.result[data.currentTaskIndex].stepResults[data.currentTaskStepIndex].message;

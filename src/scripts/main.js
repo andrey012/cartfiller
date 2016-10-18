@@ -55,10 +55,46 @@
                 });
                 define('cfMessageService', ['app'], function(app){
                     app.service('cfDebug', function(){
+                        var callPhantom = false;
+                        try {
+
+                            if (window.parent && window.parent.callPhantom && ('function' === typeof window.parent.callPhantom)) {
+                                callPhantom = window.parent.callPhantom;
+                            }
+                        } catch (e) {}
                         return {
                             debugEnabled: message.debug,
                             src: message.src,
                             useSource: ! isDist,
+                            callPhantom: callPhantom,
+                            makeFilesystemSafeTestName: function(testName) {
+                                var pc = testName.split('?');
+                                var name = encodeURIComponent(pc.shift());
+                                if (! pc.length) {
+                                    return name;
+                                }
+                                var params = encodeURIComponent(pc.join('?'));
+                                if (params.length > 64) {
+                                    // we need some extremely simple hashing for everything after 32 chars
+                                    var first = params.substr(0, 32);
+                                    var toHash = params.substr(32).split('').map(function(c){ return c.charCodeAt(0);});
+                                    for (var i = 24; i < toHash.length; i ++ ) {
+                                        toHash[i % 24] += toHash[i];
+                                    }
+                                    var second = btoa(
+                                        String.fromCharCode.apply(
+                                            null, 
+                                            new Uint8Array(
+                                                toHash.slice(0, 24).map(function(v){
+                                                    return v % 256;
+                                                })
+                                            )
+                                        )
+                                    );
+                                    params = first + second;
+                                }
+                                return name + encodeURIComponent('?') + params;
+                            }
                         };
                     }),
                     app.service('cfMessage', function(){

@@ -1,5 +1,5 @@
 define('audioService', ['app', 'audioService'], function(app){
-    app.service('cfAudioService', function(){
+    app.service('cfAudioService', ['cfDebug', function(cfDebug){
         var recording = false;
         var initialized;
         var AudioContext;
@@ -147,11 +147,11 @@ define('audioService', ['app', 'audioService'], function(app){
                     link.href = url;
                     var now = (new Date()).getTime();
                     var duration = now - recording;
-                    link.download = testName + '_' + (1 + task) + '_' + (1 + step) + '_' + duration + '_' + now + ' .wav';
+                    link.download = 'cartFillerAudio_' + cfDebug.makeFilesystemSafeTestName(testName) + '___' + (1 + task) + '_' + (1 + step) + '_' + duration + '_' + now + '.wav';
                     recording = false;
                 }
                 return recording;
             }
         };
-    });
+    }]);
 });

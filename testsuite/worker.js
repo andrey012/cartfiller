@@ -137,6 +137,11 @@
                 'check result', function() {
                     api.result(api.compare(lib.testsuite.worker.theHelper(), 'helperOfTestsuite'));
                 },
+                '', function() { api.setTimeout(api.result, 5000); }
+            ],
+            'say foo value': [
+                '', function() {
+                    api.say('The foo value is: ' + task.value).sleep(5000).result();
             ],
             'show modal dialog': [
                 '', function() {
@@ -239,6 +244,7 @@
                     api.result(globals.passes > 10 ? '' : 'error');
                 }
             ]
+
         };
     });
 })(window, document);
