@@ -184,7 +184,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1485930411021';
+    config.gruntBuildTimeStamp='1485973382390';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -1133,7 +1133,7 @@
                     elementNode.focus();
                     var text;
                     if (value instanceof Function) {
-                        text = value();
+                        text = value.apply(getDocument(), args);
                     } else if (undefined !== me.modules.dispatcher.getWorkerTask()[value]) {
                         text = me.modules.dispatcher.getWorkerTask()[value];
                     } else if (undefined !== me.modules.dispatcher.getWorkerGlobals()[value]) {
