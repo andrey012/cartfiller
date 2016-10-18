@@ -47375,6 +47375,9 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                         pause = true;
                     }
                 }
+                if ($scope.updateTaskCompleteMark($scope.currentTask)) {
+                    $scope.jobTaskProgress[$scope.currentTask].complete = true;
+                }
             } else if (0 === nextTaskFlow.indexOf('repeatStep')) {
                 var n = parseInt(nextTaskFlow.split(',')[1]);
                 $scope.currentStep = $scope.currentStep + 1 - n;
@@ -47477,11 +47480,6 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
         };
         $scope.updateTaskCompleteMark = function(index){
             return (false === $scope.getNextStepToDo(index));
-        };
-        $scope.selectTask = function(index){
-            for (var i = 0; i < index; i ++){
-                $scope.jobTaskProgress[i].complete = true;
-            }
         };
         $scope.toggleTaskProgress = function(index){
             $scope.jobTaskProgress[index].complete = !$scope.jobTaskProgress[index].complete;
@@ -47996,7 +47994,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
             reportError('bootstrap message did not come');
         }
     }, 10000);
-    config.gruntBuildTimeStamp='1485810492858';
+    config.gruntBuildTimeStamp='1485887993063';
     window.addEventListener('message', function(event){
         var prefix = 'cartFillerMessage:';
         var isDist = true;
@@ -48070,7 +48068,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 if (message.tests) {
                     var x = new XMLHttpRequest();
                     x.onload = function(){
-                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1485810492858') {
+                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1485887993063') {
                             console.log('new version of CartFiller was deployed, switching to it');
                             var hash = window.location.href.split('#');
                             var pc = hash[0].split('?');

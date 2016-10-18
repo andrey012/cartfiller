@@ -335,6 +335,9 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                         pause = true;
                     }
                 }
+                if ($scope.updateTaskCompleteMark($scope.currentTask)) {
+                    $scope.jobTaskProgress[$scope.currentTask].complete = true;
+                }
             } else if (0 === nextTaskFlow.indexOf('repeatStep')) {
                 var n = parseInt(nextTaskFlow.split(',')[1]);
                 $scope.currentStep = $scope.currentStep + 1 - n;
@@ -437,11 +440,6 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
         };
         $scope.updateTaskCompleteMark = function(index){
             return (false === $scope.getNextStepToDo(index));
-        };
-        $scope.selectTask = function(index){
-            for (var i = 0; i < index; i ++){
-                $scope.jobTaskProgress[i].complete = true;
-            }
         };
         $scope.toggleTaskProgress = function(index){
             $scope.jobTaskProgress[index].complete = !$scope.jobTaskProgress[index].complete;

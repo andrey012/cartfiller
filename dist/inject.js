@@ -184,7 +184,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1485810492858';
+    config.gruntBuildTimeStamp='1485887993063';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -1097,12 +1097,14 @@
          * @param {Function} whatNext callback after this task is 
          * @param {boolean} dontClear by default this function will clear input before typing
          * @param {boolean} failOnErrors set to true to fail on errors during attempts to set keyCode and charCode values
+         * @param {boolean} paste set to true not to simulate each separate key press, but
+         * simulate Paste action
          * @return {Array} ready for putting into worker array
          * @access public
          */
-        typer: function(value, whatNext, dontClear, failOnErrors) {
+        typer: function(value, whatNext, dontClear, failOnErrors, paste) {
             var r = [
-                'type key sequence',
+                paste ? 'type key sequence' : 'paste value',
                 function(el) {
                     var args = arguments;
                     if (me.modules.api.debug && (1 || me.modules.api.debug.stop)) {
@@ -1148,9 +1150,9 @@
                     }
                     var document = elementNode.ownerDocument;
                     var fn = function(text, elementNode, whatNext) {
-                        var char = text.substr(0, 1);
+                        var char = paste ? 'v' : text.substr(0, 1);
                         var charCode = char.charCodeAt(0);
-                        var nextText = text.substr(1);
+                        var nextText = paste ? '' : text.substr(1);
                         var charCodeGetter = {get : function() { return charCode; }};
                         var metaKeyGetter = {get : function() { return false; }};
                         var doKeyPress = true;
@@ -1206,7 +1208,7 @@
                                 doKeyPress = false;
                             }
                             if ((invalidEvent || dispatchEventResult) && 'keypress' === eventName) {
-                                elementNode.value = elementNode.value + char;
+                                elementNode.value = elementNode.value + (paste ? text : char);
                             }
                         }
                         if (0 === nextText.length) {
@@ -1225,6 +1227,19 @@
             ];
             r[1].cartFillerParameterList = [value];
             return r;
+        },
+        /**
+         * Sames as typer but pastes in one step
+         * @function CartFiller.Api#paster
+         * @param {string|Function} value see api.typer()
+         * @param {Function} whatNext see api.typer()
+         * @param {boolean} dontClear see api.typer()
+         * @param {boolean} failOnErrors see api.typer()
+         * @return {Array} ready for putting into worker array
+         * @access public
+         */
+        paster: function(value, whatNext, dontClear, failOnErrors) {
+            return this.typer(value, whatNext, dontClear, failOnErrors, true);
         },
         /**
          * Wrapper function for asynchronous things - catches exceptions and fires negative result
