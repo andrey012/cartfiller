@@ -184,7 +184,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1486016042662';
+    config.gruntBuildTimeStamp='1486016463014';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -1995,7 +1995,6 @@
      * @access private
      */
     var openRelay = function(url, message, noFocus) {
-        console.log('openRelay called');
         if (url !== '') {
             relay.knownUrls[url.split('/').slice(0,3).join('/')] = true;
         }
@@ -2675,10 +2674,6 @@
                 try {
                     if (undefined === worker[message.task]) {
                         alert(err = 'invalid worker - no function for ' + message.task + ' exist');
-                        console.log('we have only: ');
-                        for (var i in worker) {
-                            console.log(i);
-                        }
                         me.modules.api.result(err, false);
                         return;
                     } else if (undefined === worker[message.task][(message.step * 2) + 1]){
