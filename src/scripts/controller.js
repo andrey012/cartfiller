@@ -2,6 +2,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
     'use strict';
     app
     .controller('indexController', ['$scope', 'cfMessage', '$timeout', 'cfDebug', 'cfScroll', 'cfAudioService', function ($scope, cfMessage, $timeout, cfDebug, cfScroll, cfAudioService){
+        var nextStepTimeoutHandle = false;
         if (cfMessage.testSuite) {
             return;
         }
@@ -116,6 +117,10 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 suspendEditorMode = ! details.enabled;
                 $('#suspendEditorMode').prop('checked', suspendEditorMode);
             } else if (cmd === 'jobDetails'){
+                if (nextStepTimeoutHandle) {
+                    clearTimeout(nextStepTimeoutHandle);
+                    nextStepTimeoutHandle = false;
+                }
                 $scope.$apply(function(){
                     if (undefined !== details.$cartFillerTestUpdate && undefined === details.details) {
                         // this is just test update
@@ -266,15 +271,21 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                         nextStepTimeout = (($scope.running === 'slow' || cfDebug.callPhantom) && (true !== details.nop)) ?
                             (('undefined' !== typeof details.sleep) ? details.sleep : 1000) : 
                             0;
+                        if (nextStepTimeoutHandle) {
+                            // looks like we already have something pending from older times - cancel it
+                            clearTimeout(nextStepTimeoutHandle);
+                        }
                         if (cfDebug.callPhantom) {
                             cfDebug.callPhantom({preventRenderingUntilNextFrame: true});
-                            setTimeout(function() {
+                            nextStepTimeoutHandle = setTimeout(function() {
+                                nextStepTimeoutHandle = false;
                                 cfDebug.callPhantom({renderNextFrame: true});
                                 $scope.doNextStep();
                             }, 100); // give it some time to stabilize
                         } else {
-                            setTimeout(
+                            nextStepTimeoutHandle = setTimeout(
                                 function(){
+                                    nextStepTimeoutHandle = false;
                                     $scope.doNextStep();
                                 }, 
                                 nextStepTimeout
