@@ -652,16 +652,7 @@
             outerWidth = isFramed ? false : window.outerWidth,
             outerHeight = isFramed ? false : window.outerHeight;
 
-        if (me.modules.ui.mainFrameWindow && me.modules.ui.mainFrameWindow.location) {
-            var url = false;
-            try {
-                url = me.modules.ui.mainFrameWindow.location.href;
-            } catch (e) {
-            }
-            if (url) {
-                me.modules.dispatcher.updateCurrentUrl(url);
-            }
-        }
+        me.modules.ui.checkAndUpdateCurrentUrl();
         if (currentWindowDimensions.width !== windowWidth ||
             currentWindowDimensions.height !== windowHeight ||
             currentWindowDimensions.outerWidth !== outerWidth ||
@@ -1504,6 +1495,20 @@
         },
         switchToWindow: function(index) {
             setMainFrameWindow(index);
+        },
+        checkAndUpdateCurrentUrl: function() {
+            try {
+                if (me.modules.ui.mainFrameWindow && me.modules.ui.mainFrameWindow.location) {
+                    var url = false;
+                    try {
+                        url = me.modules.ui.mainFrameWindow.location.href;
+                    } catch (e) {
+                    }
+                    if (url) {
+                        me.modules.dispatcher.updateCurrentUrl(url);
+                    }
+                }
+            } catch(e) {}
         }
     });
 }).call(this, document, window);

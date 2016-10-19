@@ -2,5 +2,6 @@ cartfiller={
     "worker": "worker.js",
     "tests": {
         "test1?value=1": true,
+        "recovery": true,
     },
 }

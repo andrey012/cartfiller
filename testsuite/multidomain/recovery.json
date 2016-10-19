@@ -1,0 +1,13 @@
+cartfiller={
+    "details": [
+        {"task": "open"},
+        {"task": "resetPasses"},
+        {"task": "clicklinkWithRecovery", "name": "127.0.0.3"},
+
+        {"task": "open relay", "host": "127.0.0.2"},
+        {"task": "clicklink", "name": "127.0.0.2"},
+        {"task": "resetPasses"},
+        {"task": "clicklinkWithRecovery", "name": "127.0.0.3"},
+        {"task": "repeatJob"},
+    ],
+}

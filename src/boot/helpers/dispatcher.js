@@ -293,6 +293,7 @@
      * @access private
      */
     var workerCurrentUrl = false;
+    var knownCurrentUrls = {};
     /**
      * Flag, that is set to true after worker (job progress) frame
      * is bootstrapped to avoid sending extra bootstrap message
@@ -386,6 +387,7 @@
         nextRelayQueue: [],
         knownUrls: {},
         igniteFromLocal: false,
+        recoveryPoints: {},
         bubbleMessage: function(message) {
             if (this.isSlave) {
                 postMessage(this.parent, 'bubbleRelayMessage', message);
@@ -880,6 +882,9 @@
                         if (message.cmd === 'workerStepResult') {
                             fillWorkerGlobals(message.globals);
                         }
+                        if (message.cmd === 'currentUrl') {
+                            knownCurrentUrls[message.currentMainFrameWindow] = message.url;
+                        }
                         postMessage(relay.isSlave ? relay.parent : me.modules.ui.workerFrameWindow, message.cmd, message);
                     } else {
                         var fn = 'onMessage_' + message.cmd;
@@ -1139,7 +1144,6 @@
          */
         onMessage_sendStatus: function(message){
             if (relay.isSlave) {
-                //////
                 message.message = 'sendStatus';
                 message.notToChildren = true;
                 message.cmd = 'bubbleRelayMessage';
@@ -1211,6 +1215,12 @@
             }
             if (! relay.isSlave) {
                 message.currentMainFrameWindow = me.modules.ui.currentMainFrameWindow;
+                if (message.step === 0) {
+                    if (! relay.recoveryPoints[me.modules.ui.currentMainFrameWindow]) {
+                        relay.recoveryPoints[me.modules.ui.currentMainFrameWindow] = {};
+                    }
+                    relay.recoveryPoints[me.modules.ui.currentMainFrameWindow][message.index] = knownCurrentUrls[me.modules.ui.currentMainFrameWindow];
+                }
             }
             var err;
             currentInvokeWorkerMessage = message;
@@ -1226,6 +1236,11 @@
                 if (message.debug) {
                     console.log('Debugger call went to slave tab - look for it there!');
                 }
+                if (! relay.nextRelay) {
+                    // we are last one in the slave chain, so this is clearly "access denied"
+                    me.modules.dispatcher.onMessage_bubbleRelayMessage({message: 'retryInvokeWorker', payload: message, failures: (message.failures || 0) + 1});
+                }
+
                 return;
             }
             if (false !== workerCurrentStepIndex){
@@ -1275,7 +1290,8 @@
                      * @member {Object} CartFiller.Api.StepEnvironment#params Task parameters as submitted by
                      * {@link CartFiller.Api.registerCallback}
                      */
-                    params: {}
+                    params: {},
+                    stepRepeatCounter: stepRepeatCounter
                 };
                 try {
                     if (undefined === worker[message.task]) {
@@ -1499,6 +1515,22 @@
             } else if (details.message === 'reportingMousePointerClickForWindow' && source) {
                 if (details.currentMainFrameWindow === relay.currentMainFrameWindow) {
                     me.modules.ui.reportingMousePointerClickForWindow(details.x, details.y);
+                }
+            } else if (details.message === 'retryInvokeWorker' && ! relay.isSlave) {
+                if (details.payload.failures < 10) {
+                    me.modules.dispatcher.onMessage_invokeWorker(details.payload);
+                } else {
+                    // recover if there is recovery point
+                    if (relay.recoveryPoints[me.modules.ui.currentMainFrameWindow][details.payload.index]) {
+                        me.modules.ui.mainFrames[me.modules.ui.currentMainFrameWindow].setAttribute('src', relay.recoveryPoints[me.modules.ui.currentMainFrameWindow][details.payload.index]);
+                        me.modules.api.onload(function(){
+                            // report failure with recovery
+                            setTimeout(function(){
+                                workerCurrentStepIndex = details.payload.step; // to prevent alert
+                                me.modules.api.repeatTask().result('recovery after access deined', 1);
+                            });
+                        });
+                    }
                 }
             }
         },
@@ -1950,9 +1982,9 @@
          */
         updateCurrentUrl: function(url) {
             if (workerCurrentUrl !== url) {
-                this.postMessageToWorker('currentUrl', {url: url, currentMainFrameWindow: me.modules.ui.currentMainFrameWindow});
+                this.postMessageToWorker('currentUrl', {url: url, currentMainFrameWindow: relay.isSlave ? me.modules.dispatcher.getFrameWindowIndex() : me.modules.ui.currentMainFrameWindow});
                 this.onMessage_bubbleRelayMessage({message: 'clearCurrentUrl'});
-                workerCurrentUrl = url;
+                workerCurrentUrl = knownCurrentUrls[me.modules.ui.currentMainFrameWindow] = url;
             }
         },
         /**
@@ -2096,6 +2128,7 @@
                         (me.modules.ui.mainFrameWindow.document.readyState === 'complete') &&
                         ! me.modules.ui.mainFrameWindow.document.getElementsByTagName('html')[0].getAttribute('data-cartfiller-reload-tracker')){
                         me.modules.ui.mainFrameWindow.document.getElementsByTagName('html')[0].setAttribute('data-cartfiller-reload-tracker', 0);
+                        me.modules.ui.checkAndUpdateCurrentUrl();
                         me.modules.dispatcher.onMainFrameLoaded(true);
                     }
                     title = 'undefined' === typeof me.modules.ui.mainFrameWindow.document.title ? '' : me.modules.ui.mainFrameWindow.document.title;

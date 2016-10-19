@@ -87,7 +87,41 @@
                         }
                     });
                 }
+            ],
+            'resetPasses': [
+                '', function(){ globals.passes = 0; api.result(); },
+            ],
+            'clicklinkWithRecovery': [
+                '', function(){
+                    if (globals.passes) {
+                        api.skipTask().result(api.compare(globals.urlThatShouldBeRecovered, window.location.href));
+                    } else {
+                        globals.urlThatShouldBeRecovered = window.location.href;
+                        api.result();
+                    }
+                },
+                '', function(){
+                    globals.passes ++;
+                    api.each(window.document.getElementsByTagName('a'), function(i,e){
+                        if (e.textContent === task.name) {
+                            api.say('b, value = ' + globals.value).arrow();
+                            globals.value ++;
+                            api.arrow(e).result();
+                            return false;
+                        }
+                    }, function() {api.result('link not found: [' + task.name + ']');});
+                },
+                api.clicker(),
+                '', function(){
+                    api.result();
+                }
+            ],
+            'repeatJob': [
+                '', function() {
+                    api.repeatJob().result();
+                }
             ]
+
         }
     });
 })(window, document);
