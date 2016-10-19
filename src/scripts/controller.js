@@ -434,6 +434,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 setTimeout(function(){
                     cfScroll(jQuery('#finishReached')[0]);
                 },0);
+                pause = true;
             }
             digestTask(oldCurrentTask);
             digestTask($scope.currentTask);

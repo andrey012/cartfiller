@@ -47126,6 +47126,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
         var run = function(slow) {
             $scope.running = slow ? 'slow' : true;
             digestButtonPanel();
+            console.log('run');
             $scope.doNextStep();
             cfMessage.send('focusMainFrameWindow');
         };
@@ -47134,10 +47135,12 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
         };
         var autorun = function() {
             if ($scope.workersLoaded >= $scope.workersCounter) {
+                console.log('launching autorun');
                 if (! $scope.pausePoints[$scope.currentTask] || ! $scope.pausePoints[$scope.currentTask][$scope.currentStep]) {
                     $scope.runNoWatch(autorunSpeed === 'slow' ? true : false, null, true);
                 }
             } else {
+                console.log('deferring autorun');
                 // wait some more time
                 setTimeout(autorun, 1000);
             }
@@ -47158,6 +47161,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
             } else if (cmd === 'jobDetails'){
                 $scope.$apply(function(){
                     if (undefined !== details.$cartFillerTestUpdate && undefined === details.details) {
+                        console.log('updating test');
                         // this is just test update
                         $scope.jobDetails = details.$cartFillerTestUpdate.details;
                         (function() {
@@ -47168,6 +47172,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                             }
                         })();
                     } else {
+                        console.log('got jobDetails');
                         cfMessage.send('makeSmaller');
                         cfScroll();
                         $scope.chooseJobState = false;
@@ -47233,6 +47238,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 digestGlobals();
             } else if (cmd === 'workerRegistered'){
                 $scope.$apply(function(){
+                    console.log('got workerRegistered');
                     $scope.workersLoaded = $scope.workersCounter; // now we push all data from dispatcher at once
                     $scope.jobTaskDescriptions = details.jobTaskDescriptions;
                     // remove pause points for those worker steps, that do not exist
@@ -47310,11 +47316,13 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                             cfDebug.callPhantom({preventRenderingUntilNextFrame: true});
                             setTimeout(function() {
                                 cfDebug.callPhantom({renderNextFrame: true});
+                                console.log('phantom-deferred');
                                 $scope.doNextStep();
                             }, 100); // give it some time to stabilize
                         } else {
                             setTimeout(
                                 function(){
+                                    console.log('nextStepTimeout');
                                     $scope.doNextStep();
                                 }, 
                                 nextStepTimeout
@@ -47474,6 +47482,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 setTimeout(function(){
                     cfScroll(jQuery('#finishReached')[0]);
                 },0);
+                pause = true;
             }
             digestTask(oldCurrentTask);
             digestTask($scope.currentTask);
@@ -47539,6 +47548,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
             $scope.currentStep = stepIndex;
             digestTask(oldCurrentTask);
             var debug = isLongClick($event);
+            console.log('clipOnStepNoWatch');
             $scope.invokeWorker(taskIndex, stepIndex, debug);
             cfMessage.send('focusMainFrameWindow');
             return false;
@@ -47555,6 +47565,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 repeatStepCounterTask = taskIndex;
                 repeatStepCounterStep = stepIndex;
             }
+            console.log('invokeWorker from controller.js');
             cfMessage.send('invokeWorker', {
                 index: taskIndex, 
                 task: taskName, 
@@ -47626,6 +47637,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
         $scope.doNextStep = function(){
             if ($scope.currentTask < $scope.jobDetails.length){
                 scrollCurrentTaskIntoView();
+                console.log('doNextStep');
                 $scope.invokeWorker($scope.currentTask, $scope.currentStep);
             } else {
                 $scope.running = false;
@@ -47653,6 +47665,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
             $scope.runUntilTask = $scope.runUntilStep = false;
             $scope.doingOneStep = true;
             $scope.doNextStep();
+            console.log('clickOnNextStepNoWatch');
             return false;
         };
         $scope.loadWorker = function(){
@@ -48012,7 +48025,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
             reportError('bootstrap message did not come');
         }
     }, 10000);
-    config.gruntBuildTimeStamp='1485984168741';
+    config.gruntBuildTimeStamp='1486016042662';
     window.addEventListener('message', function(event){
         var prefix = 'cartFillerMessage:';
         var isDist = true;
@@ -48122,7 +48135,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 if (message.tests) {
                     var x = new XMLHttpRequest();
                     x.onload = function(){
-                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1485984168741') {
+                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1486016042662') {
                             console.log('new version of CartFiller was deployed, switching to it');
                             var hash = window.location.href.split('#');
                             var pc = hash[0].split('?');
