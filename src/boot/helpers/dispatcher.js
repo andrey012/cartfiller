@@ -613,7 +613,7 @@
                 relay.nextRelayQueue.push(message);
             }
         } else if (url !== '') {
-            relay.nextRelay = window.open(url, '_blank', 'toolbar=yes, location=yes, status=yes, menubar=yes, scrollbars=yes');
+            relay.nextRelay = window.open(url, '_blank');
             if (noFocus) {
                 setTimeout(function(){
                     relay.nextRelay.blur();
@@ -1238,7 +1238,8 @@
                 }
                 if (! relay.nextRelay) {
                     // we are last one in the slave chain, so this is clearly "access denied"
-                    me.modules.dispatcher.onMessage_bubbleRelayMessage({message: 'retryInvokeWorker', payload: message, failures: (message.failures || 0) + 1});
+                    message.failures = (message.failures || 0) + 1;
+                    me.modules.dispatcher.onMessage_bubbleRelayMessage({message: 'retryInvokeWorker', payload: message});
                 }
 
                 return;
@@ -1517,19 +1518,20 @@
                     me.modules.ui.reportingMousePointerClickForWindow(details.x, details.y);
                 }
             } else if (details.message === 'retryInvokeWorker' && ! relay.isSlave) {
-                if (details.payload.failures < 10) {
-                    me.modules.dispatcher.onMessage_invokeWorker(details.payload);
+                if (details.payload.failures < 15) {
+                    setTimeout(function() {
+                        me.modules.dispatcher.onMessage_invokeWorker(details.payload);
+                    }, 1000);
                 } else {
                     // recover if there is recovery point
                     if (relay.recoveryPoints[me.modules.ui.currentMainFrameWindow][details.payload.index]) {
                         me.modules.ui.mainFrames[me.modules.ui.currentMainFrameWindow].setAttribute('src', relay.recoveryPoints[me.modules.ui.currentMainFrameWindow][details.payload.index]);
-                        me.modules.api.onload(function(){
-                            // report failure with recovery
-                            setTimeout(function(){
-                                workerCurrentStepIndex = details.payload.step; // to prevent alert
-                                me.modules.api.repeatTask().result('recovery after access deined', 1);
-                            });
-                        });
+                        // this is rather rare situation, so let's just wait for some 20 seconds
+                        setTimeout(function() {
+                            workerCurrentTaskIndex = details.payload.index;
+                            workerCurrentStepIndex = details.payload.step; // to prevent alert
+                            me.modules.api.repeatTask().result('recovering after access deined', 1);
+                        }, 20000);
                     }
                 }
             }

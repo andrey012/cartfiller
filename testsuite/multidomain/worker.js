@@ -101,7 +101,7 @@
                     }
                 },
                 '', function(){
-                    globals.passes ++;
+                    globals.passes  = (globals.passes  || 0 ) + 1;
                     api.each(window.document.getElementsByTagName('a'), function(i,e){
                         if (e.textContent === task.name) {
                             api.say('b, value = ' + globals.value).arrow();
