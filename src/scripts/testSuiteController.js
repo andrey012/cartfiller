@@ -69,7 +69,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             selectedTestCountScope.$digest();
         };
         $scope.downloadsInProgress = [];
-
+        var currentJobId;
         var parseParams = function() {
             angular.forEach(getLocation().replace(/^#*\/*/, '').split('&'), function(v) {
                 var pc = v.split('=');
@@ -717,6 +717,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             test.trackWorker = $scope.params.editor;
             test.jobName = $scope.discovery.scripts.urls[index];
             test.jobTitle = $scope.discovery.scripts.contents[index].title ? $scope.discovery.scripts.contents[index].title : $scope.discovery.scripts.urls[index];
+            test.jobId = currentJobId = (new Date()).getTime + '' + Math.floor(Math.random() * 1000000);
             if (undefined !== untilTask) {
                 test.autorunUntilTask = untilTask;
                 test.autorunUntilStep = undefined !== untilStep ? untilStep : 0;
@@ -729,6 +730,9 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                 test,
                 false,
                 function(data) {
+                    if (data.jobId !== currentJobId) {
+                        return;
+                    }
                     if ($scope.params.backend && false !== data.currentTaskIndex && false !== data.currentTaskStepIndex) {
                         var videoFrame = getVideoFrame();
                         var json = {

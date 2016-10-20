@@ -70,6 +70,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
         $scope.noResultButton = false;
         $scope.jobName = '';
         $scope.jobTitle = '';
+        $scope.jobId = '';
         $scope.stepDependencies = {};
         $scope.currentMainFrameWindow = 0;
         $scope.currentUrls = [false];
@@ -147,6 +148,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                         $scope.noResultButton = ! details.resultMessage;
                         $scope.jobName = 'undefined' === details.jobName ? '' : details.jobName;
                         $scope.jobTitle = 'undefined' === details.jobTitle ? '' : details.jobTitle;
+                        $scope.jobId = details.jobId;
                         updateTopWindowHash();
                         scrollCurrentTaskIntoView(true);
                         var workerSrc = '';
@@ -309,7 +311,8 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                         nextTaskIndex: $scope.currentTask,
                         nextTaskStepIndex: $scope.currentStep,
                         nextTaskSleep: nextStepTimeout,
-                        globals: details.globals
+                        globals: details.globals,
+                        jobId: $scope.jobId
                     });
                 $scope.workerInProgress = false;
                 if (!proceed){

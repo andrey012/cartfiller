@@ -47241,6 +47241,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
         $scope.noResultButton = false;
         $scope.jobName = '';
         $scope.jobTitle = '';
+        $scope.jobId = '';
         $scope.stepDependencies = {};
         $scope.currentMainFrameWindow = 0;
         $scope.currentUrls = [false];
@@ -47318,6 +47319,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                         $scope.noResultButton = ! details.resultMessage;
                         $scope.jobName = 'undefined' === details.jobName ? '' : details.jobName;
                         $scope.jobTitle = 'undefined' === details.jobTitle ? '' : details.jobTitle;
+                        $scope.jobId = details.jobId;
                         updateTopWindowHash();
                         scrollCurrentTaskIntoView(true);
                         var workerSrc = '';
@@ -47480,7 +47482,8 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                         nextTaskIndex: $scope.currentTask,
                         nextTaskStepIndex: $scope.currentStep,
                         nextTaskSleep: nextStepTimeout,
-                        globals: details.globals
+                        globals: details.globals,
+                        jobId: $scope.jobId
                     });
                 $scope.workerInProgress = false;
                 if (!proceed){
@@ -48156,7 +48159,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
             reportError('bootstrap message did not come');
         }
     }, 10000);
-    config.gruntBuildTimeStamp='1487498482776';
+    config.gruntBuildTimeStamp='1487506525936';
     window.addEventListener('message', function(event){
         var prefix = 'cartFillerMessage:';
         var isDist = true;
@@ -48266,7 +48269,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 if (message.tests) {
                     var x = new XMLHttpRequest();
                     x.onload = function(){
-                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1487498482776') {
+                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1487506525936') {
                             console.log('new version of CartFiller was deployed, switching to it');
                             var hash = window.location.href.split('#');
                             var pc = hash[0].split('?');
@@ -48445,7 +48448,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             selectedTestCountScope.$digest();
         };
         $scope.downloadsInProgress = [];
-
+        var currentJobId;
         var parseParams = function() {
             angular.forEach(getLocation().replace(/^#*\/*/, '').split('&'), function(v) {
                 var pc = v.split('=');
@@ -49093,6 +49096,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             test.trackWorker = $scope.params.editor;
             test.jobName = $scope.discovery.scripts.urls[index];
             test.jobTitle = $scope.discovery.scripts.contents[index].title ? $scope.discovery.scripts.contents[index].title : $scope.discovery.scripts.urls[index];
+            test.jobId = currentJobId = (new Date()).getTime + '' + Math.floor(Math.random() * 1000000);
             if (undefined !== untilTask) {
                 test.autorunUntilTask = untilTask;
                 test.autorunUntilStep = undefined !== untilStep ? untilStep : 0;
@@ -49105,6 +49109,9 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                 test,
                 false,
                 function(data) {
+                    if (data.jobId !== currentJobId) {
+                        return;
+                    }
                     if ($scope.params.backend && false !== data.currentTaskIndex && false !== data.currentTaskStepIndex) {
                         var videoFrame = getVideoFrame();
                         var json = {
@@ -50072,6 +50079,10 @@ define('jquery-cartFiller', ['jquery'], function() {
     /**
      * @member {String} CartFillerPlugin~JobDetails#jobTitle optional parameter to give 
      * user-friendly job title
+     */
+    /**
+     * @member {String} CartFillerPlugin~JobDetails#jobId optional parameter to 
+     * identify job
      */
     /**
      * @member {String} CartFillerPlugin~JobDetails#cartFillerInstallationUrl gives an idea where

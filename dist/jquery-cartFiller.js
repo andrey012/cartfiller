@@ -636,6 +636,10 @@
      * user-friendly job title
      */
     /**
+     * @member {String} CartFillerPlugin~JobDetails#jobId optional parameter to 
+     * identify job
+     */
+    /**
      * @member {String} CartFillerPlugin~JobDetails#cartFillerInstallationUrl gives an idea where
      * to find everything else if you arelost, this one is URL of cartfiller installation
      */
