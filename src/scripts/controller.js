@@ -308,7 +308,8 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                         stopTestsuite: stopTestsuite,
                         nextTaskIndex: $scope.currentTask,
                         nextTaskStepIndex: $scope.currentStep,
-                        nextTaskSleep: nextStepTimeout
+                        nextTaskSleep: nextStepTimeout,
+                        globals: details.globals
                     });
                 $scope.workerInProgress = false;
                 if (!proceed){

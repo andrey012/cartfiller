@@ -741,7 +741,8 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                             nextTask: data.nextTaskIndex,
                             nextStep: data.nextTaskStepIndex,
                             nextVideoFrame: videoFrame + 1,
-                            nextSleep: data.nextTaskSleep
+                            nextSleep: data.nextTaskSleep,
+                            globals: data.globals
                         };
                         if (json.result !== 'ok') {
                             json.message = data.result[data.currentTaskIndex].stepResults[data.currentTaskStepIndex].message;
