@@ -671,7 +671,7 @@
             me.modules.api.each(array, function(i,v) {
                 return fn.apply(r, [i, v, p, u]);
             }, otherwise ? function() {
-                return otherwise(p, u);
+                return otherwise.apply(r, [p, u]);
             } : undefined);
             return r;
         }, 
