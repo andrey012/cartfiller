@@ -648,7 +648,7 @@
                 }
             }
             if (! breaked && otherwise instanceof Function) {
-                otherwise();
+                otherwise.call(me.modules.ui.mainFrameWindow.document);
             }
         },
         /**
