@@ -54,8 +54,8 @@
                 </table>
             </div>
             <div>
-                <input id="testsearch" type="text" style="width: 100%" placeholder="search for test" onkeyup="var event = arguments[0] || window.event; return angular.element(this).scope().searchForTestNoWatch(event);" ng-class="'rendered'"/><a href="#" onclick="var event = arguments[0] || window.event; return angular.element(this).scope().clearTestFilterNoWatch(event);">(x)</a><br/>
-                <input id="tasksearch" type="text" style="width: 100%" placeholder="search for task inside test" onkeyup="var event = arguments[0] || window.event; return angular.element(this).scope().searchForTaskNoWatch(event);"/><a href="#" onclick="var event = arguments[0] || window.event; return angular.element(this).scope().clearTaskFilterNoWatch(event);">(x)</a>
+                <input id="testsearch" type="text" style="width: 100%" placeholder="search for test" onkeyup="var event = arguments[0] || window.event; return angular.element(this).scope().searchForTestNoWatch(event);" ng-class="'rendered'" tabindex="1"/><a href="#" onclick="var event = arguments[0] || window.event; return angular.element(this).scope().clearTestFilterNoWatch(event);" tabindex="-1">(x)</a><br/>
+                <input id="tasksearch" type="text" style="width: 100%" placeholder="search for task inside test" onkeyup="var event = arguments[0] || window.event; return angular.element(this).scope().searchForTaskNoWatch(event);" tabindex="2"/><a href="#" onclick="var event = arguments[0] || window.event; return angular.element(this).scope().clearTaskFilterNoWatch(event);" tabindex="-1">(x)</a>
             </div>
         </div>
         <div class="col-xs-6" style="text-align: right;" id="testsuiteButtonPanel" ng-repeat="dummy in [0]">

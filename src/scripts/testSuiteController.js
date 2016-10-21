@@ -824,7 +824,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                             if (undefined === $scope.discovery.scripts.errors[index][data.currentTaskIndex]) {
                                 $scope.discovery.scripts.errors[index][data.currentTaskIndex] = {};
                             }
-                            $scope.discovery.scripts.errors[index][data.currentTaskIndex][data.currentTaskStepIndex] = data.result[data.currentTaskIndex].stepResults[data.currentTaskStepIndex].title + ': ' + message;
+                            $scope.discovery.scripts.errors[index][data.currentTaskIndex][data.currentTaskStepIndex] = message;
                             $scope.$digest();
                         }
                     }
@@ -885,9 +885,19 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             angular.element($('#testslist')[0]).scope().$digest();
         };
         $scope.searchForTaskNoWatch = function() {
-            $scope.filterTasksByText = $('#tasksearch').val();
-            $scope.expandedTest = false;
-            angular.element($('#testslist')[0]).scope().$digest();
+            var val = $('#tasksearch').val();
+            var go = function() {
+                $scope.filterTasksByText = $('#tasksearch').val();
+                $scope.expandedTest = false;
+                angular.element($('#testslist')[0]).scope().$digest();
+            };
+            if (val.length === 1) {
+                setTimeout(go, 2000);
+            } else if (val.length === 2) {
+                setTimeout(go, 1000);
+            } else {
+                go();
+            }
         };
         $scope.clearTestFilterNoWatch = function() {
             $scope.filterTestsByText = '';
@@ -935,11 +945,12 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                     return false;
                 }
                 if ($scope.discovery.scripts.contents[index] && $scope.discovery.scripts.contents[index].details) {
-                    if ($scope.discovery.scripts.contents[index].details.filter(function(task) {
-                        return taskMatchesFilter(task, taskFilter);
-                    }).length) {
-                        return true;
+                    for (var taskIndex = $scope.discovery.scripts.contents[index].details.length - 1 ; taskIndex >= 0; taskIndex --) {
+                        if (taskMatchesFilter($scope.discovery.scripts.contents[index].details[taskIndex], taskFilter)) {
+                            return true;
+                        }
                     }
+                    return false;
                 }
             } else {
                 return ((! filter.length) || testMatchesFilter(index, filter));
