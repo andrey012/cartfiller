@@ -620,6 +620,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
             $scope.currentTask = restartTask;
             $scope.currentStep = restartStep;
             digestTask(oldCurrentTask);
+            scrollCurrentTaskIntoView(true, true);
             skipHeadings();
             run();
             return false;
