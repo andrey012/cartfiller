@@ -222,6 +222,12 @@
                onclick="return false;"
                >{{chooseJobState ? 'Close' : 'Open'}}</a>
             <br/>
+            <a id="restartFromPause" 
+               href="#" 
+               class="btn btn-success btn-xs"
+               onclick="var event = arguments[0] || window.event; return angular.element(this).scope().restartFromPauseNoWatch(event);"
+               title="Restart from nearest pause or from beginning"
+               >I&nbsp;I&gt;&gt;&gt;</a>
             <a id="recordAudio" href="#" class="btn btn-info btn-xs" onclick="var event = arguments[0] || window.event; return angular.element(this).scope().recordAudioNoWatch(event);" title="Record Audio">A</a>
             <input type="checkbox" id="suspendEditorMode" title="suspend editor mode (refresh of test scenario and workers)" onchange="var event = arguments[0] || window.event; return angular.element(this).scope().suspendEditorModeNoWatch(event, this)"/>
             <input type="checkbox" id="alertOnErrors" title="alert (show dialog) when errors are encountered"/>

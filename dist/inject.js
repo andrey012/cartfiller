@@ -184,7 +184,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1487506525936';
+    config.gruntBuildTimeStamp='1488622581920';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag

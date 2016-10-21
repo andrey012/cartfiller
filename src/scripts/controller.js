@@ -591,6 +591,39 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
             run(slow);
             return false;
         };
+        $scope.restartFromPauseNoWatch = function($event) {
+            if ($event) {
+                $event.stopPropagation();
+            }
+            if ($scope.workerInProgress || ($scope.workersLoaded < $scope.workersCounter)) {
+                return false;
+            }
+            $scope.doingOneStep = false;
+            // rewind to nearest known pause
+            var restartTask = 0, restartStep = 0;
+            for (var pauseTask in $scope.pausePoints) {
+                pauseTask = parseInt(pauseTask);
+                for (var pauseStep in $scope.pausePoints[pauseTask]) {
+                    pauseStep = parseInt(pauseStep);
+                    if ($scope.pausePoints[pauseTask][pauseStep]) {
+                        if (pauseTask < $scope.currentTask || (pauseTask === $scope.currentTask && pauseStep < $scope.currentStep)) {
+                            if (restartTask < pauseTask || (restartTask === pauseTask && restartStep < pauseStep)) {
+                                restartTask = pauseTask;
+                                restartStep = pauseStep;
+                            }
+                        }
+                    }
+                }
+            }
+            $scope.runUntilTask = $scope.runUntilStep = false;
+            var oldCurrentTask = $scope.currentTask;
+            $scope.currentTask = restartTask;
+            $scope.currentStep = restartStep;
+            digestTask(oldCurrentTask);
+            skipHeadings();
+            run();
+            return false;
+        };
         $scope.stopNoWatch = function($event){
             $scope.runUntilTask = $scope.runUntilStep = $scope.doingOneStep = $scope.clickedWhileWorkerWasInProgress = false;
             $event.stopPropagation();
