@@ -75,12 +75,17 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                 var pc = v.split('=');
                 var name = decodeURIComponent(pc.shift());
                 var value = pc.join('=');
+                var m;
                 if (name === 'editor') {
                     $scope.params.editor = (value === '0' || value === '') ? false : true;
                 } else if (0 === name.indexOf('globals[')) {
-                    var m = /^globals\[([^\]]+)\]$/.exec(name);
+                    m = /^globals\[([^\]]+)\]$/.exec(name);
                     $scope.params.globals = $scope.params.globals || {};
                     $scope.params.globals[m[1]] = decodeURIComponent(value);
+                } else if (0 === name.indexOf('locals[')) {
+                    m = /^locals\[([^\]]+)\]$/.exec(name);
+                    $scope.params.locals = $scope.params.locals || {};
+                    $scope.params.locals[m[1]] = decodeURIComponent(value);
                 } else if (name === 'selectedTests') {
                     value.split('.').filter(function(v) {
                        $scope.selectedTests[v] = true;
@@ -713,6 +718,9 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                 for (i in $scope.discovery.scripts.tweaks[index]) {
                     test.globals[i] = $scope.discovery.scripts.tweaks[index][i];
                 }
+            }
+            for (i in $scope.params.locals) {
+                test.globals[i] = $scope.params.locals[i];
             }
             test.trackWorker = $scope.params.editor;
             test.jobName = $scope.discovery.scripts.urls[index];
