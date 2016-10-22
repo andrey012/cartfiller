@@ -1432,7 +1432,7 @@
             try { mainFrameWindowDocument = me.modules.ui.mainFrameWindow.document; } catch (e) {}
             return mainFrameWindowDocument;
         },
-        setAdditionalWindows: function(descriptors) {
+        setAdditionalWindows: function(descriptors, noResultCall) {
             if (! isFramed) {
                 throw new Error('this function is only availabled in framed mode');
             }
@@ -1458,7 +1458,7 @@
                         me.modules.api.result();
                     } else {
                         window.frames[mainFrameName + '-s' + (currentSlavesLoaded + 1)].location.href = descriptors[currentSlavesLoaded].slave + '#launchSlaveInFrame';
-                        me.modules.api.waitFor(waitForNextSlaveToLoad, actWhenWaitForFinished);
+                        me.modules.api.waitFor(waitForNextSlaveToLoad, actWhenWaitForFinished, 300000);
                     }
                 }
             };
@@ -1491,7 +1491,9 @@
             }
             setMainFrameWindow();
             adjustFrameCoordinates(true);
-            actWhenWaitForFinished(true);
+            if (! noResultCall) {
+                actWhenWaitForFinished(true);
+            }
         },
         switchToWindow: function(index) {
             setMainFrameWindow(index);

@@ -2280,6 +2280,10 @@
             relay.slaveCounter = 0;
         },
         getSlaveCounter: function() { return relay.slaveCounter; },
+        onMessage_resetAdditionalWindows: function() { 
+            me.modules.ui.switchToWindow(0);
+            me.modules.ui.setAdditionalWindows([], true); 
+        },
         setAdditionalWindows: function(descriptors, details) {
             if (relay.currentMainFrameWindow > 0) {
                 throw new Error('setAdditionalWindows is only allowed when worker is switched to primary window (0)');

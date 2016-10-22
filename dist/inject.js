@@ -184,7 +184,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1491205451094';
+    config.gruntBuildTimeStamp='1491253145583';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -3674,6 +3674,10 @@
             relay.slaveCounter = 0;
         },
         getSlaveCounter: function() { return relay.slaveCounter; },
+        onMessage_resetAdditionalWindows: function() { 
+            me.modules.ui.switchToWindow(0);
+            me.modules.ui.setAdditionalWindows([], true); 
+        },
         setAdditionalWindows: function(descriptors, details) {
             if (relay.currentMainFrameWindow > 0) {
                 throw new Error('setAdditionalWindows is only allowed when worker is switched to primary window (0)');
@@ -5215,7 +5219,7 @@
             try { mainFrameWindowDocument = me.modules.ui.mainFrameWindow.document; } catch (e) {}
             return mainFrameWindowDocument;
         },
-        setAdditionalWindows: function(descriptors) {
+        setAdditionalWindows: function(descriptors, noResultCall) {
             if (! isFramed) {
                 throw new Error('this function is only availabled in framed mode');
             }
@@ -5241,7 +5245,7 @@
                         me.modules.api.result();
                     } else {
                         window.frames[mainFrameName + '-s' + (currentSlavesLoaded + 1)].location.href = descriptors[currentSlavesLoaded].slave + '#launchSlaveInFrame';
-                        me.modules.api.waitFor(waitForNextSlaveToLoad, actWhenWaitForFinished);
+                        me.modules.api.waitFor(waitForNextSlaveToLoad, actWhenWaitForFinished, 300000);
                     }
                 }
             };
@@ -5274,7 +5278,9 @@
             }
             setMainFrameWindow();
             adjustFrameCoordinates(true);
-            actWhenWaitForFinished(true);
+            if (! noResultCall) {
+                actWhenWaitForFinished(true);
+            }
         },
         switchToWindow: function(index) {
             setMainFrameWindow(index);

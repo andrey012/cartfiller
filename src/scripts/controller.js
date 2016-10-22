@@ -118,6 +118,8 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 suspendEditorMode = ! details.enabled;
                 $('#suspendEditorMode').prop('checked', suspendEditorMode);
             } else if (cmd === 'jobDetails'){
+                cfMessage.send('resetAdditionalWindows');
+                $scope.currentMainFrameWindow = 0;
                 if (nextStepTimeoutHandle) {
                     clearTimeout(nextStepTimeoutHandle);
                     nextStepTimeoutHandle = false;
