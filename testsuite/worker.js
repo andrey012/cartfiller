@@ -244,7 +244,19 @@
                     globals.passes ++;
                     api.result(globals.passes > 10 ? '' : 'error');
                 }
+            ],
+            'make sure that two parameters are equal': [
+                '', function() {
+                    api.result(api.compare(task.a, task.b));
+                }
+            ],
+            'set a to b': [
+                '', function() {
+                    task.a = task.b; api.result();
+                }
             ]
+
+
 
         };
     });

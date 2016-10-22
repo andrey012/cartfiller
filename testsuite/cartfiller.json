@@ -53,6 +53,9 @@ cartfiller = {
         },
         "magicParams": {
             "repeat": true,
-        }
+        },
+        "referencesToGlobals": {
+            "referencesToGlobals": true,
+        },
     }
 }

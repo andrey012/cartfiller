@@ -1,0 +1,24 @@
+{
+  "globals": {
+    "email of user [usera]": "theusera@example.com",
+    "actor": "usera",
+  },
+  "details": [
+    {"make sure that two parameters are equal": {"a": "usera", "b": ["actor"]}},
+    {"make sure that two parameters are equal": {"a": "email of user [usera]", "b": ["email of user [", ["actor"], "]"]}}, 
+    {"make sure that two parameters are equal": {"a": "theusera@example.com", "b": [["email of user [", ["actor"], "]"]]}}, 
+    {"set a to b": {"a": ["actor"], "b": "userb"}},
+    {"make sure that two parameters are equal": {"a": "userb", "b": ["actor"]}},
+    {"set a to b": {"a": ["email of user [", ["actor"], "]"], "b": "asdf"}},
+    {"make sure that two parameters are equal": {"a": "email of user [userb]", "b": ["email of user [", ["actor"], "]"]}}, 
+    {"set a to b": {"a": [["email of user [", ["actor"], "]"]], "b": "userb@example.com"}},
+    {"make sure that two parameters are equal": {"a": "userb@example.com", "b": [["email of user [", ["actor"], "]"]]}}, 
+    {"make sure that two parameters are equal": {"a": "userb@example.com", "b": ["email of user [userb]"]}}, 
+    {"make sure that two parameters are equal": {"a": "theusera@example.com", "b": ["email of user [usera]"]}}, 
+    {"set a to b": {"a": ["actor"], "b": "usera"}},
+    {"set a to b": {"a": [["email of user [", ["actor"], "]"]], "b": "usera@example.com"}},
+    {"make sure that two parameters are equal": {"a": "usera@example.com", "b": [["email of user [", ["actor"], "]"]]}}, 
+    {"make sure that two parameters are equal": {"a": "userb@example.com", "b": ["email of user [userb]"]}}, 
+    {"make sure that two parameters are equal": {"a": "usera@example.com", "b": ["email of user [usera]"]}}, 
+  ]
+}
