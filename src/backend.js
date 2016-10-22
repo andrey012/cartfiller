@@ -42,6 +42,7 @@ var crypto = require('crypto');
 var bodyParser = require('body-parser');
 var childProcess = require('child_process');
 var fs = require('fs');
+var url = require('url');
 app.use( bodyParser.json() );
 app.use(bodyParser.urlencoded({ extended: true }));
 var isPhantomJs = ('string' === typeof argv.browser) && (-1 !== argv.browser.indexOf('phantomjs'));
@@ -348,6 +349,7 @@ var childApp = false;
 var phantomJsStdoutBuffer = '';
 
 var startup = [];
+var testUrl = argv._[0];
 
 startup.push(function() {
     server = http.createServer(app);
@@ -409,23 +411,50 @@ if (argv.app) {
             console.log('exitting, because child process exitted with code ' + code);
             tearDownFn(code ? code : 1);
         });
-        setTimeout(function() {
-            startup.shift();
-            startup[0]();
-        }, 4000); //// TBD make this more predictable
+        var urlToProbe = testUrl.split('#')[0];
+        var probedOk = false;
+        setTimeout(function probeUrl() {
+            if (probedOk) {
+                return;
+            }
+            try {
+                console.log('probing application url: ' + urlToProbe);
+                var options = url.parse(urlToProbe);
+                var req = http.request(options, function(res) {
+                    res.on('data', function() { 
+                        if (probedOk) {
+                            return;
+                        }
+                        console.log('application seems to be ready');
+                        probedOk = true;
+                        req.end();
+                        startup.shift();
+                        startup[0]();
+                    });
+                    res.on('error', function() {
+                        setTimeout(probeUrl, 500);
+                    });
+                });
+                req.on('error', function() { 
+                    setTimeout(probeUrl, 500);
+                });
+                req.end();
+            } catch (e) {
+                setTimeout(probeUrl, 500);
+            }
+        }, 0);
     });
 }
 
-var injectPortIntoUrl = function(url, port) {
-    var pc = url.split('/');
+var injectPortIntoUrl = function(testUrl, port) {
+    var pc = testUrl.split('/');
     pc[2] = pc[2].replace(/\:\d+$/, '') + ':' + port;
     return pc.join('/');
 };
     
 startup.push(function() {
-    var url = argv._[0];
     if (argv['serve-http']) {
-        url = injectPortIntoUrl(url, serveHttpPort);
+        testUrl = injectPortIntoUrl(testUrl, serveHttpPort);
     }
     var backendUrl = 'http://127.0.0.1:' + port;
     var editor = argv.editor;
@@ -453,13 +482,13 @@ startup.push(function() {
     if (wait) {
         args.push('wait=' + wait);
     }
-    var hash = url.split('#')[1];
-    url = url.split('#')[0];
-    url = -1 === url.indexOf('?') ? (url + '?' + (new Date()).getTime()) : (url.replace('?', '?' + (new Date()).getTime() + '&'));
+    var hash = testUrl.split('#')[1];
+    testUrl = testUrl.split('#')[0];
+    testUrl = -1 === testUrl.indexOf('?') ? (testUrl + '?' + (new Date()).getTime()) : (testUrl.replace('?', '?' + (new Date()).getTime() + '&'));
     if (undefined !== hash) {
-        url += '#' + hash;
+        testUrl += '#' + hash;
     }
-    url = url + (-1 === url.indexOf('#') ? '#' : '&') + args.join('&');
+    testUrl = testUrl + (-1 === testUrl.indexOf('#') ? '#' : '&') + args.join('&');
     if (isPhantomJs) {
         var childArgs;
         childArgs = ['--web-security=false'];
@@ -473,7 +502,7 @@ startup.push(function() {
         if (argv.video || argv.frames) {
             childArgs.push('--video');
         }
-        childArgs.push(url);
+        childArgs.push(testUrl);
         console.log('Launching ' + (argv.browser) + ' ' + childArgs.join(' '));
         browserProcess = childProcess.spawn(argv.browser, childArgs);
 
@@ -559,11 +588,9 @@ startup.push(function() {
             }
         });
     } else {
-        console.log('Launching ' + (argv.browser ? argv.browser : 'default browser') + ' with URL: ' + url);
-        browserProcess = open(url, argv.browser);
+        console.log('Launching ' + (argv.browser ? argv.browser : 'default browser') + ' with URL: ' + testUrl);
+        browserProcess = open(testUrl, argv.browser);
     }
 });
 
 startup[0]();
-
-
