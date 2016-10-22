@@ -512,46 +512,32 @@
      * @return {String}
      */
     var decodeAlias = function(value, returnRefKey) {
-        console.log('decodeAlias(' + JSON.stringify(arguments) + ')');
         var result;
         if ('string' === typeof value) {
-            console.log(1);
             result = returnRefKey ? value : workerGlobals[value];
-            console.log('returning ' + JSON.stringify(result));
             return result;
         } else {
-            console.log(2);
             if (1 === value.length) {
-                console.log(3);
                 // ["globalVar"] or [["email of ", ["userNameForThisActor"]]]
                 value = value[0];
-                console.log(JSON.stringify(value));
                 if ('string' === typeof value) {
-                    console.log(4);
                     result = returnRefKey ? value : decodeAlias(value);
-                    console.log('returning ' + JSON.stringify(result));
                     return result;
                 } else if (value instanceof Array) {
-                    console.log(5);
                     result = returnRefKey ? decodeAlias(value) : workerGlobals[decodeAlias(value)];
-                    console.log('returning ' + JSON.stringify(result));
                     return result;
                 } else {
                     throw new Error('incorrect value: [' + (typeof value) + '] [ ' + JSON.stringify(value) + ']');
                 }
             } else if (0 === value.length) {
-                console.log(6);
                 // [] - just prompt user for value
                 result = returnRefKey ? undefined : prompt('enter value for ' + newKey, '');
-                console.log('returning ' + JSON.stringify(result));
                 return result;
             } else {
                 // ['entity for ts = ', ["timeStamp"]]
-                console.log(7);
                 result = returnRefKey ? undefined : value.map(function(part) {
                     return part instanceof Array ? String(decodeAlias(part)) : part;
                 }).join('');
-                console.log('returning ' + JSON.stringify(result));
                 return result;
             }
         }
