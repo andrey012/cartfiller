@@ -12,6 +12,16 @@
      * @access private
      */
     var worker = false;
+    var reinitializeWorker = function() {
+        var task = workerCurrentTask;
+        var api = me.modules.api;
+        worker = {
+            '$set': ['set [ref] to [value]', function() { task.ref = task.value; api.result(); }],
+            '$loop': ['check [ref] against [value]', function() { if (parseInt(task.ref) < parseInt(task.value)) { api.repeatTask(task.tasks); } api.result();}],
+            '$inc': ['inc [ref]', function() { task.ref = parseInt(task.ref) + 1; api.result(); }],
+            '$assertEquals': ['assert that [ref] is equals to [value]', function() { api.result(api.compare(task.value, task.ref)); }]
+        };
+    };
     /**
      * Keeps workers URL=>code map, used to initiate relays on the fly
      * @var {Object} CartFiller.Dispatcher~workerSourceCodes
@@ -1145,7 +1155,7 @@
                 for (i in message) {
                     jobDetailsCache[i] = message[i];
                 }
-                worker = {};
+                reinitializeWorker();
                 workerGlobals = message.globals = message.globals ? message.globals : {};
                 message.details = convertObjectToArray(message.details);
                 workerEventListeners = {};
@@ -2100,7 +2110,7 @@
                 link.focus();
             } catch (e) {}
             // initialize
-            worker = {};
+            reinitializeWorker();
             if (window.opener) {
                 relay.parent = window.opener;
             } else if (window.parent) {

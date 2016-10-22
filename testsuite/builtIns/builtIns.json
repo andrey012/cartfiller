@@ -1,0 +1,9 @@
+{
+  "details": [
+    {"$set": {"ref": ["var"], "value": 0}},
+    {"$assertEquals": {"ref": ["var"], "value": 0}},
+    {"$inc": {"ref": ["var"]}},
+    {"$loop": {"ref": ["var"], "value": 10, "tasks": 2}},
+    {"$assertEquals": {"ref": ["var"], "value": 10}}
+  ]
+}
