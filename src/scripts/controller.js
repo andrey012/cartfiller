@@ -103,6 +103,20 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
             }
             cfScroll(elementToScrollTo[0], useTop, force);
         };
+        var promptWithJsonWorkaround = function(message, defaultValue) {
+            var result = prompt(message, defaultValue);
+            if (result !== null) {
+                try {
+                    var jsonParsed = JSON.parse(result);
+                    if (String(jsonParsed) !== String(result)) {
+                        if (confirm('this looks like valid JSON, do you want me to parse this JSON? Here it is: \n\n' + JSON.stringify(jsonParsed, null, 4))) {
+                            result = jsonParsed;
+                        }
+                    }
+                } catch (e) {}
+            }
+            return result;
+        };
         var autorun = function() {
             if ($scope.workersLoaded >= $scope.workersCounter) {
                 if (! $scope.pausePoints[$scope.currentTask] || ! $scope.pausePoints[$scope.currentTask][$scope.currentStep]) {
@@ -492,7 +506,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
         };
         $scope.getPropertyValue = function(value) {
             if ('object' === typeof value) {
-                value = JSON.stringify(value, null, 1);
+                value = 'json: ' + JSON.stringify(value, null, 1);
             }
             value = String(value);
             if (value.length > 100) {
@@ -501,9 +515,9 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
             return value;
         };
         $scope.doubleClickTaskInput = function(index, name, value) {
-            var val = prompt('Enter new value for [' + name + ']', 'object' === typeof value ? JSON.stringify(value) : value);
+            var val = promptWithJsonWorkaround('Enter new value for [' + name + ']', 'object' === typeof value ? JSON.stringify(value) : value);
             if (null !== val) {
-                $scope.jobDetails[index][name] = 'object' === typeof value ? JSON.parse(val) : val;
+                $scope.jobDetails[index][name] = val;
                 cfMessage.send('updateProperty', {index: index, name: name, value: val});
             }
         };
@@ -713,7 +727,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
         };
         $scope.getWorkerGlobalValue = function(name) {
             var v = $scope.workerGlobals[name];
-            return 'object' === typeof v ? JSON.stringify(v) : v;
+            return 'object' === typeof v ? ('json: ' + JSON.stringify(v)) : v;
         };
         $scope.refreshPageNoWatch = function($event) {
             cfMessage.send('refreshPage');
@@ -987,7 +1001,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 return setTimeout(initGlobalsScope, 1000);
             }
             scope.updateGlobal = function(name) {
-                var newValue = prompt('Enter new value for [' + name + ']', $scope.workerGlobals[name]);
+                var newValue = promptWithJsonWorkaround('Enter new value for [' + name + ']', $scope.workerGlobals[name]);
                 if (null !== newValue) {
                     $scope.workerGlobals[name] = newValue;
                     cfMessage.send('updateGlobal', {name: name, value: newValue});
