@@ -55,6 +55,15 @@
      * @access public
      */
     var config;
+
+    if (window.cartFillerAPI) {
+        window.postMessage(
+            'cartFillerMessage:' + 
+            JSON.stringify({cmd: 'reinitialize'}),
+            '*'
+        );
+        throw new Error('preventing duplicate launch');
+    }
     
     /**
      * @class CartFiller.Configuration
@@ -184,7 +193,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1493324013972';
+    config.gruntBuildTimeStamp='1493925720124';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -2455,6 +2464,13 @@
          */
         onMessage_toggleSize: function(details){
                 me.modules.ui.setSize(details.size);
+        },
+        onMessage_reinitialize: function() {
+            if (! relay.isSlave) {
+                this.onMessage_chooseJob({hideHashDetails: 1});
+            } else {
+                alert('This slave is already initialized');
+            }
         },
         /**
          * Shows Choose Job frame

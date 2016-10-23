@@ -1062,6 +1062,13 @@
         onMessage_toggleSize: function(details){
                 me.modules.ui.setSize(details.size);
         },
+        onMessage_reinitialize: function() {
+            if (! relay.isSlave) {
+                this.onMessage_chooseJob({hideHashDetails: 1});
+            } else {
+                alert('This slave is already initialized');
+            }
+        },
         /**
          * Shows Choose Job frame
          * @function CartFiller.Dispatcher#onMessage_chooseJob

@@ -42,6 +42,15 @@
      * @access public
      */
     var config;
+
+    if (window.cartFillerAPI) {
+        window.postMessage(
+            'cartFillerMessage:' + 
+            JSON.stringify({cmd: 'reinitialize'}),
+            '*'
+        );
+        throw new Error('preventing duplicate launch');
+    }
     
     /**
      * @class CartFiller.Configuration
