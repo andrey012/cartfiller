@@ -184,7 +184,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1491253145583';
+    config.gruntBuildTimeStamp='1493139159032';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -1413,7 +1413,8 @@
             '$set': ['set [ref] to [value]', function() { task.ref = task.value; api.result(); }],
             '$loop': ['check [ref] against [value]', function() { if (parseInt(task.ref) < parseInt(task.value)) { api.repeatTask(task.tasks); } api.result();}],
             '$inc': ['inc [ref]', function() { task.ref = parseInt(task.ref) + 1; api.result(); }],
-            '$assertEquals': ['assert that [ref] is equals to [value]', function() { api.result(api.compare(task.value, task.ref)); }]
+            '$assertEquals': ['assert that [ref] is equals to [value]', function() { api.result(api.compare(task.value, task.ref)); }],
+            '$wait': ['wait for tasks to be added', function() { api.repeatTask().setTimeout(api.result, 1000);}]
         };
     };
     /**
@@ -2727,8 +2728,8 @@
                 };
                 try {
                     if (undefined === worker[message.task]) {
-                        alert(err = 'invalid worker - no function for ' + message.task + ' exist');
-                        me.modules.api.result(err, false);
+                        // let's wait for task to appear
+                        me.modules.api.repeatTask().setTimeout(me.modules.api.result, 1000);
                         return;
                     } else if (undefined === worker[message.task][(message.step * 2) + 1]){
                         alert(err = 'invalid worker - function for ' + message.task + ' step ' + message.step + ' does not exist');

@@ -92,7 +92,16 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
             cfMessage.send('focusMainFrameWindow');
         };
         var scrollCurrentTaskIntoView = function(useTop, force) {
-            cfScroll(jQuery('#stepButton_' + $scope.currentTask + '_' + $scope.currentStep)[0], useTop, force);
+            var elementToScrollTo = jQuery('#stepButton_' + $scope.currentTask + '_' + $scope.currentStep);
+            if (! elementToScrollTo.length) {
+                var templateTextarea = jQuery('#template_' + $scope.currentTask);
+                if (templateTextarea.length) {
+                    templateTextarea[0].focus();
+                    templateTextarea[0].select();
+                    elementToScrollTo = templateTextarea;
+                }
+            }
+            cfScroll(elementToScrollTo[0], useTop, force);
         };
         var autorun = function() {
             if ($scope.workersLoaded >= $scope.workersCounter) {
@@ -397,7 +406,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 $scope.currentTask = $scope.jobDetails.length;
                 $scope.currentStep = 0;
             } else if (skip || -1 !== nextTaskFlow.indexOf('skipTask') || -1 !== nextTaskFlow.indexOf('repeatTask') || $scope.jobTaskDescriptions[$scope.jobDetails[$scope.currentTask].task].length <= $scope.currentStep){
-                while ($scope.currentStep < $scope.jobTaskDescriptions[$scope.jobDetails[$scope.currentTask].task].length) {
+                while ($scope.jobTaskDescriptions[$scope.jobDetails[$scope.currentTask].task] && $scope.currentStep < $scope.jobTaskDescriptions[$scope.jobDetails[$scope.currentTask].task].length) {
                     if ($scope.pausePoints[$scope.currentTask] && $scope.pausePoints[$scope.currentTask][$scope.currentStep]) {
                         pause = true;
                     }
