@@ -15,12 +15,70 @@
     var reinitializeWorker = function() {
         var task = workerCurrentTask;
         var api = me.modules.api;
+        var getStack = function() {
+            return (workerGlobals['`foreach stack'] || '').split('|');
+        };
+        var setStack = function(pc) {
+            workerGlobals['`foreach stack'] = pc.join('|');
+        };
         worker = {
-            '$set': ['set [ref] to [value]', function() { task.ref = task.value; api.result(); }],
-            '$loop': ['check [ref] against [value]', function() { if (parseInt(task.ref) < parseInt(task.value)) { api.repeatTask(task.tasks); } api.result();}],
-            '$inc': ['inc [ref]', function() { task.ref = parseInt(task.ref) + 1; api.result(); }],
-            '$assertEquals': ['assert that [ref] is equals to [value]', function() { api.result(api.compare(task.value, task.ref)); }],
-            '$wait': ['wait for tasks to be added', function() { api.repeatTask().setTimeout(api.result, 1000);}]
+            '=set': ['set [ref] to [value]', function() { task.ref = task.value; api.result(); }],
+            '=loop': ['check [ref] against [value]', function() { if (parseInt(task.ref) < parseInt(task.value)) { api.repeatTask(task.tasks); } api.result();}],
+            '=inc': ['inc [ref]', function() { task.ref = parseInt(task.ref) + 1; api.result(); }],
+            '=assertEquals': ['assert that [ref] is equals to [value]', function() { api.result(api.compare(task.value, task.ref)); }],
+            '=wait': ['wait for tasks to be added', function() { api.repeatTask().setTimeout(api.result, 1000);}],
+            '=foreach': [
+                'check whether we are looping', function() {
+                    var pc = getStack(), myIndex = -1, myStack = '', index = 0;
+                    pc.filter(function(v, k) {
+                        if (parseInt(v.split(':')[0]) === api.env.taskIndex) {
+                            myIndex = k;
+                            myStack = v;
+                        }
+                    });
+                    if (myIndex !== -1) {
+                        var ppc = myStack.split(':');
+                        pc = pc.slice(0, myIndex);
+                        if (ppc[2] === '*') {
+                            // ok, we are looping 
+                            index = parseInt(ppc[1]);
+                        }
+                    }
+                    myStack = String(api.env.taskIndex) + ':' + index;
+                    pc.push(myStack);
+                    setStack(pc);
+                    api.nop();
+                }, 'initialize values', function() {
+                    var pc = getStack();
+                    var recent = pc.pop();
+                    var ppc = recent.split(':');
+                    var index = parseInt(ppc[1]);
+                    var values = task.values.split(task.separator);
+                    task.index = index;
+                    task.value = values[index];
+                    if (index === values.length - 1) {
+                        recent = ppc[0] + ':-';
+                        pc.push(recent);
+                        setStack(pc);
+                    }
+                    api.nop();
+                }
+            ],
+            '=endforeach':[
+                'loop', function() {
+                    var pc = getStack();
+                    var recent = pc.pop();
+                    var ppc = recent.split(':');
+                    if (ppc[1] === '-') {
+                        setStack(pc);
+                        return api.nop();
+                    }
+                    recent = String(ppc[0]) + ':' + String(parseInt(ppc[1]) + 1) + ':*';
+                    pc.push(recent);
+                    setStack(pc);
+                    api.repeatTask(1 + api.env.taskIndex - parseInt(ppc[0])).nop();
+                }
+            ]
         };
     };
     /**

@@ -939,6 +939,11 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                     var name = el.attr('name');
                     var value = el.val();
                     if (value.length && name) {
+                        if ('[' === value.substr(0, 1) && ']' === value.substr(-1, 1)) {
+                            try {
+                                value = JSON.parse(value);
+                            } catch (e) {}
+                        }
                         result[taskName][name] = value;
                     }
                 });

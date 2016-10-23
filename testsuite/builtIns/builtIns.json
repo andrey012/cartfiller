@@ -1,9 +1,28 @@
 {
   "details": [
-    {"$set": {"ref": ["var"], "value": 0}},
-    {"$assertEquals": {"ref": ["var"], "value": 0}},
-    {"$inc": {"ref": ["var"]}},
-    {"$loop": {"ref": ["var"], "value": 10, "tasks": 2}},
-    {"$assertEquals": {"ref": ["var"], "value": 10}}
+    "# =set ... =inc ... =loop",
+    {"=set": {"ref": ["var"], "value": 0}},
+    {"=assertEquals": {"ref": ["var"], "value": 0}},
+    {"=inc": {"ref": ["var"]}},
+    {"=loop": {"ref": ["var"], "value": 10, "tasks": 2}},
+    {"=assertEquals": {"ref": ["var"], "value": 10}},
+    "# =foreach ... =endforeach",
+    {"=set": {"ref": ["var"], "value": ""}},
+    {"=assertEquals": {"ref": ["var"], "value": ""}},
+    {"=foreach": {"values": "a,b,c", "separator": ",", "value": ["letter"]}},
+    {"=foreach": {"values": "1  2  3", "separator": "  ", "value": ["digit"]}},
+    {"=set": {"ref": ["var"], "value": [["var"], ",", ["letter"], ["digit"]]}},
+    {"=endforeach": {}},
+    {"=endforeach": {}},
+    {"=assertEquals": {"ref": ["var"], "value": ",a1,a2,a3,b1,b2,b3,c1,c2,c3"}},
+    "# =foreach ... =endforeach with indexes",
+    {"=set": {"ref": ["var"], "value": ""}},
+    {"=assertEquals": {"ref": ["var"], "value": ""}},
+    {"=foreach": {"values": "a,b,c", "separator": ",", "value": ["letter"], "index": ["letterIndex"]}},
+    {"=foreach": {"values": "1  2  3", "separator": "  ", "value": ["digit"], "index": ["digitIndex"]}},
+    {"=set": {"ref": ["var"], "value": [["var"], ",", ["letter"], ["digit"], ":", ["letterIndex"], ["digitIndex"]]}},
+    {"=endforeach": {}},
+    {"=endforeach": {}},
+    {"=assertEquals": {"ref": ["var"], "value": ",a1:00,a2:01,a3:02,b1:10,b2:11,b3:12,c1:20,c2:21,c3:22"}},
   ]
 }
