@@ -57,6 +57,9 @@ cartfiller = {
         "referencesToGlobals": {
             "referencesToGlobals": true,
         },
+        "selectors": {
+            "selectors": true,
+        },
         "builtIns": {
             "builtIns": true,
         },

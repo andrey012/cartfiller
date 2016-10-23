@@ -193,7 +193,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1495179493229';
+    config.gruntBuildTimeStamp='1496442683461';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -481,6 +481,188 @@
             doc = me.modules.ui.mainFrameWindow.document;
         } catch (e) {}
         return doc;
+    };
+
+    var selectorPattern = /^(([^\:\[.# ]+)|(\#[^\:\[.# ]+)|(\.[^\:\[.# ]+)|(\[([^\]"]|("[^"]*"))*\])|(\:([^\:\[.#" ]|("[^"]*"))+))(.*)$/;
+    var selectorStepPattern = /^((([^\:\[.# ]+)|(\#[^\:\[.# ]+)|(\.[^\:\[.# ]+)|(\[([^\]"]|("[^"]*"))*\])|(\:([^\:\[.#" ]|("[^"]*"))+))+)(\s(.*))?$/;
+    var parseAttributeSelector = function(expression) {
+        var pc = expression.split('=');
+        var name = pc.shift();
+        var value = pc.join('=');
+        return {attribute: name, value: value.substr(1, value.length - 2)};
+    };
+    var Selector = function(elementList) {
+        this.length = elementList.length;
+        for (var i = 0; i < elementList.length; i ++) {
+            this[i] = elementList[i];
+        }
+    };
+    Selector.prototype = Object.create({});
+    Selector.prototype.find = function(selector) {
+        var match = selectorStepPattern.exec(selector);
+        if (! match) { 
+            throw new Error('invalid selector: [' + selector + ']');
+        }
+        var firstSelector = match[1];
+        var remainder = match[13];
+        var firstResult = new Selector([]);
+        this.each(function(i,e) {
+            firstResult.add(getElementsBySelector(e, firstSelector));
+        });
+        if (remainder) {
+            return firstResult.find(remainder);
+        } else {
+            return firstResult;
+        }
+    };
+    var getElementsBySelectorSecondStepFilter = function(el) {
+        return function(criterion) {
+            return getElementsBySelectorSecondStepMatch(el, criterion);
+        };
+    };
+    Selector.prototype.closest = function(selector) {
+        var parsed = parseSelector(selector);
+        if (this.length) {
+            for (var el = this[0].parentNode; el; el = el.parentNode) {
+                if (parsed.length === parsed.filter(getElementsBySelectorSecondStepFilter(el)).length) {
+                    return new Selector([el]);
+                }
+            }
+        }
+        return new Selector([]);
+    };
+    Selector.prototype.text = function() {
+        if (this.length) {
+            return this[0].textContent;
+        }
+    };
+    Selector.prototype.index = function() {
+        if (this.length) {
+            var el = this[0].previousSibling;
+            for (var i = 0; el; el = el.previousSibling) {
+                i += el.nodeName === this[0].nodeName ? 1 : 0;
+            }
+            return i;
+        }
+    };
+    Selector.prototype.val = function() {
+        if (this.length) {
+            if (arguments.length) {
+                this[0].value = arguments[0];
+            } else {
+                return this[0].value;
+            }
+        }
+    };
+    Selector.prototype.attr = function(name) {
+        if (this.length) {
+            return this[0].getAttribute(name);
+        }
+    };
+    Selector.prototype.add = function(anotherSelectorOrElement) {
+        if ((anotherSelectorOrElement instanceof Selector) || (anotherSelectorOrElement instanceof Array)) {
+            for (var i = 0; i < anotherSelectorOrElement.length; i ++) {
+                this[this.length] = anotherSelectorOrElement[i];
+                this.length ++;
+            }
+        } else {
+            this[this.length] = anotherSelectorOrElement;
+            this.length ++;
+        }
+        return this;
+    };
+    Selector.prototype.filter = function(fn) {
+        var result = [];
+        for (var i = 0; i < this.length; i ++) {
+            if (fn(i, this[i])) {
+                result.push(this[i]);
+            }
+        }
+        return new Selector(result);
+    };
+    Selector.prototype.each = function(fn) {
+        for (var i = 0; i < this.length; i ++) {
+            var result = fn(i, this[i]);
+            if (result === false || result === me.modules.api) {
+                break;
+            }
+        }
+        return this;
+    };
+    var parseSelector = function(selector) {
+        var result = [];
+        while (selector.length) {
+            var match = selectorPattern.exec(selector);
+            if (! match) {
+                throw new Error('invalid selector: [' + selector + ']');
+            }
+            if (match[2]) {
+                result.push(['nodeName', match[2]]);
+            } else if (match[3]) {
+                result.push(['id', match[3].substr(1)]);
+            } else if (match[4]) {
+                result.push(['class', match[4].substr(1)]);
+            } else if (match[5]) {
+                result.push(['attribute', parseAttributeSelector(match[5].substr(1, match[5].length - 2))]);
+            } else if (match[8]) {
+                result.push(['modifier', match[8].substr(1)]);
+            } else {
+                throw new Error('bad selector: [' + selector + ']');
+            }
+            selector = match[11];
+        }
+        return result;
+    };
+    var getElementsBySelectorFirstStep = function(root, criterion) {
+        switch (criterion[0]) {
+            case 'nodeName': 
+                return new Selector(root.getElementsByTagName(criterion[1]));
+            case 'id': 
+                return new Selector([root.getElementById(criterion[1])]);
+            case 'class': 
+                return new Selector(root.getElementsByClassName(criterion[1]));
+            case 'attribute': 
+            case 'modifier': 
+                return getElementsBySelectorSecondStep(new Selector(root.getElementsByTagName('*')), criterion);
+            default: 
+                throw new Error('unknown or invalid criterion type for first step: [' + criterion[0] + ']');
+        }
+    };
+    var matchModifier = function(modifier, element) {
+        var match;
+        if (modifier === 'visible') {
+            return element.style.display !== 'none' && element.style.visibility !== 'hidden' && (element.style.opacity === '' || parseFloat(element.style.opacity) > 0);
+        } else if (match = /^contains\(\"(.*)"\)$/.exec(modifier)) {
+            return -1 !== element.textContent.toLowerCase().indexOf(match[1].toLowerCase());
+        } else {
+            throw new Error('unknown modifier: [' + modifier + ']');
+        }
+    };
+    var getElementsBySelectorSecondStepMatch = function(element, criterion) {
+        switch (criterion[0]) {
+            case 'id': return element.id === criterion[1];
+            case 'nodeName': return element.nodeName.toLowerCase() === criterion[1].toLowerCase();
+            case 'class': return (' ' + element.className + ' ').indexOf(criterion[1]) !== -1;
+            case 'attribute': return String(element.getAttribute(criterion[1].attribute)) === criterion[1].value;
+            case 'modifier': return matchModifier(criterion[1], element);
+            default: throw new Error('unknown criterion type: [' + criterion[0] + ']');
+        }
+    };
+    var getElementsBySelectorSecondStep = function(selector, criterion) {
+        return selector.filter(function(index, element) {
+            return getElementsBySelectorSecondStepMatch(element, criterion);
+        });
+    };
+    var getElementsBySelector = function(root, selector) {
+        var parsed = parseSelector(selector);
+        if (parsed.length === 0) {
+            throw new Error('wrong selector: [' + selector + ']');
+        }
+        var result = getElementsBySelectorFirstStep(root, parsed.shift());
+        parsed.filter(function(criterion) {
+            result = getElementsBySelectorSecondStep(result, criterion);
+        });
+        return result;
     };
 
     me.scripts.push({
@@ -924,13 +1106,13 @@
          * @return {string} '' if values match, error description otherwise
          * @access public
          */
-        compare: function(expected, value) {
+        compare: function(expected, value, comment) {
             expected = String(expected);
             value = String(value);
             if (expected === value) {
                 return '';
             }
-            var r = '[';
+            var r = (comment ? (comment + ': ') : '') + '[';
             for (var i = 0; i < Math.max(expected.length, value.length); i++) {
                 if (expected.substr(i, 1) === value.substr(i, 1)) {
                     r += expected.substr(i, 1);
@@ -998,7 +1180,7 @@
                         return me.modules.api.result();
                     } else if ('object' === typeof el && 'string' === typeof el.jquery && undefined !== el.length) {
                         el[0].click();
-                    } else if (el instanceof Array) {
+                    } else if (el instanceof Array || el instanceof Selector) {
                         el[0].click();
                     } else {
                         el.click();
@@ -1397,6 +1579,12 @@
         switchToWindow: function(index) {
             me.modules.dispatcher.switchToWindow(index);
             return this;
+        },
+        find: function(selector) {
+            return new Selector([getDocument()]).find(selector);
+        },
+        getSelectorClass: function() {
+            return Selector;
         }
     });
 }).call(this, document, window);
@@ -1459,6 +1647,12 @@
                     var values = task.values.split(task.separator);
                     task.index = index;
                     task.value = values[index];
+                    if (task.fields) {
+                        var valuePc = task.value.split(',').map(function(v){ return v.trim(); });
+                        task.fields.split(',').filter(function(field) {
+                            workerGlobals[field] = valuePc.shift();
+                        });
+                    }
                     if (index === values.length - 1) {
                         recent = ppc[0] + ':-';
                         pc.push(recent);
@@ -2935,7 +3129,7 @@
             var arrow = [];
             var elements;
             try {
-                elements = eval('(function(window, document, jQuery, $, api, task){return jQuery' + details.selector + ';})(me.modules.ui.mainFrameWindow, me.modules.ui.mainFrameWindow.document, me.modules.ui.mainFrameWindow.jQuery, me.modules.ui.mainFrameWindow.$, me.modules.api, ' + JSON.stringify(details.taskDetails) + ');'); // jshint ignore:line
+                elements = eval('(function(window, document, api, task){return api.find' + details.selector + ';})(me.modules.ui.mainFrameWindow, me.modules.ui.mainFrameWindow.document, me.modules.api, ' + JSON.stringify(details.taskDetails) + ');'); // jshint ignore:line
             } catch (e) {
                 elements = [];
             }
@@ -4786,7 +4980,7 @@
             var i;
             var added = false;
 
-            if (null !== element && 'object' === typeof element && 'string' === typeof element.jquery && undefined !== element.length && 'function' === typeof element.each){
+            if (null !== element && 'object' === typeof element && (('string' === typeof element.jquery && undefined !== element.length && 'function' === typeof element.each) || (element instanceof me.modules.api.getSelectorClass()))){
                 element.each(function(i,el){
                     me.modules.ui.addElementToTrack('highlight', el);
                     added = true;
@@ -4821,7 +5015,7 @@
             if (prepareToClearOverlays) {
                 this.clearOverlaysAndReflect(true);
             }
-            if (null !== element && 'object' === typeof element && 'string' === typeof element.jquery && undefined !== element.length && 'function' === typeof element.each){
+            if (null !== element && 'object' === typeof element && (('string' === typeof element.jquery && undefined !== element.length && 'function' === typeof element.each) || (element instanceof me.modules.api.getSelectorClass()))){
                 element.each(function(i,el){
                     me.modules.ui.addElementToTrack('arrow', el, noScroll);
                     if (!allElements) {

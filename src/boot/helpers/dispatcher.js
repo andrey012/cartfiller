@@ -56,6 +56,12 @@
                     var values = task.values.split(task.separator);
                     task.index = index;
                     task.value = values[index];
+                    if (task.fields) {
+                        var valuePc = task.value.split(',').map(function(v){ return v.trim(); });
+                        task.fields.split(',').filter(function(field) {
+                            workerGlobals[field] = valuePc.shift();
+                        });
+                    }
                     if (index === values.length - 1) {
                         recent = ppc[0] + ':-';
                         pc.push(recent);
@@ -1532,7 +1538,7 @@
             var arrow = [];
             var elements;
             try {
-                elements = eval('(function(window, document, jQuery, $, api, task){return jQuery' + details.selector + ';})(me.modules.ui.mainFrameWindow, me.modules.ui.mainFrameWindow.document, me.modules.ui.mainFrameWindow.jQuery, me.modules.ui.mainFrameWindow.$, me.modules.api, ' + JSON.stringify(details.taskDetails) + ');'); // jshint ignore:line
+                elements = eval('(function(window, document, api, task){return api.find' + details.selector + ';})(me.modules.ui.mainFrameWindow, me.modules.ui.mainFrameWindow.document, me.modules.api, ' + JSON.stringify(details.taskDetails) + ');'); // jshint ignore:line
             } catch (e) {
                 elements = [];
             }

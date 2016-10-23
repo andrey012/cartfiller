@@ -254,7 +254,32 @@
                 '', function() {
                     task.a = task.b; api.result();
                 }
+            ],
+            'test selectors': [
+                '', function() {
+                    api.modal('<div id="root"><div>0<div id="one">a<div id="two" class="theclass" style="color: green">b</div></div></div><div>asdf (fds)[] a</div></div>', function() {
+                        api.setTimeout(function() {
+                            api.result( ''
+                                || api.compare("ab", api.find('#one').text(), 1) 
+                                || api.compare("ab", api.find('div#one').text(), 2)
+                                || api.compare("b", api.find('div.theclass').text(), 3)
+                                || api.compare("b", api.find('#one div.theclass').text(), 4)
+                                || api.compare("b", api.find('div div div.theclass').text(), 5)
+                                || api.compare("b", api.find('.theclass').text(), 6)
+                                || api.compare("b", api.find('#two.theclass').text(), 7)
+                                || api.compare("b", api.find('.theclass#two').text(), 8)
+                                || api.compare("b", api.find('[style="color: green"]').text(), 9)
+                                || api.compare("ab", api.find("#two").closest('div').text(), 10)
+                                || api.compare("asdf (fds)[] a", api.find('#root div:contains("asdf (fds)[] a")').text(), 11)
+                                || api.compare("asdf (fds)[] a", api.find('#root div:contains("asdf")').text(), 12)
+                                || api.compare("asdf (fds)[] a", api.find('#root div:contains("fds")').text(), 13)
+                                || api.compare("asdf (fds)[] a", api.find('#root div:contains("[]")').text(), 14)
+                            );
+                        }, 0);
+                    });
+                }
             ]
+
 
 
 

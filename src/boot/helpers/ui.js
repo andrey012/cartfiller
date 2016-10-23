@@ -924,7 +924,7 @@
             var i;
             var added = false;
 
-            if (null !== element && 'object' === typeof element && 'string' === typeof element.jquery && undefined !== element.length && 'function' === typeof element.each){
+            if (null !== element && 'object' === typeof element && (('string' === typeof element.jquery && undefined !== element.length && 'function' === typeof element.each) || (element instanceof me.modules.api.getSelectorClass()))){
                 element.each(function(i,el){
                     me.modules.ui.addElementToTrack('highlight', el);
                     added = true;
@@ -959,7 +959,7 @@
             if (prepareToClearOverlays) {
                 this.clearOverlaysAndReflect(true);
             }
-            if (null !== element && 'object' === typeof element && 'string' === typeof element.jquery && undefined !== element.length && 'function' === typeof element.each){
+            if (null !== element && 'object' === typeof element && (('string' === typeof element.jquery && undefined !== element.length && 'function' === typeof element.each) || (element instanceof me.modules.api.getSelectorClass()))){
                 element.each(function(i,el){
                     me.modules.ui.addElementToTrack('arrow', el, noScroll);
                     if (!allElements) {
