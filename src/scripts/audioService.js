@@ -143,12 +143,21 @@ define('audioService', ['app', 'audioService'], function(app){
                     });
 
 
-                    var url = (window.URL || window.webkitURL).createObjectURL(new Blob([view], { type: 'audio/wav' }));
+                    var blob = new Blob([view], { type: 'audio/wav' });
+                    var url = (window.URL || window.webkitURL).createObjectURL(blob);
                     link.href = url;
                     var now = (new Date()).getTime();
                     var duration = now - recording;
                     link.download = 'cartFillerAudio_' + cfDebug.makeFilesystemSafeTestName(testName) + '___' + (1 + task) + '_' + (1 + step) + '_' + duration + '_' + now + '.wav';
                     recording = false;
+                    var reader = new FileReader();
+                    reader.onload = function() {
+                        var dataUrl = reader.result;
+                        var base64 = dataUrl.split(',')[1];
+                        var snd = new Audio('data:audio/wav;base64,' + base64);
+                        snd.play();
+                    };
+                    reader.readAsDataURL(blob);
                 }
                 return recording;
             }

@@ -78,6 +78,10 @@ var currentTestBeingExecuted = '';
 var currentFrameFolder = false;
 var currentFrameIndex = 1;
 
+var getFrameFileName = function(currentFrameIndex) {
+    return currentFrameFolder + '/0000000'.substr(0, 8 - String(currentFrameIndex).length) + String(currentFrameIndex) + '.png';
+};
+
 app.get('/', function (req, res) {
   res.send('<!DOCTYPE html><html><head></head><body><pre>Hello, this is cartFiller backend, you should not ever interact with it directly, here are current stats: ' + JSON.stringify(stats, null, 4) + '</pre></body></html>');
 });
@@ -133,11 +137,23 @@ var getConvertedFrameMap = function() {
     convertedFrameMap.sort(function(a, b) {
         return a[2] - b[2];
     });
+    for (i = convertedFrameMap.length - 1; i >= 0; i --) {
+        if (convertedFrameMap[i]) {
+            convertedFrameMap[i][3] = 10000;
+            break;
+        }
+    }
 
     return convertedFrameMap;
 };
 
 var writeFrameMapToFrameFolder = function() {
+    var buf = new Buffer(previousFrameBase64, 'base64');
+    var frameFileName = getFrameFileName(currentFrameIndex); 
+    console.log('saving final frame to ' + frameFileName);
+    frameCompressionMap[currentPhantomJsFrame + 1] = currentFrameIndex;
+    fs.writeFileSync(frameFileName, buf);
+    currentFrameIndex ++;
     // we are going to write frameMap here
     console.log('writing frameMap.json to ' + currentFrameFolder);
     fs.writeFileSync(currentFrameFolder + '/frameMap.json', JSON.stringify(getConvertedFrameMap()));
@@ -566,7 +582,7 @@ startup.push(function() {
                             fs.writeFileSync(debugFrameFile, buf);
                         }
                         if (currentFrameFolder) {
-                            var frameFileName = currentFrameFolder + '/0000000'.substr(0, 8 - String(currentFrameIndex).length) + String(currentFrameIndex) + '.png';
+                            var frameFileName = getFrameFileName(currentFrameIndex); 
                             console.log('saving frame to ' + frameFileName);
                             fs.writeFileSync(frameFileName, buf);
                             currentFrameIndex ++;

@@ -71,17 +71,20 @@ var processFrameFolder = function() {
         map = JSON.parse(fs.readFileSync(dir + '/frameMap.json'));
         // ffmpeg -i /tmp/output___suite2%2Ftest22%3Ffoo%3Dbar.mp4 -filter:v "setpts='PTS+if(gte(N,50),3/TB,0)'" -y /tmp/result.mp4
         map = injectAudioDelaysIntoMap(map, testName);
-
+        var totalDuration = 0;
         var pts = map.filter(function(frame) {
+            totalDuration += 40;
             return frame[3] > 0;
         }).map(function(frame) {
+            totalDuration += frame[3];
             return 'if(gte(N,' + (parseInt(frame[2]) - 1) + '),' + frame[3] + '/(1000*TB),0)';
         });
         var audioInputs = map.filter(function(frame) {
             return !! frame[4];
         });
-        pts.unshift('');
+        console.log('total duration: ' + totalDuration);
         var args = [];
+        pts.unshift('');
         args.push(
             '-i', '%07d.png'
         );
@@ -106,6 +109,7 @@ var processFrameFolder = function() {
             'setpts=\'N/(25*TB)' + pts.join('+') + '\''
         );
 
+        
         if (audioInputs.length) {
             var totalInjectedTime = 0;
             var audioFilterPieces = [];
@@ -138,6 +142,8 @@ var processFrameFolder = function() {
                 '-strict', '-2'
             );
         }
+        
+        args.push('-t', Math.floor((5000.0 + totalDuration) / 1000));
 
         args.push(
             '-force_key_frames', 'expr:gte(t,n_forced)',
