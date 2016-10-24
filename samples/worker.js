@@ -17,7 +17,7 @@
             return api.find('h2:contains("Search results"):visible');
         }
         lib.click = function(el) {
-            var ev = window.document.createEvent('MouseEvent');
+            var ev = window.document.createEvent('MouseEvents');
             ev.initMouseEvent(
                 'click',
                 /*bubble*/true, /*cancelable*/true,
@@ -275,7 +275,7 @@
                 ),
                 'remember current amount in cart', function(){
                     var cart = lib.cartAmountElement();
-                    var currentCartAmount = parseInt(cart.text());
+                    var currentCartAmount = globals.currentCartAmount = parseInt(cart.text());
                     api.highlight(cart).say(globals.skipMessages?'':('We are going to remember current cart amount (' + currentCartAmount + ') and after we\'ll add more items to cart - we are going to check, that cart amount increased accordingly')).return(currentCartAmount).result();
                 },
                 'find Add to cart button', function(cart, input){

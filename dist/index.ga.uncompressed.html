@@ -47365,7 +47365,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
             $scope.currentTask = taskIndex;
             $scope.currentStep = stepIndex;
             digestTask(oldCurrentTask);
-            var debug = isLongClick($event);
+            var debug = isLongClick($event) || $event.shiftKey;
             $scope.invokeWorker(taskIndex, stepIndex, debug);
             cfMessage.send('focusMainFrameWindow');
             return false;
@@ -47880,7 +47880,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
             reportError('bootstrap message did not come');
         }
     }, 10000);
-    config.gruntBuildTimeStamp='1496604158986';
+    config.gruntBuildTimeStamp='1496612692795';
     window.addEventListener('message', function(event){
         var prefix = 'cartFillerMessage:';
         var isDist = true;
@@ -47990,7 +47990,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 if (message.tests) {
                     var x = new XMLHttpRequest();
                     x.onload = function(){
-                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1496604158986') {
+                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1496612692795') {
                             console.log('new version of CartFiller was deployed, switching to it');
                             var hash = window.location.href.split('#');
                             var pc = hash[0].split('?');

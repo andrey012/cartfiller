@@ -539,7 +539,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
             $scope.currentTask = taskIndex;
             $scope.currentStep = stepIndex;
             digestTask(oldCurrentTask);
-            var debug = isLongClick($event);
+            var debug = isLongClick($event) || $event.shiftKey;
             $scope.invokeWorker(taskIndex, stepIndex, debug);
             cfMessage.send('focusMainFrameWindow');
             return false;
