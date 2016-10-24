@@ -579,7 +579,7 @@
     var decodeAlias = function(value, returnRefKey) {
         var result;
         if ('string' === typeof value) {
-            result = returnRefKey ? value : workerGlobals[value];
+            result = returnRefKey ? value : (value === '=random' ? (String(new Date().getTime()) + String(Math.floor(1000 * Math.random()))) : workerGlobals[value]);
             return result;
         } else {
             if (1 === value.length) {
@@ -2394,6 +2394,7 @@
                 this.postMessageToWorker('switchToWindow', {currentMainFrameWindow: index});
             }
         },
-        getFrameWindowIndex: function(){ return relay.currentMainFrameWindow; }
+        getFrameWindowIndex: function(){ return relay.currentMainFrameWindow; },
+        discoverTaskParameters: function(fn, params) { return discoverTaskParameters(fn, params); }
     });
 }).call(this, document, window);

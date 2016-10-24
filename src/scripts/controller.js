@@ -767,13 +767,15 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 var generateCompareCleanTextExpression = function(s) {
                     s = String(s);
                     for (var i in $scope.jobDetails[$scope.currentTask]) {
-                        var accessor = /^[a-zA-Z_][a-zA-Z_0-9]*$/.test(i) ? ('.' + i) : ('['  + JSON.stringify(i) + ']');
-                        if (String($scope.jobDetails[$scope.currentTask][i]) === s) {
-                            return 'task' + accessor + ', el.textContent';
-                        } else if ($scope.jobDetails[$scope.currentTask][i] === s.trim()) {
-                            return 'task' + accessor + ', el.textContent';
-                        } else if (String($scope.jobDetails[$scope.currentTask][i]).toLowerCase() === s.toLowerCase()) {
-                            return 'String(task' + accessor + ').toLowerCase(), el.toLowerCase()';
+                        if (i !== 'task') {
+                            var accessor = /^[a-zA-Z_][a-zA-Z_0-9]*$/.test(i) ? ('.' + i) : ('['  + JSON.stringify(i) + ']');
+                            if (String($scope.jobDetails[$scope.currentTask][i]) === s) {
+                                return 'task' + accessor + ', el.textContent';
+                            } else if ($scope.jobDetails[$scope.currentTask][i] === s.trim()) {
+                                return 'task' + accessor + ', el.textContent';
+                            } else if (String($scope.jobDetails[$scope.currentTask][i]).toLowerCase() === s.toLowerCase()) {
+                                return 'String(task' + accessor + ').toLowerCase(), el.textContent.toLowerCase()';
+                            }
                         }
                     }
                     return JSON.stringify(s) + ', el.textContent';

@@ -13,7 +13,7 @@
         return {
             sayHello: [
                 'open homepage', function() {
-                    window.location.href = baseUrl;
+                    api.openUrl(baseUrl);
                     api.onload();
                 },
                 'say hello', function() {
@@ -256,14 +256,20 @@
                 }
             ],
             'test selectors': [
-                '', function() {
-                    api.modal('<div id="root"><div>0<div id="one">a<div id="two" class="theclass" style="color: green">b</div></div></div><div>asdf (fds)[] a</div></div>', function() {
-                        api.setTimeout(function() {
+                lib.sampleModal = function(cb) {
+                    api.modal('<div id="root"><div>0<div id="one">a<div id="two" class="theclass" style="color: green">b</div></div></div><div>asdf (fds)[] a</div></div>', function() { api.setTimeout(cb, 0); });
+                },
+                'basic selector tests', function() {
+                    lib.sampleModal(function() {
                             api.result( ''
                                 || api.compare("ab", api.find('#one').text(), 1) 
                                 || api.compare("ab", api.find('div#one').text(), 2)
                                 || api.compare("b", api.find('div.theclass').text(), 3)
+                                || api.compare("ab", api.find('div.theclass').closest('div').text(), 3)
                                 || api.compare("b", api.find('#one div.theclass').text(), 4)
+                                || api.compare("ab", api.find('div[id^="on"]').text(), 4)
+                                || api.compare("ab", api.find('div[id="one"]').text(), 4)
+                                || api.compare("ab", api.find('div[id$="ne"]').text(), 4)
                                 || api.compare("b", api.find('div div div.theclass').text(), 5)
                                 || api.compare("b", api.find('.theclass').text(), 6)
                                 || api.compare("b", api.find('#two.theclass').text(), 7)
@@ -275,14 +281,35 @@
                                 || api.compare("asdf (fds)[] a", api.find('#root div:contains("fds")').text(), 13)
                                 || api.compare("asdf (fds)[] a", api.find('#root div:contains("[]")').text(), 14)
                             );
-                        }, 0);
                     });
-                }
+                },
+                'reset globals.ok', function() { globals.ok = false; api.result(); },
+                'test for existing element', function(repeat2) {
+                    lib.sampleModal(function(repeat2) {
+                        if (api.env.stepRepeatCounter === 0) {
+                            api.find('#one').absent();
+                        } else if (api.env.stepRepeatCounter === 1) {
+                            globals.ok = true;
+                            api.find('#one').exists();
+                        } else {
+                            api.result('too many repeats');
+                        }
+                    });
+                }, 'verify globals.ok', function() { api.result(globals.ok ? '' : 'error'); },
+                'reset globals.ok', function() { globals.ok = false; api.result(); },
+                'test for absent element', function(repeat2) {
+                    lib.sampleModal(function(repeat2) {
+                        if (api.env.stepRepeatCounter === 0) {
+                            api.find('#three').exists();
+                        } else if (api.env.stepRepeatCounter === 1) {
+                            globals.ok = true;
+                            api.find('#three').absent();
+                        } else {
+                            api.result('too many repeats');
+                        }
+                    });
+                }, 'verify globals.ok', function() { api.result(globals.ok ? '' : 'error'); },
             ]
-
-
-
-
         };
     });
 })(window, document);

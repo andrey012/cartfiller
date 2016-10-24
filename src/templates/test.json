@@ -3,6 +3,6 @@ cartfiller = {
     "globals": {
     },
     "details": [
-        {"$wait": {}}
+        {"=wait": {}}
     ]
 }

@@ -24,5 +24,10 @@
     {"=endforeach": {}},
     {"=endforeach": {}},
     {"=assertEquals": {"ref": ["var"], "value": ",a1:00,a2:01,a3:02,b1:10,b2:11,b3:12,c1:20,c2:21,c3:22"}},
+    {"=set": {"ref": ["var"], "value": 0}},
+    {"=set": {"ref": ["name"], "value": ["randomName_", ["=random"]]}},
+    {"=set": {"ref": [["name"]], "value": 123}},
+    {"=inc": {"ref": ["var"]}},
+    {"=loop": {"ref": ["var"], "value": 10, "tasks": 4}},
   ]
 }

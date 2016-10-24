@@ -10,24 +10,11 @@
      * @access private
      */
     var registerCallback = function(window, document, api, task, job, globals, lib){
-        function j(s) { 
-            return window.jQuery? window.jQuery(s) : []; 
-        }
-        function h(s, a) { 
-            var e = j(s); 
-            api
-                .highlight(e, a)
-                .result(
-                    e.length ? 
-                        '' : 
-                        (('object' === typeof s && s.selector) ? s.selector : s) + 'not found'
-                ); 
-        }
         lib.cartAmountElement = function(){
-            return window.jQuery('#navbar > div > strong:nth-child(1):visible');
+            return api.find('#navbar div strong:nth-child(1):visible');
         };
         lib.searchResultsHeading = function(){
-            return window.jQuery('h2:contains("Search results"):visible');
+            return api.find('h2:contains("Search results"):visible');
         }
         lib.click = function(el) {
             var ev = window.document.createEvent('MouseEvent');
@@ -155,14 +142,14 @@
                 },
                 'if cart is not empty - find link to open cart', function(){
                     api.arrow();
-                    var cartLink = window.jQuery('#navbar a:contains("Open Cart"):visible');
+                    var cartLink = api.find('#navbar a:contains("Open Cart"):visible');
                     api.highlight(cartLink).say(globals.skipMessages?'':'Here is "open cart" link, we are going to open cart').result((1 === cartLink.length) ? "" : "Cant find link to open cart");
                 },
                 'if cart is not empty - click on open cart link', function(cartLink){
                     cartLink.each(function(i,el){lib.click(el);});
                     api.waitFor(
                         function(){ 
-                            return ((undefined !== window.jQuery) && (1 === window.jQuery('h2:contains("Your cart"):visible').length));
+                            return (1 === api.find('h2:contains("Your cart"):visible').length);
                         }, 
                         function(result){ 
                             api.highlight().result(result ? "" : "Cant open cart");
@@ -170,7 +157,7 @@
                     );
                 },
                 'if cart is not empty - find clear cart button', function(){
-                    var removeAllItems = window.jQuery('a:contains("Remove all items"):visible');
+                    var removeAllItems = api.find('a:contains("Remove all items"):visible');
                     api.highlight(removeAllItems).say(globals.skipMessages?'':'Here is "Remove all" button').result((1 <= removeAllItems.length) ? "" : "Cant find clear cart button");
                 },
                 'if cart is not empty - click clear cart button', function(removeAllItems){
@@ -209,7 +196,7 @@
             goToHome: [
                 lib.goToHome = [
                     'go to home', function(){
-                        var homeLink = window.jQuery('#navbar a:contains("Home"):visible');
+                        var homeLink = api.find('#navbar a:contains("Home"):visible');
                         api.highlight(homeLink).say(globals.skipMessages?'':'This is "Home" link that we will use to search for product').result((1 === homeLink.length) ? "" : "Cant find home link");
                     }
                 ]
@@ -217,20 +204,17 @@
             addToCart: [
                 lib.goToHomeSteps = [
                     lib('goToHome'),
-                    'click home', function(homeLink){
-                        homeLink.each(function(i,el){lib.click(el);});
-                        api.waitFor(
-                            function(){
-                                return (window.jQuery) && (1 === lib.searchBox().length);
-                            },
-                            function(result){
-                                api.highlight(lib.searchBox()).say(globals.skipMessages?'':'Here is search box, which means, that we came to home page.').result(result ? "" : "Cant navigate to home");
-                            }
-                        );
-                    }
+                    api.clicker(api.waiter(
+                        function(){
+                            return (1 === lib.searchBox().length);
+                        },
+                        function(result){
+                            api.highlight(lib.searchBox()).say(globals.skipMessages?'':'Here is search box, which means, that we came to home page.').result(result ? "" : "Cant navigate to home");
+                        }
+                    ))
                 ],
                 lib.searchBox = function searchBox(){
-                    return window.jQuery('input[type="text"][name="partNumber"]:visible');
+                    return api.find('input[type="text"][name="partNumber"]:visible');
                 },
                 lib('searchStepFactory', 123)(function (param) { return [
                     'find search box', function(){
@@ -238,7 +222,7 @@
                         api.highlight(input).say(globals.skipMessages?'':('Here is search box, let\'s put our number (' + task.partno + ') into it. This was parametrised snippet, parameter value: ' + param)).result((1 === input.length) ? "" : "Cant find search box");
                     }, api.type('partno'),
                     'find search button', function(){
-                        var searchButton = window.jQuery('input[type="submit"][value="Search"]:visible');
+                        var searchButton = api.find('input[type="submit"][value="Search"]:visible');
                         api.highlight(searchButton).say(globals.skipMessages?'':'Here is search button').result((1 === searchButton.length) ? "" : "Cant find search button");
                     },
                 ]}),
@@ -251,19 +235,19 @@
                 'click search button', function(searchButton){
                     searchButton.each(function(i,el){lib.click(el);});
                     api.waitFor(function(){
-                        return (window.jQuery) && (1 === lib.searchResultsHeading().length);
+                        return (1 === lib.searchResultsHeading().length);
                     }, function(result){
                         api.highlight(lib.searchResultsHeading()).say(globals.skipMessages?'':'Here is search results heading, which means, that search operation was successful').result(result? "" : "Cant search");
                     });
                 },
                 'find suitable item', function(){
-                    var rows = window.jQuery('#container table tbody tr');
+                    var rows = api.find('#container table tbody tr');
                     var found = false;
                     rows.each(function(i,el){
                         if (
-                            (window.jQuery(el).find('td:nth-child(1)').text() === task.partno) && 
-                            (parseInt(window.jQuery(el).find('td:nth-child(3)').text()) === 1) &&
-                            (parseFloat(window.jQuery(el).find('td:nth-child(4)').text()) <= (task.price * 1.02))
+                            (api.find(el).find('td:nth-child(1)').text() === task.partno) && 
+                            (parseInt(api.find(el).find('td:nth-child(3)').text()) === 1) &&
+                            (parseFloat(api.find(el).find('td:nth-child(4)').text()) <= (task.price * 1.02))
                         ){
                             api.highlight(el).say(globals.skipMessages?'':'This row looks suitable for our search criteria').result("");
                             found = true;
@@ -275,21 +259,27 @@
                     }
                 },
                 'find quantity box', function(row){
-                    var input = window.jQuery(row).find('td:nth-child(5) input[type="text"]:visible');
+                    var input = api.find(row).find('td:nth-child(5) input[type="text"]:visible');
                     api.highlight(input).say(globals.skipMessages?'':'This is quantity box').result((1 === input.length) ? "" : "Cant find quantity input");
                 },
-                'put appropriate quantity', function(input){
-                    input.val(task.quantity);
-                    input.change();
-                    api.highlight(input).say(globals.skipMessages?'':('Let\'s put necessary quantity (' + task.quantity + ') into it')).result();
-                },
+                api.typer(
+                    function(){ 
+                        return task.quantity; 
+                    }, 
+                    function(){ 
+                        if (! globals.skipMessages) {
+                            api.say(task.overrideMessage || ('Let\'s put necessary quantity (' + task.quantity + ') into it'));
+                        }
+                        api.result();
+                    }
+                ),
                 'remember current amount in cart', function(){
                     var cart = lib.cartAmountElement();
                     var currentCartAmount = parseInt(cart.text());
                     api.highlight(cart).say(globals.skipMessages?'':('We are going to remember current cart amount (' + currentCartAmount + ') and after we\'ll add more items to cart - we are going to check, that cart amount increased accordingly')).return(currentCartAmount).result();
                 },
                 'find Add to cart button', function(cart, input){
-                    var add = j(input).closest('tr').find('td:nth-child(5) a:visible');
+                    var add = api.find(input).closest('tr').find('td:nth-child(5) a:visible');
                     api.highlight(add).say(globals.skipMessages?'':'This is "Add to cart" button').result((1 === add.length) ? "" : "Cant find add to cart link");
                 },
                 'click on Add to cart button', function(add){
@@ -308,7 +298,7 @@
                 },
                 'make sure, that hint appeared', function(cart, click, add){
                     if (!task.quantity) return api.result();
-                    var hint = j(add).closest('tr').next();
+                    var hint = api.find(add).closest('tr').next();
                     api.highlight(hint).say(globals.skipMessages?'':'Here is hint box').result((1 === hint.length) ? "" : "Cant find hint line");
                 },
                 'make sure, that quantity on hint is correct', function(hint){
