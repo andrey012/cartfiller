@@ -529,10 +529,16 @@
     var simulateClick = function(el) {
         try {
             triggerMouseEvent (el, 'mouseover');
+        } catch (e) {}
+        try {
             triggerMouseEvent (el, 'mousedown');
+        } catch (e) {}
+        try {
             triggerMouseEvent (el, 'mouseup');
         } catch (e) {}
-        el.click();
+        try {
+            triggerMouseEvent (el, 'click');
+        } catch (e) {}
     };
 
     me.scripts.push({

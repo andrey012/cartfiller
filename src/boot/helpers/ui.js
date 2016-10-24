@@ -1434,7 +1434,10 @@
         },
         setAdditionalWindows: function(descriptors, noResultCall) {
             if (! isFramed) {
-                throw new Error('this function is only availabled in framed mode');
+                if (descriptors && descriptors.length) {
+                    throw new Error('this function is only availabled in framed mode');
+                }
+                return;
             }
             for (var i = this.mainFrames.length - 1; i >= 1; i --) {
                 this.mainFrames[i].parentNode.removeChild(this.mainFrames[i]);

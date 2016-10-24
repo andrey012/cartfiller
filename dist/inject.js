@@ -193,7 +193,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1496586170499';
+    config.gruntBuildTimeStamp='1496593386214';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -768,10 +768,16 @@
     var simulateClick = function(el) {
         try {
             triggerMouseEvent (el, 'mouseover');
+        } catch (e) {}
+        try {
             triggerMouseEvent (el, 'mousedown');
+        } catch (e) {}
+        try {
             triggerMouseEvent (el, 'mouseup');
         } catch (e) {}
-        el.click();
+        try {
+            triggerMouseEvent (el, 'click');
+        } catch (e) {}
     };
 
     me.scripts.push({
@@ -5623,7 +5629,10 @@
         },
         setAdditionalWindows: function(descriptors, noResultCall) {
             if (! isFramed) {
-                throw new Error('this function is only availabled in framed mode');
+                if (descriptors && descriptors.length) {
+                    throw new Error('this function is only availabled in framed mode');
+                }
+                return;
             }
             for (var i = this.mainFrames.length - 1; i >= 1; i --) {
                 this.mainFrames[i].parentNode.removeChild(this.mainFrames[i]);
