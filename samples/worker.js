@@ -284,12 +284,13 @@
                 },
                 'click on Add to cart button', function(add){
                     if (!task.quantity) return api.result();
-                    add.each(function(i,el){lib.click(el);});
-                    api.waitFor(function(){
-                        return globals.currentCartAmount !== parseInt(lib.cartAmountElement().text());
-                    }, function(r){
-                        api.highlight(add).say(globals.skipMessages?'':'Something was added, let\'s check what in the next step').result(r ? "" : "Cant add to cart - total cart amount is not changing");
-                    });
+                    api.clicker(function(){
+                        api.waitFor(function(){
+                            return globals.currentCartAmount !== parseInt(lib.cartAmountElement().text());
+                        }, function(r){
+                            api.highlight(add).say(globals.skipMessages?'':'Something was added, let\'s check what in the next step').result(r ? "" : "Cant add to cart - total cart amount is not changing");
+                        });
+                    })[1](add.first());
                 },
                 'make sure, that cart amount increased properly', function(resultOfClick, addToCartButton, oldCartAmount, repeat5){
                     var cart = lib.cartAmountElement();
