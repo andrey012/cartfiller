@@ -45,7 +45,7 @@ if (service && success) {
  */
 function waitFor(testFx, onReady, timeOutMillis) {
     console.trace()
-    var maxtimeOutMillis = timeOutMillis ? timeOutMillis : 300001, //< Default Max Timout is 3s
+    var maxtimeOutMillis = timeOutMillis ? timeOutMillis : 1800000, // give more time if CI server is slow
         start = new Date().getTime(),
         condition = false,
         interval = setInterval(function() {

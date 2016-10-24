@@ -291,10 +291,10 @@
                         api.highlight(add).say(globals.skipMessages?'':'Something was added, let\'s check what in the next step').result(r ? "" : "Cant add to cart - total cart amount is not changing");
                     });
                 },
-                'make sure, that cart amount increased properly', function(resultOfClick, addToCartButton, oldCartAmount){
+                'make sure, that cart amount increased properly', function(resultOfClick, addToCartButton, oldCartAmount, repeat5){
                     var cart = lib.cartAmountElement();
                     api.highlight(cart);
-                    api.say(globals.skipMessages?'':'Let\'s make sure, that total cart amount increased appropriately').result(((oldCartAmount + task.quantity) === parseInt(cart.text())) ? "" : "new total cart amount is incorrect");
+                    api.say(globals.skipMessages?'':'Let\'s make sure, that total cart amount increased appropriately').result(((oldCartAmount + task.quantity) === parseInt(cart.text())) ? "" : ("new total cart amount is incorrect: " + api.compare(oldCartAmount + task.quantity, cart.text())));
                 },
                 'make sure, that hint appeared', function(cart, click, add){
                     if (!task.quantity) return api.result();
