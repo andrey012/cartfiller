@@ -169,7 +169,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             } else if (param instanceof Array) {
                 return param.map(function(v) { return deepMapGlobalReferences(v, map); });
             } else {
-                throw new Error('invalid case');
+                return param;
             }
         };
         var convertNewStyleTaskDetailsIntoOldStyleTaskDetails = function(detail) {

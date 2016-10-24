@@ -310,8 +310,9 @@
     };
     Selector.prototype.text = function() {
         if (this.length) {
-            return this[0].textContent;
+            return String(this[0].textContent);
         }
+        return '';
     };
     Selector.prototype.index = function() {
         if (this.length) {
