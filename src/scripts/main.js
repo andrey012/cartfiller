@@ -31,10 +31,10 @@
                     event = {source: window};
                 }
                 var paths = {
-                    'angular': message.lib + '/angular/angular.min',
-                    'angular-route': message.lib + '/angular-route/angular-route.min',
-                    'jquery': message.lib + '/jquery/dist/jquery.min',
-                    'bootstraptw': message.lib + '/bootstrap/dist/js/bootstrap.min',
+                    'angular': message.lib.replace(/\/$/, '') + '/angular/angular.min',
+                    'angular-route': message.lib.replace(/\/$/, '') + '/angular-route/angular-route.min',
+                    'jquery': message.lib.replace(/\/$/, '') + '/jquery/dist/jquery.min',
+                    'bootstraptw': message.lib.replace(/\/$/, '') + '/bootstrap/dist/js/bootstrap.min',
                 };
                 var shim = {
                     'angular' : {exports: 'angular', deps: ['jquery', 'bootstraptw']},
