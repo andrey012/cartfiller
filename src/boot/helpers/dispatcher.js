@@ -158,6 +158,7 @@
      * @access private
      */
     var workerGlobals = {};
+    var currentCf;
     var workerLibResolve = function(arg, promise, path) {
         var name, type;
 
@@ -312,6 +313,14 @@
             }
             $this = $this[item];
         });
+    };
+    var processWorkerTasks = function(tasks) {
+        for (var taskName in tasks){
+            if (tasks.hasOwnProperty(taskName)){
+                worker[taskName] = recursivelyCollectSteps(tasks[taskName]);
+                workerTaskSources[taskName] = currentEvaluatedWorker;
+            }
+        }
     };
     var postProcessWorkerLibs = function() {
         for (var i in workerLibByWorkerPath) {
@@ -831,8 +840,10 @@
             workersToEvaluate.push(i);
         }
         resetWorkerLib();
+        currentCf = me.modules.cf.create();
         evaluateNextWorker();
-
+        processWorkerTasks(currentCf.buildTasks());
+        currentCf.switchMode();
         postProcessWorkerLibs();
         resolveLibPromisesInWorker();
         var list = {};
@@ -899,7 +910,8 @@
         var params = {};
         [
             /[^a-zA-Z0-9_$]task\.([a-zA-Z0-9_$]+)[^a-zA-Z0-9_$]/g, 
-            /[^a-zA-Z0-9_$]task\[['"]([^'"]+)['"]\]/g]
+            /[^a-zA-Z0-9_$]task\[['"]([^'"]+)['"]\]/g
+        ]
             .filter(function(pattern) {
 
                 var localPattern = new RegExp(pattern.source);
@@ -1379,6 +1391,16 @@
                      * @access public
                      */
                     taskIndex: message.index,
+                    /**
+                     * @member {string} CartFiller.Api.StepEnvironment#taskName current task name
+                     * @access public
+                     */
+                    taskName: message.task,
+                    /**
+                     * @member {Array} CartFiller.Api.StepEnvironment#taskSteps steps of current task
+                     * @access public
+                     */
+                    taskSteps: worker[message.task],
                     /**
                      * @member {integer} CartFiller.Api.StepEnvironment#stepIndex 0-based index of current step within task
                      * @access public
@@ -1897,6 +1919,7 @@
             var workerLibPath = makeLibPathFromWorkerPath(currentEvaluatedWorker);
             var workerLibOfThisWorker = workerLibFactory(workerLibPath);
             workerLibByWorkerPath[workerLibPath.join('.')] = workerLibOfThisWorker;
+            var argNames = cb.toString().split('(')[1].split(')')[0].split(',').map(function(v) { return v.trim(); });
             var knownArgs = {
                 window: me.modules.ui.mainFrameWindow,
                 document: undefined,
@@ -1904,10 +1927,10 @@
                 task: workerCurrentTask,
                 job: jobDetailsCache,
                 globals: workerGlobals,
-                lib: workerLibOfThisWorker 
+                lib: -1 === argNames.indexOf('cf') ? workerLibOfThisWorker : currentCf.getLib(),
+                cf: currentCf.getCf()
             };
-            var args = cb.toString().split('(')[1].split(')')[0].split(',').map(function(arg){
-                arg = arg.trim();
+            var args = argNames.map(function(arg){
                 if (knownArgs.hasOwnProperty(arg)) {
                     return knownArgs[arg];
                 }
@@ -1925,12 +1948,7 @@
             });
             var thisWorker = cb.apply(undefined, args);
             processWorkerLibByPath(workerLibOfThisWorker, workerLibPath);
-            for (var taskName in thisWorker){
-                if (thisWorker.hasOwnProperty(taskName)){
-                    worker[taskName] = recursivelyCollectSteps(thisWorker[taskName]);
-                    workerTaskSources[taskName] = currentEvaluatedWorker;
-                }
-            }
+            processWorkerTasks(thisWorker);
         },
         /**
          * Remembers directions for task flow to be passed to worker (job progress)
@@ -2395,6 +2413,9 @@
             }
         },
         getFrameWindowIndex: function(){ return relay.currentMainFrameWindow; },
-        discoverTaskParameters: function(fn, params) { return discoverTaskParameters(fn, params); }
+        discoverTaskParameters: function(fn, params) { return discoverTaskParameters(fn, params); },
+        recursivelyCollectSteps: function(source, taskSteps) {
+            return recursivelyCollectSteps(source, taskSteps);
+        }
     });
 }).call(this, document, window);

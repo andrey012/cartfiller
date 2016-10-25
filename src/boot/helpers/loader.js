@@ -12,7 +12,8 @@
     var require = [
         'dispatcher',
         'ui',
-        'api'
+        'api',
+        'cf'
     ];
 
     var me = this;
@@ -44,6 +45,11 @@
         for (var scriptIndex = me.cartFillerConfiguration.scripts.length - 1; scriptIndex >= 0; scriptIndex--){
             var script = me.cartFillerConfiguration.scripts[scriptIndex];
             me.cartFillerConfiguration.modules[script.getName()] = script;
+        }
+        for (var scriptName in me.cartFillerConfiguration.modules) {
+            if (me.cartFillerConfiguration.modules[scriptName].onLoaded) {
+                me.cartFillerConfiguration.modules[scriptName].onLoaded();
+            }
         }
         me.cartFillerConfiguration.launch();
     };

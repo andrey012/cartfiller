@@ -1,7 +1,9 @@
 cartfiller = {
     "worker": [
         "worker.js",
-        "../samples/worker.js"
+        "../samples/worker.js",
+        "declarativeStepBuilder/declarativeWorker.js",
+        "declarativeStepBuilder/anotherDeclarativeWorker.js"
     ],
     "globals": {
         "skipMessages": true
@@ -63,5 +65,8 @@ cartfiller = {
         "builtIns": {
             "builtIns": true,
         },
+        "declarativeStepBuilder": {
+            "basic": true
+        }
     }
 }

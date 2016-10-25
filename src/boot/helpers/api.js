@@ -431,6 +431,7 @@
     ['result', 'nop', 'skipStep', 'skipTask', 'repeatStep', 'repeatTask', 'repeatJob', 'skipJob'].filter(function(name) {
         Selector.prototype[name] = function(){
             me.modules.api[name].apply(me.modules.api, arguments);
+            return this;
         };
     });
     var parseSelector = function(selector) {
