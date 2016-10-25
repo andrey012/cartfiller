@@ -193,7 +193,7 @@
         }
         throw new Error('step not found: [' + name + ']');
     };
-    var wrapSelectorPromise = function(arr) {
+    var wrapSelectorBuilderPromise = function(arr) {
         // tbd this should happen at runtime, since 
         // promise after libs 
         if (arr.length === 1) {
@@ -204,9 +204,9 @@
         } else {
             var prev = arr.slice();
             var step = prev.pop();
-            var prevPromise = wrapSelectorPromise(prev);
+            var prevBuilderPromise = wrapSelectorBuilderPromise(prev);
             return function(){
-                var prevResult = prevPromise();
+                var prevResult = prevBuilderPromise();
                 return prevResult[step[0]].apply(prevResult, step[1]);
             };
         }
@@ -228,37 +228,45 @@
             this.lib = {};
             var wrapper = this;
             this.runtime = new Runtime();
-            var Promise = this.Promise = function(method, args, prev) { 
+            var BuilderPromise = this.BuilderPromise = function(method, args, prev) { 
                 this.arr = ((prev.length === 1 && prev[0][0] === '') ? [] : prev.slice()).concat(method ? [[method, args]] : []);
             };
-            Promise.prototype = Object.create({});
-            Promise.prototype.export = function(name) {
+            BuilderPromise.prototype = Object.create({});
+            BuilderPromise.prototype.export = function(name) {
+                if (! name) {
+                    if (this.arr[0][0] === 'task') {
+                        name = this.arr[0][1][0];
+                    }
+                    if (! name) {
+                        throw new Error('When using export without parameters, you should name task at the very beginning using cf.task(\'thename\')');
+                    }
+                }
                 if (wrapper.tasks[name] || wrapper.shares[name]) {
                     throw new Error('task or share or generator [' + name + '] already exists, looks like you try to overwrite it by cf.export() another time');
                 }
                 wrapper.tasks[name] = this.$since ? cutSince(this.arr, this.$since[0]) : this.arr;
                 return this;
             };
-            Promise.prototype.lib = function(name, body) {
+            BuilderPromise.prototype.lib = function(name, body) {
                 if (wrapper.lib[name]) {
                     throw new Error('lib [' + name + '] is already defined, you are trying to redefined it');
                 }
-                if (('function' === typeof body) || (body instanceof Promise)) {
+                if (('function' === typeof body) || (body instanceof BuilderPromise)) {
                     wrapper.lib[name] = body;
                 }
                 return this;
             };
-            Promise.prototype.const = function(value) {
+            BuilderPromise.prototype.const = function(value) {
                 return function() { return value; };
             };
-            Promise.prototype.share = function(name) {
+            BuilderPromise.prototype.share = function(name) {
                 if (wrapper.tasks[name] || wrapper.shares[name]) {
                     throw new Error('task or share or generator [' + name + '] already exists, looks like you try to overwrite it by cf.share() another time');
                 }
                 wrapper.shares[name] = this.$since ? cutSince(this.arr, this.$since[0]) : this.arr;
                 return this;
             };
-            Promise.prototype.generator = function(name, fn) {
+            BuilderPromise.prototype.generator = function(name, fn) {
                 if (wrapper.tasks[name] || wrapper.shares[name]) {
                     throw new Error('task or share or generator [' + name + '] already exists, looks like you try to overwrite it by cf.generator() another time');
                 }
@@ -266,24 +274,32 @@
                 return this;
             };
             ['since'].filter(function(f) {
-                Promise.prototype[f] = function() {
-                    var p = new Promise(undefined, undefined, this.arr);
+                BuilderPromise.prototype[f] = function() {
+                    var p = new BuilderPromise(undefined, undefined, this.arr);
                     p['$' + f] = copyArguments(arguments);
                     return p;
                 };
             });
-            this.cf = new Promise('', [], []); // the root
+            this.cf = new BuilderPromise('', [], []); // the root
+            if (! this.cf) {
+                console.log('no this.cf, checking BuilderPromise');
+                console.log(BuilderPromise);
+                console.log(typeof BuilderPromise);
+                console.log(BuilderPromise.prototype);
+                console.log(typeof BuilderPromise.prototype);
+                throw new Error('unable to use declarative mode - probably browser incompatibility');
+            }
 
-            var makeBooleanPromise = function(condition) {
+            var makeBooleanBuilderPromise = function(condition) {
                 if (condition instanceof Function) {
                     return condition;
-                } else if (condition instanceof Promise) {
+                } else if (condition instanceof BuilderPromise) {
                     var arr = condition.arr.slice();
                     var check = arr.pop();
                     var promise;
                     switch (check[0]) {
                         case 'exists': 
-                            promise = wrapSelectorPromise(arr);
+                            promise = wrapSelectorBuilderPromise(arr);
                             return function() {
                                 var e = promise();
                                 if (e.length) {
@@ -292,7 +308,7 @@
                                 return e.length;
                             };
                         case 'absent': 
-                            promise = wrapSelectorPromise(arr);
+                            promise = wrapSelectorBuilderPromise(arr);
                             return function() {
                                 var e = promise();
                                 if (e.length) {
@@ -304,7 +320,7 @@
                         case 'closest':
                         case 'first':
                         case 'get':
-                            promise = wrapSelectorPromise(condition.arr);
+                            promise = wrapSelectorBuilderPromise(condition.arr);
                             return function() {
                                 var e = promise();
                                 if (e.length) {
@@ -324,12 +340,12 @@
             };
             Builder.prototype = Object.create({});
             Builder.prototype.get = function(args) {
-                if (args[0] instanceof Promise) {
+                if (args[0] instanceof BuilderPromise) {
                     return ['get' + niceArgs(args), function() {
                         if(me.modules.api.debug && (1 || me.modules.api.debug.stop)) {
                             debugger; // jshint ignore:line
                         }
-                        wrapSelectorPromise(args[0].arr)().arrow(1).result(); 
+                        wrapSelectorBuilderPromise(args[0].arr)().arrow(1).result(); 
                     }];
                 } else {
                     return ['get' + niceArgs(args), function() { 
@@ -417,9 +433,9 @@
                     return [name, function() { 
                         api('waitFor', args);
                     }];
-                } else if (args[0] instanceof Promise) {
+                } else if (args[0] instanceof BuilderPromise) {
                     // ok, this is the case where we should get promise of selector
-                    var promise = makeBooleanPromise(args[0]);
+                    var promise = makeBooleanBuilderPromise(args[0]);
                     return ['waitFor' + niceArgs(args), function() {
                         api('waitFor', [promise].concat(args.slice(1)));
                     }];
@@ -437,7 +453,7 @@
                         steps = steps.apply(null, args.slice(1)).arr;
                     }
                     return this.build(steps);
-                } else if (args[0] instanceof Promise) {
+                } else if (args[0] instanceof BuilderPromise) {
                     return this.build(args[0].arr);
                 }
             };
@@ -452,9 +468,9 @@
                 var condition = args[0];
                 var action = args[1];
                 var actionSteps = builder.build(action.arr);
-                var booleanPromise = makeBooleanPromise(condition);
+                var booleanBuilderPromise = makeBooleanBuilderPromise(condition);
                 return ['if' + (ifNot ? 'Not' : '') + niceArgs([condition]), function() {
-                    var result = booleanPromise();
+                    var result = booleanBuilderPromise();
                     if ((! ifNot && ! result) || (ifNot && result)) {
                         api('skipStep', [actionSteps.length / 2]);
                     }
@@ -467,18 +483,22 @@
             Builder.prototype.ifNot = function(args) { 
                 return generateIfOrIfNotSteps(args, this, true);
             };
+            Builder.prototype.task = function() {
+                // just declare task name
+                return [];
+            };
             var promiseProxyFactory = function(name){
                 return function() { 
                     if (wrapper.mode) {
                         return this.runtime[name].apply(this.runtime, arguments);
                     } else {
-                        return new Promise(name, copyArguments(arguments), this.arr); 
+                        return new BuilderPromise(name, copyArguments(arguments), this.arr); 
                     }
                 };
             };
             for (i in Builder.prototype) {
                 if (Builder.prototype.hasOwnProperty(i)) {
-                    Promise.prototype[i] = promiseProxyFactory(i);
+                    BuilderPromise.prototype[i] = promiseProxyFactory(i);
                 }
             }
             Builder.prototype.build = function(steps, prev) {
@@ -510,7 +530,7 @@
                 // will anyway be resolved later at runtime
                 if ('function' === typeof this.lib[name]) {
                     throw new Error('this is not implemented');
-                } else if (this.lib[name] instanceof this.Promise) {
+                } else if (this.lib[name] instanceof this.BuilderPromise) {
                     return this.lib[name];
                 } else {
                     throw new Error('not sure how to handle lib item: ' + JSON.stringify(this.lib[name]));
@@ -519,8 +539,8 @@
                 // proxy
                 if ('function' === typeof this.lib[name]) {
                     return this.lib[name].apply(null, args);
-                } else if (this.lib[name] instanceof this.Promise) {
-                    return wrapSelectorPromise(this.lib[name].arr)();
+                } else if (this.lib[name] instanceof this.BuilderPromise) {
+                    return wrapSelectorBuilderPromise(this.lib[name].arr)();
                 } else {
                     throw new Error('not sure how to handle lib item: ' + JSON.stringify(this.lib[name]));
                 }

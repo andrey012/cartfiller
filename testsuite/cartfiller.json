@@ -6,20 +6,20 @@ cartfiller = {
         "declarativeStepBuilder/anotherDeclarativeWorker.js"
     ],
     "globals": {
-        "skipMessages": true
+        "skipMessages": false
     },
     "tests": {
         "suite1": {
-            "test11": true,
+            "test11": false,
             "test12": false
         },
         "suite2": {
-            "test22?foo=bar": true
+            "test22?foo=bar": false
         },
         "libTests": {
-            "staticSteps": true,
-            "dynamicSteps": true,
-            "helpers": true,
+            "staticSteps": false,
+            "dynamicSteps": false,
+            "helpers": false,
         },
         "utils": {
             "addToCart": false,
@@ -47,23 +47,23 @@ cartfiller = {
             "cdata": false,
         },
         "modals": {
-            "modalTest": true,
+            "modalTest": false,
         },
         "taskFlow": {
-            "repeatTask": true,
-            "skipTask": true,
+            "repeatTask": false,
+            "skipTask": false,
         },
         "magicParams": {
-            "repeat": true,
+            "repeat": false,
         },
         "referencesToGlobals": {
-            "referencesToGlobals": true,
+            "referencesToGlobals": false,
         },
         "selectors": {
-            "selectors": true,
+            "selectors": false,
         },
         "builtIns": {
-            "builtIns": true,
+            "builtIns": false,
         },
         "declarativeStepBuilder": {
             "basic": true

@@ -3,7 +3,7 @@
         {"sayHello": {}},
         {"declarativeOpenHome": {}},
         {"guessPartNumber":{"part number":"1111108"}},
-        {"type part number":{"part number":"123456"}},
+        {"declarativeTypePartNumber":{"part number":"123456"}},
         {"declarativeOpenCart": {}},
         {"declarative - exported since - only Remove All Items button":{}},
         {"declarativeClearCart": {}},

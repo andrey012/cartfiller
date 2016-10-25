@@ -5,6 +5,7 @@
 (function(window, document, undefined){
     cartFillerAPI().registerWorker(function(window, document, api, task, job, globals, lib, cf){
         cf
+        .task('declarativeClearCart')
         .lib('cartTitle', cf.get('h2:visible').filter(function(i,el){ return api.compareCleanText("Your cart", el.textContent);}))
         .if(lib('cartTitle').exists(), cf.skipStep('wait for remove all items button to appear'))
         .lib('openCartLink', cf.get('a:visible').filter(function(i,el){ return api.compareCleanText("Open Cart", el.textContent);}))
@@ -22,20 +23,22 @@
         .name('find remove all items button')
         .get(lib('removeAllItemsButton'))
         .click()
-        .export('declarativeClearCart')
+        .export()
         .since('find remove all items button').export('declarative - exported since - only Remove All Items button')
          
         cf
+        .task('declarativeClearCart2')
         .use('declarativeOpenCart')
         .get(lib('removeAllItemsButton'))
         .click()
-        .export('declarativeClearCart2')
+        .export()
 
         cf
+        .task('declarativeClearCart3')
         .use('declarativeOpenCartShare')
         .get(lib('removeAllItemsButton'))
         .click()
-        .export('declarativeClearCart3')
+        .export()
 
         cf
         .generator('myGenerator', function(a, b, c) {
@@ -46,11 +49,13 @@
         })
 
         cf
+        .task('declarativeGeneratedTask')
         .use('myGenerator', 1, 2, 3)
         .use('myGenerator', 4, 5, 6)
-        .export('declarativeGeneratedTask')
+        .export()
 
         cf
+        .task('declarativeTypePartNumber')
         .lib('partNumberInput', cf.get('input[name="partNumber"][type="text"]:visible'))
         .ifNot(lib('partNumberInput'), cf.use('declarativeOpenHomeGenerator', true))
         .get(lib('partNumberInput')).as('searchBox')
@@ -63,9 +68,10 @@
         })
         .with('searchButton').click()
         .use('waitForResultsToAppear')
-        .export('type part number');
+        .export();
 
         cf
+        .task('guessPartNumber')
         .then(function(){ 
             globals.guessedPartNumber = task['part number']; 
             api.result();
@@ -88,7 +94,7 @@
             api.result();
         })
         .name('repeat').repeatStep('restart')
-        .export('guessPartNumber')
+        .export()
         
     });
 })(window, document);
