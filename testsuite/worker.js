@@ -257,7 +257,7 @@
             ],
             'test selectors': [
                 lib.sampleModal = function(cb) {
-                    api.modal('<div id="root"><div>0<div id="one">a<div id="two" class="theclass" style="color: green">b</div></div></div><div>asdf (fds)[] a</div></div>', function() { api.setTimeout(cb, 0); });
+                    api.modal('<div id="root"><div>0<div id="one">a<div id="two" class="theclass" style="color: green">b</div></div></div><div>asdf fdsa</div><input type="checkbox" id="checked" checked/><input type="checkbox" id="unchecked"/></div>', function() { api.setTimeout(cb, 0); });
                 },
                 'basic selector tests', function() {
                     lib.sampleModal(function() {
@@ -276,10 +276,11 @@
                                 || api.compare("b", api.find('.theclass#two').text(), 8)
                                 || api.compare("b", api.find('[style="color: green"]').text(), 9)
                                 || api.compare("ab", api.find("#two").closest('div').text(), 10)
-                                || api.compare("asdf (fds)[] a", api.find('#root div:contains("asdf (fds)[] a")').text(), 11)
-                                || api.compare("asdf (fds)[] a", api.find('#root div:contains("asdf")').text(), 12)
-                                || api.compare("asdf (fds)[] a", api.find('#root div:contains("fds")').text(), 13)
-                                || api.compare("asdf (fds)[] a", api.find('#root div:contains("[]")').text(), 14)
+                                || api.compare("asdf fdsa", api.find('#root div:contains("asdf fdsa")').text(), 11)
+                                || api.compare("asdf fdsa", api.find('#root div:contains("asdf")').text(), 12)
+                                || api.compare("asdf fdsa", api.find('#root div:contains("fdsa")').text(), 13)
+                                || api.compare("checked", api.find('#root input[type="checkbox"]:checked').attr('id'), 14) 
+                                || api.compare("unchecked", api.find('#root input[type="checkbox"]:not(:checked)').attr('id'), 15)
                             );
                     });
                 },

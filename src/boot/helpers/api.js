@@ -244,8 +244,8 @@
         return doc;
     };
 
-    var selectorPattern = /^(([^\:\[.# ]+)|(\#[^\:\[.# ]+)|(\.[^\:\[.# ]+)|(\[([^\]"]|("[^"]*"))*\])|(\:([^\:\[.#" ]|("[^"]*"))+))(.*)$/;
-    var selectorStepPattern = /^((([^\:\[.# ]+)|(\#[^\:\[.# ]+)|(\.[^\:\[.# ]+)|(\[([^\]"]|("[^"]*"))*\])|(\:([^\:\[.#" ]|("[^"]*"))+))+)(\s(.*))?$/;
+    var selectorPattern = /^(([^\:\[.# ]+)|(\#[^\:\[.# ]+)|(\.[^\:\[.# ]+)|(\[([^\]"]|("[^"]*"))*\])|(\:([^\:\[.#" \()]|("[^"]*")|\([^)]+\))+))(.*)$/;
+    var selectorStepPattern = /^((([^\:\[.# ]+)|(\#[^\:\[.# ]+)|(\.[^\:\[.# ]+)|(\[([^\]"]|("[^"]*"))*\])|(\:([^\:\[.#" \(]|("[^"]*")|\([^)]+\))+))+)(\s(.*))?$/;
     var parseAttributeSelector = function(expression) {
         var pc = expression.split(/[\^$]?=/, 2);
         var name = pc[0];
@@ -417,6 +417,11 @@
     Selector.prototype.last = function() {
         return new Selector(this.length ? [this[this.length - 1]] : [], this.description + ' last()');
     };
+    ['result', 'nop', 'skipStep', 'skipTask', 'repeatStep', 'repeatTask', 'repeatJob', 'skipJob'].filter(function(name) {
+        Selector.prototype[name] = function(){
+            me.modules.api[name].apply(me.modules.api, arguments);
+        };
+    });
     var parseSelector = function(selector) {
         var result = [];
         while (selector.length) {
@@ -433,7 +438,12 @@
             } else if (match[5]) {
                 result.push(['attribute', parseAttributeSelector(match[5].substr(1, match[5].length - 2))]);
             } else if (match[8]) {
-                result.push(['modifier', match[8].substr(1)]);
+                var notMatch = /^:not\((.*)\)$/.exec(match[8]);
+                if (notMatch) {
+                    result.push(['not', parseSelector(notMatch[1])]);
+                } else {
+                    result.push(['modifier', match[8].substr(1)]);
+                }
             } else {
                 throw new Error('bad selector: [' + selector + ']');
             }
@@ -452,6 +462,7 @@
                 return new Selector(root.getElementsByClassName(criterion[1]));
             case 'attribute': 
             case 'modifier': 
+            case 'not':
                 return getElementsBySelectorSecondStep(new Selector(root.getElementsByTagName('*')), criterion);
             default: 
                 throw new Error('unknown or invalid criterion type for first step: [' + criterion[0] + ']');
@@ -468,10 +479,25 @@
         }
         throw new Error('something went wrong, element is not a child of its parent???');
     };
+    var isChecked = function(element) {
+        switch (element.nodeName) {
+            case 'OPTION': return element.selected;
+            case 'INPUT': 
+                switch (element.getAttribute('type').toLowerCase()) {
+                    case 'checkbox':
+                    case 'radio':
+                        return element.checked;
+                }
+                break;
+        }
+    };
+
     var matchModifier = function(modifier, element) {
         var match;
         if (modifier === 'visible') {
             return isVisible(element);
+        } else if (modifier === 'checked') {
+            return isChecked(element);
         } else if (match = /^contains\(\"(.*)"\)$/.exec(modifier)) {
             return -1 !== element.textContent.toLowerCase().indexOf(match[1].toLowerCase());
         } else if (match = /^nth-child\((\d+)\)$/.exec(modifier)) {
@@ -495,6 +521,10 @@
                 }
                 break;
             case 'modifier': return matchModifier(criterion[1], element);
+            case 'not': 
+                return 0 === criterion[1].filter(function(notCriterion) { 
+                    return getElementsBySelectorSecondStepMatch(element, notCriterion);
+                }).length;
             default: throw new Error('unknown criterion type: [' + criterion[0] + ']');
         }
     };
