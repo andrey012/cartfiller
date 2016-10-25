@@ -193,7 +193,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1497475633886';
+    config.gruntBuildTimeStamp='1497654031337';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -552,6 +552,12 @@
             return String(this[0].textContent);
         }
         return '';
+    };
+    Selector.prototype.is = function(selector) {
+        if (this.length) {
+            var parsed = parseSelector(selector);
+            return parsed.length === parsed.filter(getElementsBySelectorSecondStepFilter(this[0])).length;
+        }
     };
     Selector.prototype.index = function() {
         if (this.length) {
@@ -1336,12 +1342,15 @@
                     } else {
                         simulateClick(el);
                     }
-                    if (undefined === whatNext || whatNext === me.modules.api.result) {
-                        me.modules.api.result();
-                    } else if (whatNext === me.modules.api.onload) {
-                        me.modules.api.onload();
-                    } else {
-                        whatNext.apply(getDocument(), arguments);
+                    // if result was already submitted (as a handler of click) - then do not call whatNext
+                    if (me.modules.dispatcher.getWorkerCurrentStepIndex() !== false) {
+                        if (undefined === whatNext || whatNext === me.modules.api.result) {
+                            me.modules.api.result();
+                        } else if (whatNext === me.modules.api.onload) {
+                            me.modules.api.onload();
+                        } else {
+                            whatNext.apply(getDocument(), arguments);
+                        }
                     }
                 }
             ];

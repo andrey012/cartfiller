@@ -314,6 +314,12 @@
         }
         return '';
     };
+    Selector.prototype.is = function(selector) {
+        if (this.length) {
+            var parsed = parseSelector(selector);
+            return parsed.length === parsed.filter(getElementsBySelectorSecondStepFilter(this[0])).length;
+        }
+    };
     Selector.prototype.index = function() {
         if (this.length) {
             var el = this[0].previousSibling;
@@ -1097,12 +1103,15 @@
                     } else {
                         simulateClick(el);
                     }
-                    if (undefined === whatNext || whatNext === me.modules.api.result) {
-                        me.modules.api.result();
-                    } else if (whatNext === me.modules.api.onload) {
-                        me.modules.api.onload();
-                    } else {
-                        whatNext.apply(getDocument(), arguments);
+                    // if result was already submitted (as a handler of click) - then do not call whatNext
+                    if (me.modules.dispatcher.getWorkerCurrentStepIndex() !== false) {
+                        if (undefined === whatNext || whatNext === me.modules.api.result) {
+                            me.modules.api.result();
+                        } else if (whatNext === me.modules.api.onload) {
+                            me.modules.api.onload();
+                        } else {
+                            whatNext.apply(getDocument(), arguments);
+                        }
                     }
                 }
             ];
