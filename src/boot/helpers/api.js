@@ -965,14 +965,14 @@
                 String(array) === '[object NodeList]'
             ) {
                 for (i = 0 ; i < array.length; i++ ) {
-                    if (resultMeansWeShouldStop(fn.call(me.modules.ui.mainFrameWindow.document, i, array[i]))) {
+                    if (resultMeansWeShouldStop(fn.call(getDocument(), i, array[i]))) {
                         breaked = true;
                         break;
                     }
                 }
             } else if (null !== array && 'object' === typeof array && 'string' === typeof array.jquery && undefined !== array.length && 'function' === typeof array.each) {
                 array.each(function(i,el){
-                    if (resultMeansWeShouldStop(fn.call(me.modules.ui.mainFrameWindow.document, i,el))) {
+                    if (resultMeansWeShouldStop(fn.call(getDocument(), i,el))) {
                         breaked = true;
                         return false;
                     }
@@ -980,7 +980,7 @@
             } else {
                 for (i in array) {
                     if (array.hasOwnProperty(i)) {
-                        if (resultMeansWeShouldStop(fn.call(me.modules.ui.mainFrameWindow.document, i, array[i]))) {
+                        if (resultMeansWeShouldStop(fn.call(getDocument(), i, array[i]))) {
                             breaked = true;
                             break;
                         }
@@ -988,7 +988,7 @@
                 }
             }
             if (! breaked && otherwise instanceof Function) {
-                otherwise.call(me.modules.ui.mainFrameWindow.document);
+                otherwise.call(getDocument());
             }
         },
         /**
@@ -1152,7 +1152,9 @@
          * Opens relay window. If url points to the cartFiller distribution
          * @function CartFiller.Api#openRelay
          * @param {string} url
-         * @param {boolean} noFocus Experimental, looks like it does not work
+         * @param {boolean} noFocus if set to true, it will make an 
+         * alert on main window when slave will be registered to 
+         * bring focus back to the dashboard
          * @return {CartFiller.Api} for chaining
          * @access public
          */
@@ -1537,6 +1539,9 @@
             if (url.split('#')[0] === existingUrl) {
                 me.modules.ui.mainFrameWindow.location.reload();
             }
+        },
+        isRelayRegistered: function(url) {
+            return me.modules.dispatcher.isRelayRegistered(url);
         }
     });
 }).call(this, document, window);

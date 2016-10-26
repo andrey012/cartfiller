@@ -48094,7 +48094,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
             reportError('bootstrap message did not come');
         }
     }, 10000);
-    config.gruntBuildTimeStamp='1497857140689';
+    config.gruntBuildTimeStamp='1501877930522';
     window.addEventListener('message', function(event){
         var prefix = 'cartFillerMessage:';
         var isDist = true;
@@ -48204,7 +48204,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 if (message.tests) {
                     var x = new XMLHttpRequest();
                     x.onload = function(){
-                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1497857140689') {
+                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1501877930522') {
                             console.log('new version of CartFiller was deployed, switching to it');
                             var hash = window.location.href.split('#');
                             var pc = hash[0].split('?');
@@ -49300,7 +49300,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
         $scope.templates = {
             cartfiller: 'data:application/json;base64,Y2FydGZpbGxlciA9IHsNCiAgICAiZ2xvYmFscyI6IHsNCiAgICB9LA0KICAgICJ3b3JrZXIiOiBbDQogICAgICAgICJ3b3JrZXIuanMiLA0KICAgIF0sDQogICAgInRlc3RzIjogew0KICAgICAgICAidGVzdCI6IHRydWUsDQogICAgfQ0KfQ0K',
             test: 'data:application/json;base64,Y2FydGZpbGxlciA9IHsNCiAgICAidGl0bGUiOiAiIiwNCiAgICAiZ2xvYmFscyI6IHsNCiAgICB9LA0KICAgICJkZXRhaWxzIjogWw0KICAgICAgICB7Ij13YWl0Ijoge319DQogICAgXQ0KfQ0K',
-            worker: 'data:application/javascript;base64,KGZ1bmN0aW9uKHdpbmRvdywgZG9jdW1lbnQsIHVuZGVmaW5lZCl7DQogICAgY2FydEZpbGxlckFQSSgpLnJlZ2lzdGVyV29ya2VyKGZ1bmN0aW9uKHdpbmRvdywgZG9jdW1lbnQsIGFwaSwgdGFzaywgam9iLCBnbG9iYWxzLCBsaWIpew0KICAgICAgICByZXR1cm4gew0KICAgICAgICB9Ow0KICAgIH0pOw0KfSkod2luZG93LCBkb2N1bWVudCk7DQo=',
+            worker: 'data:application/javascript;base64,KGZ1bmN0aW9uKHdpbmRvdywgZG9jdW1lbnQsIHVuZGVmaW5lZCl7DQogICAgY2FydEZpbGxlckFQSSgpLnJlZ2lzdGVyV29ya2VyKGZ1bmN0aW9uKHdpbmRvdywgZG9jdW1lbnQsIGFwaSwgdGFzaywgam9iLCBnbG9iYWxzLCBsaWIsIGNmKXsNCiAgICAgICAgDQogICAgfSk7DQp9KSh3aW5kb3csIGRvY3VtZW50KTsNCg==',
         };
         (function(){
             var base64Pattern = /base64-content-of-([^-]+)-goes-here/;
@@ -50176,7 +50176,7 @@ define('jquery-cartFiller', ['jquery'], function() {
                     filePopupSendUrl();
                 }
             } else {
-                filePopupWindow = window.open('javascript:document.write("<h1>Open cartfiller/local/index.html file from your disk in this tab</h1>");', '_blank');  // jshint ignore:line
+                filePopupWindow = window.open('javascript:document.write("<h1>Open cartfiller/dist/local.html file from your disk in this tab</h1>");', '_blank');  // jshint ignore:line
                 pingFilePopupWindow();
             }
         } else {

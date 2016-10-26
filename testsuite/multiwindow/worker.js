@@ -1,6 +1,9 @@
 (function(window, document, undefined){
     cartFillerAPI().registerWorker(function(window, document, api, task, job, globals){
         globals.baseUrl = job.cartFillerInstallationUrl.replace(/(src|dist)\/[^\/]*$/, 'testsuite/multiwindow/');
+        if (-1 === globals.baseUrl.indexOf('127.0.0.1')) {
+            alert('This is expected to be used as http://127.0.0.1');
+        }
         return {
             'open home': [
                 'reset', function(){
@@ -16,7 +19,8 @@
                     api.setAdditionalWindows([
                         {
                             url: globals.baseUrl.replace(globals.thisHost, globals.otherHost),
-                            slave: job.cartFillerInstallationUrl.replace(globals.thisHost, globals.otherHost)
+                            slave: parseInt(task.withHelper) === 1 ? globals.baseUrl.replace(globals.thisHost, globals.otherHost) : job.cartFillerInstallationUrl.replace(globals.thisHost, globals.otherHost),
+                            withHelper: task.withHelper
                         }
                     ]);
                 }
@@ -26,11 +30,13 @@
                     api.setAdditionalWindows([
                         {
                             url: globals.baseUrl.replace(globals.thisHost, globals.otherHost),
-                            slave: job.cartFillerInstallationUrl.replace(globals.thisHost, globals.otherHost)
+                            slave: parseInt(task.withHelper) === 1 ? globals.baseUrl.replace(globals.thisHost, globals.otherHost) : job.cartFillerInstallationUrl.replace(globals.thisHost, globals.otherHost),
+                            withHelper: task.withHelper
                         },
                         {
                             url: globals.baseUrl.replace(globals.thisHost, globals.thirdHost),
-                            slave: job.cartFillerInstallationUrl.replace(globals.thisHost, globals.thirdHost)
+                            slave: parseInt(task.withHelper) === 1 ? globals.baseUrl.replace(globals.thisHost, globals.thirdHost) : job.cartFillerInstallationUrl.replace(globals.thisHost, globals.thirdHost),
+                            withHelper: task.withHelper
                         }
                     ]);
                 }

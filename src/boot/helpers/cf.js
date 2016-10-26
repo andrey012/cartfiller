@@ -314,7 +314,7 @@
                                 if (e.length) {
                                     e.arrow();
                                 }
-                                return ! se.length;
+                                return ! e.length;
                             };
                         case 'find':
                         case 'closest':

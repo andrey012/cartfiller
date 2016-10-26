@@ -6,15 +6,24 @@
     cartFillerAPI().registerWorker(function(window, document, api, task, job, globals, lib, cf){
         cf
         .task('declarativeClearCart')
-        .lib('cartTitle', cf.get('h2:visible').filter(function(i,el){ return api.compareCleanText("Your cart", el.textContent);}))
+        .lib('cartTitle', cf
+            .get('h2:visible')
+            .filter(function(i,el){ return api.compareCleanText("Your cart", el.textContent);})
+        )
         .if(lib('cartTitle').exists(), cf.skipStep('wait for remove all items button to appear'))
-        .lib('openCartLink', cf.get('a:visible').filter(function(i,el){ return api.compareCleanText("Open Cart", el.textContent);}))
+        .lib('openCartLink', cf
+            .get('a:visible')
+            .filter(function(i,el){ return api.compareCleanText("Open Cart", el.textContent);})
+        )
         .then(function(){
             lib('openCartLink').exists();
         })
         .get(lib('openCartLink'))
         .click()
-        .lib('removeAllItemsButton', cf.get('a:visible').filter(function(i,el){ return api.compareCleanText("Remove all items", el.textContent);}))
+        .lib('removeAllItemsButton', cf
+            .get('a:visible')
+            .filter(function(i,el){ return api.compareCleanText("Remove all items", el.textContent);})
+        )
         .name('wait for remove all items button to appear').waitFor(lib('removeAllItemsButton').exists())
         .get(lib('cartTitle')).exists()
         .share('declarativeOpenCartShare')
@@ -80,7 +89,12 @@
         .use('declarativeOpenHomeGenerator', true)
         .get(lib('partNumberInput')).exists().type('guessedPartNumber')
         .get(lib('searchButton')).click()
-        .lib('searchResultLines', cf.get('table.table.table-bordered:visible thead:visible tr:visible th:visible').filter(function(i,el){ return api.compareCleanText("Part number", el.textContent);}).closest('table').find('tbody:visible tr:visible'))
+        .lib('searchResultLines', cf
+            .get('table.table.table-bordered:visible thead:visible tr:visible th:visible')
+            .filter(function(i,el){ return api.compareCleanText("Part number", el.textContent);})
+            .closest('table')
+            .find('tbody:visible tr:visible')
+        )
         .name('wait for results to appear').waitFor(lib('searchResultLines').exists())
         .since('wait for results to appear').share('waitForResultsToAppear')
         .if(

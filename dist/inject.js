@@ -8,7 +8,7 @@
  */
 // this file is used as as header when concatenating inject scripts. It is not valid as standalone.
 /* jshint ignore:start */
-(function(){
+(function concatenatedInjectFunction(){(function(){
 /* jshint ignore:end */
 
 /**
@@ -17,7 +17,7 @@
 /**
  * @class CartFiller.Injector
  */
-(function(document, window, undefined){
+(function injectFunction(document, window, undefined){
     'use strict';
     /** 
      * Is set to true if all injector scripts are concatenated and probably
@@ -62,7 +62,7 @@
             JSON.stringify({cmd: 'reinitialize'}),
             '*'
         );
-        throw new Error('preventing duplicate launch');
+        throw new Error('preventing duplicate launch on [' + window.location.href + ']');
     }
     
     /**
@@ -193,7 +193,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1497857140689';
+    config.gruntBuildTimeStamp='1501877930522';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -227,6 +227,19 @@
         config['data-worker'] = this.cartFillerEval[4];
         config['data-wfu'] = this.cartFillerEval[5];
         config.localInjectJs = this.cartFillerEval[6];
+    }
+    var cartFillerEvalForInjectFunction = [
+        config.baseUrl,
+        config['data-type'],
+        config['data-choose-job'],
+        config['data-debug'],
+        config['data-worker'],
+        config['data-wfu']
+    ];
+    if (concatenated) {
+        config.injectFunction = '(' + concatenatedInjectFunction.toString() + ').call(' + JSON.stringify(this) + ');';
+    } else {
+        config.injectFunction = '(' + injectFunction.toString() + ').call({cartFillerEval: ' + JSON.stringify(cartFillerEvalForInjectFunction) + '}, document, window);';
     }
     // if not concatenated - then load loader.js, which, itself, will load other
     // files
@@ -1204,14 +1217,14 @@
                 String(array) === '[object NodeList]'
             ) {
                 for (i = 0 ; i < array.length; i++ ) {
-                    if (resultMeansWeShouldStop(fn.call(me.modules.ui.mainFrameWindow.document, i, array[i]))) {
+                    if (resultMeansWeShouldStop(fn.call(getDocument(), i, array[i]))) {
                         breaked = true;
                         break;
                     }
                 }
             } else if (null !== array && 'object' === typeof array && 'string' === typeof array.jquery && undefined !== array.length && 'function' === typeof array.each) {
                 array.each(function(i,el){
-                    if (resultMeansWeShouldStop(fn.call(me.modules.ui.mainFrameWindow.document, i,el))) {
+                    if (resultMeansWeShouldStop(fn.call(getDocument(), i,el))) {
                         breaked = true;
                         return false;
                     }
@@ -1219,7 +1232,7 @@
             } else {
                 for (i in array) {
                     if (array.hasOwnProperty(i)) {
-                        if (resultMeansWeShouldStop(fn.call(me.modules.ui.mainFrameWindow.document, i, array[i]))) {
+                        if (resultMeansWeShouldStop(fn.call(getDocument(), i, array[i]))) {
                             breaked = true;
                             break;
                         }
@@ -1227,7 +1240,7 @@
                 }
             }
             if (! breaked && otherwise instanceof Function) {
-                otherwise.call(me.modules.ui.mainFrameWindow.document);
+                otherwise.call(getDocument());
             }
         },
         /**
@@ -1391,7 +1404,9 @@
          * Opens relay window. If url points to the cartFiller distribution
          * @function CartFiller.Api#openRelay
          * @param {string} url
-         * @param {boolean} noFocus Experimental, looks like it does not work
+         * @param {boolean} noFocus if set to true, it will make an 
+         * alert on main window when slave will be registered to 
+         * bring focus back to the dashboard
          * @return {CartFiller.Api} for chaining
          * @access public
          */
@@ -1776,6 +1791,9 @@
             if (url.split('#')[0] === existingUrl) {
                 me.modules.ui.mainFrameWindow.location.reload();
             }
+        },
+        isRelayRegistered: function(url) {
+            return me.modules.dispatcher.isRelayRegistered(url);
         }
     });
 }).call(this, document, window);
@@ -2096,7 +2114,7 @@
                                 if (e.length) {
                                     e.arrow();
                                 }
-                                return ! se.length;
+                                return ! e.length;
                             };
                         case 'find':
                         case 'closest':
@@ -2374,6 +2392,12 @@
      * @access private
      */
     var worker = false;
+    var postMessageFromWindowToWindow = function(cmd, details, from, to) {
+        from.tmpReference1892049810jf10jfa = to;
+        details.cmd = cmd;
+        var payload = 'cartFillerMessage:' + JSON.stringify(details);
+        from.eval('tmpReference1892049810jf10jfa.postMessage(' + JSON.stringify(payload) + ', "*");');
+    };
     var reinitializeWorker = function() {
         var task = workerCurrentTask;
         var api = me.modules.api;
@@ -2829,9 +2853,12 @@
         parent: false,
         currentMainFrameWindow: 0,
         nextRelay: false,
+        nextRelayDomain: false,
         nextRelayRegistered: false,
         nextRelayQueue: [],
-        knownUrls: {},
+        knownDomains: {},
+        registeredDomains: {},
+        noFocusForDomain: {},
         igniteFromLocal: false,
         recoveryPoints: {},
         bubbleMessage: function(message) {
@@ -3065,6 +3092,9 @@
             workerWatchdogId = false;
         }
     };
+    var getDomain = function(url) {
+        return url.split('/').slice(0,3).join('/');
+    };
     /**
      * Passes message to next relay if message is not undefined and next relay exists, otherwise
      * create new relay using specified url and puts message if it is not undefined to the queue
@@ -3076,7 +3106,7 @@
      */
     var openRelay = function(url, message, noFocus) {
         if (url !== '') {
-            relay.knownUrls[url.split('/').slice(0,3).join('/')] = true;
+            relay.knownDomains[getDomain(url)] = true;
         }
         if (relay.nextRelay && message) {
             if (relay.nextRelayRegistered) {
@@ -3085,25 +3115,34 @@
                 relay.nextRelayQueue.push(message);
             }
         } else if (url !== '') {
-            relay.nextRelay = window.open(url, '_blank');
-            if (noFocus) {
-                setTimeout(function(){
-                    relay.nextRelay.blur();
-                    window.focus();
-                },0);
-            }
-            if (message) {
-                relay.nextRelayQueue.push(message);
-            }
-            if (me.localInjectJs) {
-                relay.igniteFromLocal = true;
-                setTimeout(function igniteFromLocal() {
-                    if (relay.igniteFromLocal) {
-                        relay.nextRelay.postMessage(me.localInjectJs, '*');
-                        setTimeout(igniteFromLocal, 500);
+            relay.nextRelayDomain = getDomain(url);
+            me.modules.dispatcher.openPopup(
+                {
+                    url: url,
+                    target: '_blank'
+                }, 
+                function(w) {
+                    relay.nextRelay = w;
+                    if (noFocus) {
+                        setTimeout(function(){
+                            relay.nextRelay.blur();
+                            window.focus();
+                        },0);
                     }
-                }, 500);
-            }
+                    if (message) {
+                        relay.nextRelayQueue.push(message);
+                    }
+                    if (me.localInjectJs) {
+                        relay.igniteFromLocal = true;
+                        setTimeout(function igniteFromLocal() {
+                            if (relay.igniteFromLocal) {
+                                relay.nextRelay.postMessage(me.localInjectJs, '*');
+                                setTimeout(igniteFromLocal, 500);
+                            }
+                        }, 500);
+                    }
+                }
+            );
         }
     };
     var workersToEvaluate = [];
@@ -3353,6 +3392,19 @@
                 var prefix = 'cartFillerMessage:';
                 if (prefix === event.data.substr(0, prefix.length)) {
                     var message = JSON.parse(event.data.substr(prefix.length));
+                    if (message.cmd === 'actAsSlaveHelper') {
+                        // ok, we are just a helper tab, our purpose is simply to discover those
+                        // frames of our opener, that are available to us and 
+                        // inject ingnition code there
+                        var frame;
+                        try {
+                            frame = event.source.frames['cartFillerMainFrame-s' + message.slaveIndex];
+                            if (frame.location.hasOwnProperty('href')) {
+                                frame.eval(me.injectFunction.toString());
+                            }
+                        } catch (e) {}
+                        return;
+                    }
                     if (event.source === relay.nextRelay && message.cmd !== 'register' && message.cmd !== 'bubbleRelayMessage' && message.cmd !== 'locate') {
                         if (message.cmd === 'workerStepResult') {
                             fillWorkerGlobals(message.globals);
@@ -3433,8 +3485,19 @@
          * @access public
          */
         onMessage_register: function(message, source){
+            var i;
             if (message.registerFromSlave) {
+                if (! relay.isSlave && me.modules.ui.slaveFramesHelperWindows) {
+                    for (i in me.modules.ui.slaveFramesHelperWindows) {
+                        if (me.modules.ui.slaveFramesHelperWindows[i].w === source) {
+                            source.postMessage('cartFillerMessage:{"cmd":"actAsSlaveHelper","slaveIndex":' + me.modules.ui.slaveFramesHelperWindows[i].i + '}', '*');
+                            return;
+                        }
+                    }
+                }
                 relay.nextRelay = source;
+                relay.registeredDomains[relay.nextRelayDomain] = true;
+                this.onMessage_bubbleRelayMessage({message: 'updateKnownAndRegisteredSlaves', knownDomains: relay.knownDomains, registeredDomains: relay.registeredDomains, newRelayDomain: relay.nextRelayDomain });
             }
             if (source === me.modules.ui.workerFrameWindow) {
                 // skip other requests
@@ -3464,7 +3527,7 @@
                         codeToSend.push(url);
                     }
                 }
-                for (var i = codeToSend.length - 1; i >= 0 ; i --) {
+                for (i = codeToSend.length - 1; i >= 0 ; i --) {
                     relay.nextRelayQueue.unshift({cmd: 'loadWorker', jobDetailsCache: jobDetailsCache, src: codeToSend[i], code: workerSourceCodes[codeToSend[i]], isFinal: (i === codeToSend.length - 1)});
                 }
                 // now we can send all queued messages to relay
@@ -3955,12 +4018,15 @@
             if (details.message === 'onMainFrameLoaded') {
                 me.modules.dispatcher.onMainFrameLoaded(details.args[0], true);
             } else if (details.message === 'openRelayOnHead' && ! relay.isSlave) {
-                if (! relay.knownUrls[details.args[0].split('/').slice(0,3).join('/')]) {
-                    relay.knownUrls[details.args[0].split('/').slice(0,3).join('/')] = true;
-                    me.modules.dispatcher.onMessage_bubbleRelayMessage({message: 'openRelayOnTail', args: details.args, notToParents: true});
+                relay.noFocusForDomain[getDomain(details.args[0])] = details.args[1];
+                if (! relay.knownDomains[getDomain(details.args[0])]) {
+                    me.modules.dispatcher.onMessage_bubbleRelayMessage({message: 'openRelayOnTail', args: details.args});
                 }
-            } else if (details.message === 'openRelayOnTail' && ! relay.nextRelay) {
-                openRelay(details.args[0], undefined, details.args[1]);
+            } else if (details.message === 'openRelayOnTail') {
+                relay.knownDomains[getDomain(details.args[0])] = true;
+                if (! relay.nextRelay) {
+                    openRelay(details.args[0], undefined, details.args[1]);
+                }
             } else if (details.message === 'updateTitle') {
                 me.modules.dispatcher.onMessage_updateTitle(details);
             } else if (details.message === 'drill' && ! relay.isSlave) {
@@ -4024,8 +4090,21 @@
                             workerCurrentTaskIndex = details.payload.index;
                             workerCurrentStepIndex = details.payload.step; // to prevent alert
                             me.modules.api.repeatTask().result('recovering after access deined', 1);
+                            workerCurrentTaskIndex = false; // to make it load task again
                         }, 20000);
                     }
+                }
+            } else if (details.message === 'popupRelayMainWindowRequest' && source) {
+                if (me.modules.ui.mainFrameWindow) {
+                    try {
+                        postMessageFromWindowToWindow('popupRelayMainWindowResponse', {}, me.modules.ui.mainFrameWindow, source);
+                    } catch (e) {}
+                }
+            } else if (details.message === 'updateKnownAndRegisteredSlaves') {
+                relay.knownDomains = details.knownDomains;
+                relay.registeredDomains = details.registeredDomains;
+                if (! relay.isSlave && relay.noFocusForDomain[details.newRelayDomain]) {
+                    alert('Thank you!');
                 }
             }
         },
@@ -4492,8 +4571,11 @@
         haveAccess: function(framesPath) {
             var windowToCheck = me.modules.ui.mainFrameWindow;
             (framesPath || []).filter(function(index) {
-                windowToCheck = windowToCheck.frames[index];
+                windowToCheck = windowToCheck && windowToCheck.frames[index];
             });
+            if (! windowToCheck) {
+                return false;
+            }
             try {
                 windowToCheck.location.href;
             } catch (e){
@@ -4534,10 +4616,10 @@
             var link = document.createElement('a');
             var i, frame;
             try {
-                link.textContent = 'This tab is used by cartFiller as slave, DO NOT CLOSE IT!, click this message to locate original tab.';
+                link.textContent = 'This tab/iframe is used by cartFiller as slave (' + window.location.href.split('/')[2] + '), DO NOT CLOSE IT!, click this message to locate original tab.';
                 link.style.color = 'red';
                 link.style.display = 'block';
-                link.style.padding = '20px';
+                link.style.padding = '0px';
                 link.setAttribute('href', '#');
                 link.onclick = function() {
                     relay.parent.postMessage('cartFillerMessage:{"cmd":"locate"}', '*');
@@ -4580,6 +4662,13 @@
                                 break;
                             }
                         } catch (e) {}
+                        try {
+                            if (opener.frames.cartFillerWorkerFrame) {
+                                // ok, we found a root window, but it looks like it is in popup mode.
+                                // let's make a request to it
+                                postMessage(relay.parent, 'bubbleRelayMessage', {message: 'popupRelayMainWindowRequest'});
+                            }
+                        } catch (e) {}
                     }
                 }
             } catch (e) {
@@ -4588,10 +4677,16 @@
             if (! me.modules.ui.mainFrameWindow) {
                 // probably we are still going to switch to UI mode, so we'll report this failure after 10 seconds
                 setTimeout(function() {
-                    if (! me.uiLaunched) {
+                    if (! me.uiLaunched && ! me.modules.ui.mainFrameWindow) {
                         alert('could not find mainFrameWindow in slave mode');
                     }
                 }, 10000);
+                return;
+            }
+            this.startSlaveModeWithWindow();
+        },
+        startSlaveModeWithWindow: function() {
+            if (relay.isSlave) {
                 return;
             }
             me.modules.dispatcher.registerLoadWatcher();
@@ -4608,6 +4703,10 @@
                     me.modules.dispatcher.updateCurrentUrl(url);
                 }
             },100);
+        },
+        onMessage_popupRelayMainWindowResponse: function(details, source) {
+            me.modules.ui.mainFrameWindow = source;
+            this.startSlaveModeWithWindow();
         },
         /**
          * Registers watcher that tracks onload events of main frame
@@ -4728,7 +4827,8 @@
         resetRelays: function() {
             relay.nextRelay = relay.nextRelayRegistered = false;
             relay.nextRelayQueue = [];
-            relay.knownUrls = {};
+            relay.knownDomains = {};
+            relay.registeredDomains = {};
             relay.slaveCounter = 0;
         },
         getSlaveCounter: function() { return relay.slaveCounter; },
@@ -4778,6 +4878,22 @@
         discoverTaskParameters: function(fn, params) { return discoverTaskParameters(fn, params); },
         recursivelyCollectSteps: function(source, taskSteps) {
             return recursivelyCollectSteps(source, taskSteps);
+        },
+        isRelayRegistered: function(url) {
+            return relay.registeredDomains[getDomain(url)];
+        },
+        openPopup: function(details, callback, tries) {
+            tries = tries || 0;
+            var w = details.target ? window.open(details.url, details.target) : window.open(details.url);
+            if (w) { 
+                return callback(w);
+            }
+            if (tries % 20 === 0) {
+                alert('looks like popups are blocked, please unblock popups and I\'ll retry in 15 seconds');
+            }
+            setTimeout(function() {
+                me.modules.dispatcher.openPopup(details, callback, tries + 1);
+            }, 1000);
         }
     });
 }).call(this, document, window);
@@ -5340,6 +5456,9 @@
         createOverlay(Math.max(0, rect.left - border), 0, Math.min(pageRight, rect.right + border), Math.min(pageBottom, rect.top - border));
         createOverlay(Math.max(0, rect.left - border), Math.max(0, rect.bottom + border), Math.min(pageRight, rect.right + border), pageBottom);
     };
+    var getDomain = function(url) {
+        return url.split('/').slice(0, 3).join('/');
+    };
     /**
      * Draws message div
      * @function CartFiller.UI~drawMessage
@@ -5513,27 +5632,30 @@
             currentWindowDimensions.outerWidth !== outerWidth ||
             currentWindowDimensions.outerHeight !== outerHeight ||
             currentWindowDimensions.workerFrameSize !== currentWorkerFrameSize ||
+            (isFramed && me.modules.ui.currentMainFrameWindow !== me.modules.ui.drawnMainFrameWindow) ||
             forceRedraw) {
             (function() {
                 var mainFrameWidthBig = windowWidth * 0.8 - 1,
                     mainFrameWidthSmall = windowWidth * 0.2 - 1,
                     workerFrameWidthBig = windowWidth * 0.8 - 1,
                     workerFrameWidthSmall = windowWidth * 0.2 - 1,
-                    slaveFramesHeight = 40,
+                    slaveFramesHeight = 20,
                     mainFramesHeight = Math.floor(
                         (windowHeight - 15 - (isFramed ? ((me.modules.ui.mainFrames.length - 1) * slaveFramesHeight) : 0)) / (isFramed ? me.modules.ui.mainFrames.length : 1)
                     ),
-                    mainFramesStep = mainFramesHeight + slaveFramesHeight,
                     workerFrameHeight = windowHeight - 15,
                     chooseJobFrameLeft = 0.02 * windowWidth + (isFramed ? 0 : 200),
                     chooseJobFrameWidth = 0.76 * windowWidth - (isFramed ? 0 : 200),
                     chooseJobFrameTop = 0.02 * windowHeight,
                     chooseJobFrameHeight = 0.96 * windowHeight;
 
+                    var frameHeights = [];
+
                     if (isFramed) {
                         me.modules.ui.mainFrames.filter(function(mainFrame, index) {
-                            mainFrame.style.height = mainFramesHeight + 'px';
-                            if (index > 0) {
+                            frameHeights[index] = Math.floor(mainFramesHeight * (me.modules.ui.mainFrames.length === 1 ? 1 : (index === me.modules.ui.currentMainFrameWindow ? (0.3 + 0.7 * me.modules.ui.mainFrames.length) : 0.3)));
+                            mainFrame.style.height =  frameHeights[index] + 'px';
+                            if (index > 0 && me.modules.ui.slaveFrames[index]) {
                                 me.modules.ui.slaveFrames[index].style.height = slaveFramesHeight + 'px';
                             }
                         });
@@ -5550,9 +5672,10 @@
                     if (isFramed) {
                         me.modules.ui.mainFrames.filter(function(mainFrame, index) {
                             try {
-                                mainFrame.style.top = (mainFramesStep * index) + 'px';
-                                if (index > 0) {
-                                    me.modules.ui.slaveFrames[index].style.top = (mainFramesStep * index - slaveFramesHeight) + 'px';
+                                var mainFrameTop = frameHeights.slice(0, index).reduce(function(acc, v) { return acc + v + slaveFramesHeight; }, 0);
+                                mainFrame.style.top = mainFrameTop + 'px';
+                                if (index > 0 && me.modules.ui.slaveFrames[index]) {
+                                    me.modules.ui.slaveFrames[index].style.top = (mainFrameTop - slaveFramesHeight) + 'px';
                                 }
                             } catch (e) {}
                         });
@@ -5568,7 +5691,7 @@
                                 try {
                                     mainFrame.style.width = mainFrameWidthSmall + 'px';
 
-                                    if (index > 0) {
+                                    if (index > 0 && me.modules.ui.slaveFrames[index]) {
                                         me.modules.ui.slaveFrames[index].style.width = mainFrameWidthSmall + 'px';
                                     }
                                 } catch (e) {}
@@ -5591,7 +5714,7 @@
                             me.modules.ui.mainFrames.filter(function(mainFrame, index) {
                                 try {
                                     mainFrame.style.width = mainFrameWidthBig + 'px';
-                                    if (index > 0) {
+                                    if (index > 0 && me.modules.ui.slaveFrames[index]) {
                                         me.modules.ui.slaveFrames[index].style.width = mainFrameWidthBig + 'px';
                                     }
                                 } catch (e) {}
@@ -5612,6 +5735,7 @@
             currentWindowDimensions.outerWidth = outerWidth;
             currentWindowDimensions.outerHeight = outerHeight;
             currentWindowDimensions.workerFrameSize = currentWorkerFrameSize;
+            me.modules.ui.drawnMainFrameWindow = me.modules.ui.currentMainFrameWindow;
         }
     };
     /**
@@ -5666,7 +5790,7 @@
      * @access private
      */
     var getZIndexForOverlay = function(){
-        return 100000000; // TBD look for max zIndex used in the main frame
+        return 2147483647; // TBD look for max zIndex used in the main frame
     };
     // Launch arrowToFunction
     setInterval(arrowToFunction, 200);
@@ -5987,6 +6111,8 @@
             this.mainFrames[0].style.top = '0px';
             this.mainFrames[0].style.borderWidth = '0px';
             this.slaveFrames = [undefined];
+            this.slaveFramesWindows = [undefined];
+            this.slaveFramesHelperWindows = {};
 
             this.workerFrame = document.createElement('iframe');
             this.workerFrame.setAttribute('name', workerFrameName);
@@ -6296,7 +6422,9 @@
             }
             for (var i = this.mainFrames.length - 1; i >= 1; i --) {
                 this.mainFrames[i].parentNode.removeChild(this.mainFrames[i]);
-                this.slaveFrames[i].parentNode.removeChild(this.slaveFrames[i]);
+                if (this.slaveFrames[i]) {
+                    this.slaveFrames[i].parentNode.removeChild(this.slaveFrames[i]);
+                }
             }
             this.mainFrames.splice(1);
             this.slaveFrames.splice(1);
@@ -6315,8 +6443,31 @@
                     if (currentSlavesLoaded === descriptors.length) {
                         me.modules.api.result();
                     } else {
-                        window.frames[mainFrameName + '-s' + (currentSlavesLoaded + 1)].location.href = descriptors[currentSlavesLoaded].slave + '#launchSlaveInFrame';
-                        me.modules.api.waitFor(waitForNextSlaveToLoad, actWhenWaitForFinished, 300000);
+                        me.modules.ui.slaveFramesWindows[currentSlavesLoaded + 1] = me.modules.ui.slaveFrames[currentSlavesLoaded + 1].contentWindow;
+                        me.modules.ui.slaveFramesWindows[currentSlavesLoaded + 1].location.href = descriptors[currentSlavesLoaded].slave + '#launchSlaveInFrame';
+                        var next = function() {   
+                            me.modules.api.waitFor(waitForNextSlaveToLoad, actWhenWaitForFinished, 300000);
+                        };
+                        if (descriptors[currentSlavesLoaded].withHelper) {
+                            if (! me.modules.ui.slaveFramesHelperWindows[getDomain(descriptors[currentSlavesLoaded].slave)]) {
+                                me.modules.dispatcher.openPopup(
+                                    {
+                                        url: descriptors[currentSlavesLoaded].slave
+                                    }, 
+                                    function(w) {
+                                        me.modules.ui.slaveFramesHelperWindows[getDomain(descriptors[currentSlavesLoaded].slave)] = {w: w, i: currentSlavesLoaded + 1};
+                                        next();
+                                    }
+                                );
+                            } else {
+                                // we already have such window
+                                me.modules.ui.slaveFramesHelperWindows[getDomain(descriptors[currentSlavesLoaded].slave)].i = currentSlavesLoaded + 1;
+                                me.modules.ui.slaveFramesHelperWindows[getDomain(descriptors[currentSlavesLoaded].slave)].w.postMessage('cartFillerMessage:{"cmd":"actAsSlaveHelper","slaveIndex":' + (currentSlavesLoaded + 1) + '}', '*');
+                                next();
+                            }
+                        } else {
+                            next();
+                        }
                     }
                 }
             };
@@ -6378,5 +6529,5 @@
 }).call({
     cartFillerConfiguration:{},
     cartFillerEval:this.cartFillerEval
-});
+});}).call(this);
 /* jshint ignore:end */

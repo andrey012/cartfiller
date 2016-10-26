@@ -4,7 +4,7 @@
 /**
  * @class CartFiller.Injector
  */
-(function(document, window, undefined){
+(function injectFunction(document, window, undefined){
     'use strict';
     /** 
      * Is set to true if all injector scripts are concatenated and probably
@@ -49,7 +49,7 @@
             JSON.stringify({cmd: 'reinitialize'}),
             '*'
         );
-        throw new Error('preventing duplicate launch');
+        throw new Error('preventing duplicate launch on [' + window.location.href + ']');
     }
     
     /**
@@ -214,6 +214,19 @@
         config['data-worker'] = this.cartFillerEval[4];
         config['data-wfu'] = this.cartFillerEval[5];
         config.localInjectJs = this.cartFillerEval[6];
+    }
+    var cartFillerEvalForInjectFunction = [
+        config.baseUrl,
+        config['data-type'],
+        config['data-choose-job'],
+        config['data-debug'],
+        config['data-worker'],
+        config['data-wfu']
+    ];
+    if (concatenated) {
+        config.injectFunction = '(' + concatenatedInjectFunction.toString() + ').call(' + JSON.stringify(this) + ');';
+    } else {
+        config.injectFunction = '(' + injectFunction.toString() + ').call({cartFillerEval: ' + JSON.stringify(cartFillerEvalForInjectFunction) + '}, document, window);';
     }
     // if not concatenated - then load loader.js, which, itself, will load other
     // files

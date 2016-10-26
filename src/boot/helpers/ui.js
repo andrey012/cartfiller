@@ -485,6 +485,9 @@
         createOverlay(Math.max(0, rect.left - border), 0, Math.min(pageRight, rect.right + border), Math.min(pageBottom, rect.top - border));
         createOverlay(Math.max(0, rect.left - border), Math.max(0, rect.bottom + border), Math.min(pageRight, rect.right + border), pageBottom);
     };
+    var getDomain = function(url) {
+        return url.split('/').slice(0, 3).join('/');
+    };
     /**
      * Draws message div
      * @function CartFiller.UI~drawMessage
@@ -658,27 +661,30 @@
             currentWindowDimensions.outerWidth !== outerWidth ||
             currentWindowDimensions.outerHeight !== outerHeight ||
             currentWindowDimensions.workerFrameSize !== currentWorkerFrameSize ||
+            (isFramed && me.modules.ui.currentMainFrameWindow !== me.modules.ui.drawnMainFrameWindow) ||
             forceRedraw) {
             (function() {
                 var mainFrameWidthBig = windowWidth * 0.8 - 1,
                     mainFrameWidthSmall = windowWidth * 0.2 - 1,
                     workerFrameWidthBig = windowWidth * 0.8 - 1,
                     workerFrameWidthSmall = windowWidth * 0.2 - 1,
-                    slaveFramesHeight = 40,
+                    slaveFramesHeight = 20,
                     mainFramesHeight = Math.floor(
                         (windowHeight - 15 - (isFramed ? ((me.modules.ui.mainFrames.length - 1) * slaveFramesHeight) : 0)) / (isFramed ? me.modules.ui.mainFrames.length : 1)
                     ),
-                    mainFramesStep = mainFramesHeight + slaveFramesHeight,
                     workerFrameHeight = windowHeight - 15,
                     chooseJobFrameLeft = 0.02 * windowWidth + (isFramed ? 0 : 200),
                     chooseJobFrameWidth = 0.76 * windowWidth - (isFramed ? 0 : 200),
                     chooseJobFrameTop = 0.02 * windowHeight,
                     chooseJobFrameHeight = 0.96 * windowHeight;
 
+                    var frameHeights = [];
+
                     if (isFramed) {
                         me.modules.ui.mainFrames.filter(function(mainFrame, index) {
-                            mainFrame.style.height = mainFramesHeight + 'px';
-                            if (index > 0) {
+                            frameHeights[index] = Math.floor(mainFramesHeight * (me.modules.ui.mainFrames.length === 1 ? 1 : (index === me.modules.ui.currentMainFrameWindow ? (0.3 + 0.7 * me.modules.ui.mainFrames.length) : 0.3)));
+                            mainFrame.style.height =  frameHeights[index] + 'px';
+                            if (index > 0 && me.modules.ui.slaveFrames[index]) {
                                 me.modules.ui.slaveFrames[index].style.height = slaveFramesHeight + 'px';
                             }
                         });
@@ -695,9 +701,10 @@
                     if (isFramed) {
                         me.modules.ui.mainFrames.filter(function(mainFrame, index) {
                             try {
-                                mainFrame.style.top = (mainFramesStep * index) + 'px';
-                                if (index > 0) {
-                                    me.modules.ui.slaveFrames[index].style.top = (mainFramesStep * index - slaveFramesHeight) + 'px';
+                                var mainFrameTop = frameHeights.slice(0, index).reduce(function(acc, v) { return acc + v + slaveFramesHeight; }, 0);
+                                mainFrame.style.top = mainFrameTop + 'px';
+                                if (index > 0 && me.modules.ui.slaveFrames[index]) {
+                                    me.modules.ui.slaveFrames[index].style.top = (mainFrameTop - slaveFramesHeight) + 'px';
                                 }
                             } catch (e) {}
                         });
@@ -713,7 +720,7 @@
                                 try {
                                     mainFrame.style.width = mainFrameWidthSmall + 'px';
 
-                                    if (index > 0) {
+                                    if (index > 0 && me.modules.ui.slaveFrames[index]) {
                                         me.modules.ui.slaveFrames[index].style.width = mainFrameWidthSmall + 'px';
                                     }
                                 } catch (e) {}
@@ -736,7 +743,7 @@
                             me.modules.ui.mainFrames.filter(function(mainFrame, index) {
                                 try {
                                     mainFrame.style.width = mainFrameWidthBig + 'px';
-                                    if (index > 0) {
+                                    if (index > 0 && me.modules.ui.slaveFrames[index]) {
                                         me.modules.ui.slaveFrames[index].style.width = mainFrameWidthBig + 'px';
                                     }
                                 } catch (e) {}
@@ -757,6 +764,7 @@
             currentWindowDimensions.outerWidth = outerWidth;
             currentWindowDimensions.outerHeight = outerHeight;
             currentWindowDimensions.workerFrameSize = currentWorkerFrameSize;
+            me.modules.ui.drawnMainFrameWindow = me.modules.ui.currentMainFrameWindow;
         }
     };
     /**
@@ -811,7 +819,7 @@
      * @access private
      */
     var getZIndexForOverlay = function(){
-        return 100000000; // TBD look for max zIndex used in the main frame
+        return 2147483647; // TBD look for max zIndex used in the main frame
     };
     // Launch arrowToFunction
     setInterval(arrowToFunction, 200);
@@ -1132,6 +1140,8 @@
             this.mainFrames[0].style.top = '0px';
             this.mainFrames[0].style.borderWidth = '0px';
             this.slaveFrames = [undefined];
+            this.slaveFramesWindows = [undefined];
+            this.slaveFramesHelperWindows = {};
 
             this.workerFrame = document.createElement('iframe');
             this.workerFrame.setAttribute('name', workerFrameName);
@@ -1441,7 +1451,9 @@
             }
             for (var i = this.mainFrames.length - 1; i >= 1; i --) {
                 this.mainFrames[i].parentNode.removeChild(this.mainFrames[i]);
-                this.slaveFrames[i].parentNode.removeChild(this.slaveFrames[i]);
+                if (this.slaveFrames[i]) {
+                    this.slaveFrames[i].parentNode.removeChild(this.slaveFrames[i]);
+                }
             }
             this.mainFrames.splice(1);
             this.slaveFrames.splice(1);
@@ -1460,8 +1472,31 @@
                     if (currentSlavesLoaded === descriptors.length) {
                         me.modules.api.result();
                     } else {
-                        window.frames[mainFrameName + '-s' + (currentSlavesLoaded + 1)].location.href = descriptors[currentSlavesLoaded].slave + '#launchSlaveInFrame';
-                        me.modules.api.waitFor(waitForNextSlaveToLoad, actWhenWaitForFinished, 300000);
+                        me.modules.ui.slaveFramesWindows[currentSlavesLoaded + 1] = me.modules.ui.slaveFrames[currentSlavesLoaded + 1].contentWindow;
+                        me.modules.ui.slaveFramesWindows[currentSlavesLoaded + 1].location.href = descriptors[currentSlavesLoaded].slave + '#launchSlaveInFrame';
+                        var next = function() {   
+                            me.modules.api.waitFor(waitForNextSlaveToLoad, actWhenWaitForFinished, 300000);
+                        };
+                        if (descriptors[currentSlavesLoaded].withHelper) {
+                            if (! me.modules.ui.slaveFramesHelperWindows[getDomain(descriptors[currentSlavesLoaded].slave)]) {
+                                me.modules.dispatcher.openPopup(
+                                    {
+                                        url: descriptors[currentSlavesLoaded].slave
+                                    }, 
+                                    function(w) {
+                                        me.modules.ui.slaveFramesHelperWindows[getDomain(descriptors[currentSlavesLoaded].slave)] = {w: w, i: currentSlavesLoaded + 1};
+                                        next();
+                                    }
+                                );
+                            } else {
+                                // we already have such window
+                                me.modules.ui.slaveFramesHelperWindows[getDomain(descriptors[currentSlavesLoaded].slave)].i = currentSlavesLoaded + 1;
+                                me.modules.ui.slaveFramesHelperWindows[getDomain(descriptors[currentSlavesLoaded].slave)].w.postMessage('cartFillerMessage:{"cmd":"actAsSlaveHelper","slaveIndex":' + (currentSlavesLoaded + 1) + '}', '*');
+                                next();
+                            }
+                        } else {
+                            next();
+                        }
                     }
                 }
             };

@@ -1,6 +1,12 @@
 cartfiller={
+    "globals": {
+        "thisHost": "127.0.0.1",
+        "otherHost": "127.0.0.2",
+        "thirdHost": "127.0.0.3"
+    },
     "worker": "worker.js",
     "tests": {
         "multiwindow": true,
+        "multiwindow?withHelper=1": false
     },
 }

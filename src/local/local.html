@@ -194,9 +194,9 @@
                 if (parent) {
                     init();
                 } else {
-                    var m = /^#?url=([^&]+)/.exec(window.location.hash);
+                    var m = /(^#?|&)url=([^&]+)/.exec(window.location.hash);
                     if (m) {
-                        var url = decodeURIComponent(m[1]);
+                        var url = decodeURIComponent(m[2]);
                         try {
                             parent = window.open(url, '_blank');
                         } catch (e) {}
@@ -225,6 +225,7 @@
 
                 var injectjs = '';
                 document.getElementById('pack').onclick = function() {
+                    var version = (new Date().getFullYear()) + '-' + ('0' + (new Date().getMonth() + 1)).substr(-2) + '-' + ('0' + (new Date().getDate())).substr(-2) + '-' + ('0' + (new Date().getHours())).substr(-2) + '-' + ('0' + (new Date().getMinutes())).substr(-2) + '-' + ('0' + (new Date().getSeconds())).substr(-2);
                     var blob = new Blob(
                         [
                             '<!DOCTYPE html>' + 
@@ -235,14 +236,14 @@
                                 + '; packedHash = '
                                 + JSON.stringify(window.location.hash)
                                 + ';'
-                            )
+                            ).replace('</h1>', '<br/>version: ' + version + '</h1>')
                         ],
                         {type : 'text/html'}
                     ); 
                     var a = new FileReader();
                     a.onload = function(e) {
                         document.getElementById('download').setAttribute('href', e.target.result);
-                        document.getElementById('download').setAttribute('download', document.getElementById('url').value.split('/')[2] + '-cartfiller-' + (new Date().getFullYear()) + '-' + (new Date().getMonth() + 1) + '-' + (new Date().getDate()) + '-' + (new Date().getHours()) + '-' + (new Date().getMinutes()) + '-' + (new Date().getSeconds()) + '.html');
+                        document.getElementById('download').setAttribute('download', document.getElementById('url').value.split('/')[2] + '-cartfiller-' + version + '.html');
                     };
                     a.readAsDataURL(blob);
                     return false;
@@ -310,7 +311,13 @@
                     var update = function() {
                         var hash = [];
                         $('input').each(function(i,el){
-                            hash.push($(el).attr('id') + '=' + encodeURIComponent($(el).val()));
+                            var id = $(el).attr('id');
+                            var pc = id + '=' + encodeURIComponent($(el).val());
+                            if (id === 'choosejob') {
+                                hash.push(pc);
+                            } else {
+                                hash.unshift(pc);
+                            }
                         });
                         window.location.hash = '#' + hash.join('&');
                         parseHash();

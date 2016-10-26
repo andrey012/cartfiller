@@ -27,7 +27,8 @@
                 '', function() {
                     api.each(window.document.getElementsByTagName('a'), function(i,e){
                         if (e.textContent === task.host) {
-                            api.arrow(e).openRelay(e.getAttribute('href')).result();
+                            var url = e.getAttribute('href');
+                            api.arrow(e).openRelay(url, globals.withThankYou).waitFor(function(){ return api.isRelayRegistered(url);});
                             return false;
                         }
                     }, function() {api.result('link not found: [' + task.name + ']');});

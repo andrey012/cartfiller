@@ -769,7 +769,7 @@
                     filePopupSendUrl();
                 }
             } else {
-                filePopupWindow = window.open('javascript:document.write("<h1>Open cartfiller/local/index.html file from your disk in this tab</h1>");', '_blank');  // jshint ignore:line
+                filePopupWindow = window.open('javascript:document.write("<h1>Open cartfiller/dist/local.html file from your disk in this tab</h1>");', '_blank');  // jshint ignore:line
                 pingFilePopupWindow();
             }
         } else {
