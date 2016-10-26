@@ -1293,7 +1293,9 @@
                     x = event.clientX;
                     y = event.clientY;
                 },false);
-                div.addEventListener('click', function() {
+                div.addEventListener('click', function(event) {
+                    x = x || event.clientX;
+                    y = y || event.clientY;
                     document.getElementsByTagName('body')[0].removeChild(reportMousePointer);
                     var windowIndex;
                     var frame = window.document.elementFromPoint(x,y);

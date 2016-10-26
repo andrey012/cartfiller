@@ -193,24 +193,6 @@
         }
         throw new Error('step not found: [' + name + ']');
     };
-    var wrapSelectorBuilderPromise = function(arr) {
-        // tbd this should happen at runtime, since 
-        // promise after libs 
-        if (arr.length === 1) {
-            if (arr[0][0] !== 'get') {
-                throw new Error('only get is allowed as first step of selector promise, we have [' + arr[0][0] + '] instead');
-            }
-            return function(){ return api('find', arr[0][1]); };
-        } else {
-            var prev = arr.slice();
-            var step = prev.pop();
-            var prevBuilderPromise = wrapSelectorBuilderPromise(prev);
-            return function(){
-                var prevResult = prevBuilderPromise();
-                return prevResult[step[0]].apply(prevResult, step[1]);
-            };
-        }
-    };
     var onLoaded = function() {
         Runtime = function() {
 
@@ -229,11 +211,43 @@
             this.unexportedTasks = {};
             var wrapper = this;
             this.runtime = new Runtime();
+            var LibReferencePromise = this.LibReferencePromise = function(name) {
+                this.name = name;
+            };
             var BuilderPromise = this.BuilderPromise = function(method, args, prev) {
                 this.arr = ((prev.length === 1 && prev[0][0] === '') ? [] : prev.slice()).concat(method ? [[method, args]] : []);
                 var taskNames = prev.filter(function(v) { return v[0] === 'task'; });
                 if (taskNames.length) {
                     wrapper.unexportedTasks[taskNames[taskNames.length - 1][1][0]] = this.arr;
+                }
+            };
+            var decodeLibReferences = function(arr) {
+                if (arr[0][0] === 'get' && arr[0][1][0] instanceof LibReferencePromise) {
+                    return wrapper.lib[arr[0][1][0].name].arr.concat(arr.slice(1));
+                } else if (arr[0][0] === 'lib' || arr[0][0] === 'getlib') {
+                    return wrapper.lib[arr[0][1][0]].arr.concat(arr.slice(1));
+                }
+                return arr;
+            };
+            var wrapSelectorBuilderPromise = function(arr) {
+                arr = decodeLibReferences(arr);
+                if (arr.length === 1) {
+                    if (arr[0][0] !== 'get') {
+                        throw new Error('only get is allowed as first step of selector promise, we have [' + arr[0][0] + '] instead');
+                    }
+                    if (arr[0][1][0] instanceof BuilderPromise) {
+                        return wrapSelectorBuilderPromise(arr[0][1][0].arr);
+                    } else {
+                        return function(){ return api('find', arr[0][1]); };
+                    }
+                } else {
+                    var prev = arr.slice();
+                    var step = prev.pop();
+                    var prevBuilderPromise = wrapSelectorBuilderPromise(prev);
+                    return function(){
+                        var prevResult = prevBuilderPromise();
+                        return prevResult[step[0]].apply(prevResult, step[1]);
+                    };
                 }
             };
             BuilderPromise.prototype = Object.create({});
@@ -344,10 +358,18 @@
                 this.namedResults = {};
             };
             Builder.prototype = Object.create({});
+            Builder.prototype.getlib = function(args) {
+                return ['get' + niceArgs(args), function() {
+                    if(me.modules.api.debug && me.modules.api.debug.stop) {
+                        debugger; // jshint ignore:line
+                    }
+                    wrapSelectorBuilderPromise(wrapper.lib[args[0]].arr)().arrow(1).result(); 
+                }];
+            };
             Builder.prototype.get = function(args) {
                 if (args[0] instanceof BuilderPromise) {
                     return ['get' + niceArgs(args), function() {
-                        if(me.modules.api.debug && (1 || me.modules.api.debug.stop)) {
+                        if(me.modules.api.debug && me.modules.api.debug.stop) {
                             debugger; // jshint ignore:line
                         }
                         if (args[0].arr[0][0] === 'lib') {
@@ -356,9 +378,16 @@
                             wrapSelectorBuilderPromise(args[0].arr)().arrow(1).result(); 
                         }
                     }];
+                } else if (args[0] instanceof LibReferencePromise) {
+                    return ['get' + niceArgs(args), function() {
+                        if(me.modules.api.debug && me.modules.api.debug.stop) {
+                            debugger; // jshint ignore:line
+                        }
+                        wrapSelectorBuilderPromise(wrapper.lib[args[0].name].arr)().arrow(1).result(); 
+                    }];
                 } else {
                     return ['get' + niceArgs(args), function() { 
-                        if(me.modules.api.debug && (1 || me.modules.api.debug.stop)) {
+                        if(me.modules.api.debug && me.modules.api.debug.stop) {
                             debugger; // jshint ignore:line
                         }
                         api('find', args).arrow(1).result(); 
@@ -386,7 +415,7 @@
                     if (name === 'exists') {
                         return [name + niceArgs(args), function(p) {
                             api('waitFor', [function() {
-                                if(me.modules.api.debug && (1 || me.modules.api.debug.stop)) {
+                                if(me.modules.api.debug && me.modules.api.debug.stop) {
                                     debugger; // jshint ignore:line
                                 }
                                 p.reevaluate(); 
@@ -398,7 +427,7 @@
                     } else if (name === 'absent') {
                         return [name + niceArgs(args), function(p) {
                             api('waitFor', [function() { 
-                                if(me.modules.api.debug && (1 || me.modules.api.debug.stop)) {
+                                if(me.modules.api.debug && me.modules.api.debug.stop) {
                                     debugger; // jshint ignore:line
                                 }
                                 p.reevaluate();
@@ -409,7 +438,7 @@
                         }];
                     } else {
                         return [name + niceArgs(args), function(p) {
-                            if(me.modules.api.debug && (1 || me.modules.api.debug.stop)) {
+                            if(me.modules.api.debug && me.modules.api.debug.stop) {
                                 debugger; // jshint ignore:line
                             }
                             var s = p[name].apply(p, args);
@@ -447,13 +476,20 @@
             Builder.prototype.click = function(args) {
                 return api('clicker', args);
             };
+            Builder.prototype.ready = function() {
+                return ['wait for readyState become complete', function() {
+                    api('waitFor', [function() {
+                        return api('getDocument').readyState === 'complete';
+                    }]);
+                }];
+            };
             Builder.prototype.type = function(args) {
                 return api('typer', args);
             };
             Builder.prototype.then = function(args) {
-                return ['then(' +niceArgs(args) + ')', function() {
+                return ['then(' +niceArgs(args) + ')', me.modules.dispatcher.injectTaskParameters(function() {
                     args[0].apply(this, arguments);
-                }];
+                }, args)];
             };
             Builder.prototype.onload = function(args) {
                 return ['onload(' +niceArgs(args) + ')', function() {
@@ -497,15 +533,23 @@
                 return args[0] ? [] : this.use(args.slice(1));
             };
             Builder.prototype.name = function() { return []; };
-            var generateIfOrIfNotSteps = function(args, builder, ifNot) {
+            var generateIfOrIfNotSteps = function(args, builder, ifNot, isWhile) {
                 var condition = args[0];
                 var action = args[1];
                 var actionSteps = builder.build(action.arr);
+                var actionStepsLen = actionSteps.length / 2;
+                if (isWhile) {
+                    actionStepsLen ++;
+                    actionSteps.push('repeat', function() {
+                        api('repeatStep', [actionStepsLen + 1]);
+                        api('result');
+                    });
+                }
                 var booleanBuilderPromise = makeBooleanBuilderPromise(condition);
                 return ['if' + (ifNot ? 'Not' : '') + niceArgs([condition]), function() {
                     var result = booleanBuilderPromise();
                     if ((! ifNot && ! result) || (ifNot && result)) {
-                        api('skipStep', [actionSteps.length / 2]);
+                        api('skipStep', [actionStepsLen]);
                     }
                     api('result');
                 }].concat(actionSteps);
@@ -515,6 +559,12 @@
             };
             Builder.prototype.ifNot = function(args) { 
                 return generateIfOrIfNotSteps(args, this, true);
+            };
+            Builder.prototype.while = function(args) { 
+                return generateIfOrIfNotSteps(args, this, false, true);
+            };
+            Builder.prototype.whileNot = function(args) { 
+                return generateIfOrIfNotSteps(args, this, true, true);
             };
             Builder.prototype.task = function() {
                 // just declare task name
@@ -575,7 +625,7 @@
                 } else if (this.lib[name] instanceof this.BuilderPromise) {
                     return this.lib[name];
                 } else {
-                    throw new Error('not sure how to handle lib item: ' + JSON.stringify(this.lib[name]));
+                    return new this.LibReferencePromise(name);
                 }
             } else {
                 // proxy

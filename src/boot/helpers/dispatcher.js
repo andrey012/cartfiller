@@ -22,19 +22,21 @@
         var task = workerCurrentTask;
         var api = me.modules.api;
         var getStack = function() {
-            return (workerGlobals['`foreach stack'] || '').split('|');
+            return (workerGlobals['_foreach stack'] || '').split('|');
         };
         var setStack = function(pc) {
-            workerGlobals['`foreach stack'] = pc.join('|');
+            workerGlobals['_foreach stack'] = pc.join('|');
         };
         worker = {
-            '=set': ['set [ref] to [value]', function() { task.ref = task.value; api.result(); }],
-            '=loop': ['check [ref] against [value]', function() { if (parseInt(task.ref) < parseInt(task.value)) { api.repeatTask(task.tasks); } api.result();}],
-            '=inc': ['inc [ref]', function() { task.ref = parseInt(task.ref) + 1; api.result(); }],
-            '=assertEquals': ['assert that [ref] is equals to [value]', function() { api.result(api.compare(task.value, task.ref)); }],
-            '=wait': ['wait for tasks to be added', function() { api.repeatTask().setTimeout(api.result, 1000);}],
-            '=foreach': [
+            '_set': ['set [ref] to [value]', function() { api.internalDebugger(); task.ref = task.value; api.result(); }],
+            '_loop': ['check [ref] against [value]', function() { api.internalDebugger(); if (parseInt(task.ref) < parseInt(task.value)) { api.repeatTask(task.tasks); } api.result();}],
+            '_inc': ['inc [ref]', function() { api.internalDebugger(); task.ref = parseInt(task.ref) + 1; api.result(); }],
+            '_assertEquals': ['assert that [ref] is equals to [value]', function() { api.internalDebugger().result(api.compare(task.value, task.ref)); }],
+            '_wait': ['wait for tasks to be added', function() { api.internalDebugger().repeatTask().setTimeout(api.result, 1000);}],
+            '_say': ['say some static message', function() { api.internalDebugger().say(task.message).result(); }],
+            '_foreach': [
                 'check whether we are looping', function() {
+                    api.internalDebugger();
                     var pc = getStack(), myIndex = -1, myStack = '', index = 0;
                     pc.filter(function(v, k) {
                         if (parseInt(v.split(':')[0]) === api.env.taskIndex) {
@@ -55,6 +57,7 @@
                     setStack(pc);
                     api.nop();
                 }, 'initialize values', function() {
+                    api.internalDebugger();
                     var pc = getStack();
                     var recent = pc.pop();
                     var ppc = recent.split(':');
@@ -76,8 +79,9 @@
                     api.nop();
                 }
             ],
-            '=endforeach':[
+            '_endforeach':[
                 'loop', function() {
+                    api.internalDebugger();
                     var pc = getStack();
                     var recent = pc.pop();
                     var ppc = recent.split(':');
@@ -597,7 +601,7 @@
     var decodeAlias = function(value, returnRefKey) {
         var result;
         if ('string' === typeof value) {
-            result = returnRefKey ? value : (value === '=random' ? (String(new Date().getTime()) + String(Math.floor(1000 * Math.random()))) : workerGlobals[value]);
+            result = returnRefKey ? value : (value === '_random' ? (String(new Date().getTime()) + String(Math.floor(1000 * Math.random()))) : workerGlobals[value]);
             return result;
         } else {
             if (1 === value.length) {
@@ -786,7 +790,9 @@
                 apiIsThere = true;
             }
             if (apiIsThere) {
-                return fn + ' if(api.debug && (1 || api.debug.stop)) debugger; ';
+                // it was return fn + ' if(api.debug && (1 || api.debug.stop)) debugger; ';
+                // but I don't like this behaviour
+                return fn + ' if(api.debug && api.debug.stop) debugger; ';
             } else {
                 return match;
             }
@@ -1588,8 +1594,14 @@
          * @function CartFiller.Dispatcher#onMessage_startReportingMousePointer
          * @access public
          */
-        onMessage_startReportingMousePointer: function() {
-            me.modules.ui.startReportingMousePointer();
+        onMessage_startReportingMousePointer: function(details) {
+            if (details.delay) {
+                setTimeout(function(){
+                    me.modules.ui.startReportingMousePointer();
+                }, 2000);
+            } else {
+                me.modules.ui.startReportingMousePointer();
+            }
         },
         /** 
          * Tries to find all elements that match specified CSS selector and 
@@ -2496,6 +2508,17 @@
         },
         getFrameWindowIndex: function(){ return relay.currentMainFrameWindow; },
         discoverTaskParameters: function(fn, params) { return discoverTaskParameters(fn, params); },
+        injectTaskParameters: function(fn, src) {
+            var params = {};
+            (src instanceof Array ? src : [src]).filter(function(src) {
+                me.modules.dispatcher.discoverTaskParameters(src, params);
+            });
+            fn.cartFillerParameterList = fn.cartFillerParameterList || [];
+            for (var i in params) {
+                fn.cartFillerParameterList.push(i);
+            }
+            return fn;
+        },
         recursivelyCollectSteps: function(source, taskSteps) {
             return recursivelyCollectSteps(source, taskSteps);
         },

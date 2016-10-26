@@ -1,8 +1,0 @@
-cartfiller = {
-    "title": "",
-    "globals": {
-    },
-    "details": [
-        {"=wait": {}}
-    ]
-}

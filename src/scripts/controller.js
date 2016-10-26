@@ -30,6 +30,29 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 $scope.currentTask ++;
             }
         };
+        var jsStringifyKeyCleanPattern = /^[a-zA-Z_$0-9]+$/;
+        var jsStringifyKey = function(v) {
+            if (jsStringifyKeyCleanPattern.test(v)) {
+                return v;
+            } else {
+                return JSON.stringify(v);
+            }
+        };
+        var jsStringify = function(v) {
+            if ('object' === typeof v) {
+                if (v instanceof Array) {
+                    return '[' + v.map(jsStringify).join(', ') + ']';
+                } else {
+                    var pc = [];
+                    for (var i in v) {
+                        pc.push(jsStringifyKey(i) + ': ' + jsStringify(v[i]));
+                    }
+                    return '{' + pc.join(', ') + '}';
+                }
+            } else {
+                return JSON.stringify(v);
+            }
+        };
         $scope.chooseJobState = false;
         $scope.toggleSizeNoWatch = function($event){
             $event.stopPropagation();
@@ -734,8 +757,8 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
             $event.stopPropagation();
             return false;
         };
-        $scope.performSearchNoWatch = function() {
-            cfMessage.send('startReportingMousePointer');
+        $scope.performSearchNoWatch = function($event) {
+            cfMessage.send('startReportingMousePointer', $event.shiftKey ? {delay: true} : undefined);
             var scope = angular.element(document.getElementById('searchResults')).scope();
             if (! scope.searchVisible) {
                 rememberedScrollPositionBeforeSearch = window.scrollY;
@@ -983,7 +1006,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 result = {};
                 result[name] = {};
             }
-            return '\n        ' + JSON.stringify(result) + ',';
+            return '\n        ' + jsStringify(result) + ',';
         };
         $scope.getSuggestForLibBrowser = function(name, full) {
             var displayName = full ? name : $scope.shortName(name);
@@ -1003,7 +1026,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 return setTimeout(initGlobalsScope, 1000);
             }
             scope.updateGlobal = function(name) {
-                var newValue = promptWithJsonWorkaround('Enter new value for [' + name + ']', $scope.workerGlobals[name]);
+                var newValue = promptWithJsonWorkaround('Enter new value for [' + name + ']', 'object' === typeof $scope.workerGlobals[name] ? JSON.stringify($scope.workerGlobals[name]) : $scope.workerGlobals[name]);
                 if (null !== newValue) {
                     $scope.workerGlobals[name] = newValue;
                     cfMessage.send('updateGlobal', {name: name, value: newValue});

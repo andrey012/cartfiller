@@ -8,6 +8,10 @@ define('testSuiteController', ['app', 'scroll'], function(app){
         $location;
         cfDebug;
         $timeout;
+        var useJsInsteadOfJson = false;
+        var getJsOrJsonFileType = function() { 
+            return 'js' + (useJsInsteadOfJson ? '' : 'on');
+        };
 
         if (! cfMessage.testSuite) {
             return;
@@ -21,7 +25,11 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                     data = JSON.stringify(data);
                     return data.substr(1,data.length-2);
                 });
-            return JSON.parse(s);
+            if (useJsInsteadOfJson) {
+                return eval('var json = ' + s + '; json'); // jshint ignore:line
+            } else {
+                return JSON.parse(s);
+            }
         };
         var testsToCheck = [];
         var currentTest = false;
@@ -390,7 +398,8 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             }
         };
         var discoverNextRootURL = function(){
-            $scope.discovery.currentRootFile = $scope.discovery.currentRootPath.replace(/\/$/, '') + '/cartfiller.json?' + (new Date()).getTime();
+            useJsInsteadOfJson = ! useJsInsteadOfJson;
+            $scope.discovery.currentRootFile = $scope.discovery.currentRootPath.replace(/\/$/, '') + '/cartfiller.' + getJsOrJsonFileType() + '?' + (new Date()).getTime();
             $.cartFillerPlugin.ajax({
                 url: $scope.discovery.currentRootFile, 
                 complete: function(xhr) {
@@ -427,12 +436,14 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                             }
                         } else {
                             var pc = $scope.discovery.currentRootPath.split('/');
-                            pc.pop();
+                            if (! useJsInsteadOfJson) {
+                                pc.pop();
+                            }
                             $scope.discovery.visitedRootPaths
                                 .push($scope.discovery.currentRootFile);
                             if (pc.length < 3) {
                                 $scope.discovery.state = -1;
-                                $scope.discovery.error = 'cartfiller.json was not found, visited: ' + $scope.discovery.visitedRootPaths.join(', ');
+                                $scope.discovery.error = 'neither cartfiller.js nor cartfiller.json was not found, visited: ' + $scope.discovery.visitedRootPaths.join(', ');
                                 $scope.discovery.currentRootFile = false;
                                 $scope.discovery.currentRootPath = $scope.params.root ? $scope.params.root : getLocation().split('?')[0].replace(/\/[^\/]*/, '/');
                             } else {
@@ -542,7 +553,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
         var launchScriptDownload = function(index) {
             var suffix; 
             var url;
-            for (suffix = 0; -1 !== getIndexInDownloadsInProgress(url = $scope.discovery.scripts.hrefs[index] =  $scope.discovery.currentRootPath.replace(/\/$/, '') + '/' + $scope.discovery.scripts.flat[index].join('/').replace(/\.json$/, '') + '.json?' + (new Date()).getTime() + suffix, true) ; suffix ++ ){}
+            for (suffix = 0; -1 !== getIndexInDownloadsInProgress(url = $scope.discovery.scripts.hrefs[index] =  $scope.discovery.currentRootPath.replace(/\/$/, '') + '/' + $scope.discovery.scripts.flat[index].join('/').replace(/\.js(on)?$/, '') + '.' + getJsOrJsonFileType() + '?' + (new Date()).getTime() + suffix, true) ; suffix ++ ){}
             (function(index, url) {
                 $scope.downloadsInProgress.push({url: url});
                 $.cartFillerPlugin.ajax({
@@ -708,6 +719,8 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             if ('undefined' === typeof test.globals) {
                 test.globals = {};
             }
+            test.globals._cartFillerInstallationUrl = test.cartFillerInstallationUrl;
+            test.globals._rootCartfillerPath = test.rootCartfillerPath;
             var i;
             if ('object' === typeof $scope.discovery.rootCartfillerJson.globals) {
                 for (i in $scope.discovery.rootCartfillerJson.globals) {
@@ -984,9 +997,9 @@ define('testSuiteController', ['app', 'scroll'], function(app){
         }
         focusOnSearchField();
         $scope.templates = {
-            cartfiller: 'data:application/json;base64,base64-content-of-cartfiller.json-goes-here',
-            test: 'data:application/json;base64,base64-content-of-test.json-goes-here',
-            worker: 'data:application/javascript;base64,base64-content-of-worker.js-goes-here',
+            cartfiller: 'base64-content-of-cartfiller.js-goes-here',
+            test: 'base64-content-of-test.js-goes-here',
+            worker: 'base64-content-of-worker.js-goes-here',
         };
         (function(){
             var base64Pattern = /base64-content-of-([^-]+)-goes-here/;
@@ -995,7 +1008,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                     url: window.location.href.split('#')[0].replace(/\/[^\/]*$/, '/templates/') + base64Pattern.exec($scope.templates[i])[1],
                     complete: function(xhr) {
                         if (xhr.status === 200) {
-                            $scope.templates[i] = $scope.templates[i].replace(base64Pattern, btoa(xhr.responseText));
+                            $scope.templates[i] = $scope.templates[i].replace(base64Pattern, (xhr.responseText));
                             if (angular.element($('#templates')) && angular.element($('#templates')).scope()) {
                                 angular.element($('#templates')).scope().$digest();
                             }
@@ -1041,6 +1054,16 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                 inject: 'script',
                 minified: false,
                 type: 'framed',
+                useSource: cfDebug.useSource
+            }, 
+            {
+                name: 'popup',
+                baseUrl: cfDebug.src,
+                chooseJob: '', 
+                debug: true,
+                inject: 'script',
+                minified: false,
+                type: 'popup',
                 useSource: cfDebug.useSource
             }
         ].map(function(options) {

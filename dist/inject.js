@@ -193,7 +193,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1502233163843';
+    config.gruntBuildTimeStamp='1503150726000';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -551,6 +551,12 @@
             return getElementsBySelectorSecondStepMatch(el, criterion);
         };
     };
+    Selector.prototype.css = function(property, value) {
+        for (var i = 0; i < this.length; i ++) {
+            this[i].style[property] = value;
+        }
+        return this;
+    };
     Selector.prototype.closest = function(selector) {
         var parsed = parseSelector(selector);
         var description = this.description + ' closest(' + selector + ')';
@@ -626,7 +632,7 @@
     Selector.prototype.filter = function(fn) {
         var result = [];
         for (var i = 0; i < this.length; i ++) {
-            if (fn(i, this[i])) {
+            if (fn.apply(getDocument(), [i, this[i]])) {
                 result.push(this[i]);
             }
         }
@@ -770,8 +776,17 @@
                 throw new Error('unknown or invalid criterion type for first step: [' + criterion[0] + ']');
         }
     };
-    var isVisible = function(element) {
-        return (! element) || (! element.style) || (element.style.display !== 'none' && element.style.visibility !== 'hidden' && (element.style.opacity === '' || parseFloat(element.style.opacity) > 0) && isVisible(element.parentNode));
+    var isVisible = function(element, recursive) {
+        if (! element) {
+            return true;
+        }
+        if (! recursive && 'function' === typeof element.getBoundingClientRect) {
+            var rect = element.getBoundingClientRect();
+            if (! (rect.width > 0 && rect.height > 0)) {
+                return false;
+            }
+        }
+        return (! element.style) || (element.style.display !== 'none' && element.style.visibility !== 'hidden' && (element.style.opacity === '' || parseFloat(element.style.opacity) > 0) && isVisible(element.parentNode, true));
     };
     var coundLeftSiblingElements = function(element) {
         for (var i = 0; i < element.parentNode.childElementCount; i ++) {
@@ -1378,7 +1393,7 @@
         clicker: function(whatNext, whatBefore) {
             return [
                 'click', function(el){
-                    if(me.modules.api.debug && (1 || me.modules.api.debug.stop)) {
+                    if(me.modules.api.debug && me.modules.api.debug.stop) {
                         debugger; // jshint ignore:line
                     }
                     if (whatBefore) {
@@ -1414,7 +1429,7 @@
         },
         confirm: function(cb, shouldAgree, expectedMessageOrRegExp, args) {
             // to be done properly
-            if(me.modules.api.debug && (1 || me.modules.api.debug.stop)) {
+            if(me.modules.api.debug && me.modules.api.debug.stop) {
                 debugger; // jshint ignore:line
             }
             var oldConfirm = me.modules.ui.mainFrameWindow.confirm;
@@ -1512,7 +1527,7 @@
                 paste ? 'type key sequence' : 'paste value',
                 function(el) {
                     var args = arguments;
-                    if (me.modules.api.debug && (1 || me.modules.api.debug.stop)) {
+                    if (me.modules.api.debug && me.modules.api.debug.stop) {
                         debugger; // jshint ignore:line
                     }
                     var finish = function() {
@@ -1829,9 +1844,17 @@
             if (url.split('#')[0] === existingUrl) {
                 me.modules.ui.mainFrameWindow.location.reload();
             }
+            return this;
         },
         isRelayRegistered: function(url) {
             return me.modules.dispatcher.isRelayRegistered(url);
+        },
+        getDocument: function() { return getDocument(); },
+        internalDebugger: function() { 
+            if(this.debug && this.debug.stop) {
+                debugger;  // jshint ignore:line
+            }
+            return this;
         }
     });
 }).call(this, document, window);
@@ -2031,24 +2054,6 @@
         }
         throw new Error('step not found: [' + name + ']');
     };
-    var wrapSelectorBuilderPromise = function(arr) {
-        // tbd this should happen at runtime, since 
-        // promise after libs 
-        if (arr.length === 1) {
-            if (arr[0][0] !== 'get') {
-                throw new Error('only get is allowed as first step of selector promise, we have [' + arr[0][0] + '] instead');
-            }
-            return function(){ return api('find', arr[0][1]); };
-        } else {
-            var prev = arr.slice();
-            var step = prev.pop();
-            var prevBuilderPromise = wrapSelectorBuilderPromise(prev);
-            return function(){
-                var prevResult = prevBuilderPromise();
-                return prevResult[step[0]].apply(prevResult, step[1]);
-            };
-        }
-    };
     var onLoaded = function() {
         Runtime = function() {
 
@@ -2067,11 +2072,43 @@
             this.unexportedTasks = {};
             var wrapper = this;
             this.runtime = new Runtime();
+            var LibReferencePromise = this.LibReferencePromise = function(name) {
+                this.name = name;
+            };
             var BuilderPromise = this.BuilderPromise = function(method, args, prev) {
                 this.arr = ((prev.length === 1 && prev[0][0] === '') ? [] : prev.slice()).concat(method ? [[method, args]] : []);
                 var taskNames = prev.filter(function(v) { return v[0] === 'task'; });
                 if (taskNames.length) {
                     wrapper.unexportedTasks[taskNames[taskNames.length - 1][1][0]] = this.arr;
+                }
+            };
+            var decodeLibReferences = function(arr) {
+                if (arr[0][0] === 'get' && arr[0][1][0] instanceof LibReferencePromise) {
+                    return wrapper.lib[arr[0][1][0].name].arr.concat(arr.slice(1));
+                } else if (arr[0][0] === 'lib' || arr[0][0] === 'getlib') {
+                    return wrapper.lib[arr[0][1][0]].arr.concat(arr.slice(1));
+                }
+                return arr;
+            };
+            var wrapSelectorBuilderPromise = function(arr) {
+                arr = decodeLibReferences(arr);
+                if (arr.length === 1) {
+                    if (arr[0][0] !== 'get') {
+                        throw new Error('only get is allowed as first step of selector promise, we have [' + arr[0][0] + '] instead');
+                    }
+                    if (arr[0][1][0] instanceof BuilderPromise) {
+                        return wrapSelectorBuilderPromise(arr[0][1][0].arr);
+                    } else {
+                        return function(){ return api('find', arr[0][1]); };
+                    }
+                } else {
+                    var prev = arr.slice();
+                    var step = prev.pop();
+                    var prevBuilderPromise = wrapSelectorBuilderPromise(prev);
+                    return function(){
+                        var prevResult = prevBuilderPromise();
+                        return prevResult[step[0]].apply(prevResult, step[1]);
+                    };
                 }
             };
             BuilderPromise.prototype = Object.create({});
@@ -2182,10 +2219,18 @@
                 this.namedResults = {};
             };
             Builder.prototype = Object.create({});
+            Builder.prototype.getlib = function(args) {
+                return ['get' + niceArgs(args), function() {
+                    if(me.modules.api.debug && me.modules.api.debug.stop) {
+                        debugger; // jshint ignore:line
+                    }
+                    wrapSelectorBuilderPromise(wrapper.lib[args[0]].arr)().arrow(1).result(); 
+                }];
+            };
             Builder.prototype.get = function(args) {
                 if (args[0] instanceof BuilderPromise) {
                     return ['get' + niceArgs(args), function() {
-                        if(me.modules.api.debug && (1 || me.modules.api.debug.stop)) {
+                        if(me.modules.api.debug && me.modules.api.debug.stop) {
                             debugger; // jshint ignore:line
                         }
                         if (args[0].arr[0][0] === 'lib') {
@@ -2194,9 +2239,16 @@
                             wrapSelectorBuilderPromise(args[0].arr)().arrow(1).result(); 
                         }
                     }];
+                } else if (args[0] instanceof LibReferencePromise) {
+                    return ['get' + niceArgs(args), function() {
+                        if(me.modules.api.debug && me.modules.api.debug.stop) {
+                            debugger; // jshint ignore:line
+                        }
+                        wrapSelectorBuilderPromise(wrapper.lib[args[0].name].arr)().arrow(1).result(); 
+                    }];
                 } else {
                     return ['get' + niceArgs(args), function() { 
-                        if(me.modules.api.debug && (1 || me.modules.api.debug.stop)) {
+                        if(me.modules.api.debug && me.modules.api.debug.stop) {
                             debugger; // jshint ignore:line
                         }
                         api('find', args).arrow(1).result(); 
@@ -2224,7 +2276,7 @@
                     if (name === 'exists') {
                         return [name + niceArgs(args), function(p) {
                             api('waitFor', [function() {
-                                if(me.modules.api.debug && (1 || me.modules.api.debug.stop)) {
+                                if(me.modules.api.debug && me.modules.api.debug.stop) {
                                     debugger; // jshint ignore:line
                                 }
                                 p.reevaluate(); 
@@ -2236,7 +2288,7 @@
                     } else if (name === 'absent') {
                         return [name + niceArgs(args), function(p) {
                             api('waitFor', [function() { 
-                                if(me.modules.api.debug && (1 || me.modules.api.debug.stop)) {
+                                if(me.modules.api.debug && me.modules.api.debug.stop) {
                                     debugger; // jshint ignore:line
                                 }
                                 p.reevaluate();
@@ -2247,7 +2299,7 @@
                         }];
                     } else {
                         return [name + niceArgs(args), function(p) {
-                            if(me.modules.api.debug && (1 || me.modules.api.debug.stop)) {
+                            if(me.modules.api.debug && me.modules.api.debug.stop) {
                                 debugger; // jshint ignore:line
                             }
                             var s = p[name].apply(p, args);
@@ -2285,13 +2337,20 @@
             Builder.prototype.click = function(args) {
                 return api('clicker', args);
             };
+            Builder.prototype.ready = function() {
+                return ['wait for readyState become complete', function() {
+                    api('waitFor', [function() {
+                        return api('getDocument').readyState === 'complete';
+                    }]);
+                }];
+            };
             Builder.prototype.type = function(args) {
                 return api('typer', args);
             };
             Builder.prototype.then = function(args) {
-                return ['then(' +niceArgs(args) + ')', function() {
+                return ['then(' +niceArgs(args) + ')', me.modules.dispatcher.injectTaskParameters(function() {
                     args[0].apply(this, arguments);
-                }];
+                }, args)];
             };
             Builder.prototype.onload = function(args) {
                 return ['onload(' +niceArgs(args) + ')', function() {
@@ -2335,15 +2394,23 @@
                 return args[0] ? [] : this.use(args.slice(1));
             };
             Builder.prototype.name = function() { return []; };
-            var generateIfOrIfNotSteps = function(args, builder, ifNot) {
+            var generateIfOrIfNotSteps = function(args, builder, ifNot, isWhile) {
                 var condition = args[0];
                 var action = args[1];
                 var actionSteps = builder.build(action.arr);
+                var actionStepsLen = actionSteps.length / 2;
+                if (isWhile) {
+                    actionStepsLen ++;
+                    actionSteps.push('repeat', function() {
+                        api('repeatStep', [actionStepsLen + 1]);
+                        api('result');
+                    });
+                }
                 var booleanBuilderPromise = makeBooleanBuilderPromise(condition);
                 return ['if' + (ifNot ? 'Not' : '') + niceArgs([condition]), function() {
                     var result = booleanBuilderPromise();
                     if ((! ifNot && ! result) || (ifNot && result)) {
-                        api('skipStep', [actionSteps.length / 2]);
+                        api('skipStep', [actionStepsLen]);
                     }
                     api('result');
                 }].concat(actionSteps);
@@ -2353,6 +2420,12 @@
             };
             Builder.prototype.ifNot = function(args) { 
                 return generateIfOrIfNotSteps(args, this, true);
+            };
+            Builder.prototype.while = function(args) { 
+                return generateIfOrIfNotSteps(args, this, false, true);
+            };
+            Builder.prototype.whileNot = function(args) { 
+                return generateIfOrIfNotSteps(args, this, true, true);
             };
             Builder.prototype.task = function() {
                 // just declare task name
@@ -2413,7 +2486,7 @@
                 } else if (this.lib[name] instanceof this.BuilderPromise) {
                     return this.lib[name];
                 } else {
-                    throw new Error('not sure how to handle lib item: ' + JSON.stringify(this.lib[name]));
+                    return new this.LibReferencePromise(name);
                 }
             } else {
                 // proxy
@@ -2488,19 +2561,21 @@
         var task = workerCurrentTask;
         var api = me.modules.api;
         var getStack = function() {
-            return (workerGlobals['`foreach stack'] || '').split('|');
+            return (workerGlobals['_foreach stack'] || '').split('|');
         };
         var setStack = function(pc) {
-            workerGlobals['`foreach stack'] = pc.join('|');
+            workerGlobals['_foreach stack'] = pc.join('|');
         };
         worker = {
-            '=set': ['set [ref] to [value]', function() { task.ref = task.value; api.result(); }],
-            '=loop': ['check [ref] against [value]', function() { if (parseInt(task.ref) < parseInt(task.value)) { api.repeatTask(task.tasks); } api.result();}],
-            '=inc': ['inc [ref]', function() { task.ref = parseInt(task.ref) + 1; api.result(); }],
-            '=assertEquals': ['assert that [ref] is equals to [value]', function() { api.result(api.compare(task.value, task.ref)); }],
-            '=wait': ['wait for tasks to be added', function() { api.repeatTask().setTimeout(api.result, 1000);}],
-            '=foreach': [
+            '_set': ['set [ref] to [value]', function() { api.internalDebugger(); task.ref = task.value; api.result(); }],
+            '_loop': ['check [ref] against [value]', function() { api.internalDebugger(); if (parseInt(task.ref) < parseInt(task.value)) { api.repeatTask(task.tasks); } api.result();}],
+            '_inc': ['inc [ref]', function() { api.internalDebugger(); task.ref = parseInt(task.ref) + 1; api.result(); }],
+            '_assertEquals': ['assert that [ref] is equals to [value]', function() { api.internalDebugger().result(api.compare(task.value, task.ref)); }],
+            '_wait': ['wait for tasks to be added', function() { api.internalDebugger().repeatTask().setTimeout(api.result, 1000);}],
+            '_say': ['say some static message', function() { api.internalDebugger().say(task.message).result(); }],
+            '_foreach': [
                 'check whether we are looping', function() {
+                    api.internalDebugger();
                     var pc = getStack(), myIndex = -1, myStack = '', index = 0;
                     pc.filter(function(v, k) {
                         if (parseInt(v.split(':')[0]) === api.env.taskIndex) {
@@ -2521,6 +2596,7 @@
                     setStack(pc);
                     api.nop();
                 }, 'initialize values', function() {
+                    api.internalDebugger();
                     var pc = getStack();
                     var recent = pc.pop();
                     var ppc = recent.split(':');
@@ -2542,8 +2618,9 @@
                     api.nop();
                 }
             ],
-            '=endforeach':[
+            '_endforeach':[
                 'loop', function() {
+                    api.internalDebugger();
                     var pc = getStack();
                     var recent = pc.pop();
                     var ppc = recent.split(':');
@@ -3063,7 +3140,7 @@
     var decodeAlias = function(value, returnRefKey) {
         var result;
         if ('string' === typeof value) {
-            result = returnRefKey ? value : (value === '=random' ? (String(new Date().getTime()) + String(Math.floor(1000 * Math.random()))) : workerGlobals[value]);
+            result = returnRefKey ? value : (value === '_random' ? (String(new Date().getTime()) + String(Math.floor(1000 * Math.random()))) : workerGlobals[value]);
             return result;
         } else {
             if (1 === value.length) {
@@ -3252,7 +3329,9 @@
                 apiIsThere = true;
             }
             if (apiIsThere) {
-                return fn + ' if(api.debug && (1 || api.debug.stop)) debugger; ';
+                // it was return fn + ' if(api.debug && (1 || api.debug.stop)) debugger; ';
+                // but I don't like this behaviour
+                return fn + ' if(api.debug && api.debug.stop) debugger; ';
             } else {
                 return match;
             }
@@ -4054,8 +4133,14 @@
          * @function CartFiller.Dispatcher#onMessage_startReportingMousePointer
          * @access public
          */
-        onMessage_startReportingMousePointer: function() {
-            me.modules.ui.startReportingMousePointer();
+        onMessage_startReportingMousePointer: function(details) {
+            if (details.delay) {
+                setTimeout(function(){
+                    me.modules.ui.startReportingMousePointer();
+                }, 2000);
+            } else {
+                me.modules.ui.startReportingMousePointer();
+            }
         },
         /** 
          * Tries to find all elements that match specified CSS selector and 
@@ -4962,6 +5047,17 @@
         },
         getFrameWindowIndex: function(){ return relay.currentMainFrameWindow; },
         discoverTaskParameters: function(fn, params) { return discoverTaskParameters(fn, params); },
+        injectTaskParameters: function(fn, src) {
+            var params = {};
+            (src instanceof Array ? src : [src]).filter(function(src) {
+                me.modules.dispatcher.discoverTaskParameters(src, params);
+            });
+            fn.cartFillerParameterList = fn.cartFillerParameterList || [];
+            for (var i in params) {
+                fn.cartFillerParameterList.push(i);
+            }
+            return fn;
+        },
         recursivelyCollectSteps: function(source, taskSteps) {
             return recursivelyCollectSteps(source, taskSteps);
         },
@@ -6350,7 +6446,9 @@
                     x = event.clientX;
                     y = event.clientY;
                 },false);
-                div.addEventListener('click', function() {
+                div.addEventListener('click', function(event) {
+                    x = x || event.clientX;
+                    y = y || event.clientY;
                     document.getElementsByTagName('body')[0].removeChild(reportMousePointer);
                     var windowIndex;
                     var frame = window.document.elementFromPoint(x,y);

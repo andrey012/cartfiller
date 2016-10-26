@@ -26,6 +26,7 @@
         #workerContainer {word-break: break-all;}
         #testsearch { margin-right: -20px; }
         #tasksearch { margin-right: -20px; }
+        #templates input, #templates textarea { width: 100%; }
     </style>
 </head>
 <body data-cartfiller-is-here="1">
@@ -79,16 +80,25 @@
             <table class="table">
                 <tbody>
                     <tr>
-                        <th>Editor mode</th>
+                        <td colspan="2"><h3>Configuration</h3></td>
+                    </tr>
+                    <tr>
+                        <td colspan="2"><strong>Important: whenever you change any of these values, refresh whole page to make your changes take effect</strong></td>
+                    </tr>
+                    <tr>
+                        <th>Editor mode (code hotswap)</th>
                         <td><input type="checkbox" ng-model="params.editor" ng-change="updateParams()"/></td>
                     </tr>
                     <tr>
-                        <th>Cartfiler.json root</th>
+                        <th>cartfiler.js root</th>
                         <td><input type="text" ng-model="params.root" ng-change="updateParams()"/></td>
                     </tr>
                     <tr ng-repeat="(key, value) in discovery.rootCartfillerJson.globals">
                         <th>{{key}}</th>
                         <td><input type="text" ng-model="params.globals[key]" ng-change="updateParams()"/></td>
+                    </tr>
+                    <tr>
+                        <td colspan="2"><h3>Some useful stuff</h3></td>
                     </tr>
                     <tr>
                         <th>Bookmarklets</th>
@@ -101,9 +111,12 @@
                     <tr id="templates" ng-repeat="dummy in [0]">
                         <th>Templates</th>
                         <td>
-                            <a download="cartfiller.json" class="template-link" href="{{templates.cartfiller}}">cartfiller.json</a>,
-                            <a download="test.json" class="template-link" href="{{templates.test}}">test.json</a>,
-                            <a target="_blank" class="template-link" href="{{templates.worker}}">worker.js</a>
+                            <input type="text" readonly onclick="this.select();" value="cartfiller.js"/><br/>
+                            <textarea readonly onclick="this.select();">{{templates.cartfiller}}</textarea><br/><br/>
+                            <input type="text" readonly onclick="this.select();" value="test.js"/><br/>
+                            <textarea readonly onclick="this.select();">{{templates.test}}</textarea><br/><br/>
+                            <input type="text" readonly onclick="this.select();" value="worker.js"/><br/>
+                            <textarea readonly onclick="this.select();">{{templates.worker}}</textarea><br/><br/>
                         </td>
                     </tr>
                 </tbody>
@@ -254,7 +267,7 @@
             </div>
             <div ng-if="debugEnabled" style="text-align: left;">
                 <a class="btn btn-xs btn-success" onclick="var event = arguments[0] || window.event; return angular.element(this).scope().refreshPageNoWatch(event);" href="#" title="Refresh page in the main frame">Refresh</a>
-                <a id="searchButton" class="btn btn-xs btn-success" onclick="return angular.element(this).scope().performSearchNoWatch();" title="Show DOM path for an element and build jQuery selector">Search</a>
+                <a id="searchButton" class="btn btn-xs btn-success" onclick="var event = arguments[0] || window.event; return angular.element(this).scope().performSearchNoWatch(event);" title="Show DOM path for an element and build jQuery selector">Search</a>
                 <a id="suggestButton" class="btn btn-xs btn-success" onclick="return angular.element(this).scope().suggestTaskNameNoWatch();" title="Search for task name from worker">Suggest</a>
                 <a id="libButton" class="btn btn-xs btn-success" onclick="return angular.element(this).scope().browseLibNoWatch();" title="Search for step builders and helpers">Lib</a>
                 <div id="searchResults" ng-repeat="dummy in [0]">
@@ -383,7 +396,7 @@
             </div>
         </div>
         <div id="jobDetails">
-            <a class="btn btn-info btn-xs" style="width: 100%; margin-top: 120px; margin-bottom: 5px;" onclick="alert('Long click on step = debug (debugger window should be open, once in debugger - do \'step into\' until you are in your worker code), double click on task property or global value = change property value, double click on pause = set pause here and run. Grayed step buttons mean, that this step depends on previous step, and will most likely fail if launched out of a sequence.');">help</a>
+            <a class="btn btn-info btn-xs" style="width: 100%; margin-top: 120px; margin-bottom: 5px;" onclick="alert('* shift+click on a step = debug (browser debugger window should be open, be aware, that some steps are purely declarative, when being debugged - you will find yourself deep in cartfiller code)\r\n* double click on task property or global value = change property value, double click on pause = set pause here and run\r\n* grayed step buttons mean, that this step depends on previous step, and will most likely fail if launched out of a sequence.\r\n* shift+click on search button makes 2 second delay before overlapping target frame with mouse capturing div');">help</a>
             <h3 ng-if="jobTitle">
                 {{jobTitle.substr(0,128)}}
             </h3>
@@ -401,7 +414,7 @@
                     <span>{{jobTitleMap[propertyName] ? jobTitleMap[propertyName] : propertyName}}:</span>
                     <span><strong>{{getPropertyValue(propertyValue)}}</strong></span></span>
                 <div>
-                    <textarea id="{{'template_' + jobTaskIndex}}" readonly onclick="select(this);" ng-if="jobTask.task && noTaskSteps(jobTask.task)" rows="6" style="width: 100%;">{{',\n            \'' + jobTask.task + '\': [\n                \'wait for steps to be added here\', function() { api.repeatStep().setTimeout(api.result, 1000); }\n            ]\n'}}</textarea>
+                    <textarea id="{{'template_' + jobTaskIndex}}" readonly onclick="select(this);" ng-if="jobTask.task && noTaskSteps(jobTask.task)" rows="6" style="width: 100%;">{{'\n        cf.task(\'' + jobTask.task + '\')\n            '}}</textarea>
                     <span
                        ng-repeat="(jobTaskStepIndex, jobTaskStep) in jobTaskDescriptions[jobTask.task] track by $index"
                     >

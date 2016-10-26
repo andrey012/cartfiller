@@ -33,8 +33,8 @@ module.exports = function(grunt) {
                 '<script src="scripts-for-local' + (uncompressed ? '' : '.min') + '.js?__inline=true">')
             .replace(base64Pattern, base64Callback)
             .replace(
-                'href="data:application/json;base64,test.json"',
-                'href="data:application/json;base64,' + (new Buffer(grunt.file.read('src/templates/test.json'))).toString('base64') + '"')
+                'href="data:application/json;base64,test.js"',
+                'href="data:application/json;base64,' + (new Buffer(grunt.file.read('src/templates/test.js'))).toString('base64') + '"')
             .replace(
                 'href="data:application/javascript;base64,worker.js"',
                 'href="data:application/javascript;base64,' + (new Buffer(grunt.file.read('src/templates/worker.js'))).toString('base64') + '"')
@@ -220,7 +220,7 @@ module.exports = function(grunt) {
 		jshint: {
 			files: ["src/**/*.js"],
 			options: {
-				ignores: ["src/templates/worker.js"],
+				ignores: ["src/templates/*.js"],
 				jshintrc: ".jshintrc"
 			}
 		},

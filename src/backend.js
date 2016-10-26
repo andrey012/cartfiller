@@ -1,7 +1,7 @@
 'use strict';
 var argv = require('yargs')
     .help('help')
-    .usage('Usage: $0 [options] <cartFiller url> [test file(s) or path(s)]\n<testsuite url> is the URL where cartFiller is installed inside your project, it should end with .../dist/ or .../src/ if you are going to debug cartFiller. Note, that if --serve-http is used then port will be automatically added to this url.')
+    .usage('\nUsage: $0 [options] <cartFiller url> [test file(s) or path(s)]\n\n        <cartFiller url> is the URL where cartFiller is installed inside your project, it should normally end with .../dist/index.html, e.g.\n\n            nodejs src/backend.js \\\n            http://localhost/myProject/tests/cartfiller/dist/index.html\n\n        You can specify - as cartfiller url in order to run just a plain http server. E.g.\n\n            nodejs src/backend.js \\\n            --serve-http=/var/www/html --serve-http-port=8080 -\n\n        Note, that if --serve-http is used then port specified by --serve-http-port will be automatically added to the <cartFiller url>. For example if you launch\n\n            nodejs src/backend.js \\\n            --serve-http=/var/www/html --serve-http-port=8080\\\n            http://localhost/myProject/tests/cartfiller/dist/index.html\n\n        then following url will be opened in browser:\n\n            http://localhost:8080/myProject/tests/cartfiller/dist/index.html')
     .demand(1, 'Please specify testsuite URL')
     .describe('suite', 'testsuite name to run, default = root testsuite (all tests)')
     .alias('s', 'suite')
@@ -34,6 +34,7 @@ var argv = require('yargs')
     .describe('debug-frame-folder', 'Save captured video frames to this folder')
     .argv;
 var express = require('express');
+var serveIndex = require('serve-index');
 var open = require('open');
 var app = express();
 var serveHttpApp = express();
@@ -58,7 +59,6 @@ var stats = {
 };
 
 var timeout = argv.timeout ? (argv.timeout * 1000) : 60000;
-console.log('timeout set to ' + (timeout / 1000) + ' seconds');
 
 var sessionKey = crypto.randomBytes(20).toString('hex');
 var failures = [];
@@ -314,17 +314,30 @@ var tearDownFn = function(code) {
     waterfall[0]();
 };
 
-
-setInterval(function() {
-    if (pulseTime < ((new Date()).getTime() - timeout)) {
-        console.log('exitting with code 1 because there was no activity over recent ' + (timeout / 1000 ) + ' seconds');
-        if (childApp) {
-            childApp.kill();
-        }
-        tearDownFn(1);
+var testUrl = argv._[0];
+var onlyServeHttp = testUrl === '-';
+if (onlyServeHttp) {
+    if (! argv['serve-http']) {
+        argv['serve-http'] = '.';
     }
-}, 1000);
+    console.log('running in dumb http server mode, serving [' + argv['serve-http'] + '] on port ' + serveHttpPort);
+    testUrl = 'http://localhost/';
+}
 
+if (! onlyServeHttp) {
+    console.log('watchdog timeout set to ' + (timeout / 1000) + ' seconds');
+    setInterval(function() {
+        if (pulseTime < ((new Date()).getTime() - timeout)) {
+            console.log('exitting with code 1 because there was no activity over recent ' + (timeout / 1000 ) + ' seconds');
+            if (childApp) {
+                childApp.kill();
+            }
+            tearDownFn(1);
+        }
+    }, 1000);
+} else {
+    console.log('skipping watchdog, because of dumb http mode');
+}
 
 app.get('/finish/' + sessionKey, function (req, res) {
     pulseTime = (new Date()).getTime();
@@ -365,31 +378,37 @@ var childApp = false;
 var phantomJsStdoutBuffer = '';
 
 var startup = [];
-var testUrl = argv._[0];
 
 startup.push(function() {
-    server = http.createServer(app);
-    server
-        .listen(port, '0.0.0.0', function(err){
-            if (! err) {
-                console.log('Launched successfully on port ' + port);
-                startup.shift();
-                startup[0]();
-            }
-        })
-        .on('error', function() {
-            console.log('No luck with port ' + port + ' going to try ' + (port + 1));
-            port ++;
-            if (port >= 65535) {
-                console.log('no more chances, exitting');
-            } else {
-                startup[0]();
-            }
-        });
+    if (onlyServeHttp) {
+        console.log('skipping test runner http server startup');
+        startup.shift();
+        startup[0]();
+    } else {
+        server = http.createServer(app);
+        server
+            .listen(port, '0.0.0.0', function(err){
+                if (! err) {
+                    console.log('Launched successfully on port ' + port);
+                    startup.shift();
+                    startup[0]();
+                }
+            })
+            .on('error', function() {
+                console.log('No luck with port ' + port + ' going to try ' + (port + 1));
+                port ++;
+                if (port >= 65535) {
+                    console.log('no more chances, exitting');
+                } else {
+                    startup[0]();
+                }
+            });
+    }
 });
 
 if (argv['serve-http']) {
     serveHttpApp.use(express.static(argv['serve-http']));
+    serveHttpApp.use(serveIndex(argv['serve-http']));
     startup.push(function() {
         serveHttpServer = http.createServer(serveHttpApp);
         serveHttpServer
@@ -498,13 +517,15 @@ startup.push(function() {
     if (wait) {
         args.push('wait=' + wait);
     }
-    var hash = testUrl.split('#')[1];
-    testUrl = testUrl.split('#')[0];
-    testUrl = -1 === testUrl.indexOf('?') ? (testUrl + '?' + (new Date()).getTime()) : (testUrl.replace('?', '?' + (new Date()).getTime() + '&'));
-    if (undefined !== hash) {
-        testUrl += '#' + hash;
+    if (! onlyServeHttp) {
+        var hash = testUrl.split('#')[1];
+        testUrl = testUrl.split('#')[0];
+        testUrl = -1 === testUrl.indexOf('?') ? (testUrl + '?' + (new Date()).getTime()) : (testUrl.replace('?', '?' + (new Date()).getTime() + '&'));
+        if (undefined !== hash) {
+            testUrl += '#' + hash;
+        }
+        testUrl = testUrl + (-1 === testUrl.indexOf('#') ? '#' : '&') + args.join('&');
     }
-    testUrl = testUrl + (-1 === testUrl.indexOf('#') ? '#' : '&') + args.join('&');
     if (isPhantomJs) {
         var childArgs;
         childArgs = ['--web-security=false'];

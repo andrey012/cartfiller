@@ -299,6 +299,12 @@
             return getElementsBySelectorSecondStepMatch(el, criterion);
         };
     };
+    Selector.prototype.css = function(property, value) {
+        for (var i = 0; i < this.length; i ++) {
+            this[i].style[property] = value;
+        }
+        return this;
+    };
     Selector.prototype.closest = function(selector) {
         var parsed = parseSelector(selector);
         var description = this.description + ' closest(' + selector + ')';
@@ -374,7 +380,7 @@
     Selector.prototype.filter = function(fn) {
         var result = [];
         for (var i = 0; i < this.length; i ++) {
-            if (fn(i, this[i])) {
+            if (fn.apply(getDocument(), [i, this[i]])) {
                 result.push(this[i]);
             }
         }
@@ -518,8 +524,17 @@
                 throw new Error('unknown or invalid criterion type for first step: [' + criterion[0] + ']');
         }
     };
-    var isVisible = function(element) {
-        return (! element) || (! element.style) || (element.style.display !== 'none' && element.style.visibility !== 'hidden' && (element.style.opacity === '' || parseFloat(element.style.opacity) > 0) && isVisible(element.parentNode));
+    var isVisible = function(element, recursive) {
+        if (! element) {
+            return true;
+        }
+        if (! recursive && 'function' === typeof element.getBoundingClientRect) {
+            var rect = element.getBoundingClientRect();
+            if (! (rect.width > 0 && rect.height > 0)) {
+                return false;
+            }
+        }
+        return (! element.style) || (element.style.display !== 'none' && element.style.visibility !== 'hidden' && (element.style.opacity === '' || parseFloat(element.style.opacity) > 0) && isVisible(element.parentNode, true));
     };
     var coundLeftSiblingElements = function(element) {
         for (var i = 0; i < element.parentNode.childElementCount; i ++) {
@@ -1126,7 +1141,7 @@
         clicker: function(whatNext, whatBefore) {
             return [
                 'click', function(el){
-                    if(me.modules.api.debug && (1 || me.modules.api.debug.stop)) {
+                    if(me.modules.api.debug && me.modules.api.debug.stop) {
                         debugger; // jshint ignore:line
                     }
                     if (whatBefore) {
@@ -1162,7 +1177,7 @@
         },
         confirm: function(cb, shouldAgree, expectedMessageOrRegExp, args) {
             // to be done properly
-            if(me.modules.api.debug && (1 || me.modules.api.debug.stop)) {
+            if(me.modules.api.debug && me.modules.api.debug.stop) {
                 debugger; // jshint ignore:line
             }
             var oldConfirm = me.modules.ui.mainFrameWindow.confirm;
@@ -1260,7 +1275,7 @@
                 paste ? 'type key sequence' : 'paste value',
                 function(el) {
                     var args = arguments;
-                    if (me.modules.api.debug && (1 || me.modules.api.debug.stop)) {
+                    if (me.modules.api.debug && me.modules.api.debug.stop) {
                         debugger; // jshint ignore:line
                     }
                     var finish = function() {
@@ -1577,9 +1592,17 @@
             if (url.split('#')[0] === existingUrl) {
                 me.modules.ui.mainFrameWindow.location.reload();
             }
+            return this;
         },
         isRelayRegistered: function(url) {
             return me.modules.dispatcher.isRelayRegistered(url);
+        },
+        getDocument: function() { return getDocument(); },
+        internalDebugger: function() { 
+            if(this.debug && this.debug.stop) {
+                debugger;  // jshint ignore:line
+            }
+            return this;
         }
     });
 }).call(this, document, window);

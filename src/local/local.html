@@ -2,6 +2,9 @@
 <html>
     <head>
         <meta charset="utf-8"/>
+        <style type="text/css">
+            .templates input, .templates textarea { width: 100%; }
+        </style>
     </head>
     <body>
         <h1>
@@ -47,7 +50,16 @@
             </table>
         </div>
         <p>
-            Some template files: <a download="cartfiller.json" href="data:application/json;base64,base64-content-of-cartfiller.json-goes-here">cartfiller.json</a>, <a download="test.json" href="data:application/json;base64,base64-content-of-test.json-goes-here">test.json</a>, <a target="_blank" href="data:application/javascript;base64,base64-content-of-worker.js-goes-here">worker.js</a>
+            Some template files: 
+        </p>
+        <p class="templates">
+            <input type="text" onclick="this.select();" readonly value="cartfiller.js"/><br/>
+            <textarea id="cartfiller.js-template" readonly onclick="this.select();"></textarea><br/><br/>
+            <input type="text" onclick="this.select();" readonly value="test.js"/><br/>
+            <textarea id="test.js-template" readonly onclick="this.select();"></textarea><br/><br/>
+            <input type="text" onclick="this.select();" readonly value="worker.js"/><br/>
+            <textarea id="worker.js-template" readonly onclick="this.select();"></textarea><br/>
+        </p>
         <p>
             This file is designed to be opened from local filesystem, e.g. file:///home/user/cartfiller/local/index.html.</p>
         <p>
@@ -117,7 +129,6 @@
                 };
                 window.addEventListener('error', function(event) {
                     alert('Error loading file, see debugger console for details');
-                    debugger;
                     parent.postMessage('cartFillerFilePopupData:', '*');
                 });
                 window.addEventListener('message', function(event) {
@@ -248,6 +259,9 @@
                     a.readAsDataURL(blob);
                     return false;
                 }
+                document.getElementById('cartfiller.js-template').value = atob('base64-content-of-cartfiller.js-goes-here');
+                document.getElementById('test.js-template').value = atob('base64-content-of-test.js-goes-here');
+                document.getElementById('worker.js-template').value = atob('base64-content-of-worker.js-goes-here');
             })();
         </script>
         <script src="../../lib/requirejs/require.js"></script>
