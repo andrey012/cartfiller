@@ -4,36 +4,51 @@
  */
 (function(window, document, undefined){
     cartFillerAPI().registerWorker(function(window, document, api, task, job, globals, lib, cf){
+        /* basic entities: 
+         * cf.task - define a task (list of steps)
+         *   -> cf.use - use task
+         * cf.lib - define helper function
+         *   -> lib - use result of helper
+         * cf.generator - define task builder (function with parameters that builds list of steps)
+         *   -> cf.use - call generator and use generated steps
+         * 
+         * selectors
+         * cf.get -- start selecting
+         * .find, .closest, .parent, .filter
+         * 
+         * actions on selectors
+         * .exists, .absent, .type, .click, .paste
+         * 
+         * actions that do not need selectors
+         * .wait
+         * .onload
+         */
         cf
         .task('declarativeClearCart')
-        .lib('cartTitle', cf
-            .get('h2:visible')
-            .filter(function(i,el){ return api.compareCleanText("Your cart", el.textContent);})
+        .use(cf.task('declarativeOpenCart')
+            .ifNot(
+                lib(cf.lib('cartTitle', 
+                    cf.get('h2:visible')
+                    .filter(function(i,el){ return api.compareCleanText("Your cart", el.textContent);})
+                )).exists(), 
+                cf.get(cf.lib('openCartLink', cf
+                    .get('a:visible')
+                    .filter(function(i,el){ return api.compareCleanText("Open Cart", el.textContent);})
+                ))
+                .click()
+                .get(lib(cf.lib('removeAllItemsButton', cf
+                    .get('a:visible')
+                    .filter(function(i,el){ return api.compareCleanText("Remove all items", el.textContent);})
+                ))).exists()
+            )
+            .get('div#container:visible').find('table:visible').find('thead:visible').find('tr:visible th:visible').filter(function(i,el){ return api.compareCleanText("Total", el.textContent);}).exists()
+            .get(lib('cartTitle')).exists()
+            .share('declarativeOpenCartShare')
         )
-        .if(lib('cartTitle').exists(), cf.skipStep('wait for remove all items button to appear'))
-        .lib('openCartLink', cf
-            .get('a:visible')
-            .filter(function(i,el){ return api.compareCleanText("Open Cart", el.textContent);})
+        .use(cf.task('declarative - exported since - only Remove All Items button')
+            .get(lib('removeAllItemsButton'))
+            .click()
         )
-        .then(function(){
-            lib('openCartLink').exists();
-        })
-        .get(lib('openCartLink'))
-        .click()
-        .lib('removeAllItemsButton', cf
-            .get('a:visible')
-            .filter(function(i,el){ return api.compareCleanText("Remove all items", el.textContent);})
-        )
-        .name('wait for remove all items button to appear').waitFor(lib('removeAllItemsButton').exists())
-        .get(lib('cartTitle')).exists()
-        .share('declarativeOpenCartShare')
-        .export('declarativeOpenCart')
-
-        .name('find remove all items button')
-        .get(lib('removeAllItemsButton'))
-        .click()
-        .export()
-        .since('find remove all items button').export('declarative - exported since - only Remove All Items button')
          
         cf
         .task('declarativeClearCart2')

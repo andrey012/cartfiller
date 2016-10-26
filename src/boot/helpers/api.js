@@ -253,7 +253,8 @@
         var equals = expression.substr(name.length, expression.length - name.length - value.length);
         return {attribute: name, equals: equals, value: value.substr(1, value.length - 2)};
     };
-    var Selector = function(elementList, description) {
+    var Selector = function(elementList, description, self) {
+        this.self = self;
         if (elementList) {
             this.length = elementList.length;
             this.description = description || ('[' + elementList.length + ']');
@@ -269,10 +270,10 @@
     Selector.prototype.find = function(selector) {
         if ('object' === typeof selector) {
             if (selector.nodeName) {
-                return new Selector([selector], this.description + ' [' + selector.nodeName + ']');
+                return new Selector([selector], this.description + ' [' + selector.nodeName + ']', [this, 'find', selector]);
             } 
             if (selector.hasOwnProperty('length')) {
-                return new Selector(selector);
+                return new Selector(selector, undefined, [this, 'find', selector]);
             }
         }
         var match = selectorStepPattern.exec(selector.trim());
@@ -283,13 +284,15 @@
         var remainder = match[13];
         var firstResult = new Selector([], this.description + ' ' + firstSelector);
         this.each(function(i,e) {
-            firstResult.add(getElementsBySelector(e, firstSelector));
+            firstResult = firstResult.add(getElementsBySelector(e, firstSelector));
         });
+        var finalResult;
         if (remainder) {
-            return firstResult.find(remainder);
+            finalResult = firstResult.find(remainder);
         } else {
-            return firstResult;
+            finalResult = firstResult;
         }
+        return new Selector(finalResult, this.description + ' ' + selector, [this, 'find', selector]);
     };
     var getElementsBySelectorSecondStepFilter = function(el) {
         return function(criterion) {
@@ -302,7 +305,7 @@
         if (this.length) {
             for (var el = this[0].parentNode; el; el = el.parentNode) {
                 if (parsed.length === parsed.filter(getElementsBySelectorSecondStepFilter(el)).length) {
-                    return new Selector([el], description);
+                    return new Selector([el], description, [this, 'closest', selector]);
                 }
             }
         }
@@ -346,9 +349,17 @@
     Selector.prototype.add = function(anotherSelectorOrElement) {
         var i;
         if ((anotherSelectorOrElement instanceof Selector) || (anotherSelectorOrElement instanceof Array)) {
-            for (i = 0; i < anotherSelectorOrElement.length; i ++) {
-                this.add(anotherSelectorOrElement[i]);
+            var newElements = [];
+            for (i = 0; i < this.length; i ++ ) {
+                newElements.push(this[i]);
             }
+            var description = this.description + ' + ' + ((anotherSelectorOrElement instanceof Selector) ? anotherSelectorOrElement.description : ('[' + anotherSelectorOrElement.length + ']'));
+            for (i = 0; i < anotherSelectorOrElement.length; i ++) {
+                if (-1 === newElements.indexOf(anotherSelectorOrElement[i])) {
+                    newElements.push(anotherSelectorOrElement[i]);
+                }
+            }
+            return new Selector(newElements, description, [this, 'add', anotherSelectorOrElement]);
         } else {
             for (i = this.length; i >= 0 ; i --) {
                 if (this[i] === anotherSelectorOrElement) {
@@ -367,7 +378,7 @@
                 result.push(this[i]);
             }
         }
-        return new Selector(result, this.description + ' filter(' + fn.toString() + ')');
+        return new Selector(result, this.description + ' filter(' + fn.toString() + ')', [this, 'filter', fn]);
     };
     Selector.prototype.each = function(fn) {
         for (var i = 0; i < this.length; i ++) {
@@ -415,18 +426,45 @@
         if (this.length) {
             var next = this[0].nextElementSibling;
             if (! next) {
-                return new Selector([], description);
+                return new Selector([], description, [this, 'next', selector]);
             }
-            return new Selector([next], description);
+            return new Selector([next], description, [this, 'next', selector]);
         } else {
-            return new Selector([], description);
+            return new Selector([], description, [this, 'next', selector]);
         }
     };
     Selector.prototype.first = function() {
-        return new Selector(this.length ? [this[0]] : [], this.description + ' first()');
+        return new Selector(this.length ? [this[0]] : [], this.description + ' first()', [this, 'first']);
     };
     Selector.prototype.last = function() {
-        return new Selector(this.length ? [this[this.length - 1]] : [], this.description + ' last()');
+        return new Selector(this.length ? [this[this.length - 1]] : [], this.description + ' last()', [this, 'last']);
+    };
+    Selector.prototype.reevaluate = function() {
+        var i;
+        if (this.self) {
+            var reevaluated;
+            if ('function' === typeof this.self) {
+                reevaluated = this.self();
+            } else {
+                if (this.self[0]) {
+                    this.self[0].reevaluate();
+                }
+                if (this.self[1] === 'add') {
+                    if (this.self[2] instanceof Selector) {
+                        this.self[2].reevaluate();
+                    }
+                }
+                reevaluated = this.self[0][this.self[1]].apply(this.self[0], this.self.slice(2));
+            }
+            for (i = 0; i < reevaluated.length; i ++) {
+                this[i] = reevaluated[i];
+            }
+            for (i = reevaluated.length ; i < this.length ; i ++ ) {
+                delete this[i];
+            }
+            this.length = reevaluated.length;
+        }
+        return this;
     };
     ['result', 'nop', 'skipStep', 'skipTask', 'repeatStep', 'repeatTask', 'repeatJob', 'skipJob'].filter(function(name) {
         Selector.prototype[name] = function(){
@@ -1525,7 +1563,7 @@
             return this;
         },
         find: function(selector) {
-            return new Selector([getDocument()]).find(selector);
+            return new Selector([getDocument()], undefined, function(){ return [getDocument()]; }).find(selector);
         },
         getSelectorClass: function() {
             return Selector;

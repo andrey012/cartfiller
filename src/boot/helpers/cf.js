@@ -226,10 +226,15 @@
             this.tasks = {};
             this.shares = {};
             this.lib = {};
+            this.unexportedTasks = {};
             var wrapper = this;
             this.runtime = new Runtime();
-            var BuilderPromise = this.BuilderPromise = function(method, args, prev) { 
+            var BuilderPromise = this.BuilderPromise = function(method, args, prev) {
                 this.arr = ((prev.length === 1 && prev[0][0] === '') ? [] : prev.slice()).concat(method ? [[method, args]] : []);
+                var taskNames = prev.filter(function(v) { return v[0] === 'task'; });
+                if (taskNames.length) {
+                    wrapper.unexportedTasks[taskNames[taskNames.length - 1][1][0]] = this.arr;
+                }
             };
             BuilderPromise.prototype = Object.create({});
             BuilderPromise.prototype.export = function(name) {
@@ -254,7 +259,7 @@
                 if (('function' === typeof body) || (body instanceof BuilderPromise)) {
                     wrapper.lib[name] = body;
                 }
-                return this;
+                return new BuilderPromise('lib', [name], this.arr);
             };
             BuilderPromise.prototype.const = function(value) {
                 return function() { return value; };
@@ -345,7 +350,11 @@
                         if(me.modules.api.debug && (1 || me.modules.api.debug.stop)) {
                             debugger; // jshint ignore:line
                         }
-                        wrapSelectorBuilderPromise(args[0].arr)().arrow(1).result(); 
+                        if (args[0].arr[0][0] === 'lib') {
+                            wrapSelectorBuilderPromise(wrapper.lib[args[0].arr[0][1][0]].arr)().arrow(1).result(); 
+                        } else {
+                            wrapSelectorBuilderPromise(args[0].arr)().arrow(1).result(); 
+                        }
                     }];
                 } else {
                     return ['get' + niceArgs(args), function() { 
@@ -374,15 +383,39 @@
             };
             var buildProxyFunction = function(name) {
                 return function(args) {
-                    return [name + niceArgs(args), function(p) {
-                        if(me.modules.api.debug && (1 || me.modules.api.debug.stop)) {
-                            debugger; // jshint ignore:line
-                        }
-                        var s = p[name].apply(p, args);
-                        if (name !== 'exists' && name !== 'absent') {
+                    if (name === 'exists') {
+                        return [name + niceArgs(args), function(p) {
+                            api('waitFor', [function() {
+                                if(me.modules.api.debug && (1 || me.modules.api.debug.stop)) {
+                                    debugger; // jshint ignore:line
+                                }
+                                p.reevaluate(); 
+                                return p.length;
+                            }, function(r) {
+                                p.arrow(1).result(r ? '' : 'element did not appear within timeout');
+                            }, args[0] || undefined]);
+                        }];
+                    } else if (name === 'absent') {
+                        return [name + niceArgs(args), function(p) {
+                            api('waitFor', [function() { 
+                                if(me.modules.api.debug && (1 || me.modules.api.debug.stop)) {
+                                    debugger; // jshint ignore:line
+                                }
+                                p.reevaluate();
+                                return ! p.length;
+                            }, function(r) {
+                                p.arrow(1).result(r ? '' : 'element did not disappear within timeout');
+                            }, args[0] || undefined]);
+                        }];
+                    } else {
+                        return [name + niceArgs(args), function(p) {
+                            if(me.modules.api.debug && (1 || me.modules.api.debug.stop)) {
+                                debugger; // jshint ignore:line
+                            }
+                            var s = p[name].apply(p, args);
                             s.arrow(1).result();
-                        }
-                    }];
+                        }];
+                    }
                 };
             };
             for (i in me.modules.api.getSelectorClass().prototype) {
@@ -506,6 +539,9 @@
                 var builder = this;
                 var rememberedName;
                 steps.filter(function(step) {
+                    if (step[0] === 'lib') {
+                        return;
+                    }
                     if (! builder[step[0]]) {
                         throw new Error('step [' + step[0] + '] is not known to builder');
                     }
@@ -526,6 +562,12 @@
             var name = arguments[0];
             var args = copyArguments(arguments).slice(1);
             if (this.mode === 0) {
+                if (name instanceof this.BuilderPromise) {
+                    var libElement = name.arr.filter(function(v) { return v[0] === 'lib'; });
+                    if (libElement.length) {
+                        name = libElement[0][1][0];
+                    }
+                }
                 // tbd this is wrong, we should return promise that
                 // will anyway be resolved later at runtime
                 if ('function' === typeof this.lib[name]) {
@@ -554,9 +596,15 @@
             };
         };
         Wrapper.prototype.buildTasks = function(existingTasks) {
+            var i;
+            for (i in this.unexportedTasks) {
+                if (! this.tasks[i]) {
+                    this.tasks[i] = this.unexportedTasks[i];
+                }
+            }
             var result = existingTasks || {};
             // build shared steps and generators
-            for (var i in this.tasks) {
+            for (i in this.tasks) {
                 result[i] = this.buildTask(this.tasks[i]);
             }
             return result;

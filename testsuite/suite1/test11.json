@@ -7,7 +7,5 @@ cartfiller = {
         "## add parts",
         {"task": "addToCart", "partno": "1111111", "quantity": 2, "price": 1.22}, 
         {"task": "addToCart", "partno": "2222222", "quantity": 3, "price": 2},
-        {"addToCart":{"partno":"123123","price":"100","quantity":"1"}},
-        {"addToCart":{"partno":"123123","price":"100","quantity":"1"}},
     ]
 }
