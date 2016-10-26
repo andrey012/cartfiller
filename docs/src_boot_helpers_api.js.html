@@ -473,6 +473,15 @@
     Selector.prototype.last = function() {
         return new Selector(this.length ? [this[this.length - 1]] : [], this.description + ' last()', [this, 'last']);
     };
+    Selector.prototype.nthOfType = function(n) {
+        return this.filter(function(i,el){ 
+            var c = 0; 
+            for (var x = el.previousSibling; x; x = x.previousSibling) {
+                c += x.nodeName === el.nodeName ? 1 : 0;
+            } 
+            return c === n;
+        });
+    };
     Selector.prototype.reevaluate = function() {
         var i;
         if (this.self) {
@@ -638,16 +647,39 @@
         return result;
     };
 
-    var triggerMouseEvent = function(el, eventType) {
-        var event = el.ownerDocument.createEvent('MouseEvents');
-        if (event.initMouseEvent) {
-            event.initMouseEvent(eventType, true, true);
-        } else if (event.initEvent) {
-            event.initEvent(eventType, true, true);
-        } else {
-            throw new Error('cant init MouseEvent');
+    var getAbsolutePosition = function(el, recursive) {
+        var rect = el.getBoundingClientRect();
+        var pos = {x: rect.left + recursive ? 0 : Math.floor(rect.width / 2), y: rect.top + recursive ? 0 : Math.floor(rect.height / 2)};
+        // it is likely possible to do this, because in PhantomJS we normally have
+        // cross origin security turned off
+        if (el.ownerDocument.defaultView !== el.ownerDocument.defaultView.parent) {
+            var frames = el.ownerDocument.defaultView.parent.document.getElementsByTagName('iframe');
+            for (var i = 0; i &lt; frames.length ; i ++) {
+                if (frames[i].contentWindow === el.ownerDocument.defaultView) {
+                    var shift = getAbsolutePosition(frames[i], true);
+                    pos.x += shift.x;
+                    pos.y += shift.y;
+                }
+            }
         }
-        el.dispatchEvent(event);
+        return pos;
+    };
+
+    var triggerMouseEvent = function(el, eventType) {
+        if (0 /* not yet, seems not reliable enough */ &amp;&amp; window.callPhantom) {
+            var pos = getAbsolutePosition(el);
+            window.callPhantom({mouseEvent: eventType, pos: pos});
+        } else {
+            var event = el.ownerDocument.createEvent('MouseEvents');
+            if (event.initMouseEvent) {
+                event.initMouseEvent(eventType, true, true);
+            } else if (event.initEvent) {
+                event.initEvent(eventType, true, true);
+            } else {
+                throw new Error('cant init MouseEvent');
+            }
+            el.dispatchEvent(event);
+        }
     };
 
     var simulateClick = function(el) {
@@ -915,7 +947,7 @@
                     }
                 }
             };
-            me.modules.api.setTimeout(fn, period);
+            me.modules.api.setTimeout(fn, 0);
             return this;
         },
         /**
@@ -1348,8 +1380,13 @@
                     var fn = function(text, elementNode, whatNext) {
                         var char = paste ? 'v' : text.substr(0, 1);
                         var charCode = char.charCodeAt(0);
+                        if (charCode === 13) {
+                            charCode = 0;
+                        }
+                        var keyCode = char.charCodeAt(0);
                         var nextText = paste ? '' : text.substr(1);
                         var charCodeGetter = {get : function() { return charCode; }};
+                        var keyCodeGetter = {get : function() { return keyCode; }};
                         var metaKeyGetter = {get : function() { return false; }};
                         var doKeyPress = true;
                         var dispatchEventResult;
@@ -1376,18 +1413,25 @@
                                     continue;
                                 }
                             } else {
+                                if (window.callPhantom) {
+                                    window.callPhantom({
+                                        keyboardEvent: eventName,
+                                        char: char
+                                    });
+                                    continue;
+                                }
                                 e = elementNode.ownerDocument.createEvent('KeyboardEvent');
-                                try { Object.defineProperty(e, 'keyCode', charCodeGetter); } catch (e) { invalidEvent = true; }
+                                try { Object.defineProperty(e, 'keyCode', keyCodeGetter); } catch (e) { invalidEvent = true; }
                                 try { Object.defineProperty(e, 'charCode', charCodeGetter); } catch (e) { invalidEvent = true; }
                                 try { Object.defineProperty(e, 'metaKey', metaKeyGetter); } catch (e) { invalidEvent = true; }
                                 try { Object.defineProperty(e, 'which', charCodeGetter); } catch (e) { invalidEvent = true; }
                                 if (e.initKeyboardEvent) {
-                                    e.initKeyboardEvent(eventName, true, true, document.defaultView, false, false, false, false, charCode, charCode);
+                                    e.initKeyboardEvent(eventName, true, true, document.defaultView, false, false, false, false, charCode, keyCode);
                                 } else {
-                                    e.initKeyEvent(eventName, true, true, document.defaultView, false, false, false, false, charCode, charCode);
+                                    e.initKeyEvent(eventName, true, true, document.defaultView, false, false, false, false, keyCode, charCode);
                                 }
-                                if ((failOnErrors) &amp;&amp; (e.keyCode !== charCode || e.charCode !== charCode)) {
-                                    me.modules.api.result('could not set correct keyCode or charCode for ' + eventName + ': keyCode returns [' + e.keyCode + '] , charCode returns [' + e.charCode + '] instead of [' + charCode + ']');
+                                if ((failOnErrors) &amp;&amp; (e.keyCode !== keyCode || e.charCode !== charCode)) {
+                                    me.modules.api.result('could not set correct keyCode or charCode for ' + eventName + ': keyCode returns [' + e.keyCode + '] instead of [' + keyCode + '], charCode returns [' + e.charCode + '] instead of [' + charCode + ']');
                                     return false;
                                 }
                                 if ((failOnErrors) &amp;&amp; e.metaKey) {
@@ -1650,7 +1694,7 @@
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.3</a> on Sat Aug 19 2017 15:52:09 GMT+0200 (CEST)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.3</a> on Sun Aug 20 2017 01:12:01 GMT+0200 (CEST)
 </footer>
 
 <script> prettyPrint(); </script>

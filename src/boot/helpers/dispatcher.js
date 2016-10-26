@@ -1617,7 +1617,7 @@
             var arrow = [];
             var elements;
             try {
-                elements = eval('(function(window, document, api, task){return api.find' + details.selector + ';})(me.modules.ui.mainFrameWindow, me.modules.ui.mainFrameWindow.document, me.modules.api, ' + JSON.stringify(details.taskDetails) + ');'); // jshint ignore:line
+                elements = eval('(function(window, document, api, cf, task){return ' + ('getlib(' === details.selector.substr(0, 7) ? 'cf.' : 'api.find') + details.selector + ';})(me.modules.ui.mainFrameWindow, me.modules.ui.mainFrameWindow.document, me.modules.api, me.modules.cf, ' + JSON.stringify(details.taskDetails) + ');'); // jshint ignore:line
             } catch (e) {
                 elements = [];
             }
@@ -1874,7 +1874,7 @@
             if (me.modules.dispatcher.reflectMessage(details)) {
                 return;
             }
-            me.modules.ui.highlightElementForQueryBuilder(details.path);
+            me.modules.ui.highlightElementForQueryBuilder(details);
         },
         /**
          * Update global value from progress frame
@@ -2511,7 +2511,9 @@
         injectTaskParameters: function(fn, src) {
             var params = {};
             (src instanceof Array ? src : [src]).filter(function(src) {
-                me.modules.dispatcher.discoverTaskParameters(src, params);
+                if ('function' === typeof src) {
+                    me.modules.dispatcher.discoverTaskParameters(src, params);
+                }
             });
             fn.cartFillerParameterList = fn.cartFillerParameterList || [];
             for (var i in params) {

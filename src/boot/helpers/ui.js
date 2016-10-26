@@ -1240,7 +1240,18 @@
                     }
                 }
             }
+            var libSelectors = me.modules.cf.getLibSelectors();
+            var matchedSelectors = {};
             while (el && el.nodeName !== 'BODY' && el.nodeName !== 'HTML' && el !== document) {
+                for (i in libSelectors) {
+                    for (n = 0; n < libSelectors[i].length; n ++ ) {
+                        if (libSelectors[i][n] === el) {
+                            matchedSelectors[i] = libSelectors[i];
+                            delete libSelectors[i];
+                            break;
+                        }
+                    }
+                }
                 var attrs = [];
                 for (i = el.attributes.length - 1 ; i >= 0 ; i -- ) {
                     n = el.attributes[i].name;
@@ -1256,6 +1267,7 @@
                 }
                 stack.unshift({
                     element: el.nodeName.toLowerCase(), 
+                    lib: undefined,
                     attrs: attrs, 
                     classes: ('string' === typeof el.className) ? el.className.split(' ').filter(function(v){return v;}) : [], 
                     id: 'string' === typeof el.id ? el.id : undefined, 
@@ -1263,6 +1275,17 @@
                     text: String(el.textContent).length < 200 ? String(el.textContent) : ''
                 });
                 el = el.parentNode;
+            }
+            for (i in matchedSelectors) {
+                stack.unshift({
+                    element: undefined, 
+                    lib: i,
+                    attrs: [],
+                    classes: [], 
+                    id: undefined, 
+                    index: 0,
+                    text: ''
+                });
             }
             me.modules.dispatcher.postMessageToWorker('mousePointer', {x: x, y: y, stack: stack, w: me.modules.dispatcher.getFrameWindowIndex()});
         },
@@ -1338,9 +1361,10 @@
         getMessageToSay: function() {
             return messageToSay;
         },
-        highlightElementForQueryBuilder: function(path) {
+        highlightElementForQueryBuilder: function(details) {
             this.clearOverlays();
-            if (path) {
+            if (details.path) {
+                var path = details.path;
                 var element = this.mainFrameWindow.document.getElementsByTagName('body')[0];
                 for (var i = 0; i < path.length; i ++  ) {
                     var name = path[i][0];
@@ -1362,6 +1386,8 @@
                     }
                 }
                 this.arrowTo(element, false, true);
+            } else if (details.lib) {
+                this.arrowTo(me.modules.cf.getlib(details.lib), true, true);
             }
         },
         prepareTolearOverlaysAndReflect: function() {

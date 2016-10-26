@@ -3,15 +3,13 @@
         globals.baseUrl = globals._cartFillerInstallationUrl.replace(/\/[^\/]*\/?$/, '');
 
         cf.task('openTodomvc')
-            .then(function(){
-                api.openUrl(globals.baseUrl + '/node_modules/todomvc/examples/' + task.flavour).result();
-            })
+            .openUrl(globals.baseUrl + '/node_modules/todomvc/examples/react')
             .get('input#new-todo:visible').exists().ready().say('we are ready')
 
 
         cf.task('removeAllTasks')
             .while(
-                cf.get(cf.lib('todolist', cf.get('ul#todo-list:visible li:visible'))).exists(),
+                cf.get(cf.lib('todolist', cf.get('ul#todo-list:visible'))).exists(),
                 cf.getlib('todolist').find('button.destroy').first().css('display', 'block').exists().click()
             )
 
@@ -19,6 +17,7 @@
         cf.task('addTask')
             .get('#new-todo:visible')
             .type(function(){return task.name + '\r'; })
+            .getlib('getTaskLi').exists()
 
 
         cf.task('triggerCheckbox')

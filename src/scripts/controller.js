@@ -83,6 +83,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
         $scope.workersCounter = 1;
         $scope.workersLoaded = 0;
         $scope.workerGlobals = {};
+        $scope.workerGlobalsOrdered = [];
         $scope.workerSrc = false;
         $scope.finishReached = false;
         $scope.runUntilTask = $scope.runUntilStep = false;
@@ -104,6 +105,30 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
         var repeatStepCounter = 0;
         var repeatStepCounterTask = false;
         var repeatStepCounterStep = false;
+        var strcmp = function(a, b) {
+            return a > b ? 1 : a < b ? -1 : 0;
+        };
+        var updateGlobalsOrdered = function() {
+            $scope.workerGlobalsOrdered = ['_random'];
+            for (var i in $scope.workerGlobals) {
+                $scope.workerGlobalsOrdered.push(i);
+            }
+            $scope.workerGlobalsOrdered.sort(function(a, b) {
+                if (a.substr(0, 1) === '_') {
+                    if (b.substr(0, 1) === '_') {
+                        return strcmp(a, b);
+                    } else {
+                        return 1;
+                    }
+                } else {
+                    if (b.substr(0, 1) === '_') {
+                        return -1;
+                    } else {
+                        return strcmp(a, b);
+                    }
+                }
+            });
+        };
         var isLongClick = function($event){
             var now = $event.timeStamp ? $event.timeStamp : (new Date()).getTime();
             return (now - mouseDownTime) > 1000;
@@ -237,6 +262,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                         }
                         $scope.finishReached = false;
                         $scope.workerGlobals = details.globals;
+                        updateGlobalsOrdered();
                     }
                     while ($scope.jobTaskProgress.length < $scope.jobDetails.length) {
                         $scope.jobTaskProgress.push({complete: false, step: 0, stepsInProgress: {}, stepResults: {}});
@@ -245,6 +271,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 });
             } else if (cmd === 'globalsUpdate'){
                 $scope.workerGlobals = details.globals;
+                updateGlobalsOrdered();
                 digestGlobals();
             } else if (cmd === 'workerRegistered'){
                 $scope.$apply(function(){
@@ -371,6 +398,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                     for (i in details.globals) {
                         if (details.globals.hasOwnProperty(i)){
                             $scope.workerGlobals = details.globals;
+                            updateGlobalsOrdered();
                             digestGlobals();
                             break;
                         }
@@ -749,6 +777,9 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
             mouseDownTime = $event.timeStamp || (new Date()).getTime();
         };
         $scope.getWorkerGlobalValue = function(name) {
+            if (name === '_random') {
+                return '(e.g. 1388531842351)';
+            }
             var v = $scope.workerGlobals[name];
             return 'object' === typeof v ? ('json: ' + JSON.stringify(v)) : v;
         };
@@ -803,31 +834,46 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                     }
                     return JSON.stringify(s) + ', el.textContent';
                 };
-                var r = ('(\'' + scope.stack.map(function(el){
-                    var r = '' +
-                        (el.selectNodeName ? el.element : '') +
-                        (el.selectId ? ('#' + el.id) : '') +
-                        (el.classes.filter(function(c,i) {
-                            return undefined !== el.selectClass && el.selectClass[i];
-                        }).map(function(v){
-                            return '.' + v;
-                        }).join('')) +
-                        (el.attrs.filter(function(a,i) {
-                            return undefined !== el.selectAttribute && el.selectAttribute[i];
-                        }).map(function(a){
-                            return '[' + a.n + '="' + a.v + '"' + ']';
-                        }).join(''));
-                    if (r.trim().length && ! /option$/.test(r.trim())) {
-                        r += ':visible';
-                    }
-                    r +=
-                        (el.selectIndex ? ('\').filter(function(i,el,x,c){ c = 0; for (x = el.previousSibling; x; x = x.previousSibling) c += x.nodeName === el.nodeName ? 1 : 0; return c === ' + (el.index - 1) + ';}).find(\'') : '');
-                    return r +
-                        (el.selectText ? ('\').filter(function(i,el){ return api.compareCleanText(' + generateCompareCleanTextExpression(el.text.trim()) + ');}).find(\'') : '')
-                    ;
-                })
-                         .filter(function(v) { return v.trim().length; })
-                         .join(' ') + '\')').replace(/.find\(\'\s*\'\)/g, '');
+                var r = 
+                    (
+                        '(\'' + 
+                        scope.stack.map(function(el){
+                            var r = '' +
+                                (el.selectNodeName && el.element ? el.element : '') +
+                                (el.selectId ? ('#' + el.id) : '') +
+                                (el.classes.filter(function(c,i) {
+                                    return undefined !== el.selectClass && el.selectClass[i];
+                                }).map(function(v){
+                                    return '.' + v;
+                                }).join('')) +
+                                (el.attrs.filter(function(a,i) {
+                                    return undefined !== el.selectAttribute && el.selectAttribute[i];
+                                }).map(function(a){
+                                    return '[' + a.n + '="' + a.v + '"' + ']';
+                                }).join(''));
+                            if (r.trim().length && ! /option$/.test(r.trim())) {
+                                r += ':visible';
+                            }
+                            if (el.selectIndex) {
+                                r += '\').nthOfType(' + (el.index - 1) + ').find(\'';
+                                //r += '\').filter(function(i,el,x,c){ c = 0; for (x = el.previousSibling; x; x = x.previousSibling) c += x.nodeName === el.nodeName ? 1 : 0; return c === ' + (el.index - 1) + ';}).find(\'';
+                            }
+                            if (el.selectText) {
+                                r += '\').filter(function(i,el){ return api.compareCleanText(' + generateCompareCleanTextExpression(el.text.trim()) + ');}).find(\'';
+                            }
+                            if (el.selectNodeName && el.lib) {
+                                r += '\').getlib(\'' + el.lib + '\').find(\'';
+                            }
+                            return r.trim();
+                        })
+                        .filter(function(v) { return v.trim().length; })
+                        .join(' ') +
+                        '\')'
+                    )
+                    .replace(/.find\(\'\s*\'\)/g, '')
+                    .replace(/\s+\'\)/, '\')')
+                    .replace(/\(\'\s+/, '(\'')
+                    .replace(/^\s*\(\'\s*\'\)\.getlib/, 'getlib');
                 return r;
             };
             scope.toggleSearch = function() {
@@ -845,12 +891,18 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 }
             };
             scope.highlight = function(button) {
-                var payload = [];
-                for (var i = 0 ; i <= button.getAttribute('data-index'); i ++) {
-                    var node = scope.stack[i];
-                    payload.push([node.element, node.index - 1]);
+                if (scope.stack[button.getAttribute('data-index')].lib) {
+                    cfMessage.send('highlightElementForQueryBuilder', {lib: scope.stack[button.getAttribute('data-index')].lib, currentMainFrameWindow: scope.window});
+                } else {
+                    var payload = [];
+                    for (var i = 0 ; i <= button.getAttribute('data-index'); i ++) {
+                        var node = scope.stack[i];
+                        if (scope.stack[i].element) {
+                            payload.push([node.element, node.index - 1]);
+                        }
+                    }
+                    cfMessage.send('highlightElementForQueryBuilder', {path: payload, currentMainFrameWindow: scope.window});
                 }
-                cfMessage.send('highlightElementForQueryBuilder', {path: payload, currentMainFrameWindow: scope.window});
             };
         },1000);
         $scope.shortName = function(name) {
@@ -1026,6 +1078,10 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 return setTimeout(initGlobalsScope, 1000);
             }
             scope.updateGlobal = function(name) {
+                if ('_' === name.substr(0, 1)) {
+                    alert('you can\'t update this variable');
+                    return;
+                }
                 var newValue = promptWithJsonWorkaround('Enter new value for [' + name + ']', 'object' === typeof $scope.workerGlobals[name] ? JSON.stringify($scope.workerGlobals[name]) : $scope.workerGlobals[name]);
                 if (null !== newValue) {
                     $scope.workerGlobals[name] = newValue;

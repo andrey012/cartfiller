@@ -195,7 +195,7 @@
              */
             goToHome: [
                 lib.goToHome = [
-                    'go to home', function(){
+                    'go to home', function(repeat5){
                         var homeLink = api.find('#navbar a:contains("Home"):visible');
                         api.highlight(homeLink).say(globals.skipMessages?'':'This is "Home" link that we will use to search for product').result((1 === homeLink.length) ? "" : "Cant find home link");
                     }

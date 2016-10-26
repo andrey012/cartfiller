@@ -193,7 +193,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1503150726000';
+    config.gruntBuildTimeStamp='1503184319250';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -697,6 +697,15 @@
     Selector.prototype.last = function() {
         return new Selector(this.length ? [this[this.length - 1]] : [], this.description + ' last()', [this, 'last']);
     };
+    Selector.prototype.nthOfType = function(n) {
+        return this.filter(function(i,el){ 
+            var c = 0; 
+            for (var x = el.previousSibling; x; x = x.previousSibling) {
+                c += x.nodeName === el.nodeName ? 1 : 0;
+            } 
+            return c === n;
+        });
+    };
     Selector.prototype.reevaluate = function() {
         var i;
         if (this.self) {
@@ -862,16 +871,39 @@
         return result;
     };
 
-    var triggerMouseEvent = function(el, eventType) {
-        var event = el.ownerDocument.createEvent('MouseEvents');
-        if (event.initMouseEvent) {
-            event.initMouseEvent(eventType, true, true);
-        } else if (event.initEvent) {
-            event.initEvent(eventType, true, true);
-        } else {
-            throw new Error('cant init MouseEvent');
+    var getAbsolutePosition = function(el, recursive) {
+        var rect = el.getBoundingClientRect();
+        var pos = {x: rect.left + recursive ? 0 : Math.floor(rect.width / 2), y: rect.top + recursive ? 0 : Math.floor(rect.height / 2)};
+        // it is likely possible to do this, because in PhantomJS we normally have
+        // cross origin security turned off
+        if (el.ownerDocument.defaultView !== el.ownerDocument.defaultView.parent) {
+            var frames = el.ownerDocument.defaultView.parent.document.getElementsByTagName('iframe');
+            for (var i = 0; i < frames.length ; i ++) {
+                if (frames[i].contentWindow === el.ownerDocument.defaultView) {
+                    var shift = getAbsolutePosition(frames[i], true);
+                    pos.x += shift.x;
+                    pos.y += shift.y;
+                }
+            }
         }
-        el.dispatchEvent(event);
+        return pos;
+    };
+
+    var triggerMouseEvent = function(el, eventType) {
+        if (0 /* not yet, seems not reliable enough */ && window.callPhantom) {
+            var pos = getAbsolutePosition(el);
+            window.callPhantom({mouseEvent: eventType, pos: pos});
+        } else {
+            var event = el.ownerDocument.createEvent('MouseEvents');
+            if (event.initMouseEvent) {
+                event.initMouseEvent(eventType, true, true);
+            } else if (event.initEvent) {
+                event.initEvent(eventType, true, true);
+            } else {
+                throw new Error('cant init MouseEvent');
+            }
+            el.dispatchEvent(event);
+        }
     };
 
     var simulateClick = function(el) {
@@ -1139,7 +1171,7 @@
                     }
                 }
             };
-            me.modules.api.setTimeout(fn, period);
+            me.modules.api.setTimeout(fn, 0);
             return this;
         },
         /**
@@ -1572,8 +1604,13 @@
                     var fn = function(text, elementNode, whatNext) {
                         var char = paste ? 'v' : text.substr(0, 1);
                         var charCode = char.charCodeAt(0);
+                        if (charCode === 13) {
+                            charCode = 0;
+                        }
+                        var keyCode = char.charCodeAt(0);
                         var nextText = paste ? '' : text.substr(1);
                         var charCodeGetter = {get : function() { return charCode; }};
+                        var keyCodeGetter = {get : function() { return keyCode; }};
                         var metaKeyGetter = {get : function() { return false; }};
                         var doKeyPress = true;
                         var dispatchEventResult;
@@ -1600,18 +1637,25 @@
                                     continue;
                                 }
                             } else {
+                                if (window.callPhantom) {
+                                    window.callPhantom({
+                                        keyboardEvent: eventName,
+                                        char: char
+                                    });
+                                    continue;
+                                }
                                 e = elementNode.ownerDocument.createEvent('KeyboardEvent');
-                                try { Object.defineProperty(e, 'keyCode', charCodeGetter); } catch (e) { invalidEvent = true; }
+                                try { Object.defineProperty(e, 'keyCode', keyCodeGetter); } catch (e) { invalidEvent = true; }
                                 try { Object.defineProperty(e, 'charCode', charCodeGetter); } catch (e) { invalidEvent = true; }
                                 try { Object.defineProperty(e, 'metaKey', metaKeyGetter); } catch (e) { invalidEvent = true; }
                                 try { Object.defineProperty(e, 'which', charCodeGetter); } catch (e) { invalidEvent = true; }
                                 if (e.initKeyboardEvent) {
-                                    e.initKeyboardEvent(eventName, true, true, document.defaultView, false, false, false, false, charCode, charCode);
+                                    e.initKeyboardEvent(eventName, true, true, document.defaultView, false, false, false, false, charCode, keyCode);
                                 } else {
-                                    e.initKeyEvent(eventName, true, true, document.defaultView, false, false, false, false, charCode, charCode);
+                                    e.initKeyEvent(eventName, true, true, document.defaultView, false, false, false, false, keyCode, charCode);
                                 }
-                                if ((failOnErrors) && (e.keyCode !== charCode || e.charCode !== charCode)) {
-                                    me.modules.api.result('could not set correct keyCode or charCode for ' + eventName + ': keyCode returns [' + e.keyCode + '] , charCode returns [' + e.charCode + '] instead of [' + charCode + ']');
+                                if ((failOnErrors) && (e.keyCode !== keyCode || e.charCode !== charCode)) {
+                                    me.modules.api.result('could not set correct keyCode or charCode for ' + eventName + ': keyCode returns [' + e.keyCode + '] instead of [' + keyCode + '], charCode returns [' + e.charCode + '] instead of [' + charCode + ']');
                                     return false;
                                 }
                                 if ((failOnErrors) && e.metaKey) {
@@ -2054,6 +2098,7 @@
         }
         throw new Error('step not found: [' + name + ']');
     };
+    var actualWrapper = false;
     var onLoaded = function() {
         Runtime = function() {
 
@@ -2071,6 +2116,7 @@
             this.lib = {};
             this.unexportedTasks = {};
             var wrapper = this;
+            actualWrapper = this;
             this.runtime = new Runtime();
             var LibReferencePromise = this.LibReferencePromise = function(name) {
                 this.name = name;
@@ -2090,7 +2136,7 @@
                 }
                 return arr;
             };
-            var wrapSelectorBuilderPromise = function(arr) {
+            var wrapSelectorBuilderPromise = this.wrapSelectorBuilderPromise = function(arr) {
                 arr = decodeLibReferences(arr);
                 if (arr.length === 1) {
                     if (arr[0][0] !== 'get') {
@@ -2099,16 +2145,16 @@
                     if (arr[0][1][0] instanceof BuilderPromise) {
                         return wrapSelectorBuilderPromise(arr[0][1][0].arr);
                     } else {
-                        return function(){ return api('find', arr[0][1]); };
+                        return me.modules.dispatcher.injectTaskParameters(function(){ return api('find', arr[0][1]); }, [arr[0][1]]);
                     }
                 } else {
                     var prev = arr.slice();
                     var step = prev.pop();
                     var prevBuilderPromise = wrapSelectorBuilderPromise(prev);
-                    return function(){
+                    return me.modules.dispatcher.injectTaskParameters(function(){
                         var prevResult = prevBuilderPromise();
                         return prevResult[step[0]].apply(prevResult, step[1]);
-                    };
+                    }, [prevBuilderPromise].concat(step[1]));
                 }
             };
             BuilderPromise.prototype = Object.create({});
@@ -2220,32 +2266,32 @@
             };
             Builder.prototype = Object.create({});
             Builder.prototype.getlib = function(args) {
-                return ['get' + niceArgs(args), function() {
+                var promise = wrapSelectorBuilderPromise(wrapper.lib[args[0]].arr);
+                return ['get' + niceArgs(args), me.modules.dispatcher.injectTaskParameters(function() {
                     if(me.modules.api.debug && me.modules.api.debug.stop) {
                         debugger; // jshint ignore:line
                     }
-                    wrapSelectorBuilderPromise(wrapper.lib[args[0]].arr)().arrow(1).result(); 
-                }];
+                    promise().arrow(1).result(); 
+                }, [promise])];
             };
             Builder.prototype.get = function(args) {
-                if (args[0] instanceof BuilderPromise) {
-                    return ['get' + niceArgs(args), function() {
-                        if(me.modules.api.debug && me.modules.api.debug.stop) {
-                            debugger; // jshint ignore:line
-                        }
+                if (args[0] instanceof BuilderPromise || args[0] instanceof LibReferencePromise) {
+                    var promise;
+                    if (args[0] instanceof BuilderPromise) {
                         if (args[0].arr[0][0] === 'lib') {
-                            wrapSelectorBuilderPromise(wrapper.lib[args[0].arr[0][1][0]].arr)().arrow(1).result(); 
+                            promise = wrapSelectorBuilderPromise(wrapper.lib[args[0].arr[0][1][0]].arr);
                         } else {
-                            wrapSelectorBuilderPromise(args[0].arr)().arrow(1).result(); 
+                            promise = wrapSelectorBuilderPromise(args[0].arr);
                         }
-                    }];
-                } else if (args[0] instanceof LibReferencePromise) {
-                    return ['get' + niceArgs(args), function() {
+                    } else { //args[0] instanceof LibReferencePromise
+                        promise = wrapSelectorBuilderPromise(wrapper.lib[args[0].name].arr);
+                    }
+                    return ['get' + niceArgs(args), me.modules.dispatcher.injectTaskParameters(function() {
                         if(me.modules.api.debug && me.modules.api.debug.stop) {
                             debugger; // jshint ignore:line
                         }
-                        wrapSelectorBuilderPromise(wrapper.lib[args[0].name].arr)().arrow(1).result(); 
-                    }];
+                        promise().arrow(1).result(); 
+                    }, [promise])];
                 } else {
                     return ['get' + niceArgs(args), function() { 
                         if(me.modules.api.debug && me.modules.api.debug.stop) {
@@ -2313,7 +2359,7 @@
                     Builder.prototype[i] = buildProxyFunction(i);
                 }
             }
-            ['say', 'repeatTask', 'repeatStep', 'skipTask', 'skipStep', 'repeatJob', 'skipJob'].filter(function(fn) {
+            ['say', 'repeatTask', 'repeatStep', 'skipTask', 'skipStep', 'repeatJob', 'skipJob', 'openUrl'].filter(function(fn) {
                 wrapper.Builder.prototype[fn] = function(args, index) {
                     return [fn + niceArgs(args), function(p) {
                         var tweakedArgs;
@@ -2323,7 +2369,7 @@
                         } else {
                             tweakedArgs = args.slice();
                         }
-                        if (p instanceof me.modules.api.getSelectorClass()) {
+                        if (fn === 'say' && p instanceof me.modules.api.getSelectorClass()) {
                             p[fn].apply(p, tweakedArgs).result();
                         } else {
                             api(fn, tweakedArgs).result();
@@ -2331,6 +2377,14 @@
                     }];
                 };
             });
+            Builder.prototype.sleep = function(args) {
+                var ms = args[0];
+                return ['sleep for [' + ms + '] ms', function(){
+                    api('setTimeout', [function(){
+                        api('result');
+                    }, ms]);
+                }];
+            };
             Builder.prototype.nop = function() {
                 return ['nop', function(){ api('nop'); }];
             };
@@ -2353,9 +2407,9 @@
                 }, args)];
             };
             Builder.prototype.onload = function(args) {
-                return ['onload(' +niceArgs(args) + ')', function() {
+                return ['onload(' +niceArgs(args) + ')', me.modules.dispatcher.injectTaskParameters(function() {
                     api('onload', args);
-                }];
+                }, args)];
             };
             Builder.prototype.waitFor = function(args) {
                 var name = 'waitFor(' + niceArgs(args) + ')';
@@ -2533,6 +2587,23 @@
         },
         create: function() {
           return new Wrapper();
+        },
+        getlib: function(name) {
+            return actualWrapper ? actualWrapper.wrapSelectorBuilderPromise(actualWrapper.lib[name].arr)() : me.modules.api.find();
+        },
+        getLibSelectors: function() {
+            var result = {};
+            if (actualWrapper) {
+                for (var i in actualWrapper.lib) {
+                    if (actualWrapper.lib[i] instanceof actualWrapper.BuilderPromise) {
+                        var selector = actualWrapper.wrapSelectorBuilderPromise(actualWrapper.lib[i].arr)();
+                        if (selector.length) {
+                            result[i] = selector;
+                        }
+                    }
+                }
+            }
+            return result;
         }
     });
 }).call(this, document, window);
@@ -4156,7 +4227,7 @@
             var arrow = [];
             var elements;
             try {
-                elements = eval('(function(window, document, api, task){return api.find' + details.selector + ';})(me.modules.ui.mainFrameWindow, me.modules.ui.mainFrameWindow.document, me.modules.api, ' + JSON.stringify(details.taskDetails) + ');'); // jshint ignore:line
+                elements = eval('(function(window, document, api, cf, task){return ' + ('getlib(' === details.selector.substr(0, 7) ? 'cf.' : 'api.find') + details.selector + ';})(me.modules.ui.mainFrameWindow, me.modules.ui.mainFrameWindow.document, me.modules.api, me.modules.cf, ' + JSON.stringify(details.taskDetails) + ');'); // jshint ignore:line
             } catch (e) {
                 elements = [];
             }
@@ -4413,7 +4484,7 @@
             if (me.modules.dispatcher.reflectMessage(details)) {
                 return;
             }
-            me.modules.ui.highlightElementForQueryBuilder(details.path);
+            me.modules.ui.highlightElementForQueryBuilder(details);
         },
         /**
          * Update global value from progress frame
@@ -5050,7 +5121,9 @@
         injectTaskParameters: function(fn, src) {
             var params = {};
             (src instanceof Array ? src : [src]).filter(function(src) {
-                me.modules.dispatcher.discoverTaskParameters(src, params);
+                if ('function' === typeof src) {
+                    me.modules.dispatcher.discoverTaskParameters(src, params);
+                }
             });
             fn.cartFillerParameterList = fn.cartFillerParameterList || [];
             for (var i in params) {
@@ -6393,7 +6466,18 @@
                     }
                 }
             }
+            var libSelectors = me.modules.cf.getLibSelectors();
+            var matchedSelectors = {};
             while (el && el.nodeName !== 'BODY' && el.nodeName !== 'HTML' && el !== document) {
+                for (i in libSelectors) {
+                    for (n = 0; n < libSelectors[i].length; n ++ ) {
+                        if (libSelectors[i][n] === el) {
+                            matchedSelectors[i] = libSelectors[i];
+                            delete libSelectors[i];
+                            break;
+                        }
+                    }
+                }
                 var attrs = [];
                 for (i = el.attributes.length - 1 ; i >= 0 ; i -- ) {
                     n = el.attributes[i].name;
@@ -6409,6 +6493,7 @@
                 }
                 stack.unshift({
                     element: el.nodeName.toLowerCase(), 
+                    lib: undefined,
                     attrs: attrs, 
                     classes: ('string' === typeof el.className) ? el.className.split(' ').filter(function(v){return v;}) : [], 
                     id: 'string' === typeof el.id ? el.id : undefined, 
@@ -6416,6 +6501,17 @@
                     text: String(el.textContent).length < 200 ? String(el.textContent) : ''
                 });
                 el = el.parentNode;
+            }
+            for (i in matchedSelectors) {
+                stack.unshift({
+                    element: undefined, 
+                    lib: i,
+                    attrs: [],
+                    classes: [], 
+                    id: undefined, 
+                    index: 0,
+                    text: ''
+                });
             }
             me.modules.dispatcher.postMessageToWorker('mousePointer', {x: x, y: y, stack: stack, w: me.modules.dispatcher.getFrameWindowIndex()});
         },
@@ -6491,9 +6587,10 @@
         getMessageToSay: function() {
             return messageToSay;
         },
-        highlightElementForQueryBuilder: function(path) {
+        highlightElementForQueryBuilder: function(details) {
             this.clearOverlays();
-            if (path) {
+            if (details.path) {
+                var path = details.path;
                 var element = this.mainFrameWindow.document.getElementsByTagName('body')[0];
                 for (var i = 0; i < path.length; i ++  ) {
                     var name = path[i][0];
@@ -6515,6 +6612,8 @@
                     }
                 }
                 this.arrowTo(element, false, true);
+            } else if (details.lib) {
+                this.arrowTo(me.modules.cf.getlib(details.lib), true, true);
             }
         },
         prepareTolearOverlaysAndReflect: function() {

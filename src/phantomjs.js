@@ -33,6 +33,11 @@ var renderFrame = function(count) {
     }
 };
 
+var keyMap = {
+    '\r': 16777221,
+    '\n': 16777221,
+};
+
 page.onCallback = function(data) {
     if (data.scroll) {
         setScrollPosition(Math.max(0, data.scroll.rect.top - 200));
@@ -50,6 +55,16 @@ page.onCallback = function(data) {
     }
     if (data.preventRenderingUntilNextFrame) {
         preventRenderingUntilNextFrame = true;
+    }
+    if (data.mouseEvent && data.mouseEvent !== 'mouseup' /* somewhy PhantomJS concverts this to click */) {
+        page.sendEvent(data.mouseEvent, data.pos.x + 1, data.pos.y + 1);
+    }
+    if (data.keyboardEvent && data.keyboardEvent !== 'keypress' /* somewhy PhantomJS converts this to keydown*/) {
+        //http://phantomjs.org/api/webpage/method/send-event.html
+        //https://github.com/ariya/phantomjs/blob/cab2635e66d74b7e665c44400b8b20a8f225153a/src/modules/webpage.js
+        var keyCode = keyMap[data.char] || data.char;
+        var shift = false;//(keyMap[data.char] && ! keyMap[data.char.toLowerCase()]) ? true : false;
+        page.sendEvent(data.keyboardEvent, keyCode, null, null, shift ? 0x02000000 : 0);
     }
 };
 

@@ -6885,12 +6885,12 @@ button.close {
                     <tr id="templates" ng-repeat="dummy in [0]">
                         <th>Templates</th>
                         <td>
-                            <input type="text" readonly onclick="this.select();" value="cartfiller.js"/><br/>
-                            <textarea readonly onclick="this.select();">{{templates.cartfiller}}</textarea><br/><br/>
-                            <input type="text" readonly onclick="this.select();" value="test.js"/><br/>
-                            <textarea readonly onclick="this.select();">{{templates.test}}</textarea><br/><br/>
-                            <input type="text" readonly onclick="this.select();" value="worker.js"/><br/>
-                            <textarea readonly onclick="this.select();">{{templates.worker}}</textarea><br/><br/>
+                            <input type="text" readonly onclick="this.select();" onfocus="this.select();" value="cartfiller.js"/><br/>
+                            <textarea readonly onclick="this.select();" onfocus="this.select();">{{templates.cartfiller}}</textarea><br/><br/>
+                            <input type="text" readonly onclick="this.select();" onfocus="this.select();" value="test.js"/><br/>
+                            <textarea readonly onclick="this.select();" onfocus="this.select();">{{templates.test}}</textarea><br/><br/>
+                            <input type="text" readonly onclick="this.select();" onfocus="this.select();" value="worker.js"/><br/>
+                            <textarea readonly onclick="this.select();" onfocus="this.select();">{{templates.worker}}</textarea><br/><br/>
                         </td>
                     </tr>
                 </tbody>
@@ -7051,8 +7051,9 @@ button.close {
                         </div>
                         <div style="max-height: 60vh; overflow: scroll">
                             <div ng-repeat="(elementIndex, element) in stack">
-                                <button data-index="{{elementIndex}}" class="btn btn-xs" ng-class="element.selectNodeName ? 'btn-success' : 'btn-warning'" ng-click="toggle('selectNodeName', element)" onmouseenter="angular.element(this).scope().highlight(this);">
-                                    {{element.element}}
+                                <span ng-if="element.lib">lib: </span>
+                                <button data-index="{{elementIndex}}" class="btn btn-xs" ng-class="element.selectNodeName ? 'btn-success' : element.lib ? 'btn-info' : 'btn-warning'" ng-click="toggle('selectNodeName', element)" onmouseenter="angular.element(this).scope().highlight(this);">
+                                    {{element.element || element.lib}}
                                 </button>
                                 <button class="btn btn-xs" ng-class="element.selectId ? 'btn-success' : 'btn-danger'" ng-click="toggle('selectId', element)" ng-if="element.id">
                                     #{{element.id}}
@@ -7063,7 +7064,7 @@ button.close {
                                 <button class="btn btn-xs" ng-class="element.selectAttribute[index] ? 'btn-success' : 'btn-disabled'" ng-click="toggle('selectAttribute', element, index)" ng-repeat="(index, a) in element.attrs">
                                     .{{a.n + '="' + a.v + '"'}}
                                 </button>
-                                <button class="btn btn-xs" ng-class="element.selectIndex ? 'btn-success' : 'btn-default'" ng-click="toggle('selectIndex', element)">
+                                <button class="btn btn-xs" ng-class="element.selectIndex ? 'btn-success' : 'btn-default'" ng-click="toggle('selectIndex', element)" ng-if="element.element">
                                     nth({{element.index}})
                                 </button>
                                 <button class="btn btn-xs" ng-class="element.selectText ? 'btn-success' : 'btn-default'" ng-click="toggle('selectText', element)" ng-if="element.text">
@@ -7223,7 +7224,7 @@ button.close {
                 Current URL: <a href="#" target="_blank" id="currentUrl" style="word-wrap: break-word;"></a>
             </div>
             <div id="globalsDiv" ng-repeat="dummy in [0]">
-                <div class="alert alert-info" ng-repeat="(name, value) in workerGlobals">
+                <div class="alert alert-info" ng-repeat="name in workerGlobalsOrdered">
                     {{name}}: <span title="Doubleclick to change" ng-dblclick="updateGlobal(name)">{{getWorkerGlobalValue(name)}}</span>
                 </div>
             </div>
@@ -47330,6 +47331,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
         $scope.workersCounter = 1;
         $scope.workersLoaded = 0;
         $scope.workerGlobals = {};
+        $scope.workerGlobalsOrdered = [];
         $scope.workerSrc = false;
         $scope.finishReached = false;
         $scope.runUntilTask = $scope.runUntilStep = false;
@@ -47351,6 +47353,30 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
         var repeatStepCounter = 0;
         var repeatStepCounterTask = false;
         var repeatStepCounterStep = false;
+        var strcmp = function(a, b) {
+            return a > b ? 1 : a < b ? -1 : 0;
+        };
+        var updateGlobalsOrdered = function() {
+            $scope.workerGlobalsOrdered = ['_random'];
+            for (var i in $scope.workerGlobals) {
+                $scope.workerGlobalsOrdered.push(i);
+            }
+            $scope.workerGlobalsOrdered.sort(function(a, b) {
+                if (a.substr(0, 1) === '_') {
+                    if (b.substr(0, 1) === '_') {
+                        return strcmp(a, b);
+                    } else {
+                        return 1;
+                    }
+                } else {
+                    if (b.substr(0, 1) === '_') {
+                        return -1;
+                    } else {
+                        return strcmp(a, b);
+                    }
+                }
+            });
+        };
         var isLongClick = function($event){
             var now = $event.timeStamp ? $event.timeStamp : (new Date()).getTime();
             return (now - mouseDownTime) > 1000;
@@ -47484,6 +47510,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                         }
                         $scope.finishReached = false;
                         $scope.workerGlobals = details.globals;
+                        updateGlobalsOrdered();
                     }
                     while ($scope.jobTaskProgress.length < $scope.jobDetails.length) {
                         $scope.jobTaskProgress.push({complete: false, step: 0, stepsInProgress: {}, stepResults: {}});
@@ -47492,6 +47519,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 });
             } else if (cmd === 'globalsUpdate'){
                 $scope.workerGlobals = details.globals;
+                updateGlobalsOrdered();
                 digestGlobals();
             } else if (cmd === 'workerRegistered'){
                 $scope.$apply(function(){
@@ -47618,6 +47646,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                     for (i in details.globals) {
                         if (details.globals.hasOwnProperty(i)){
                             $scope.workerGlobals = details.globals;
+                            updateGlobalsOrdered();
                             digestGlobals();
                             break;
                         }
@@ -47996,6 +48025,9 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
             mouseDownTime = $event.timeStamp || (new Date()).getTime();
         };
         $scope.getWorkerGlobalValue = function(name) {
+            if (name === '_random') {
+                return '(e.g. 1388531842351)';
+            }
             var v = $scope.workerGlobals[name];
             return 'object' === typeof v ? ('json: ' + JSON.stringify(v)) : v;
         };
@@ -48050,31 +48082,46 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                     }
                     return JSON.stringify(s) + ', el.textContent';
                 };
-                var r = ('(\'' + scope.stack.map(function(el){
-                    var r = '' +
-                        (el.selectNodeName ? el.element : '') +
-                        (el.selectId ? ('#' + el.id) : '') +
-                        (el.classes.filter(function(c,i) {
-                            return undefined !== el.selectClass && el.selectClass[i];
-                        }).map(function(v){
-                            return '.' + v;
-                        }).join('')) +
-                        (el.attrs.filter(function(a,i) {
-                            return undefined !== el.selectAttribute && el.selectAttribute[i];
-                        }).map(function(a){
-                            return '[' + a.n + '="' + a.v + '"' + ']';
-                        }).join(''));
-                    if (r.trim().length && ! /option$/.test(r.trim())) {
-                        r += ':visible';
-                    }
-                    r +=
-                        (el.selectIndex ? ('\').filter(function(i,el,x,c){ c = 0; for (x = el.previousSibling; x; x = x.previousSibling) c += x.nodeName === el.nodeName ? 1 : 0; return c === ' + (el.index - 1) + ';}).find(\'') : '');
-                    return r +
-                        (el.selectText ? ('\').filter(function(i,el){ return api.compareCleanText(' + generateCompareCleanTextExpression(el.text.trim()) + ');}).find(\'') : '')
-                    ;
-                })
-                         .filter(function(v) { return v.trim().length; })
-                         .join(' ') + '\')').replace(/.find\(\'\s*\'\)/g, '');
+                var r = 
+                    (
+                        '(\'' + 
+                        scope.stack.map(function(el){
+                            var r = '' +
+                                (el.selectNodeName && el.element ? el.element : '') +
+                                (el.selectId ? ('#' + el.id) : '') +
+                                (el.classes.filter(function(c,i) {
+                                    return undefined !== el.selectClass && el.selectClass[i];
+                                }).map(function(v){
+                                    return '.' + v;
+                                }).join('')) +
+                                (el.attrs.filter(function(a,i) {
+                                    return undefined !== el.selectAttribute && el.selectAttribute[i];
+                                }).map(function(a){
+                                    return '[' + a.n + '="' + a.v + '"' + ']';
+                                }).join(''));
+                            if (r.trim().length && ! /option$/.test(r.trim())) {
+                                r += ':visible';
+                            }
+                            if (el.selectIndex) {
+                                r += '\').nthOfType(' + (el.index - 1) + ').find(\'';
+                                //r += '\').filter(function(i,el,x,c){ c = 0; for (x = el.previousSibling; x; x = x.previousSibling) c += x.nodeName === el.nodeName ? 1 : 0; return c === ' + (el.index - 1) + ';}).find(\'';
+                            }
+                            if (el.selectText) {
+                                r += '\').filter(function(i,el){ return api.compareCleanText(' + generateCompareCleanTextExpression(el.text.trim()) + ');}).find(\'';
+                            }
+                            if (el.selectNodeName && el.lib) {
+                                r += '\').getlib(\'' + el.lib + '\').find(\'';
+                            }
+                            return r.trim();
+                        })
+                        .filter(function(v) { return v.trim().length; })
+                        .join(' ') +
+                        '\')'
+                    )
+                    .replace(/.find\(\'\s*\'\)/g, '')
+                    .replace(/\s+\'\)/, '\')')
+                    .replace(/\(\'\s+/, '(\'')
+                    .replace(/^\s*\(\'\s*\'\)\.getlib/, 'getlib');
                 return r;
             };
             scope.toggleSearch = function() {
@@ -48092,12 +48139,18 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 }
             };
             scope.highlight = function(button) {
-                var payload = [];
-                for (var i = 0 ; i <= button.getAttribute('data-index'); i ++) {
-                    var node = scope.stack[i];
-                    payload.push([node.element, node.index - 1]);
+                if (scope.stack[button.getAttribute('data-index')].lib) {
+                    cfMessage.send('highlightElementForQueryBuilder', {lib: scope.stack[button.getAttribute('data-index')].lib, currentMainFrameWindow: scope.window});
+                } else {
+                    var payload = [];
+                    for (var i = 0 ; i <= button.getAttribute('data-index'); i ++) {
+                        var node = scope.stack[i];
+                        if (scope.stack[i].element) {
+                            payload.push([node.element, node.index - 1]);
+                        }
+                    }
+                    cfMessage.send('highlightElementForQueryBuilder', {path: payload, currentMainFrameWindow: scope.window});
                 }
-                cfMessage.send('highlightElementForQueryBuilder', {path: payload, currentMainFrameWindow: scope.window});
             };
         },1000);
         $scope.shortName = function(name) {
@@ -48273,6 +48326,10 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 return setTimeout(initGlobalsScope, 1000);
             }
             scope.updateGlobal = function(name) {
+                if ('_' === name.substr(0, 1)) {
+                    alert('you can\'t update this variable');
+                    return;
+                }
                 var newValue = promptWithJsonWorkaround('Enter new value for [' + name + ']', 'object' === typeof $scope.workerGlobals[name] ? JSON.stringify($scope.workerGlobals[name]) : $scope.workerGlobals[name]);
                 if (null !== newValue) {
                     $scope.workerGlobals[name] = newValue;
@@ -48324,7 +48381,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
             reportError('bootstrap message did not come');
         }
     }, 10000);
-    config.gruntBuildTimeStamp='1503150726000';
+    config.gruntBuildTimeStamp='1503184319250';
     window.addEventListener('message', function(event){
         var prefix = 'cartFillerMessage:';
         var isDist = true;
@@ -48434,7 +48491,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 if (message.tests) {
                     var x = new XMLHttpRequest();
                     x.onload = function(){
-                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1503150726000') {
+                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1503184319250') {
                             console.log('new version of CartFiller was deployed, switching to it');
                             var hash = window.location.href.split('#');
                             var pc = hash[0].split('?');

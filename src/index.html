@@ -111,12 +111,12 @@
                     <tr id="templates" ng-repeat="dummy in [0]">
                         <th>Templates</th>
                         <td>
-                            <input type="text" readonly onclick="this.select();" value="cartfiller.js"/><br/>
-                            <textarea readonly onclick="this.select();">{{templates.cartfiller}}</textarea><br/><br/>
-                            <input type="text" readonly onclick="this.select();" value="test.js"/><br/>
-                            <textarea readonly onclick="this.select();">{{templates.test}}</textarea><br/><br/>
-                            <input type="text" readonly onclick="this.select();" value="worker.js"/><br/>
-                            <textarea readonly onclick="this.select();">{{templates.worker}}</textarea><br/><br/>
+                            <input type="text" readonly onclick="this.select();" onfocus="this.select();" value="cartfiller.js"/><br/>
+                            <textarea readonly onclick="this.select();" onfocus="this.select();">{{templates.cartfiller}}</textarea><br/><br/>
+                            <input type="text" readonly onclick="this.select();" onfocus="this.select();" value="test.js"/><br/>
+                            <textarea readonly onclick="this.select();" onfocus="this.select();">{{templates.test}}</textarea><br/><br/>
+                            <input type="text" readonly onclick="this.select();" onfocus="this.select();" value="worker.js"/><br/>
+                            <textarea readonly onclick="this.select();" onfocus="this.select();">{{templates.worker}}</textarea><br/><br/>
                         </td>
                     </tr>
                 </tbody>
@@ -277,8 +277,9 @@
                         </div>
                         <div style="max-height: 60vh; overflow: scroll">
                             <div ng-repeat="(elementIndex, element) in stack">
-                                <button data-index="{{elementIndex}}" class="btn btn-xs" ng-class="element.selectNodeName ? 'btn-success' : 'btn-warning'" ng-click="toggle('selectNodeName', element)" onmouseenter="angular.element(this).scope().highlight(this);">
-                                    {{element.element}}
+                                <span ng-if="element.lib">lib: </span>
+                                <button data-index="{{elementIndex}}" class="btn btn-xs" ng-class="element.selectNodeName ? 'btn-success' : element.lib ? 'btn-info' : 'btn-warning'" ng-click="toggle('selectNodeName', element)" onmouseenter="angular.element(this).scope().highlight(this);">
+                                    {{element.element || element.lib}}
                                 </button>
                                 <button class="btn btn-xs" ng-class="element.selectId ? 'btn-success' : 'btn-danger'" ng-click="toggle('selectId', element)" ng-if="element.id">
                                     #{{element.id}}
@@ -289,7 +290,7 @@
                                 <button class="btn btn-xs" ng-class="element.selectAttribute[index] ? 'btn-success' : 'btn-disabled'" ng-click="toggle('selectAttribute', element, index)" ng-repeat="(index, a) in element.attrs">
                                     .{{a.n + '="' + a.v + '"'}}
                                 </button>
-                                <button class="btn btn-xs" ng-class="element.selectIndex ? 'btn-success' : 'btn-default'" ng-click="toggle('selectIndex', element)">
+                                <button class="btn btn-xs" ng-class="element.selectIndex ? 'btn-success' : 'btn-default'" ng-click="toggle('selectIndex', element)" ng-if="element.element">
                                     nth({{element.index}})
                                 </button>
                                 <button class="btn btn-xs" ng-class="element.selectText ? 'btn-success' : 'btn-default'" ng-click="toggle('selectText', element)" ng-if="element.text">
@@ -449,7 +450,7 @@
                 Current URL: <a href="#" target="_blank" id="currentUrl" style="word-wrap: break-word;"></a>
             </div>
             <div id="globalsDiv" ng-repeat="dummy in [0]">
-                <div class="alert alert-info" ng-repeat="(name, value) in workerGlobals">
+                <div class="alert alert-info" ng-repeat="name in workerGlobalsOrdered">
                     {{name}}: <span title="Doubleclick to change" ng-dblclick="updateGlobal(name)">{{getWorkerGlobalValue(name)}}</span>
                 </div>
             </div>

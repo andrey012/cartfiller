@@ -32,6 +32,7 @@ var argv = require('yargs')
     .describe('phantomjs-auth', 'Username:password for PhantomJs http authentication')
     .describe('phantomjs-render', 'filename (.png) to render page 5 seconds after launching to troubleshoot what PhantomJs is doing')
     .describe('debug-frame-folder', 'Save captured video frames to this folder')
+    .describe('phantomjs-debugger-port', '')
     .argv;
 var express = require('express');
 var serveIndex = require('serve-index');
@@ -86,20 +87,30 @@ app.get('/', function (req, res) {
   res.send('<!DOCTYPE html><html><head></head><body><pre>Hello, this is cartFiller backend, you should not ever interact with it directly, here are current stats: ' + JSON.stringify(stats, null, 4) + '</pre></body></html>');
 });
 
+var logDate = function(thisTs, prevTs, withDate){
+    return (withDate ? (thisTs.getUTCFullYear() + '-' + ('0' + thisTs.getUTCMonth()).substr(-2) + '-' + ('0' + thisTs.getUTCDate()).substr(-2) + ' ') : '') + ('0' + thisTs.getUTCHours()).substr(-2) + ':' + ('0' + thisTs.getUTCMinutes()).substr(-2) + ':' + ('0' + thisTs.getUTCSeconds()).substr(-2) + '.' + ('00' + thisTs.getUTCMilliseconds()).substr(-3) + ' (+' + (thisTs.getTime() - prevTs.getTime()) + 'ms)';
+};
+
+var prevProgressTs = new Date();
+
 app.post('/progress/' + sessionKey, function (req, res) {
     pulseTime = (new Date()).getTime();
     res.setHeader('Access-Control-Allow-Origin', '*');
+    req.body.task = parseInt(req.body.task) + 1;
+    req.body.step = parseInt(req.body.step) + 1;
     if (req.body.result !== 'ok') {
         failures.push(req.body);
     }
-    var task = (parseInt(req.body.task) + 1);
-    var step = (parseInt(req.body.step) + 1);
+    var task = req.body.task;
+    var step = req.body.step;
     var frameMapTask = String(parseInt(req.body.nextTask) + 1);
     var frameMapStep = String(parseInt(req.body.nextStep) + 1);
     console.log('setting frameMap for ' + frameMapTask + '.' + frameMapStep);
     frameMap[frameMapTask + '.' + frameMapStep] = [parseInt(req.body.nextVideoFrame), parseInt(req.body.nextSleep)];
-
-    console.log((req.body.result + '       ').substr(0,8) + (new Date()) + '  ' + req.body.test + ', task ' + task + ': ' + req.body.taskName + ', step ' + step + ': result = ' + req.body.result + (req.body.videoFrame ? (', frame = ' + req.body.videoFrame) : '') + (req.body.message ? (', message = ' + req.body.message) : ''));
+    
+    var ts = new Date();
+    console.log((req.body.result + '       ').substr(0,8) + logDate(ts, prevProgressTs) + ' ' + req.body.test + ', task ' + task + ': ' + req.body.taskName + ', step ' + step + ': result = ' + req.body.result + (req.body.videoFrame ? (', frame = ' + req.body.videoFrame) : '') + (req.body.message ? (', message = ' + req.body.message) : ''));
+    prevProgressTs = ts;
     res.end();
 });
 
@@ -529,6 +540,10 @@ startup.push(function() {
     if (isPhantomJs) {
         var childArgs;
         childArgs = ['--web-security=false'];
+        if (argv['phantomjs-debugger-port']) {
+            childArgs.push('--remote-debugger-port=' + argv['phantomjs-debugger-port']);
+            childArgs.push('--remote-debugger-autorun=yes');
+        }
         childArgs.push(__dirname + '/phantomjs.js');
         if (argv['phantomjs-auth']) {
             childArgs.push('--auth=' + argv['phantomjs-auth']);
