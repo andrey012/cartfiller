@@ -563,6 +563,7 @@
             }
             messageDiv.onclick = function(){me.modules.ui.clearOverlaysAndReflect();};
             overlayWindow().document.getElementsByTagName('body')[0].appendChild(messageDiv);
+            closeButton.focus();
             messageAdjustmentRemainingAttempts = 100;
             me.modules.ui.adjustMessageDiv(messageDiv);
             if (messageToSayOptions.callback) {
@@ -1025,12 +1026,18 @@
                     }
                     ok = false;
                     var rect = div.getBoundingClientRect();
-                    if (rect.bottom > ui.mainFrameWindow.innerHeight){
-                        if (rect.width > 0.95 * ui.mainFrameWindow.innerWidth){
+                    if (rect.bottom > ui.mainFrameWindow.innerHeight || (rect.width - 20) < div.scrollWidth){
+                        if (rect.width > 0.95 * ui.mainFrameWindow.innerWidth && rect.bottom > ui.mainFrameWindow.innerHeight){
                             currentMessageDivTopShift += Math.min(rect.top, rect.bottom - ui.mainFrameWindow.innerHeight);
                         } else {
                             // let's make div wider
-                            currentMessageDivWidth = Math.min(ui.mainFrameWindow.innerWidth, (parseInt(div.style.width.replace('px', '')) + Math.round(ui.mainFrameWindow.innerWidth * 0.4)));
+                            currentMessageDivWidth = Math.min(
+                                ui.mainFrameWindow.innerWidth - 60, 
+                                (
+                                    parseInt(div.style.width.replace('px', '')) +
+                                    Math.round(ui.mainFrameWindow.innerWidth * 0.4)
+                                )
+                            );
                         }
                     } else {
                         // that's ok 

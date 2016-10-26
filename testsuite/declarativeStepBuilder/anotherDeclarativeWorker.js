@@ -13,7 +13,7 @@
                 .useIfNot(noOnload, cf.click(api.onload)) // tbd: think how to avoid using api here
                 .waitFor(lib('partNumberInput'))
         })
-        .use('declarativeOpenHomeGenerator')
+        .use('declarativeOpenHomeGenerator', true)
         .export()
         
     });

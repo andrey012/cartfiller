@@ -211,7 +211,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                         cfScroll();
                         $scope.chooseJobState = false;
                         $scope.jobDetails = details.details;
-                        $scope.jobTitleMap = angular.isUndefined(details.titleMap) ? [] : details.titleMap;
+                        $scope.jobTitleMap = angular.isUndefined(details.titleMap) ? {} : details.titleMap;
                         $scope.jobTaskProgress = [];
                         $scope.jobTaskStepProgress = [];
                         $scope.repeatedTaskCounter = [];
@@ -778,7 +778,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
         };
         $scope.getWorkerGlobalValue = function(name) {
             if (name === '_random') {
-                return '(e.g. 1388531842351)';
+                return '(e.g. 1388531842351124)';
             }
             var v = $scope.workerGlobals[name];
             return 'object' === typeof v ? ('json: ' + JSON.stringify(v)) : v;
@@ -822,17 +822,16 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                     s = String(s);
                     for (var i in $scope.jobDetails[$scope.currentTask]) {
                         if (i !== 'task') {
-                            var accessor = /^[a-zA-Z_][a-zA-Z_0-9]*$/.test(i) ? ('.' + i) : ('['  + JSON.stringify(i) + ']');
-                            if (String($scope.jobDetails[$scope.currentTask][i]) === s) {
-                                return 'task' + accessor + ', el.textContent';
-                            } else if ($scope.jobDetails[$scope.currentTask][i] === s.trim()) {
-                                return 'task' + accessor + ', el.textContent';
+                            if (String($scope.jobDetails[$scope.currentTask][i]) === s ||
+                                $scope.jobDetails[$scope.currentTask][i] === s.trim()
+                            ) {
+                                return '\'${' + i + '}\'';
                             } else if (String($scope.jobDetails[$scope.currentTask][i]).toLowerCase() === s.toLowerCase()) {
-                                return 'String(task' + accessor + ').toLowerCase(), el.textContent.toLowerCase()';
+                                return '\'${' + i + '}\', true';
                             }
                         }
                     }
-                    return JSON.stringify(s) + ', el.textContent';
+                    return JSON.stringify(s);
                 };
                 var r = 
                     (
@@ -859,7 +858,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                                 //r += '\').filter(function(i,el,x,c){ c = 0; for (x = el.previousSibling; x; x = x.previousSibling) c += x.nodeName === el.nodeName ? 1 : 0; return c === ' + (el.index - 1) + ';}).find(\'';
                             }
                             if (el.selectText) {
-                                r += '\').filter(function(i,el){ return api.compareCleanText(' + generateCompareCleanTextExpression(el.text.trim()) + ');}).find(\'';
+                                r += '\').withText(' + generateCompareCleanTextExpression(el.text.trim()) + ').find(\'';
                             }
                             if (el.selectNodeName && el.lib) {
                                 r += '\').getlib(\'' + el.lib + '\').find(\'';

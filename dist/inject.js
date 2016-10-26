@@ -193,7 +193,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1503184319250';
+    config.gruntBuildTimeStamp='1503233950779';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -704,6 +704,15 @@
                 c += x.nodeName === el.nodeName ? 1 : 0;
             } 
             return c === n;
+        });
+    };
+    Selector.prototype.withText = function(text, ignoreCase) {
+        text = me.modules.dispatcher.interpolateText(text);
+        if (ignoreCase) {
+            text = text.toLowerCase();
+        }
+        return this.filter(function(i,el){
+            return me.modules.api.compareCleanText(text, ignoreCase ? el.textContent.toLowerCase : el.textContent);
         });
     };
     Selector.prototype.reevaluate = function() {
@@ -1556,7 +1565,7 @@
          */
         typer: function(value, whatNext, dontClear, failOnErrors, paste) {
             var r = [
-                paste ? 'type key sequence' : 'paste value',
+                paste ? 'paste value' : 'type key sequence',
                 function(el) {
                     var args = arguments;
                     if (me.modules.api.debug && me.modules.api.debug.stop) {
@@ -2219,6 +2228,10 @@
             var makeBooleanBuilderPromise = function(condition) {
                 if (condition instanceof Function) {
                     return condition;
+                } else if ('string' === typeof condition) {
+                    return function() {
+                        return me.modules.dispatcher.interpolateText(condition).length;
+                    };
                 } else if (condition instanceof BuilderPromise) {
                     var arr = condition.arr.slice();
                     var check = arr.pop();
@@ -2290,14 +2303,14 @@
                         if(me.modules.api.debug && me.modules.api.debug.stop) {
                             debugger; // jshint ignore:line
                         }
-                        promise().arrow(1).result(); 
+                        promise().arrow(1).nop(); 
                     }, [promise])];
                 } else {
                     return ['get' + niceArgs(args), function() { 
                         if(me.modules.api.debug && me.modules.api.debug.stop) {
                             debugger; // jshint ignore:line
                         }
-                        api('find', args).arrow(1).result(); 
+                        api('find', args).arrow(1).nop(); 
                     }];
                 }
             };
@@ -2344,13 +2357,13 @@
                             }, args[0] || undefined]);
                         }];
                     } else {
-                        return [name + niceArgs(args), function(p) {
+                        return [name + niceArgs(args), me.modules.dispatcher.injectTaskParameters(function(p) {
                             if(me.modules.api.debug && me.modules.api.debug.stop) {
                                 debugger; // jshint ignore:line
                             }
                             var s = p[name].apply(p, args);
-                            s.arrow(1).result();
-                        }];
+                            s.arrow(1).nop();
+                        }, args)];
                     }
                 };
             };
@@ -2359,7 +2372,7 @@
                     Builder.prototype[i] = buildProxyFunction(i);
                 }
             }
-            ['say', 'repeatTask', 'repeatStep', 'skipTask', 'skipStep', 'repeatJob', 'skipJob', 'openUrl'].filter(function(fn) {
+            ['say', 'repeatTask', 'repeatStep', 'skipTask', 'skipStep', 'repeatJob', 'skipJob', 'openUrl', 'sleep'].filter(function(fn) {
                 wrapper.Builder.prototype[fn] = function(args, index) {
                     return [fn + niceArgs(args), function(p) {
                         var tweakedArgs;
@@ -2369,17 +2382,31 @@
                         } else {
                             tweakedArgs = args.slice();
                         }
+                        var submitResult = true;
+                        if (fn === 'say') {
+                            tweakedArgs[0] = me.modules.dispatcher.interpolateText(tweakedArgs[0]);
+                            if (tweakedArgs[2]) {
+                                submitResult = false;
+                            }
+                        }
+                        var apiOrElement;
                         if (fn === 'say' && p instanceof me.modules.api.getSelectorClass()) {
-                            p[fn].apply(p, tweakedArgs).result();
+                            apiOrElement = p[fn].apply(p, tweakedArgs);
                         } else {
-                            api(fn, tweakedArgs).result();
+                            apiOrElement = api(fn, tweakedArgs);
+                        }
+                        if (fn === 'say' && ! tweakedArgs[2]) {
+                            api('sleep');
+                        }
+                        if (submitResult) {
+                            apiOrElement.result();
                         }
                     }];
                 };
             });
-            Builder.prototype.sleep = function(args) {
+            Builder.prototype.pause = function(args) {
                 var ms = args[0];
-                return ['sleep for [' + ms + '] ms', function(){
+                return ['pause for [' + ms + '] ms', function(){
                     api('setTimeout', [function(){
                         api('result');
                     }, ms]);
@@ -2389,7 +2416,7 @@
                 return ['nop', function(){ api('nop'); }];
             };
             Builder.prototype.click = function(args) {
-                return api('clicker', args);
+                return buildProxyFunction('exists')([]).concat(api('clicker', args));
             };
             Builder.prototype.ready = function() {
                 return ['wait for readyState become complete', function() {
@@ -2398,8 +2425,27 @@
                     }]);
                 }];
             };
+            /**
+             * string text to type
+             * boolean dont clear text before typing
+             */
             Builder.prototype.type = function(args) {
-                return api('typer', args);
+                return buildProxyFunction('exists')([]).concat(api('typer', [
+                    function() {
+                        return me.modules.dispatcher.interpolateText(args[0]);
+                    },
+                    undefined,
+                    args[1]
+                ]));
+            };
+            Builder.prototype.enter = function() {
+                return buildProxyFunction('exists')([]).concat(api('typer', [
+                    function() { 
+                        return '\r'; 
+                    }, 
+                    undefined, 
+                    true
+                ]));
             };
             Builder.prototype.then = function(args) {
                 return ['then(' +niceArgs(args) + ')', me.modules.dispatcher.injectTaskParameters(function() {
@@ -2552,7 +2598,6 @@
                     throw new Error('not sure how to handle lib item: ' + JSON.stringify(this.lib[name]));
                 }
             }
-            ///////
         };
         Wrapper.prototype.getLib = function() {
             var wrapper = this;
@@ -2707,6 +2752,7 @@
             ]
         };
     };
+    var INTERPOLATE_PATTERN = /(^|[^\\])\$\{([^}]+)}/;
     /**
      * Keeps workers URL=>code map, used to initiate relays on the fly
      * @var {Object} CartFiller.Dispatcher~workerSourceCodes
@@ -5123,6 +5169,8 @@
             (src instanceof Array ? src : [src]).filter(function(src) {
                 if ('function' === typeof src) {
                     me.modules.dispatcher.discoverTaskParameters(src, params);
+                } else if ('string' === typeof src) {
+                    me.modules.dispatcher.interpolateText(src, params);
                 }
             });
             fn.cartFillerParameterList = fn.cartFillerParameterList || [];
@@ -5149,6 +5197,17 @@
             setTimeout(function() {
                 me.modules.dispatcher.openPopup(details, callback, tries + 1);
             }, 1000);
+        },
+        interpolateText: function(text, storeDiscoveredParametersHere) {
+            if ('string' !== typeof text) {
+                text = (undefined === text || null === text) ? '' : String(text);
+            }
+            return text.replace(INTERPOLATE_PATTERN, function(m, g1, g2) {
+                if (storeDiscoveredParametersHere) {
+                    storeDiscoveredParametersHere[g2] = true;
+                }
+                return g1 + ((undefined === workerCurrentTask[g2] || null === workerCurrentTask[g2]) ? '' : String(workerCurrentTask[g2]));
+            }).replace(/\\\$/g, '$');
         }
     });
 }).call(this, document, window);
@@ -5789,6 +5848,7 @@
             }
             messageDiv.onclick = function(){me.modules.ui.clearOverlaysAndReflect();};
             overlayWindow().document.getElementsByTagName('body')[0].appendChild(messageDiv);
+            closeButton.focus();
             messageAdjustmentRemainingAttempts = 100;
             me.modules.ui.adjustMessageDiv(messageDiv);
             if (messageToSayOptions.callback) {
@@ -6251,12 +6311,18 @@
                     }
                     ok = false;
                     var rect = div.getBoundingClientRect();
-                    if (rect.bottom > ui.mainFrameWindow.innerHeight){
-                        if (rect.width > 0.95 * ui.mainFrameWindow.innerWidth){
+                    if (rect.bottom > ui.mainFrameWindow.innerHeight || (rect.width - 20) < div.scrollWidth){
+                        if (rect.width > 0.95 * ui.mainFrameWindow.innerWidth && rect.bottom > ui.mainFrameWindow.innerHeight){
                             currentMessageDivTopShift += Math.min(rect.top, rect.bottom - ui.mainFrameWindow.innerHeight);
                         } else {
                             // let's make div wider
-                            currentMessageDivWidth = Math.min(ui.mainFrameWindow.innerWidth, (parseInt(div.style.width.replace('px', '')) + Math.round(ui.mainFrameWindow.innerWidth * 0.4)));
+                            currentMessageDivWidth = Math.min(
+                                ui.mainFrameWindow.innerWidth - 60, 
+                                (
+                                    parseInt(div.style.width.replace('px', '')) +
+                                    Math.round(ui.mainFrameWindow.innerWidth * 0.4)
+                                )
+                            );
                         }
                     } else {
                         // that's ok 

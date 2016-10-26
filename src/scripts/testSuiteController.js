@@ -618,8 +618,21 @@ define('testSuiteController', ['app', 'scroll'], function(app){
         };
         $scope.discover = function(reset) {
             if (reset) {
+                useJsInsteadOfJson = false;
                 $scope.discovery.visitedRootPaths = [];
                 $scope.discovery.currentRootPath = $scope.params.root ? $scope.params.root : window.location.href.split(/[#?]/)[0].replace(/\/[^\/]*/, '/');
+                if (/^\./.test($scope.discovery.currentRootPath)) {
+                    var pc = (window.location.href.split(/[#?]/)[0] + '/' + $scope.discovery.currentRootPath) . split('//');
+                    var protocol = pc.shift();
+                    var url = pc.join('//');
+                    while (/\/\.?\//.test(url)) {
+                        url = url.replace(/\/\.?\//, '/');
+                    }
+                    while (/\/[^/]*\/\.\.\//.test(url)) {
+                        url = url.replace(/\/[^/]*\/\.\.\//, '/');
+                    }
+                    $scope.discovery.currentRootPath = protocol + '//' + url;
+                }
             }
             switch ($scope.discovery.state) {
                 case -1:

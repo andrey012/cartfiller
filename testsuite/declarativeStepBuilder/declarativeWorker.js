@@ -85,8 +85,8 @@
         .get(lib('partNumberInput')).as('searchBox')
         .lib('searchButton', cf.get('input[value="Search"][type="submit"]:visible'))
         .get(lib('searchButton')).as('searchButton')
-        .with('searchBox').type(cf.const('123'))
-        .with('searchBox').type('part number')
+        .with('searchBox').type('123')
+        .with('searchBox').type('${part number}')
         .with('searchBox', 'searchButton').then(function(searchBox, searchButton) {
             api.arrow([searchBox[0], searchButton[0]], 1).result();
         })
@@ -102,7 +102,7 @@
         })
         .name('restart')
         .use('declarativeOpenHomeGenerator', true)
-        .get(lib('partNumberInput')).exists().type('guessedPartNumber')
+        .get(lib('partNumberInput')).exists().type('${guessedPartNumber}')
         .get(lib('searchButton')).click()
         .lib('searchResultLines', cf
             .get('table.table.table-bordered:visible thead:visible tr:visible th:visible')

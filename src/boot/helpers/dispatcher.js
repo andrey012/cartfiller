@@ -97,6 +97,7 @@
             ]
         };
     };
+    var INTERPOLATE_PATTERN = /(^|[^\\])\$\{([^}]+)}/;
     /**
      * Keeps workers URL=>code map, used to initiate relays on the fly
      * @var {Object} CartFiller.Dispatcher~workerSourceCodes
@@ -2513,6 +2514,8 @@
             (src instanceof Array ? src : [src]).filter(function(src) {
                 if ('function' === typeof src) {
                     me.modules.dispatcher.discoverTaskParameters(src, params);
+                } else if ('string' === typeof src) {
+                    me.modules.dispatcher.interpolateText(src, params);
                 }
             });
             fn.cartFillerParameterList = fn.cartFillerParameterList || [];
@@ -2539,6 +2542,17 @@
             setTimeout(function() {
                 me.modules.dispatcher.openPopup(details, callback, tries + 1);
             }, 1000);
+        },
+        interpolateText: function(text, storeDiscoveredParametersHere) {
+            if ('string' !== typeof text) {
+                text = (undefined === text || null === text) ? '' : String(text);
+            }
+            return text.replace(INTERPOLATE_PATTERN, function(m, g1, g2) {
+                if (storeDiscoveredParametersHere) {
+                    storeDiscoveredParametersHere[g2] = true;
+                }
+                return g1 + ((undefined === workerCurrentTask[g2] || null === workerCurrentTask[g2]) ? '' : String(workerCurrentTask[g2]));
+            }).replace(/\\\$/g, '$');
         }
     });
 }).call(this, document, window);

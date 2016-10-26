@@ -2,9 +2,9 @@ cartfiller = {
     globals: {
     },
     worker: [
-        "worker.js",
+        "todoMvcWorker.js",
     ],
     tests: {
-        test: true,
+        todoMvcTest: true,
     }
 }

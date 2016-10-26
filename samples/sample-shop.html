@@ -12,10 +12,16 @@
     <body>
         <div id="navbar" class="navbar" ng-controller="navbarController" ng-cloak>
             <div style="float: left;" id="bookmarklets">
-                <a href="sample-shop.html#/">Home</a> :
+                <a id="homeLink" href="sample-shop.html#/">Home</a> :
             </div>
             <script>
                 jQuery(window).ready(function(){
+                    if (/\?noBookmarklets/.test(window.location.href)) {
+                        $('a[href^="sample-shop.html"]').each(function(i, e) {
+                            $(e).attr('href', $(e).attr('href').replace('sample-shop.html', 'sample-shop.html?noBookmarklets'));
+                        });
+                        return;
+                    }
                     var baseUrl = window.location.href.replace(/samples\/sample-shop.html.*$/, '');
                     var injectUrl = baseUrl + '/src/boot/inject.js';
                     var injectMinifiedUrl = baseUrl + '/src/boot/inject.min.js';

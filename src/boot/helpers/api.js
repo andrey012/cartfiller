@@ -454,6 +454,15 @@
             return c === n;
         });
     };
+    Selector.prototype.withText = function(text, ignoreCase) {
+        text = me.modules.dispatcher.interpolateText(text);
+        if (ignoreCase) {
+            text = text.toLowerCase();
+        }
+        return this.filter(function(i,el){
+            return me.modules.api.compareCleanText(text, ignoreCase ? el.textContent.toLowerCase : el.textContent);
+        });
+    };
     Selector.prototype.reevaluate = function() {
         var i;
         if (this.self) {
@@ -1304,7 +1313,7 @@
          */
         typer: function(value, whatNext, dontClear, failOnErrors, paste) {
             var r = [
-                paste ? 'type key sequence' : 'paste value',
+                paste ? 'paste value' : 'type key sequence',
                 function(el) {
                     var args = arguments;
                     if (me.modules.api.debug && me.modules.api.debug.stop) {

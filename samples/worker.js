@@ -206,7 +206,7 @@
                     lib('goToHome'),
                     api.clicker(api.waiter(
                         function(){
-                            return (1 === lib.searchBox().length);
+                            return this.readyState === 'complete' && (1 === lib.searchBox().length);
                         },
                         function(result){
                             api.highlight(lib.searchBox()).say(globals.skipMessages?'':'Here is search box, which means, that we came to home page.').result(result ? "" : "Cant navigate to home");
