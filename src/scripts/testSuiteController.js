@@ -1032,6 +1032,8 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             for (var i in $scope.templates) {
                 if (base64Pattern.test($scope.templates[i])) {
                     getter(i);
+                } else {
+                    $scope.templates[i] = atob($scope.templates[i]);
                 }
             }
         })();

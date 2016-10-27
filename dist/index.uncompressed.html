@@ -48224,6 +48224,10 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 $('#buttonPanel').hide();
                 $('#libBrowser').show().data('scroll', $(window).scrollTop());
                 cfMessage.send('toggleSize', {size: 'big'});
+                if ($scope.chooseJobState) {
+                    $scope.chooseJob();
+                    $scope.$digest();
+                }
                 $('#libBrowserSearch').focus();
                 $('#libBrowserSearch')[0].select();
             } else {
@@ -48243,6 +48247,10 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 $('#buttonPanel').hide();
                 $('#availableTasksOfWorker').show().data('scroll', $(window).scrollTop());
                 cfMessage.send('toggleSize', {size: 'big'});
+                if ($scope.chooseJobState) {
+                    $scope.chooseJob();
+                    $scope.$digest();
+                }
                 $('#availableTasksOfWorkerSearch').focus();
                 $('#availableTasksOfWorkerSearch')[0].select();
             } else {
@@ -48370,7 +48378,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
             reportError('bootstrap message did not come');
         }
     }, 10000);
-    config.gruntBuildTimeStamp='1503265405070';
+    config.gruntBuildTimeStamp='1503347583403';
     window.addEventListener('message', function(event){
         var prefix = 'cartFillerMessage:';
         var isDist = true;
@@ -48480,7 +48488,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 if (message.tests) {
                     var x = new XMLHttpRequest();
                     x.onload = function(){
-                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1503265405070') {
+                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1503347583403') {
                             console.log('new version of CartFiller was deployed, switching to it');
                             var hash = window.location.href.split('#');
                             var pc = hash[0].split('?');
@@ -49651,6 +49659,8 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             for (var i in $scope.templates) {
                 if (base64Pattern.test($scope.templates[i])) {
                     getter(i);
+                } else {
+                    $scope.templates[i] = atob($scope.templates[i]);
                 }
             }
         })();

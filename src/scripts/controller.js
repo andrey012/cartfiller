@@ -991,6 +991,10 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 $('#buttonPanel').hide();
                 $('#libBrowser').show().data('scroll', $(window).scrollTop());
                 cfMessage.send('toggleSize', {size: 'big'});
+                if ($scope.chooseJobState) {
+                    $scope.chooseJob();
+                    $scope.$digest();
+                }
                 $('#libBrowserSearch').focus();
                 $('#libBrowserSearch')[0].select();
             } else {
@@ -1010,6 +1014,10 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 $('#buttonPanel').hide();
                 $('#availableTasksOfWorker').show().data('scroll', $(window).scrollTop());
                 cfMessage.send('toggleSize', {size: 'big'});
+                if ($scope.chooseJobState) {
+                    $scope.chooseJob();
+                    $scope.$digest();
+                }
                 $('#availableTasksOfWorkerSearch').focus();
                 $('#availableTasksOfWorkerSearch')[0].select();
             } else {

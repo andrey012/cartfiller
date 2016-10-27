@@ -1188,7 +1188,7 @@
          * @access public
          */
         onMessage_toggleSize: function(details){
-                me.modules.ui.setSize(details.size);
+            me.modules.ui.setSize(details.size);
         },
         onMessage_reinitialize: function() {
             if (! relay.isSlave) {

@@ -193,7 +193,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1503265405070';
+    config.gruntBuildTimeStamp='1503347583403';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -3855,7 +3855,7 @@
          * @access public
          */
         onMessage_toggleSize: function(details){
-                me.modules.ui.setSize(details.size);
+            me.modules.ui.setSize(details.size);
         },
         onMessage_reinitialize: function() {
             if (! relay.isSlave) {
