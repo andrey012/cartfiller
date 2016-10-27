@@ -50,6 +50,23 @@ app.use(bodyParser.urlencoded({ extended: true }));
 var isPhantomJs = ('string' === typeof argv.browser) && (-1 !== argv.browser.indexOf('phantomjs'));
 var previousFrameBase64 = '';
 
+if (argv.frames) {
+    if (fs.existsSync(argv.frames)) {
+        if (! fs.statSync(argv.frames).isDirectory()) {
+            console.log('[' + argv.frames + '] exists but is not a directory');
+            process.exit(1);
+        }
+    } else {
+        console.log('trying to create [' + argv.frames + ']');
+        fs.mkdirSync(argv.frames);
+        if (fs.existsSync(argv.frames)) {
+            console.log('created');
+        } else {
+            console.log('unable to create [' + argv.frames + ']');
+            process.exit(1);
+        }
+    }
+}
 var stats = {
     totalTests: 0,
     totalAssertions: 0,
@@ -580,7 +597,7 @@ startup.push(function() {
                         frameCompressionMap[currentPhantomJsFrame] = currentFrameIndex;
                     }
                     if (previousFrameBase64 === frameContents) {
-                        console.log('skipping frame ' + currentPhantomJsFrame + ' because it is exactly same as previous');
+                        console.log('skipping frame ' + currentPhantomJsFrame + ' because it is exactly same as previous (currentFrameIndex = ' + currentFrameIndex + ')');
                         continue;
                     }
                     if (false === firstFrameOfThisTest) {

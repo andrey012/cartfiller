@@ -193,7 +193,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1503240321937';
+    config.gruntBuildTimeStamp='1503265405070';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -2287,6 +2287,12 @@
                     promise().arrow(1).result(); 
                 }, [promise])];
             };
+            Builder.prototype.clear = function(){
+                return ['remove all arrows', function() {
+                    api('arrow'); 
+                    api('nop');
+                }];
+            };
             Builder.prototype.get = function(args) {
                 if (args[0] instanceof BuilderPromise || args[0] instanceof LibReferencePromise) {
                     var promise;
@@ -2397,6 +2403,12 @@
                         }
                         if (fn === 'say' && ! tweakedArgs[2]) {
                             api('sleep');
+                            if (submitResult) {
+                                api('waitFor', [function() {
+                                    return me.modules.ui.isMessageStable();
+                                }]);
+                                return;
+                            }
                         }
                         if (submitResult) {
                             apiOrElement.result();
@@ -5626,6 +5638,10 @@
         }
         return {rect: rect};
     };
+    var sendScrollToPhantom = function(mapped) {
+        window.callPhantom({scroll: mapped});
+        me.modules.dispatcher.postMessageToWorker('phantomScroll', {scroll: mapped});
+    };
     var knownScrollTs = 0;
     var scrollIfNecessary = function() {
         var scrollPretendent, scrollPretendentTs;
@@ -5643,11 +5659,17 @@
                 .filter(currentMainFrameWindowFilter)
                 .filter(findScrollPretendent);
         }
+        if (! scrollPretendent && window.callPhantom && currentMessageOnScreen) {
+            var messageDiv = overlayWindow().document.getElementsByClassName(overlayClassName + 'message');
+            if (messageDiv.length) {
+                sendScrollToPhantom({rect: messageDiv[0].getBoundingClientRect()});
+            }
+        } 
         if (scrollPretendent) {
             knownScrollTs = scrollPretendentTs;
             if (window.callPhantom && (window.callPhantom instanceof Function)) {
                 var mapped = addFrameCoordinatesMap(scrollPretendent);
-                window.callPhantom({scroll: mapped});
+                sendScrollToPhantom(mapped);
             } else {
                 var border = 0.25;
                 var scroll = [
@@ -5745,6 +5767,11 @@
         return {left: left, right: right, top: top, bottom: bottom};
     };
     var getInnerHeight = function() {
+        try {
+            if (parent.callPhantom) {
+                return 600;
+            }
+        } catch (e) {}
         return me.modules.ui.mainFrameWindow.innerHeight;
     };
     var getInnerWidth = function() {
@@ -6338,9 +6365,13 @@
                         //setTimeout(drawMessage, 100);
                     }
                 } else {
+                    messageAdjustmentRemainingAttempts = 0;
+                    currentMessageOnScreen = messageToSay;
                     div.style.opacity = '1';
                 }
+                scrollIfNecessary();
             },0);
+            
         },
         /**
          * Starts Popup type UI
@@ -6869,6 +6900,9 @@
                     }
                 }
             } catch(e) {}
+        },
+        isMessageStable: function() { 
+            return messageAdjustmentRemainingAttempts === 0;
         }
     });
 }).call(this, document, window);

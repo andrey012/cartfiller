@@ -423,6 +423,11 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 })();
             } else if (cmd === 'cssSelectorEvaluateResult') {
                 $('#searchButton').text('Search (' + details.count + ')').removeClass('btn-success btn-danger').addClass(details.count === 1 ? 'btn-success': 'btn-danger');
+            } else if (cmd === 'phantomScroll') {
+                console.log(JSON.stringify(details));
+                if (details.scroll && details.scroll.rect) {
+                    cfScroll(null, null, null, details.scroll.rect.top);
+                }
             }
         });
         var setStepStatus = function(task, step, status, message, response) {

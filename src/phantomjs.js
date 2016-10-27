@@ -100,3 +100,4 @@ var args = system.args.filter(function(arg) {
 var url = args[1];
 page.onConsoleMessage('opening ' + url);
 page.open(url, function() {});
+setScrollPosition(0);

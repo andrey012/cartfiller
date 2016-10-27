@@ -2,7 +2,7 @@
 var argv = require('yargs')
     .help('help')
     .usage('Usage: $0 [options] <base video filename> <folder with audios>')
-    .demand(1, 'Please specify base video filename. It is exactly same, that you specified for -v option of backend.js')
+    .demand(1, 'Please specify base video filename. It is exactly same, that you specified for --frames option of backend.js')
     .demand(2, 'Please specify folder with audio files')
     .describe('debug-dump-frames', 'Dump individual frames from source files into subfolders of this dir')
     .argv;
@@ -90,17 +90,23 @@ var processFrameFolder = function() {
         );
         if (audioInputs.length) {
             audioInputs.filter(function(frame) {
+                // args.push(
+                //     '-f', 'lavfi',
+                //     '-i', 'anullsrc=channel_layout=5.1:sample_rate=44100'
+                // );
                 args.push(
-                    '-f', 'lavfi',
-                    '-i', 'anullsrc=channel_layout=5.1:sample_rate=48000'
+                    '-i', __dirname + '/silence.flac'
                 );
                 args.push(
                     '-i', argv._[1] + '/' + frame[4]
                 );
                 args.push(
-                    '-f', 'lavfi',
-                    '-i', 'anullsrc=channel_layout=5.1:sample_rate=48000'
+                    '-i', __dirname + '/silence.flac'
                 );
+                // args.push(
+                //     '-f', 'lavfi',
+                //     '-i', 'anullsrc=channel_layout=5.1:sample_rate=44100'
+                // );
             });
         }
 
@@ -139,7 +145,8 @@ var processFrameFolder = function() {
                 audioFilterPieces.join('') + ' ' + audioFilterSinks.join('') + 'concat=n=' + (audioFilterSinks.length * 2) + ':v=0:a=1[a]',
                 '-map', '0:v',
                 '-map', '[a]',
-                '-strict', '-2'
+                '-strict', '-2',
+                '-ac', '1', '-c:a', 'libvorbis'
             );
         }
         

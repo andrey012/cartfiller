@@ -373,6 +373,12 @@
                     promise().arrow(1).result(); 
                 }, [promise])];
             };
+            Builder.prototype.clear = function(){
+                return ['remove all arrows', function() {
+                    api('arrow'); 
+                    api('nop');
+                }];
+            };
             Builder.prototype.get = function(args) {
                 if (args[0] instanceof BuilderPromise || args[0] instanceof LibReferencePromise) {
                     var promise;
@@ -483,6 +489,12 @@
                         }
                         if (fn === 'say' && ! tweakedArgs[2]) {
                             api('sleep');
+                            if (submitResult) {
+                                api('waitFor', [function() {
+                                    return me.modules.ui.isMessageStable();
+                                }]);
+                                return;
+                            }
                         }
                         if (submitResult) {
                             apiOrElement.result();

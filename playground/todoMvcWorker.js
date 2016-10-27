@@ -13,7 +13,7 @@
         globals.baseUrl = globals._cartFillerInstallationUrl.replace(/\/[^\/]*\/?$/, '') + '/node_modules/todomvc/examples/react';
 
         cf.task('openTodomvc')
-            .say('cf.task(\'openTodomvc\')\n    .openUrl(globals.baseUrl)\n    .get(\'input#new-todo:visible\')\n    .exists()\n    .ready()\n    .say(\'we are ready\')', true)
+            .clear().say('cf.task(\'openTodomvc\')\n    .openUrl(globals.baseUrl)\n    .get(\'input#new-todo:visible\')\n    .exists()\n    .ready()\n    .say(\'we are ready\')', true)
             // we have sample distribution of TodoMVC in node_modules
             .openUrl(globals.baseUrl)
             // let's wait for some element to appear and then make sure
@@ -25,7 +25,8 @@
 
 
         cf.task('removeAllTasks')
-            .say('cf.task(\'removeAllTasks\')\n    .while(\n        cf.get(\n            cf.lib(\n                \'todolist\'\n                cf.get(\'ul#todo-list:visible\')\n            )\n        )\n        .exists(),\n\n        cf.getlib(\'todolist\')\n        .find(\'button.destroy\')\n        .first()\n        .css(\'display\', \'block\')\n        .click()\n    )\n    .say(\'all tasks removed\')', true)
+            .clear().say('cf.task(\'removeAllTasks\')\n    .while(\n        cf.get(\n            cf.lib(\n                \'todolist\'\n                cf.get(\'ul#todo-list:visible\')\n            )\n        )\n        .exists(),\n\n        cf.getlib(\'todolist\')\n        .find(\'button.destroy\')\n        .first()\n        .css(\'display\', \'block\')\n        .click()\n    )\n    .say(\'all tasks removed\')', true)
+            .nop()
             .while( // repeat while todo list is visible
                 // first argument of .where is condition
                 cf.get( // .get is used to start searching for elements - either by 
@@ -53,7 +54,7 @@
 
 
         cf.task('addTask')
-            .ifNot('${skipIntro}', cf.say('cf.task(\'addTask\')\n    .get(\'#new-todo:visible\')\n    .type(\'\\${name}\')\n    .enter()\n    .getlib(\'getTaskLi\')\n    .exists()\n    .say(\'task \\${name} added\')', true))
+            .ifNot('${skipIntro}', cf.clear().say('cf.task(\'addTask\')\n    .get(\'#new-todo:visible\')\n    .type(\'\\${name}\')\n    .enter()\n    .getlib(\'getTaskLi\')\n    .exists()\n    .say(\'task \\${name} added\')', true))
             .get('#new-todo:visible') // search for new task input
             .type('${name}')
             .enter()
@@ -65,7 +66,7 @@
 
 
         cf.task('triggerCheckbox')
-            .ifNot('${skipIntro}', cf.say('cf.task(\'triggerCheckbox\')\n    .lib(   \n        \'getTaskLi\', \n        cf\n            .getlib(\'todolist\') \n            .find(\'label:visible\')  \n            .withText(\'\\${name}\') \n            .closest(\'li:visible\') \n    )\n    .getlib(\'getTaskLi\') \n    .find(\'input[type="checkbox"]:visible\') \n    .click()', true))
+            .ifNot('${skipIntro}', cf.clear().say('cf.task(\'triggerCheckbox\')\n    .lib(   \n        \'getTaskLi\', \n        cf\n            .getlib(\'todolist\') \n            .find(\'label:visible\')  \n            .withText(\'\\${name}\') \n            .closest(\'li:visible\') \n    )\n    .getlib(\'getTaskLi\') \n    .find(\'input[type="checkbox"]:visible\') \n    .click()', true))
             .lib(   // here we are putting selector to lib, and it will not be evaluated until we
                     // use .getlib() later. For now it will only be stored to library. 
                 'getTaskLi', 
@@ -81,7 +82,7 @@
             .click() 
 
         cf.task('filter')
-            .say('\ncf.task(\'filter\')\n    .get(\'#filters:visible a:visible\')\n    .withText(\'\\${type}\')\n    .click()\n    // let\'s make sure filter became selected\n    .get(\'#filters:visible a.selected:visible\')\n    .withText(\'\\${type}\')\n    .exists()', true)
+            .clear().say('\ncf.task(\'filter\')\n    .get(\'#filters:visible a:visible\')\n    .withText(\'\\${type}\')\n    .click()\n    // let\'s make sure filter became selected\n    .get(\'#filters:visible a.selected:visible\')\n    .withText(\'\\${type}\')\n    .exists()', true)
             .get('#filters:visible a:visible')
             .withText('${type}')
             .click()
@@ -92,13 +93,13 @@
 
 
         cf.task('makeSureTaskIsNotThere')
-            .ifNot('${skipIntro}', cf.say('cf.task(\'makeSureTaskIsNotThere\')\n    .getlib(\'getTaskLi\')\n    .absent()', true))
+            .ifNot('${skipIntro}', cf.clear().say('cf.task(\'makeSureTaskIsNotThere\')\n    .getlib(\'getTaskLi\')\n    .absent()', true))
             .getlib('getTaskLi') // by using this lib item, we add 'name' parameter to 
                                  // this task, which have to be defined in test.js
             .absent()
 
         cf.task('makeSureTaskIsThere')
-            .ifNot('${skipIntro}', cf.say('cf.task(\'makeSureTaskIsThere\')\n    .getlib(\'getTaskLi\')\n    .exists()', true))
+            .ifNot('${skipIntro}', cf.clear().say('cf.task(\'makeSureTaskIsThere\')\n    .getlib(\'getTaskLi\')\n    .exists()', true))
             .getlib('getTaskLi')
             .exists()
             

@@ -47671,6 +47671,11 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 })();
             } else if (cmd === 'cssSelectorEvaluateResult') {
                 $('#searchButton').text('Search (' + details.count + ')').removeClass('btn-success btn-danger').addClass(details.count === 1 ? 'btn-success': 'btn-danger');
+            } else if (cmd === 'phantomScroll') {
+                console.log(JSON.stringify(details));
+                if (details.scroll && details.scroll.rect) {
+                    cfScroll(null, null, null, details.scroll.rect.top);
+                }
             }
         });
         var setStepStatus = function(task, step, status, message, response) {
@@ -48380,7 +48385,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
             reportError('bootstrap message did not come');
         }
     }, 10000);
-    config.gruntBuildTimeStamp='1503240321937';
+    config.gruntBuildTimeStamp='1503265405070';
     window.addEventListener('message', function(event){
         var prefix = 'cartFillerMessage:';
         var isDist = true;
@@ -48490,7 +48495,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 if (message.tests) {
                     var x = new XMLHttpRequest();
                     x.onload = function(){
-                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1503240321937') {
+                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1503265405070') {
                             console.log('new version of CartFiller was deployed, switching to it');
                             var hash = window.location.href.split('#');
                             var pc = hash[0].split('?');
@@ -48582,14 +48587,43 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
 
 define('scroll', ['app', 'scroll'], function(app){
     app.service('cfScroll', function(){
-        return function(element, useTop, force){
+        var phantomScrollOffset = 0, oldUnshiftedMargin = 0;
+        return function(element, useTop, force, phantomScrollUpdate){
+            if (element === null && useTop === null && force === null) {
+                // this is workaround for the PhantomJS's absence of vertical scroll. 
+                if (phantomScrollUpdate !== undefined) {
+                    console.log('received phantomScrollOffset update: [' + String(phantomScrollUpdate) + ']');
+                    // this logic comes from phantomjs.js file
+                    phantomScrollOffset = Math.max(0, parseInt(phantomScrollUpdate) - 200);
+                    console.log('phantomScrollOffset = ' + phantomScrollOffset);
+                }
+                return;
+            }
+            var rect, bottom, delta;
+            try {
+                if (parent.parent.callPhantom) {
+                    // this is workaround for the PhantomJS's absence of vertical scroll. 
+                    if (! element) {
+                        $('#jobDetails').css('margin-top', '0px');
+                    } else {
+                        rect = element.getBoundingClientRect();
+                        bottom = 400 + phantomScrollOffset;
+                        delta = rect.bottom - bottom;
+                        var newUnshiftedMargin = (oldUnshiftedMargin - delta);
+                        $('#jobDetails').css('margin-top', String(newUnshiftedMargin) + 'px');
+                        console.log('phantomScrollOffset = ' + phantomScrollOffset + ', bottom = ' + bottom + ', delta = ' + delta + ', oldUnshiftedMargin = ' + oldUnshiftedMargin + ', newUnshiftedMargin = ' + newUnshiftedMargin);
+                        oldUnshiftedMargin = newUnshiftedMargin;
+                    }
+                    return;
+                }
+            } catch (e) {}
             if (! element) {
                 // just scroll to top
                 window.scrollBy(0, -1000000);
             } else {
-                var rect = element.getBoundingClientRect();
-                var bottom = window.innerHeight - 20;
-                var delta = (useTop ? rect.top : rect.bottom) - bottom;
+                rect = element.getBoundingClientRect();
+                bottom = window.innerHeight - 20;
+                delta = (useTop ? rect.top : rect.bottom) - bottom;
                 if (force || delta > 0 && delta < bottom) {
                     window.scrollBy(0, delta);
                 }

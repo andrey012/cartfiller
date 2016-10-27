@@ -341,6 +341,10 @@
         }
         return {rect: rect};
     };
+    var sendScrollToPhantom = function(mapped) {
+        window.callPhantom({scroll: mapped});
+        me.modules.dispatcher.postMessageToWorker('phantomScroll', {scroll: mapped});
+    };
     var knownScrollTs = 0;
     var scrollIfNecessary = function() {
         var scrollPretendent, scrollPretendentTs;
@@ -358,11 +362,17 @@
                 .filter(currentMainFrameWindowFilter)
                 .filter(findScrollPretendent);
         }
+        if (! scrollPretendent && window.callPhantom && currentMessageOnScreen) {
+            var messageDiv = overlayWindow().document.getElementsByClassName(overlayClassName + 'message');
+            if (messageDiv.length) {
+                sendScrollToPhantom({rect: messageDiv[0].getBoundingClientRect()});
+            }
+        } 
         if (scrollPretendent) {
             knownScrollTs = scrollPretendentTs;
             if (window.callPhantom && (window.callPhantom instanceof Function)) {
                 var mapped = addFrameCoordinatesMap(scrollPretendent);
-                window.callPhantom({scroll: mapped});
+                sendScrollToPhantom(mapped);
             } else {
                 var border = 0.25;
                 var scroll = [
@@ -460,6 +470,11 @@
         return {left: left, right: right, top: top, bottom: bottom};
     };
     var getInnerHeight = function() {
+        try {
+            if (parent.callPhantom) {
+                return 600;
+            }
+        } catch (e) {}
         return me.modules.ui.mainFrameWindow.innerHeight;
     };
     var getInnerWidth = function() {
@@ -1053,9 +1068,13 @@
                         //setTimeout(drawMessage, 100);
                     }
                 } else {
+                    messageAdjustmentRemainingAttempts = 0;
+                    currentMessageOnScreen = messageToSay;
                     div.style.opacity = '1';
                 }
+                scrollIfNecessary();
             },0);
+            
         },
         /**
          * Starts Popup type UI
@@ -1584,6 +1603,9 @@
                     }
                 }
             } catch(e) {}
+        },
+        isMessageStable: function() { 
+            return messageAdjustmentRemainingAttempts === 0;
         }
     });
 }).call(this, document, window);
