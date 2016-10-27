@@ -48365,7 +48365,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
             reportError('bootstrap message did not come');
         }
     }, 10000);
-    config.gruntBuildTimeStamp='1503233950779';
+    config.gruntBuildTimeStamp='1503240321937';
     window.addEventListener('message', function(event){
         var prefix = 'cartFillerMessage:';
         var isDist = true;
@@ -48475,7 +48475,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 if (message.tests) {
                     var x = new XMLHttpRequest();
                     x.onload = function(){
-                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1503233950779') {
+                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1503240321937') {
                             console.log('new version of CartFiller was deployed, switching to it');
                             var hash = window.location.href.split('#');
                             var pc = hash[0].split('?');
@@ -49207,7 +49207,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                 $scope.discovery.visitedRootPaths = [];
                 $scope.discovery.currentRootPath = $scope.params.root ? $scope.params.root : window.location.href.split(/[#?]/)[0].replace(/\/[^\/]*/, '/');
                 if (/^\./.test($scope.discovery.currentRootPath)) {
-                    var pc = (window.location.href.split(/[#?]/)[0] + '/' + $scope.discovery.currentRootPath) . split('//');
+                    var pc = (window.location.href.split(/[#?]/)[0].replace(/\/[^/]*$/, '/') + $scope.discovery.currentRootPath) . split('//');
                     var protocol = pc.shift();
                     var url = pc.join('//');
                     while (/\/\.?\//.test(url)) {

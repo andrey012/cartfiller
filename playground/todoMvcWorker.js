@@ -18,11 +18,14 @@
             .openUrl(globals.baseUrl)
             // let's wait for some element to appear and then make sure
             // that at least document.readyState is complete
-            .get('input#new-todo:visible').exists().ready().say('we are ready')
+            .get('input#new-todo:visible')
+            .exists()
+            .ready()
+            .say('we are ready')
 
 
         cf.task('removeAllTasks')
-            .say('cf.task(\'removeAllTasks\')\n    .while(\n        cf.get(\n            cf.lib(\n                \'todolist\'\n                cf.get(\'ul#todo-list:visible\')\n            )\n        )\n        .exists(),\n\n        cf.getlib(\'todolist\')\n        .find(\'button.destroy\')\n        .first()\n        .css(\'display\', \'block\')\n        .exists()\n        .click()\n    )\n    .say(\'all tasks removed\')', true)
+            .say('cf.task(\'removeAllTasks\')\n    .while(\n        cf.get(\n            cf.lib(\n                \'todolist\'\n                cf.get(\'ul#todo-list:visible\')\n            )\n        )\n        .exists(),\n\n        cf.getlib(\'todolist\')\n        .find(\'button.destroy\')\n        .first()\n        .css(\'display\', \'block\')\n        .click()\n    )\n    .say(\'all tasks removed\')', true)
             .while( // repeat while todo list is visible
                 // first argument of .where is condition
                 cf.get( // .get is used to start searching for elements - either by 

@@ -622,7 +622,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                 $scope.discovery.visitedRootPaths = [];
                 $scope.discovery.currentRootPath = $scope.params.root ? $scope.params.root : window.location.href.split(/[#?]/)[0].replace(/\/[^\/]*/, '/');
                 if (/^\./.test($scope.discovery.currentRootPath)) {
-                    var pc = (window.location.href.split(/[#?]/)[0] + '/' + $scope.discovery.currentRootPath) . split('//');
+                    var pc = (window.location.href.split(/[#?]/)[0].replace(/\/[^/]*$/, '/') + $scope.discovery.currentRootPath) . split('//');
                     var protocol = pc.shift();
                     var url = pc.join('//');
                     while (/\/\.?\//.test(url)) {
