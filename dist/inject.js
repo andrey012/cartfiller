@@ -193,7 +193,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1503347583403';
+    config.gruntBuildTimeStamp='1503350958350';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -899,20 +899,24 @@
     };
 
     var triggerMouseEvent = function(el, eventType) {
+        var event;
         if (0 /* not yet, seems not reliable enough */ && window.callPhantom) {
             var pos = getAbsolutePosition(el);
             window.callPhantom({mouseEvent: eventType, pos: pos});
-        } else {
-            var event = el.ownerDocument.createEvent('MouseEvents');
+        } else if (el.ownerDocument.createEvent) {
+            event = el.ownerDocument.createEvent('MouseEvents');
             if (event.initMouseEvent) {
-                event.initMouseEvent(eventType, true, true);
+                event.initMouseEvent(eventType, true, true, el.ownerDocument.defaultView, 0, 1, 1, 1, 1, false, false, false, false, 0, null);
             } else if (event.initEvent) {
                 event.initEvent(eventType, true, true);
             } else {
                 throw new Error('cant init MouseEvent');
             }
             el.dispatchEvent(event);
-        }
+        } else if (el.ownerDocument && el.ownerDocument.defaultView && el.ownerDocument.defaultView.MouseEvent) {
+            event = new el.ownerDocument.defaultView.MouseEvent(eventType);
+            el.dispatchEvent(event);
+        } 
     };
 
     var simulateClick = function(el) {
