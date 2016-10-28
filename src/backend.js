@@ -1,6 +1,10 @@
 'use strict';
-var argv = require('yargs')
+var PHANTOM_DEFAULT_ARGS = ['--web-security=false', '--ignore-ssl-errors=true'];
+var PHANTOM_COMMAND_SUBSTRING = 'phantomjs';
+var yargs = require('yargs');
+var argv = yargs
     .help('help')
+    .wrap(yargs.terminalWidth())
     .usage('\nUsage: $0 [options] <cartFiller url> [test file(s) or path(s)]\n\n        <cartFiller url> is the URL where cartFiller is installed inside your project, it should normally end with .../dist/index.html, e.g.\n\n            nodejs src/backend.js \\\n            http://localhost/myProject/tests/cartfiller/dist/index.html\n\n        You can specify - as cartfiller url in order to run just a plain http server. E.g.\n\n            nodejs src/backend.js \\\n            --serve-http=/var/www/html --serve-http-port=8080 -\n\n        Note, that if --serve-http is used then port specified by --serve-http-port will be automatically added to the <cartFiller url>. For example if you launch\n\n            nodejs src/backend.js \\\n            --serve-http=/var/www/html --serve-http-port=8080\\\n            http://localhost/myProject/tests/cartfiller/dist/index.html\n\n        then following url will be opened in browser:\n\n            http://localhost:8080/myProject/tests/cartfiller/dist/index.html')
     .demand(1, 'Please specify testsuite URL')
     .describe('suite', 'testsuite name to run, default = root testsuite (all tests)')
@@ -37,6 +41,7 @@ var argv = require('yargs')
     .describe('proxy-to-static-folder-name')
     .boolean('https')
     .describe('https', 'use https for both test progress and serve-http/proxy-to connections')
+    .describe('browser-args', 'add additional arguments when launching browser. PhantomJS args ' + PHANTOM_DEFAULT_ARGS.join(', ') + ' are automatically used when \'' + PHANTOM_COMMAND_SUBSTRING + '\' is found in browser name, useful parameters for Chrome: \n\n--browser-args=\'--ignore-certificate-errors \n --user-data-dir=/tmp/mytests-chrome-data-dir \n--no-first-run\'\nAlso in this case browser is launched as child prcess directly, without OS specific launchers, this happens if you specify empty browser-args as well (--browser-args=). No escaping supported in this argument, so aviod having spaces in browser args values, spaces are treated as parameter separators.')
     .argv;
 var express = require('express');
 var serveIndex = require('serve-index');
@@ -53,7 +58,7 @@ var fs = require('fs');
 var url = require('url');
 app.use( bodyParser.json() );
 app.use(bodyParser.urlencoded({ extended: true }));
-var isPhantomJs = ('string' === typeof argv.browser) && (-1 !== argv.browser.indexOf('phantomjs'));
+var isPhantomJs = ('string' === typeof argv.browser) && (-1 !== argv.browser.indexOf(PHANTOM_COMMAND_SUBSTRING));
 var previousFrameBase64 = '';
 var httpsOptions = {
     cert: '-----BEGIN CERTIFICATE-----\nMIIDXTCCAkWgAwIBAgIJAOW6zUbKURlOMA0GCSqGSIb3DQEBCwUAMEUxCzAJBgNV\nBAYTAkFVMRMwEQYDVQQIDApTb21lLVN0YXRlMSEwHwYDVQQKDBhJbnRlcm5ldCBX\naWRnaXRzIFB0eSBMdGQwHhcNMTcwODIyMjM0MTIwWhcNMTcwOTIxMjM0MTIwWjBF\nMQswCQYDVQQGEwJBVTETMBEGA1UECAwKU29tZS1TdGF0ZTEhMB8GA1UECgwYSW50\nZXJuZXQgV2lkZ2l0cyBQdHkgTHRkMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIB\nCgKCAQEAtVpysdvhvVQz4RncxS9en0KpXYhCG/8MQEIFV+jsOQiVuVZ+FN3gUORc\nJH9DK8zIkf0e2ccE5S8gFLnbGdbLiRH4lAXCaa8Y5qWfJ6Y5TOkXmN/g03X8O3sO\n+/Xq4ImPt+mAUUaT+iWyYm+PWicJjoy0da3WRGV0bGYjneZ6qXcrAJUPFc5EqZXE\nS4oVyvTu9kfzCinqDMCmwZUMz2W9z+3+7UspqsfzysOlNBk6Bo0i0s5NJQGnbIsY\nO+b5zl4ieZW3jtqb+IvukE9Bdu7MsNDiB8woBm52qAPHPgErgs3y2waow/5vb4xq\nt7nEzGNL5FzWGw+qmmRhGU6i0U59/wIDAQABo1AwTjAdBgNVHQ4EFgQUeX7K2Pmy\nLhjbbuL8oF35LFUKji4wHwYDVR0jBBgwFoAUeX7K2PmyLhjbbuL8oF35LFUKji4w\nDAYDVR0TBAUwAwEB/zANBgkqhkiG9w0BAQsFAAOCAQEArBIwqSfuFl12QclcoSml\nTWYFa2RfBiqhCtEEZ9Uiv30JA8TtjyEosIyX1r3DbGX+tO8V3Q6hBxrG/db3V6kH\n6Nia4N7dFlRU96yPgsPaIwF4XDsIKUsmIO4JEhoy7R98QvGwC6AAwm2aIu4Dfp/m\nEE9jdX0LQsGBGUYlIZYFDrvAXkA7MgKmLuB00zQd/2iGRZjVPnz9Zt3dx9+zyjbG\nhPStbo8UboLYrlFfrlOeh33Q+8MYzvWBgcvnTgnIVb/is/BNSSko3yOepQAx3Wm4\nX5zu27m3T6nPmdPsy/WyNXgF1bHTq8wNIb85T/UAU4XhX72IfhPr9EDsFqEsS+Wx\nnQ==\n-----END CERTIFICATE-----',
@@ -298,7 +303,7 @@ app.post('/ready/' + sessionKey, function(req, res) {
 var tearDownFn = function(code) {
     var cmds;
     var waterfall = [];
-    if (isPhantomJs) {
+    if (isPhantomJs || argv['browser-args'] !== undefined) {
         waterfall.push(function() {
             console.log('killing child process');
             browserProcess.on('close', function() {
@@ -582,7 +587,7 @@ startup.push(function() {
     }
     if (isPhantomJs) {
         var childArgs;
-        childArgs = ['--web-security=false', '--ignore-ssl-errors=true'];
+        childArgs = PHANTOM_DEFAULT_ARGS.concat(argv['browser-args'] ? argv['browser-args'].split(' ') : []);
         if (argv['phantomjs-debugger-port']) {
             childArgs.push('--remote-debugger-port=' + argv['phantomjs-debugger-port']);
             childArgs.push('--remote-debugger-autorun=yes');
@@ -681,6 +686,16 @@ startup.push(function() {
             } else {
                 console.log('PhantomJs stderr: ' + data);
             }
+        });
+    } else if (argv['browser-args'] !== undefined) {
+        var browserArgs = argv['browser-args'] ? argv['browser-args'].split(' ') : [];
+        browserArgs.push(testUrl);
+        browserProcess = childProcess.spawn(argv.browser, browserArgs);
+        browserProcess.stdout.on('data', function(data) { 
+            console.log('browser stdout: ' + data);
+        });
+        browserProcess.stderr.on('data', function(data) { 
+            console.log('browser stderr: ' + data);
         });
     } else {
         console.log('Launching ' + (argv.browser ? argv.browser : 'default browser') + ' with URL: ' + testUrl);
