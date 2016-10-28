@@ -52,6 +52,7 @@
     "body-parser": "^1.15.0",
     "crypto": "0.0.3",
     "express": "^4.13.4",
+    "http-proxy": "^1.16.2",
     "open": "0.0.5",
     "serve-index": "^1.9.0",
     "todomvc": "^0.1.1",

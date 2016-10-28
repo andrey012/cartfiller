@@ -27,18 +27,21 @@ var argv = require('yargs')
     .describe('video', 'record video using ffmpeg into this file (works only with phantomjs')
     .alias('f', 'frames')
     .describe('frames', 'save frames to subfolders of this folder for each test to build a video')
-    .describe('serve-http', 'start another local static http server, which will serve files from this directory')
+    .describe('serve-http', 'start another local static http server, which will serve files from this directory. Cartfiller binaries will be served through /cartfillerFiles/ e.g.\n        http://localhost:3213/cartfillerFiles/dist/index.html')
     .describe('serve-http-port', 'default http port to bind static http server to')
     .describe('phantomjs-auth', 'Username:password for PhantomJs http authentication')
     .describe('phantomjs-render', 'filename (.png) to render page 5 seconds after launching to troubleshoot what PhantomJs is doing')
     .describe('debug-frame-folder', 'Save captured video frames to this folder')
     .describe('phantomjs-debugger-port', '')
+    .describe('proxy-to', 'start another local http server that will proxy to your web application. In this case static content specified by --serve-http will automatically be served through /cartfillerTests/ url, e.g.\n        http://localhost:3213/cartfillerTests/cartfiller.js')
+    .describe('proxy-to-static-folder-name' )
     .argv;
 var express = require('express');
 var serveIndex = require('serve-index');
 var open = require('open');
 var app = express();
 var serveHttpApp = express();
+var httpProxy = require('http-proxy');
 var http = require('http');
 var crypto = require('crypto');
 var bodyParser = require('body-parser');
@@ -349,7 +352,7 @@ if (onlyServeHttp) {
         argv['serve-http'] = '.';
     }
     console.log('running in dumb http server mode, serving [' + argv['serve-http'] + '] on port ' + serveHttpPort);
-    testUrl = 'http://localhost/';
+    testUrl = 'http://localhost/' + (argv['proxy-to'] ? 'cartfillerFiles/dist/index.html#root=/cartfillerTests/' : '');
 }
 
 if (! onlyServeHttp) {
@@ -435,8 +438,21 @@ startup.push(function() {
 });
 
 if (argv['serve-http']) {
-    serveHttpApp.use(express.static(argv['serve-http']));
-    serveHttpApp.use(serveIndex(argv['serve-http']));
+    serveHttpApp.use((argv['proxy-to'] ? '/cartfillerTests' : '/'), express.static(argv['serve-http']));
+    serveHttpApp.use((argv['proxy-to'] ? '/cartfillerTests' : '/'), serveIndex(argv['serve-http']));
+    serveHttpApp.use('/cartfillerFiles', express.static(__dirname + '/..'));
+    serveHttpApp.use('/cartfillerFiles', serveIndex(__dirname + '/..'));
+    if (argv['proxy-to']) {
+        var proxy = httpProxy.createProxyServer({
+            agent: http.globalAgent,
+            protocolRewrite: true,
+            timeout: 600000,
+            proxyTimeout: 600000
+        });
+        serveHttpApp.use(function(req, res) {
+            proxy.web(req, res, { target: argv['proxy-to'] });
+        });
+    }
     startup.push(function() {
         serveHttpServer = http.createServer(serveHttpApp);
         serveHttpServer
@@ -457,6 +473,9 @@ if (argv['serve-http']) {
                 }
             });
     });
+} else if (argv['proxy-to']) {
+    console.log('--proxy-to only works together with --serve-http, because when proxying you still need to tell proxy where tests should be served from');
+    process.exit(1);
 }
 
 
