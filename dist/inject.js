@@ -193,7 +193,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1503350958350';
+    config.gruntBuildTimeStamp='1503442863279';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -3810,7 +3810,7 @@
                     lib: getLibUrl(),
                     testSuite: true,
                     src: me.localIndexHtml ? '' : me.baseUrl.replace(/\/$/, '') + '/',
-                    hashUrl: window.location.hash
+                    hashUrl: me['data-choose-job'].split('#')[1] || window.location.hash
                 }, 'cartFillerMessage');
             } else if (source === me.modules.ui.mainFrameWindow) {
                 startupWatchDog.mainRegistered = true;
@@ -6628,15 +6628,16 @@
                 me.modules.ui.clearOverlaysAndReflect();
             } catch (e) {}
             if (! reportMousePointer) {
-                var div = document.createElement('div');
+                var trackingDocument = isFramed ? document : getDocument();
+                var div = trackingDocument.createElement('div');
                 div.style.height = window.innerHeight + 'px';
                 div.style.width = window.innerWidth + 'px';
-                div.zindex = 1000;
+                div.zindex = 2147483647;
                 div.style.position = 'absolute';
                 div.style.left = '0px';
                 div.style.top = '0px';
                 div.style.backgroundColor = 'transparent';
-                document.getElementsByTagName('body')[0].appendChild(div);
+                trackingDocument.getElementsByTagName('body')[0].appendChild(div);
                 reportMousePointer = div;
                 var x,y;
                 div.addEventListener('mousemove', function(event) {
@@ -6646,19 +6647,22 @@
                 div.addEventListener('click', function(event) {
                     x = x || event.clientX;
                     y = y || event.clientY;
-                    document.getElementsByTagName('body')[0].removeChild(reportMousePointer);
-                    var windowIndex;
-                    var frame = window.document.elementFromPoint(x,y);
-                    if (frame) {
-                        var match = /^cartFillerMainFrame-(\d+)$/.exec(frame.getAttribute('name'));
-                        if (match) {
-                            windowIndex = parseInt(match[1]);
-                        }
-                    }
-                    var frameRect = frame.getBoundingClientRect();
+                    trackingDocument.getElementsByTagName('body')[0].removeChild(reportMousePointer);
+                    var windowIndex = 0;
+                    var frameRect = {left: 0, top: 0};
                     reportMousePointer = false;
-                    if (me.modules.dispatcher.reflectMessage({cmd: 'reportingMousePointerClick', x: x, y: y, w: windowIndex, ft: frameRect.top, fl: frameRect.left})) {
-                        return;
+                    if (isFramed) {
+                        var frame = trackingDocument.elementFromPoint(x,y);
+                        if (frame) {
+                            var match = /^cartFillerMainFrame-(\d+)$/.exec(frame.getAttribute('name'));
+                            if (match) {
+                                windowIndex = parseInt(match[1]);
+                            }
+                        }
+                        frameRect = frame.getBoundingClientRect();
+                        if (me.modules.dispatcher.reflectMessage({cmd: 'reportingMousePointerClick', x: x, y: y, w: windowIndex, ft: frameRect.top, fl: frameRect.left})) {
+                            return;
+                        }
                     }
                     me.modules.ui.reportingMousePointerClick(x, y, windowIndex, frameRect.left, frameRect.top);
                 });

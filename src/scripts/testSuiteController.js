@@ -1060,30 +1060,23 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             }
             $.cartFillerPlugin.postMessageToDispatcher('updateHashUrl', {params: params});
         };
-        $scope.bookmarklets = [
-            {
-                name: 'framed',
-                baseUrl: cfDebug.src,
-                chooseJob: '', 
-                debug: true,
-                inject: 'script',
-                minified: false,
-                type: 'framed',
-                useSource: cfDebug.useSource
-            }, 
-            {
-                name: 'popup',
-                baseUrl: cfDebug.src,
-                chooseJob: '', 
-                debug: true,
-                inject: 'script',
-                minified: false,
-                type: 'popup',
-                useSource: cfDebug.useSource
-            }
-        ].map(function(options) {
-            options.code = $.cartFillerPlugin.getBookmarkletCode(options);
-            return options;
+        var srcUrl = cfDebug.src.replace(/\/+$/, '');
+        $scope.bookmarklets = [];
+        ['framed', 'popup'].filter(function(type) {
+            ['script', 'eval', 'iframe'].filter(function(inject) {
+                var options = {
+                    name: type + '-' + inject,
+                    baseUrl: srcUrl,
+                    chooseJob: window.location.href + '#' + getLocation().replace(/^#+/, ''),
+                    debug: true,
+                    inject: inject,
+                    minified: false,
+                    type: type,
+                    useSource: cfDebug.useSource
+                };
+                options.code = $.cartFillerPlugin.getBookmarkletCode(options);
+                $scope.bookmarklets.push(options);
+            });
         });
         $scope.previouslyClickedSelectTestCheckbox = undefined;
         $scope.clickSelectedTestsToRun = function(event, clickedOnTd) {

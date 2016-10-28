@@ -1139,7 +1139,7 @@
                     lib: getLibUrl(),
                     testSuite: true,
                     src: me.localIndexHtml ? '' : me.baseUrl.replace(/\/$/, '') + '/',
-                    hashUrl: window.location.hash
+                    hashUrl: me['data-choose-job'].split('#')[1] || window.location.hash
                 }, 'cartFillerMessage');
             } else if (source === me.modules.ui.mainFrameWindow) {
                 startupWatchDog.mainRegistered = true;
