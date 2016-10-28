@@ -403,16 +403,20 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             $.cartFillerPlugin.ajax({
                 url: $scope.discovery.currentRootFile, 
                 complete: function(xhr) {
+                    var i;
                     if ($scope.discovery.state === 0) {
                         $scope.errorURL = false;
                         if (xhr.status === 200) {
                             try {
                                 $scope.discovery.rootCartfillerJson = parseJson(xhr.responseText);
                                 if ('object' === typeof $scope.discovery.rootCartfillerJson.globals) {
-                                    for (var i in $scope.discovery.rootCartfillerJson.globals) {
+                                    for (i in $scope.discovery.rootCartfillerJson.globals) {
                                         if ($scope.params.globals && undefined !== $scope.params.globals[i]) {
                                             $scope.discovery.rootCartfillerJson.globals[i] = $scope.params.globals[i];
                                         }
+                                    }
+                                    for (i in $scope.params.globals) {
+                                        $scope.discovery.rootCartfillerJson.globals[i] = $scope.params.globals[i];
                                     }
                                 }
                                 $scope.discovery.workerSrc = normalizeWorkerURLs($scope.discovery.rootCartfillerJson.worker, $scope.discovery.currentRootPath);

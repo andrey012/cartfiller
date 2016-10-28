@@ -193,7 +193,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1503442863279';
+    config.gruntBuildTimeStamp='1503519148627';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -782,8 +782,11 @@
             case 'nodeName': 
                 return new Selector(root.getElementsByTagName(criterion[1]));
             case 'id': 
-                var e = root.getElementById(criterion[1]);
-                return new Selector(e ? [e] : []);
+                if ('#document' === root.nodeName) {
+                    var e = root.getElementById(criterion[1]);
+                    return new Selector(e ? [e] : []);
+                } 
+                return getElementsBySelectorSecondStep(new Selector(root.getElementsByTagName('*')), criterion);
             case 'class': 
                 return new Selector(root.getElementsByClassName(criterion[1]));
             case 'attribute': 
@@ -931,6 +934,20 @@
         } catch (e) {}
         try {
             triggerMouseEvent (el, 'click');
+        } catch (e) {}
+    };
+
+    var createInputEvent = function(elementNode) {
+        try {
+            return new elementNode.ownerDocument.defaultView.InputEvent('input', {bubbles: true});
+        } catch (e) {}
+        try {
+            return new elementNode.ownerDocument.defaultView.Event('input', {bubbles: true});
+        } catch (e) {}
+        try {
+            var event = elementNode.createEvent('UIEvent');
+            event.initUIEvent('input');
+            return event;
         } catch (e) {}
     };
 
@@ -1637,15 +1654,7 @@
                             var e = false;
                             var invalidEvent = false;
                             if (eventName === 'input') {
-                                try {
-                                    e = new elementNode.ownerDocument.defaultView.Event('input');
-                                } catch (e) {}
-                                if (! e) {
-                                    try {
-                                        e = elementNode.createEvent('UIEvent');
-                                        e.initUIEvent('input');
-                                    } catch (e) {}
-                                }
+                                e = createInputEvent(elementNode);
                                 if (! e) {
                                     continue;
                                 }
@@ -1685,7 +1694,21 @@
                                 doKeyPress = false;
                             }
                             if ((invalidEvent || dispatchEventResult) && 'keypress' === eventName) {
-                                elementNode.value = elementNode.value + (paste ? text : char);
+                                var newValue = elementNode.value + (paste ? text : char);
+                                var descriptorOk = false;
+                                try {
+                                    if (Object.getOwnPropertyDescriptor && 'function' === typeof Object.getOwnPropertyDescriptor) {
+                                        var descriptor = Object.getOwnPropertyDescriptor(elementNode.constructor.prototype, 'value');
+                                        if (descriptor && descriptor.set && 'function' === typeof descriptor.set) {
+                                            descriptor.set.apply(elementNode, [newValue]);
+                                            descriptorOk = true;
+                                        }
+                                    }
+                                } catch (e) {
+                                }
+                                if (! descriptorOk) {
+                                    elementNode.value = newValue;
+                                }
                             }
                         }
                         if (0 === nextText.length) {
@@ -1694,8 +1717,10 @@
                                 elementNode.dispatchEvent(event);
                             } catch (e) {}
                             try {
-                                var inputEvent = new elementNode.ownerDocument.defaultView.Event('input', {bubbles: true});
-                                elementNode.dispatchEvent(inputEvent);
+                                var inputEvent = createInputEvent(elementNode);
+                                if (inputEvent) {
+                                    elementNode.dispatchEvent(inputEvent);
+                                }
                             } catch (e) {}
                             try {
                                 if ('function' === typeof elementNode.ownerDocument.defaultView.jQuery) {

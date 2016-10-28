@@ -428,7 +428,7 @@ startup.push(function() {
         startup.shift();
         startup[0]();
     } else {
-        server = argv['https'] ? https.createServer(httpsOptions, app) : http.createServer(app);
+        server = argv.https ? https.createServer(httpsOptions, app) : http.createServer(app);
         server
             .listen(port, '0.0.0.0', function(err){
                 if (! err) {
@@ -459,14 +459,16 @@ if (argv['serve-http']) {
             agent: http.globalAgent,
             protocolRewrite: true,
             timeout: 600000,
-            proxyTimeout: 600000
+            proxyTimeout: 600000,
+            changeOrigin: true,
+            hostRewrite: true
         });
         serveHttpApp.use(function(req, res) {
             proxy.web(req, res, { target: argv['proxy-to'] });
         });
     }
     startup.push(function() {
-        serveHttpServer = argv['https'] ? https.createServer(httpsOptions, serveHttpApp) : http.createServer(serveHttpApp);
+        serveHttpServer = argv.https ? https.createServer(httpsOptions, serveHttpApp) : http.createServer(serveHttpApp);
         serveHttpServer
             .listen(serveHttpPort, '0.0.0.0', function(err){
                 if (! err) {
@@ -584,6 +586,10 @@ startup.push(function() {
             testUrl += '#' + hash;
         }
         testUrl = testUrl + (-1 === testUrl.indexOf('#') ? '#' : '&') + args.join('&');
+    } else {
+        if (argv['proxy-to']) {
+            testUrl = testUrl + (-1 === testUrl.indexOf('#') ? '#' : '&') + 'editor=1&globals[baseUrl]=' + encodeURIComponent('http' + (argv.https ? 's' : '') + '://localhost:' + serveHttpPort);
+        }
     }
     if (isPhantomJs) {
         var childArgs;
