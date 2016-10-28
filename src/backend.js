@@ -34,15 +34,18 @@ var argv = require('yargs')
     .describe('debug-frame-folder', 'Save captured video frames to this folder')
     .describe('phantomjs-debugger-port', '')
     .describe('proxy-to', 'start another local http server that will proxy to your web application. In this case static content specified by --serve-http will automatically be served through /cartfillerTests/ url, e.g.\n        http://localhost:3213/cartfillerTests/cartfiller.js')
-    .describe('proxy-to-static-folder-name' )
+    .describe('proxy-to-static-folder-name')
+    .boolean('https')
+    .describe('https', 'use https for both test progress and serve-http/proxy-to connections')
     .argv;
 var express = require('express');
 var serveIndex = require('serve-index');
 var open = require('open');
 var app = express();
 var serveHttpApp = express();
-var httpProxy = require('http-proxy');
 var http = require('http');
+var https = require('https');
+var httpProxy = require('http-proxy');
 var crypto = require('crypto');
 var bodyParser = require('body-parser');
 var childProcess = require('child_process');
@@ -52,6 +55,10 @@ app.use( bodyParser.json() );
 app.use(bodyParser.urlencoded({ extended: true }));
 var isPhantomJs = ('string' === typeof argv.browser) && (-1 !== argv.browser.indexOf('phantomjs'));
 var previousFrameBase64 = '';
+var httpsOptions = {
+    cert: '-----BEGIN CERTIFICATE-----\nMIIDXTCCAkWgAwIBAgIJAOW6zUbKURlOMA0GCSqGSIb3DQEBCwUAMEUxCzAJBgNV\nBAYTAkFVMRMwEQYDVQQIDApTb21lLVN0YXRlMSEwHwYDVQQKDBhJbnRlcm5ldCBX\naWRnaXRzIFB0eSBMdGQwHhcNMTcwODIyMjM0MTIwWhcNMTcwOTIxMjM0MTIwWjBF\nMQswCQYDVQQGEwJBVTETMBEGA1UECAwKU29tZS1TdGF0ZTEhMB8GA1UECgwYSW50\nZXJuZXQgV2lkZ2l0cyBQdHkgTHRkMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIB\nCgKCAQEAtVpysdvhvVQz4RncxS9en0KpXYhCG/8MQEIFV+jsOQiVuVZ+FN3gUORc\nJH9DK8zIkf0e2ccE5S8gFLnbGdbLiRH4lAXCaa8Y5qWfJ6Y5TOkXmN/g03X8O3sO\n+/Xq4ImPt+mAUUaT+iWyYm+PWicJjoy0da3WRGV0bGYjneZ6qXcrAJUPFc5EqZXE\nS4oVyvTu9kfzCinqDMCmwZUMz2W9z+3+7UspqsfzysOlNBk6Bo0i0s5NJQGnbIsY\nO+b5zl4ieZW3jtqb+IvukE9Bdu7MsNDiB8woBm52qAPHPgErgs3y2waow/5vb4xq\nt7nEzGNL5FzWGw+qmmRhGU6i0U59/wIDAQABo1AwTjAdBgNVHQ4EFgQUeX7K2Pmy\nLhjbbuL8oF35LFUKji4wHwYDVR0jBBgwFoAUeX7K2PmyLhjbbuL8oF35LFUKji4w\nDAYDVR0TBAUwAwEB/zANBgkqhkiG9w0BAQsFAAOCAQEArBIwqSfuFl12QclcoSml\nTWYFa2RfBiqhCtEEZ9Uiv30JA8TtjyEosIyX1r3DbGX+tO8V3Q6hBxrG/db3V6kH\n6Nia4N7dFlRU96yPgsPaIwF4XDsIKUsmIO4JEhoy7R98QvGwC6AAwm2aIu4Dfp/m\nEE9jdX0LQsGBGUYlIZYFDrvAXkA7MgKmLuB00zQd/2iGRZjVPnz9Zt3dx9+zyjbG\nhPStbo8UboLYrlFfrlOeh33Q+8MYzvWBgcvnTgnIVb/is/BNSSko3yOepQAx3Wm4\nX5zu27m3T6nPmdPsy/WyNXgF1bHTq8wNIb85T/UAU4XhX72IfhPr9EDsFqEsS+Wx\nnQ==\n-----END CERTIFICATE-----',
+    key: '-----BEGIN PRIVATE KEY-----\nMIIEvwIBADANBgkqhkiG9w0BAQEFAASCBKkwggSlAgEAAoIBAQC1WnKx2+G9VDPh\nGdzFL16fQqldiEIb/wxAQgVX6Ow5CJW5Vn4U3eBQ5Fwkf0MrzMiR/R7ZxwTlLyAU\nudsZ1suJEfiUBcJprxjmpZ8npjlM6ReY3+DTdfw7ew779ergiY+36YBRRpP6JbJi\nb49aJwmOjLR1rdZEZXRsZiOd5nqpdysAlQ8VzkSplcRLihXK9O72R/MKKeoMwKbB\nlQzPZb3P7f7tSymqx/PKw6U0GToGjSLSzk0lAadsixg75vnOXiJ5lbeO2pv4i+6Q\nT0F27syw0OIHzCgGbnaoA8c+ASuCzfLbBqjD/m9vjGq3ucTMY0vkXNYbD6qaZGEZ\nTqLRTn3/AgMBAAECggEAPzJzwZM0STvskEbo7jYhrTIXvyZak1L/u+zF2+qpVv6s\n3ldLvI3NO6M4kOdgSwUj5+vjMlTuWcdgUJirx4dYij2e+EZBh36jGM0idzivwyN/\nO6DYwhfdfATYJel+nhyR3q8aLjiAHK3CShdCR1JPPEPAJzoa7t7EAXpecwn8OM1d\nVk5RyVE1/h9yGc4jJ02sJWXn/aghsJiRhXe0hK+l/TsD9GRiG2tMLUc5kUXHtSFa\nSP7yX7H0xFZIELZY159PeNscvout3neF/+z4ohyDjbapwYt57gJ4ybM41W4Ttsbh\n+SrN+KgJPISekXGRTLsm7zw9tfpEBeHUkyKdqIAZcQKBgQDuf6srLn/2XFQt0Ae8\nxB4aBnWAJL/kON9oKo3N+Vo3ovQb8/q5/b+r14LlzTSLun4SBUs72bpJHTXE5LfJ\nmx7dohljAiGLUnlm1BYnIym24SkCDZE62mh6w0JMivWXZImWSfB9S9E8kZ7VjN99\nRukKV40ehyQU1onTBGp5EA7x1QKBgQDCqUVyjut93AZ3jY25ytwVfapCQJcGSlC7\nU97NWQ74E1zUbkToSofqaaF5pstKs+QHNCGexZHLJlcMGt+KE9B2itROV/HB6Y9J\nFLi0SYi3Ftr5JsMxk9Fbr+Rm2fn3ju/m0qFgrNxQHgCmHYMP3+jrO8Eco6LWCbwV\nMFGJESbGgwKBgQDlF21sBTaVhwq1FubXw+rGRP4JIUPSDW9Lt9SOzb6DQtwJHcrx\nbXT3tAPgicS3k2QWG0+xJety38QOZUTFO2PisRqBqEJgedBznbXJ0lT3fkDN4Apo\n5fMGORkuPSy7R6+B1XRUZseNzrMrni3vQHYJoR/E+zsFaS7qq4s6ztoMIQKBgQCI\nBokE+GIO3QWX3U7AGcWZLuseyMvAFYY8oOr8S9Nt/vnLaBK2z/4SDCZOQAOm+/XI\nIuGrdRvf/bauOskiT55Id9LLvCCwBGmgA97d/NSQPGRf3npf1o9hppPQW1mVaEiz\n31Ptnl2FjrGdYtoG6cx1NJhJTv+m2b6Yf986DMYvyQKBgQCaIkHVa3ANQe5ZhAHp\nrioWNudCOh3iO5jmdx+7KeB0h1/eILbP4y2nrC6hvmLnwAESYc3PCBWvoVDTu3Fa\nxPFVn89kFGYq5MoDWd8Ckanvmc60FWuSujhoqr5rdLw0l7TkN6loJw5n0hdjNZrQ\nx4qqkJUcGNmJ2Zx1VP5rmYF0ew==\n-----END PRIVATE KEY-----'
+};
 
 if (argv.frames) {
     if (fs.existsSync(argv.frames)) {
@@ -352,7 +359,7 @@ if (onlyServeHttp) {
         argv['serve-http'] = '.';
     }
     console.log('running in dumb http server mode, serving [' + argv['serve-http'] + '] on port ' + serveHttpPort);
-    testUrl = 'http://localhost/' + (argv['proxy-to'] ? 'cartfillerFiles/dist/index.html#root=/cartfillerTests/' : '');
+    testUrl = 'http' + (argv.https ? 's' : '') + '://localhost/' + (argv['proxy-to'] ? 'cartfillerFiles/dist/index.html#root=/cartfillerTests/' : '');
 }
 
 if (! onlyServeHttp) {
@@ -416,7 +423,7 @@ startup.push(function() {
         startup.shift();
         startup[0]();
     } else {
-        server = http.createServer(app);
+        server = argv['https'] ? https.createServer(httpsOptions, app) : http.createServer(app);
         server
             .listen(port, '0.0.0.0', function(err){
                 if (! err) {
@@ -454,7 +461,7 @@ if (argv['serve-http']) {
         });
     }
     startup.push(function() {
-        serveHttpServer = http.createServer(serveHttpApp);
+        serveHttpServer = argv['https'] ? https.createServer(httpsOptions, serveHttpApp) : http.createServer(serveHttpApp);
         serveHttpServer
             .listen(serveHttpPort, '0.0.0.0', function(err){
                 if (! err) {
@@ -538,7 +545,7 @@ startup.push(function() {
     if (argv['serve-http']) {
         testUrl = injectPortIntoUrl(testUrl, serveHttpPort);
     }
-    var backendUrl = 'http://127.0.0.1:' + port;
+    var backendUrl = 'http' + (argv.https ? 's' : '') + '://127.0.0.1:' + port;
     var editor = argv.editor;
     var root = argv.root;
     var wait = argv.wait;
@@ -575,7 +582,7 @@ startup.push(function() {
     }
     if (isPhantomJs) {
         var childArgs;
-        childArgs = ['--web-security=false'];
+        childArgs = ['--web-security=false', '--ignore-ssl-errors=true'];
         if (argv['phantomjs-debugger-port']) {
             childArgs.push('--remote-debugger-port=' + argv['phantomjs-debugger-port']);
             childArgs.push('--remote-debugger-autorun=yes');
