@@ -7,7 +7,7 @@ cartfiller = {
         {if: 'pure', then: [], else: [
             {_say: {message: 'The demo:\n* philosophy\n* test definition syntax\n* browser action syntax', sleepMs: 10000}},
             {_say: {message: 'Philosophy:\n\n1. separate test scenario from browser actions (like FinNesse)\n2. make tests interactive (like Cypress)\n3. do not require any browser-side software or plugins (like Seleinum or Cypress Chrome Extension) and be cross-browser', sleepMs: 15000}},
-            {_say: {message: 'Test definition - human readable:\n\ncartfiller = {\n    title: \'sample test\',\n    details: [\n        \'# Sample test for TodoMVC\' // MD heading syntax,\n        {openTodomvc: {}}, // task with no parameters\n\n        \'## Add some items\',\n        {addItem: {name: \'item one\'}}, // task with parameter\n        {addItem: {name: \'item two\'}},\n        {addItem: {name: \'item three\'}},\n\n        \'## Mark item as completed\',\n        {triggerCheckbox: {name: \'item two\'}}\n    ]\n}', pre: true, sleepMs: 20000}},
+            {_say: {message: 'Test definition - human readable:\n\ncartfiller = {\n    title: \'sample test\',\n    details: [\n        \'# Sample test for TodoMVC\' // MD heading syntax,\n        {openTodomvc: {}}, // task with no parameters\n\n        \'## Add some items\',\n        {addItem: {name: \'item #one\'}}, // task with parameter\n        {addItem: {name: \'item two\'}},\n        {addItem: {name: \'item three\'}},\n\n        \'## Mark item as completed\',\n        {triggerCheckbox: {name: \'item two\'}}\n    ]\n}', pre: true, sleepMs: 20000}},
             
             {_say: {message: 'Browser action syntax - JS code:\n\ncf.task(\'openTodomvc\')\n    .openUrl(globals.baseUrl)\n    .get(\'input#new-todo:visible\')\n    .exists() // wait for this element to appear\n    .ready() // make sure that document.readyState === \'complete\'\n    .then(function(resultOfPreviousStep) {\n        ... your code here ...\n        api.result(); // or api.result(\'error!\'); if there is an error\n    })\n    .say(\'we are ready\')', pre: true, clear: true, sleepMs: 20000}},
         ]},
@@ -22,7 +22,7 @@ cartfiller = {
         {if: 'pure', then: [], else: [
             {_say: {message: 'Browser action syntax:\n\ncf.task(\'addItem\')\n    .get(\'#new-todo:visible\')\n    .type(\'${name}\') // simulate keyboard typing\n    .enter() // simulate pressing enter\n    .getlib(\'getItemLi\') // get from library\n    .exists()\n    .say(\'item \'${name}\' added\')', pre: true, clear: true, sleepMs: 15000}},
         ]},
-        {addItem: {name: 'item one'}},
+        {addItem: {name: 'item #one'}},
         {addItem: {name: 'item two'}},
         {addItem: {name: 'item three'}},
         '## Mark item as completed',
@@ -43,10 +43,10 @@ cartfiller = {
         {if: 'pure', then: [], else: [
             {_say: {message: 'Browser action syntax:\n\ncf.task(\'makeSureItemIsThere\')\n    .getlib(\'getItemLi\')\n    .exists()', pre: true, clear: true, sleepMs: 12000}},
         ]},
-        {makeSureItemIsThere: {name: 'item one'}},
+        {makeSureItemIsThere: {name: 'item #one'}},
         {makeSureItemIsThere: {name: 'item three'}},
-        {triggerCheckbox: {name: 'item one'}},
-        {makeSureItemIsNotThere: {name: 'item one'}},
+        {triggerCheckbox: {name: 'item #one'}},
+        {makeSureItemIsNotThere: {name: 'item #one'}},
 
         '# Ok, now we want random item name',
         {if: 'pure', then: [], else: [

@@ -661,26 +661,34 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                 // check whether currently loaded test have changed and we need to replace it
                 if (testsToCheck.length) {
                     $.cartFillerPlugin.ajax({
-                        url: $scope.discovery.scripts.hrefs[testsToCheck[0]] + '?' + (new Date()).getTime(),
+                        url: $scope.discovery.scripts.hrefs[testsToCheck[0].test] + '?' + (new Date()).getTime(),
                         complete: function(xhr) {
                             if (xhr.status === 200) {
-                                var oldContents = $scope.discovery.scripts.rawContents[testsToCheck[0]];
-                                if (oldContents !== xhr.responseText) {
+                                var oldContents = $scope.discovery.scripts.rawContents[testsToCheck[0].test];
+                                if (oldContents !== xhr.responseText || testsToCheck[0].force) {
                                     try {
-                                        rememberDownloadedTest(xhr.responseText, testsToCheck[0]);
-                                        testsToCheck.filter(function(index) {
-                                            $scope.discovery.scripts.contents[index] = undefined;
-                                        });
+                                        rememberDownloadedTest(xhr.responseText, testsToCheck[0].test);
+                                        if (oldContents !== xhr.responseText) {
+                                            testsToCheck = testsToCheck.map(function(v) {
+                                                return {
+                                                    test: v.test, 
+                                                    force: true
+                                                };
+                                            });
+                                        }
                                         processDownloadedTest(currentTest);
                                         $scope.submitTestUpdate(currentTest);
                                         $scope.$digest();
                                     } catch (e){
                                         alert('Something went wrong when processing updated test file - looks like JSON is invalid: ' + String(e));
-                                        $scope.discovery.scripts.rawContents[testsToCheck[0]] = xhr.responseText;
+                                        $scope.discovery.scripts.rawContents[testsToCheck[0].test] = xhr.responseText;
                                     }
                                 }
                             }
-                            testsToCheck.push(testsToCheck.shift());
+                            testsToCheck.push({ 
+                                test: testsToCheck.shift().test,
+                                force: false
+                            });
                             setTimeout(refreshCurrentTest, 1000 / testsToCheck.length);
                         },
                         cartFillerTrackSomething: true
@@ -726,7 +734,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                 $event.stopPropagation();
             }
             $scope.discovery.scripts.errors[index] = {};
-            testsToCheck = getIncludedTests(index, []);
+            testsToCheck = getIncludedTests(index, []).map(function(v) { return {test: v, force: false }; });
             currentTest = index;
             var test = $scope.discovery.scripts.contents[index];
             test.workerSrc = $scope.discovery.workerSrc;

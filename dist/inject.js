@@ -193,7 +193,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1503779439642';
+    config.gruntBuildTimeStamp='1503785060887';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -1915,7 +1915,7 @@
             return this;
         },
         find: function(selector) {
-            if (undefined === selector) {
+            if (undefined === selector || '' === selector) {
                 return new Selector([], undefined, function() { return []; });
             } else {
                 return new Selector([getDocument()], undefined, function(){ return [getDocument()]; }).find(selector);
@@ -2398,7 +2398,7 @@
                                 p.arrow(1).result(r ? '' : 'element did not disappear within timeout');
                             }, args[0] || undefined, undefined, [p]]);
                         }];
-                    } else if ((rename || name) === 'add') {
+                    } else if (name === 'add') {
                         var selectorPromises = args.map(function(arg) {
                             if (arg instanceof BuilderPromise) {
                                 return wrapSelectorBuilderPromise(arg.arr);
@@ -2418,6 +2418,18 @@
                             }
                             s.arrow(1).nop();
                         }, args)];
+                    } else if (name === 'is' || name === 'isNot') {
+                        return [(rename || name) + niceArgs(args),
+                        me.modules.dispatcher.injectTaskParameters(function(p) {
+                            if(me.modules.api.debug && me.modules.api.debug.stop) {
+                                debugger; // jshint ignore:line
+                            }
+                            if (name === 'is') {
+                                p.result(p.is(args[0]) ? '' : 'element.is(\'' + args[0] + '\') is not true');
+                            } else {
+                                p.result(p.is(args[0]) ? 'element.is(\'' + args[0] + '\') is true but should not be' : '');
+                            }
+                        })];
                     } else {
                         return [(rename || name) + niceArgs(args), me.modules.dispatcher.injectTaskParameters(function(p) {
                             if(me.modules.api.debug && me.modules.api.debug.stop) {
@@ -2494,6 +2506,9 @@
                         p.result('element did not appear within timeout');
                     }
                 })(args);
+            };
+            Builder.prototype.isNot = function(args) {
+                return buildProxyFunction('isNot')(args);
             };
             Builder.prototype.ready = function() {
                 return ['wait for readyState become complete', function() {
@@ -6645,7 +6660,7 @@
         reportingMousePointerClickForWindow: function(x, y) {
             var stack = [];
             var el = me.modules.ui.mainFrameWindow.document.elementFromPoint(x,y);
-            me.modules.api.arrow(el);
+            me.modules.api.arrow(el, true, true);
             var prev;
             var i, n;
             if (el.nodeName === 'SELECT') {

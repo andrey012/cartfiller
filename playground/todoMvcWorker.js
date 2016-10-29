@@ -99,6 +99,24 @@
         cf.task('makeSureItemIsThere')
             .getlib('getItemLi')
             .exists()
+
+
+        cf.task('clearCompleted')
+            .get('#clear-completed:visible')
+            .click()
+            
+        cf.task('makeSureThatItemIsNotDone')
+            .getlib('getItemLi').find('input[type="checkbox"]:visible')
+            .is(':not(:checked)')
+
+        cf.task('toggleAll')
+            .get('#toggle-all:visible')
+            .click()
+
+        cf.task('makeSureThatItemIsDone')
+            .getlib('getItemLi').find('input[type="checkbox"]:visible')
+            .is(':checked')
+            
             
     });
 })(window, document);

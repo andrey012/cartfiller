@@ -6795,9 +6795,10 @@ button.close {
     <div id="testSuiteManager" style="display: none;" ng-controller="testSuiteController" data-local-href="" ng-class="'rendered'">
         <div class="col-xs-6">
             <div class="alert alert-danger" ng-if="discovery.state == -1">
-                Error discovering cartfiller.json:<br/>
-                <span ng-if="discovery.errorURL"><a href="{{discovery.errorURL}}">{{discovery.errorURL}}</a><br/></span>
-                {{discovery.error}}
+                Error discovering cartfiller.js or cartfiller.json:<br/>
+                <span ng-if="discovery.errorURL"><a href="{{discovery.errorURL}}">{{discovery.errorURL}}</a><br/></span><br/>
+                <span>{{discovery.error}}</span><br/>
+                <a ng-repeat-start="url in discovery.visitedRootPaths" href="{{url}}">{{url}}</a><br ng-repeat-end/>
             </div>
             <div class="alert alert-info" ng-if="discovery.state == 0">
                 Looking for cartfiller.json at <a href="{{discovery.currentRootPath}}">{{discovery.currentRootPath}}</a>
@@ -7067,7 +7068,7 @@ button.close {
                                 </button>
                             </div>
                         </div>
-                        <textarea id="selectorSearchQueryInput" onclick="this.select()" onfocus="this.select()" style="width: 100%" ng-keyup="textareaKeyUp($event)">{{cssSelector}}</textarea>
+                        <textarea readonly id="selectorSearchQueryInput" onclick="this.select()" onfocus="this.select()" style="width: 100%" ng-keyup="textareaKeyUp($event)">{{cssSelector}}</textarea>
 
                     </div>
                 </div>
@@ -47679,7 +47680,8 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 } else {
                     (function(){
                         var scope = angular.element(document.getElementById('searchResults')).scope();
-                        if (! scope.searchVisible && trackMousePointerWithDelay) {
+                        if (trackMousePointerWithDelay) {
+                            skipMousePointerAutoRefresh = 3;
                             setTimeout(function refreshPointer() {
                                 if (! skipMousePointerAutoRefresh) {
                                     scope.send();
@@ -48444,7 +48446,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
             reportError('bootstrap message did not come');
         }
     }, 10000);
-    config.gruntBuildTimeStamp='1503779439642';
+    config.gruntBuildTimeStamp='1503785060887';
     window.addEventListener('message', function(event){
         var prefix = 'cartFillerMessage:';
         var isDist = true;
@@ -48554,7 +48556,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 if (message.tests) {
                     var x = new XMLHttpRequest();
                     x.onload = function(){
-                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1503779439642') {
+                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1503785060887') {
                             console.log('new version of CartFiller was deployed, switching to it');
                             var hash = window.location.href.split('#');
                             var pc = hash[0].split('?');
@@ -49140,9 +49142,9 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                                 .push($scope.discovery.currentRootFile);
                             if (pc.length < 3) {
                                 $scope.discovery.state = -1;
-                                $scope.discovery.error = 'neither cartfiller.js nor cartfiller.json was not found, visited: ' + $scope.discovery.visitedRootPaths.join(', ');
+                                $scope.discovery.error = 'neither cartfiller.js nor cartfiller.json was not found, visited: ';
                                 $scope.discovery.currentRootFile = false;
-                                $scope.discovery.currentRootPath = $scope.params.root ? $scope.params.root : getLocation().split('?')[0].replace(/\/[^\/]*/, '/');
+                                $scope.discovery.currentRootPath = $scope.initialRootPath;
                             } else {
                                 $scope.discovery.currentRootPath = pc.join('/');
                             }
@@ -49317,7 +49319,8 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             if (reset) {
                 useJsInsteadOfJson = false;
                 $scope.discovery.visitedRootPaths = [];
-                $scope.discovery.currentRootPath = $scope.params.root ? $scope.params.root : window.location.href.split(/[#?]/)[0].replace(/\/[^\/]*/, '/');
+                $scope.initialRootPath = $scope.params.root ? $scope.params.root : window.location.href.split(/[#?]/)[0].replace(/\/[^\/]*$/, '');
+                $scope.discovery.currentRootPath = $scope.initialRootPath;
                 if (/^\./.test($scope.discovery.currentRootPath)) {
                     var pc = (window.location.href.split(/[#?]/)[0].replace(/\/[^/]*$/, '/') + $scope.discovery.currentRootPath) . split('//');
                     var protocol = pc.shift();
@@ -49353,26 +49356,34 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                 // check whether currently loaded test have changed and we need to replace it
                 if (testsToCheck.length) {
                     $.cartFillerPlugin.ajax({
-                        url: $scope.discovery.scripts.hrefs[testsToCheck[0]] + '?' + (new Date()).getTime(),
+                        url: $scope.discovery.scripts.hrefs[testsToCheck[0].test] + '?' + (new Date()).getTime(),
                         complete: function(xhr) {
                             if (xhr.status === 200) {
-                                var oldContents = $scope.discovery.scripts.rawContents[testsToCheck[0]];
-                                if (oldContents !== xhr.responseText) {
+                                var oldContents = $scope.discovery.scripts.rawContents[testsToCheck[0].test];
+                                if (oldContents !== xhr.responseText || testsToCheck[0].force) {
                                     try {
-                                        rememberDownloadedTest(xhr.responseText, testsToCheck[0]);
-                                        testsToCheck.filter(function(index) {
-                                            $scope.discovery.scripts.contents[index] = undefined;
-                                        });
+                                        rememberDownloadedTest(xhr.responseText, testsToCheck[0].test);
+                                        if (oldContents !== xhr.responseText) {
+                                            testsToCheck = testsToCheck.map(function(v) {
+                                                return {
+                                                    test: v.test, 
+                                                    force: true
+                                                };
+                                            });
+                                        }
                                         processDownloadedTest(currentTest);
                                         $scope.submitTestUpdate(currentTest);
                                         $scope.$digest();
                                     } catch (e){
                                         alert('Something went wrong when processing updated test file - looks like JSON is invalid: ' + String(e));
-                                        $scope.discovery.scripts.rawContents[testsToCheck[0]] = xhr.responseText;
+                                        $scope.discovery.scripts.rawContents[testsToCheck[0].test] = xhr.responseText;
                                     }
                                 }
                             }
-                            testsToCheck.push(testsToCheck.shift());
+                            testsToCheck.push({ 
+                                test: testsToCheck.shift().test,
+                                force: false
+                            });
                             setTimeout(refreshCurrentTest, 1000 / testsToCheck.length);
                         },
                         cartFillerTrackSomething: true
@@ -49418,7 +49429,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                 $event.stopPropagation();
             }
             $scope.discovery.scripts.errors[index] = {};
-            testsToCheck = getIncludedTests(index, []);
+            testsToCheck = getIncludedTests(index, []).map(function(v) { return {test: v, force: false }; });
             currentTest = index;
             var test = $scope.discovery.scripts.contents[index];
             test.workerSrc = $scope.discovery.workerSrc;

@@ -448,7 +448,7 @@
                                 p.arrow(1).result(r ? '' : 'element did not disappear within timeout');
                             }, args[0] || undefined, undefined, [p]]);
                         }];
-                    } else if ((rename || name) === 'add') {
+                    } else if (name === 'add') {
                         var selectorPromises = args.map(function(arg) {
                             if (arg instanceof BuilderPromise) {
                                 return wrapSelectorBuilderPromise(arg.arr);
@@ -468,6 +468,18 @@
                             }
                             s.arrow(1).nop();
                         }, args)];
+                    } else if (name === 'is' || name === 'isNot') {
+                        return [(rename || name) + niceArgs(args),
+                        me.modules.dispatcher.injectTaskParameters(function(p) {
+                            if(me.modules.api.debug && me.modules.api.debug.stop) {
+                                debugger; // jshint ignore:line
+                            }
+                            if (name === 'is') {
+                                p.result(p.is(args[0]) ? '' : 'element.is(\'' + args[0] + '\') is not true');
+                            } else {
+                                p.result(p.is(args[0]) ? 'element.is(\'' + args[0] + '\') is true but should not be' : '');
+                            }
+                        })];
                     } else {
                         return [(rename || name) + niceArgs(args), me.modules.dispatcher.injectTaskParameters(function(p) {
                             if(me.modules.api.debug && me.modules.api.debug.stop) {
@@ -544,6 +556,9 @@
                         p.result('element did not appear within timeout');
                     }
                 })(args);
+            };
+            Builder.prototype.isNot = function(args) {
+                return buildProxyFunction('isNot')(args);
             };
             Builder.prototype.ready = function() {
                 return ['wait for readyState become complete', function() {
