@@ -27,6 +27,8 @@
         #testsearch { margin-right: -20px; }
         #tasksearch { margin-right: -20px; }
         #templates input, #templates textarea { width: 100%; }
+        .hoverclick { font-size: 8px; }
+        #workerContainer div#dashboardMessage { word-break: normal; }
     </style>
 </head>
 <body data-cartfiller-is-here="1">
@@ -267,9 +269,10 @@
             </div>
             <div ng-if="debugEnabled" style="text-align: left;">
                 <a class="btn btn-xs btn-success" onclick="var event = arguments[0] || window.event; return angular.element(this).scope().refreshPageNoWatch(event);" href="#" title="Refresh page in the main frame">Refresh</a>
-                <a id="searchButton" class="btn btn-xs btn-success" onclick="var event = arguments[0] || window.event; return angular.element(this).scope().performSearchNoWatch(event);" title="Show DOM path for an element and build jQuery selector">Search</a>
+                <a id="searchButton" class="btn btn-xs btn-success" onclick="var event = arguments[0] || window.event; return angular.element(this).scope().performSearchNoWatch(event);" title="Show DOM path for an element and build jQuery selector. For tricky elements click with shift.">Search</a>
                 <a id="suggestButton" class="btn btn-xs btn-success" onclick="return angular.element(this).scope().suggestTaskNameNoWatch();" title="Search for task name from worker">Suggest</a>
                 <a id="libButton" class="btn btn-xs btn-success" onclick="return angular.element(this).scope().browseLibNoWatch();" title="Search for step builders and helpers">Lib</a>
+                <div id="dashboardMessage" class="alert alert-info" style="display: none;"></div>
                 <div id="searchResults" ng-repeat="dummy in [0]">
                     <div ng-if="searchVisible">
                         <div>
@@ -280,21 +283,27 @@
                                 <span ng-if="element.lib">lib: </span>
                                 <button data-index="{{elementIndex}}" class="btn btn-xs" ng-class="element.selectNodeName ? 'btn-success' : element.lib ? 'btn-info' : 'btn-warning'" ng-click="toggle('selectNodeName', element)" onmouseenter="angular.element(this).scope().highlight(this);">
                                     {{element.element || element.lib}}
+                                    <span ng-if="delay" class="hoverclick" onmouseenter="this.parentNode.click()">[]</span>
                                 </button>
                                 <button class="btn btn-xs" ng-class="element.selectId ? 'btn-success' : 'btn-danger'" ng-click="toggle('selectId', element)" ng-if="element.id">
                                     #{{element.id}}
+                                    <span ng-if="delay" class="hoverclick" onmouseenter="this.parentNode.click()">[]</span>
                                 </button>
                                 <button class="btn btn-xs" ng-class="element.selectClass[index] ? 'btn-success' : 'btn-default'" ng-click="toggle('selectClass', element, index)" ng-repeat="(index, class) in element.classes">
                                     .{{class}}
+                                    <span ng-if="delay" class="hoverclick" onmouseenter="this.parentNode.click()">[]</span>
                                 </button>
                                 <button class="btn btn-xs" ng-class="element.selectAttribute[index] ? 'btn-success' : 'btn-disabled'" ng-click="toggle('selectAttribute', element, index)" ng-repeat="(index, a) in element.attrs">
                                     .{{a.n + '="' + a.v + '"'}}
+                                    <span ng-if="delay" class="hoverclick" onmouseenter="this.parentNode.click()">[]</span>
                                 </button>
                                 <button class="btn btn-xs" ng-class="element.selectIndex ? 'btn-success' : 'btn-default'" ng-click="toggle('selectIndex', element)" ng-if="element.element">
                                     nth({{element.index}})
+                                    <span ng-if="delay" class="hoverclick" onmouseenter="this.parentNode.click()">[]</span>
                                 </button>
                                 <button class="btn btn-xs" ng-class="element.selectText ? 'btn-success' : 'btn-default'" ng-click="toggle('selectText', element)" ng-if="element.text">
                                     text
+                                    <span ng-if="delay" class="hoverclick" onmouseenter="this.parentNode.click()">[]</span>
                                 </button>
                             </div>
                         </div>

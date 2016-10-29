@@ -1596,13 +1596,7 @@
          * @access public
          */
         onMessage_startReportingMousePointer: function(details) {
-            if (details.delay) {
-                setTimeout(function(){
-                    me.modules.ui.startReportingMousePointer();
-                }, 2000);
-            } else {
-                me.modules.ui.startReportingMousePointer();
-            }
+            me.modules.ui.startReportingMousePointer(details.delay);
         },
         /** 
          * Tries to find all elements that match specified CSS selector and 

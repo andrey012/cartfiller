@@ -6786,6 +6786,8 @@ button.close {
         #testsearch { margin-right: -20px; }
         #tasksearch { margin-right: -20px; }
         #templates input, #templates textarea { width: 100%; }
+        .hoverclick { font-size: 8px; }
+        #workerContainer div#dashboardMessage { word-break: normal; }
     </style>
     <script>
         (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
@@ -7041,9 +7043,10 @@ button.close {
             </div>
             <div ng-if="debugEnabled" style="text-align: left;">
                 <a class="btn btn-xs btn-success" onclick="var event = arguments[0] || window.event; return angular.element(this).scope().refreshPageNoWatch(event);" href="#" title="Refresh page in the main frame">Refresh</a>
-                <a id="searchButton" class="btn btn-xs btn-success" onclick="var event = arguments[0] || window.event; return angular.element(this).scope().performSearchNoWatch(event);" title="Show DOM path for an element and build jQuery selector">Search</a>
+                <a id="searchButton" class="btn btn-xs btn-success" onclick="var event = arguments[0] || window.event; return angular.element(this).scope().performSearchNoWatch(event);" title="Show DOM path for an element and build jQuery selector. For tricky elements click with shift.">Search</a>
                 <a id="suggestButton" class="btn btn-xs btn-success" onclick="return angular.element(this).scope().suggestTaskNameNoWatch();" title="Search for task name from worker">Suggest</a>
                 <a id="libButton" class="btn btn-xs btn-success" onclick="return angular.element(this).scope().browseLibNoWatch();" title="Search for step builders and helpers">Lib</a>
+                <div id="dashboardMessage" class="alert alert-info" style="display: none;"></div>
                 <div id="searchResults" ng-repeat="dummy in [0]">
                     <div ng-if="searchVisible">
                         <div>
@@ -7054,21 +7057,27 @@ button.close {
                                 <span ng-if="element.lib">lib: </span>
                                 <button data-index="{{elementIndex}}" class="btn btn-xs" ng-class="element.selectNodeName ? 'btn-success' : element.lib ? 'btn-info' : 'btn-warning'" ng-click="toggle('selectNodeName', element)" onmouseenter="angular.element(this).scope().highlight(this);">
                                     {{element.element || element.lib}}
+                                    <span ng-if="delay" class="hoverclick" onmouseenter="this.parentNode.click()">[]</span>
                                 </button>
                                 <button class="btn btn-xs" ng-class="element.selectId ? 'btn-success' : 'btn-danger'" ng-click="toggle('selectId', element)" ng-if="element.id">
                                     #{{element.id}}
+                                    <span ng-if="delay" class="hoverclick" onmouseenter="this.parentNode.click()">[]</span>
                                 </button>
                                 <button class="btn btn-xs" ng-class="element.selectClass[index] ? 'btn-success' : 'btn-default'" ng-click="toggle('selectClass', element, index)" ng-repeat="(index, class) in element.classes">
                                     .{{class}}
+                                    <span ng-if="delay" class="hoverclick" onmouseenter="this.parentNode.click()">[]</span>
                                 </button>
                                 <button class="btn btn-xs" ng-class="element.selectAttribute[index] ? 'btn-success' : 'btn-disabled'" ng-click="toggle('selectAttribute', element, index)" ng-repeat="(index, a) in element.attrs">
                                     .{{a.n + '="' + a.v + '"'}}
+                                    <span ng-if="delay" class="hoverclick" onmouseenter="this.parentNode.click()">[]</span>
                                 </button>
                                 <button class="btn btn-xs" ng-class="element.selectIndex ? 'btn-success' : 'btn-default'" ng-click="toggle('selectIndex', element)" ng-if="element.element">
                                     nth({{element.index}})
+                                    <span ng-if="delay" class="hoverclick" onmouseenter="this.parentNode.click()">[]</span>
                                 </button>
                                 <button class="btn btn-xs" ng-class="element.selectText ? 'btn-success' : 'btn-default'" ng-click="toggle('selectText', element)" ng-if="element.text">
                                     text
+                                    <span ng-if="delay" class="hoverclick" onmouseenter="this.parentNode.click()">[]</span>
                                 </button>
                             </div>
                         </div>
@@ -47251,6 +47260,8 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
     app
     .controller('indexController', ['$scope', 'cfMessage', '$timeout', 'cfDebug', 'cfScroll', 'cfAudioService', function ($scope, cfMessage, $timeout, cfDebug, cfScroll, cfAudioService){
         var nextStepTimeoutHandle = false;
+        var trackMousePointerWithDelay = false;
+        var skipMousePointerAutoRefresh = 0;
         if (cfMessage.testSuite) {
             return;
         }
@@ -47662,13 +47673,33 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 $scope.currentUrls[details.currentMainFrameWindow] = details.url;
                 $scope.updateCurrentUrl();
             } else if (cmd === 'mousePointer') {
-                (function(){
-                    var scope = angular.element(document.getElementById('searchResults')).scope();
-                    scope.searchVisible = true;
-                    scope.stack = details.stack;
-                    scope.window = details.w;
-                    scope.$digest();
-                })();
+                if (details.autoshootReady) {
+                    $('#dashboardMessage').show().text('now make small movement of your mouse');
+                } else if (details.autoshootCaptured) {
+                    $('#dashboardMessage').show().text('your mouse position is captured, now you have another 5 seconds before element lookup will happen');
+                } else {
+                    (function(){
+                        var scope = angular.element(document.getElementById('searchResults')).scope();
+                        if (! scope.searchVisible && trackMousePointerWithDelay) {
+                            setTimeout(function refreshPointer() {
+                                if (! skipMousePointerAutoRefresh) {
+                                    scope.send();
+                                } else {
+                                    skipMousePointerAutoRefresh --;
+                                }
+                                if (trackMousePointerWithDelay && scope.searchVisible) {
+                                    setTimeout(refreshPointer, 1000);
+                                }
+                            });
+                        }
+                        scope.searchVisible = true;
+                        scope.stack = details.stack;
+                        scope.window = details.w;
+                        scope.delay = trackMousePointerWithDelay;
+                        scope.$digest();
+                    })();
+                    $('#dashboardMessage').hide();
+                }
             } else if (cmd === 'cssSelectorEvaluateResult') {
                 $('#searchButton').text('Search (' + details.count + ')').removeClass('btn-success btn-danger').addClass(details.count === 1 ? 'btn-success': 'btn-danger');
             } else if (cmd === 'phantomScroll') {
@@ -48042,7 +48073,12 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
             return false;
         };
         $scope.performSearchNoWatch = function($event) {
-            cfMessage.send('startReportingMousePointer', $event.shiftKey ? {delay: true} : undefined);
+            trackMousePointerWithDelay = $event.shiftKey;
+            $('#dashboardMessage').show().text(trackMousePointerWithDelay ? 
+                'Move your mouse to the element you want to analyze, you have 5 seconds for that, then the layover will appear, make a short mouse movement to let layover notice your mouse position' : 
+                'Click on the element you want to analyze'
+            );
+            cfMessage.send('startReportingMousePointer', trackMousePointerWithDelay ? {delay: true} : undefined);
             var scope = angular.element(document.getElementById('searchResults')).scope();
             if (! scope.searchVisible) {
                 rememberedScrollPositionBeforeSearch = window.scrollY;
@@ -48054,6 +48090,9 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 setTimeout(initSearchScope,1000);
                 return;
             }
+            scope.send = function() {
+                cfMessage.send('evaluateCssSelector', {selector: scope.cssSelector, currentMainFrameWindow: scope.window, taskDetails: $scope.jobDetails[$scope.currentTask]});
+            };
             scope.toggle = function(what, where, index){
                 if (undefined === index) {
                     where[what] = ! where[what];
@@ -48064,7 +48103,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                     where[what][index] = ! where[what][index];
                 }
                 scope.cssSelector = scope.getCssSelector();
-                cfMessage.send('evaluateCssSelector', {selector: scope.cssSelector, currentMainFrameWindow: scope.window, taskDetails: $scope.jobDetails[$scope.currentTask]});
+                scope.send();
                 $('#selectorSearchQueryInput')[0].focus();
                 setTimeout(function() {
                     $('#selectorSearchQueryInput')[0].select();
@@ -48155,6 +48194,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                     }
                     cfMessage.send('highlightElementForQueryBuilder', {path: payload, currentMainFrameWindow: scope.window});
                 }
+                skipMousePointerAutoRefresh = 3;
             };
         },1000);
         $scope.shortName = function(name) {
@@ -48393,7 +48433,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
             reportError('bootstrap message did not come');
         }
     }, 10000);
-    config.gruntBuildTimeStamp='1503519148627';
+    config.gruntBuildTimeStamp='1503700078679';
     window.addEventListener('message', function(event){
         var prefix = 'cartFillerMessage:';
         var isDist = true;
@@ -48503,7 +48543,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 if (message.tests) {
                     var x = new XMLHttpRequest();
                     x.onload = function(){
-                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1503519148627') {
+                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1503700078679') {
                             console.log('new version of CartFiller was deployed, switching to it');
                             var hash = window.location.href.split('#');
                             var pc = hash[0].split('?');

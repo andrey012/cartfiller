@@ -3,6 +3,8 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
     app
     .controller('indexController', ['$scope', 'cfMessage', '$timeout', 'cfDebug', 'cfScroll', 'cfAudioService', function ($scope, cfMessage, $timeout, cfDebug, cfScroll, cfAudioService){
         var nextStepTimeoutHandle = false;
+        var trackMousePointerWithDelay = false;
+        var skipMousePointerAutoRefresh = 0;
         if (cfMessage.testSuite) {
             return;
         }
@@ -414,13 +416,33 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 $scope.currentUrls[details.currentMainFrameWindow] = details.url;
                 $scope.updateCurrentUrl();
             } else if (cmd === 'mousePointer') {
-                (function(){
-                    var scope = angular.element(document.getElementById('searchResults')).scope();
-                    scope.searchVisible = true;
-                    scope.stack = details.stack;
-                    scope.window = details.w;
-                    scope.$digest();
-                })();
+                if (details.autoshootReady) {
+                    $('#dashboardMessage').show().text('now make small movement of your mouse');
+                } else if (details.autoshootCaptured) {
+                    $('#dashboardMessage').show().text('your mouse position is captured, now you have another 5 seconds before element lookup will happen');
+                } else {
+                    (function(){
+                        var scope = angular.element(document.getElementById('searchResults')).scope();
+                        if (! scope.searchVisible && trackMousePointerWithDelay) {
+                            setTimeout(function refreshPointer() {
+                                if (! skipMousePointerAutoRefresh) {
+                                    scope.send();
+                                } else {
+                                    skipMousePointerAutoRefresh --;
+                                }
+                                if (trackMousePointerWithDelay && scope.searchVisible) {
+                                    setTimeout(refreshPointer, 1000);
+                                }
+                            });
+                        }
+                        scope.searchVisible = true;
+                        scope.stack = details.stack;
+                        scope.window = details.w;
+                        scope.delay = trackMousePointerWithDelay;
+                        scope.$digest();
+                    })();
+                    $('#dashboardMessage').hide();
+                }
             } else if (cmd === 'cssSelectorEvaluateResult') {
                 $('#searchButton').text('Search (' + details.count + ')').removeClass('btn-success btn-danger').addClass(details.count === 1 ? 'btn-success': 'btn-danger');
             } else if (cmd === 'phantomScroll') {
@@ -794,7 +816,12 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
             return false;
         };
         $scope.performSearchNoWatch = function($event) {
-            cfMessage.send('startReportingMousePointer', $event.shiftKey ? {delay: true} : undefined);
+            trackMousePointerWithDelay = $event.shiftKey;
+            $('#dashboardMessage').show().text(trackMousePointerWithDelay ? 
+                'Move your mouse to the element you want to analyze, you have 5 seconds for that, then the layover will appear, make a short mouse movement to let layover notice your mouse position' : 
+                'Click on the element you want to analyze'
+            );
+            cfMessage.send('startReportingMousePointer', trackMousePointerWithDelay ? {delay: true} : undefined);
             var scope = angular.element(document.getElementById('searchResults')).scope();
             if (! scope.searchVisible) {
                 rememberedScrollPositionBeforeSearch = window.scrollY;
@@ -806,6 +833,9 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 setTimeout(initSearchScope,1000);
                 return;
             }
+            scope.send = function() {
+                cfMessage.send('evaluateCssSelector', {selector: scope.cssSelector, currentMainFrameWindow: scope.window, taskDetails: $scope.jobDetails[$scope.currentTask]});
+            };
             scope.toggle = function(what, where, index){
                 if (undefined === index) {
                     where[what] = ! where[what];
@@ -816,7 +846,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                     where[what][index] = ! where[what][index];
                 }
                 scope.cssSelector = scope.getCssSelector();
-                cfMessage.send('evaluateCssSelector', {selector: scope.cssSelector, currentMainFrameWindow: scope.window, taskDetails: $scope.jobDetails[$scope.currentTask]});
+                scope.send();
                 $('#selectorSearchQueryInput')[0].focus();
                 setTimeout(function() {
                     $('#selectorSearchQueryInput')[0].select();
@@ -907,6 +937,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                     }
                     cfMessage.send('highlightElementForQueryBuilder', {path: payload, currentMainFrameWindow: scope.window});
                 }
+                skipMousePointerAutoRefresh = 3;
             };
         },1000);
         $scope.shortName = function(name) {

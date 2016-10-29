@@ -328,7 +328,7 @@
                             return function() {
                                 var e = promise();
                                 if (e.length) {
-                                    e.arrow();
+                                    e.arrow(true);
                                 }
                                 return e.length;
                             };
@@ -337,7 +337,7 @@
                             return function() {
                                 var e = promise();
                                 if (e.length) {
-                                    e.arrow();
+                                    e.arrow(true);
                                 }
                                 return ! e.length;
                             };
@@ -448,6 +448,26 @@
                                 p.arrow(1).result(r ? '' : 'element did not disappear within timeout');
                             }, args[0] || undefined]);
                         }];
+                    } else if (name === 'add') {
+                        var selectorPromises = args.map(function(arg) {
+                            if (arg instanceof BuilderPromise) {
+                                return wrapSelectorBuilderPromise(arg.arr);
+                            } else {
+                                return function() {
+                                    return arg;
+                                };
+                            }
+                        });
+                        return [name + niceArgs(args), me.modules.dispatcher.injectTaskParameters(function(p) {
+                            if(me.modules.api.debug && me.modules.api.debug.stop) {
+                                debugger; // jshint ignore:line
+                            }
+                            var s = p;
+                            for (var i = 0; i < selectorPromises.length; i ++) {
+                                s = s.add(selectorPromises[i]());
+                            }
+                            s.arrow(1).nop();
+                        }, args)];
                     } else {
                         return [name + niceArgs(args), me.modules.dispatcher.injectTaskParameters(function(p) {
                             if(me.modules.api.debug && me.modules.api.debug.stop) {
@@ -606,6 +626,9 @@
                 }
                 var booleanBuilderPromise = makeBooleanBuilderPromise(condition);
                 return ['if' + (ifNot ? 'Not' : '') + niceArgs([condition]), function() {
+                    if(me.modules.api.debug && me.modules.api.debug.stop) {
+                        debugger; // jshint ignore:line
+                    }
                     var result = booleanBuilderPromise();
                     if ((! ifNot && ! result) || (ifNot && result)) {
                         api('skipStep', [actionStepsLen]);

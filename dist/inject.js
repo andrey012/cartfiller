@@ -193,7 +193,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1503519148627';
+    config.gruntBuildTimeStamp='1503700078679';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -528,7 +528,7 @@
                 return new Selector(selector, undefined, [this, 'find', selector]);
             }
         }
-        var match = selectorStepPattern.exec(selector.trim());
+        var match = selectorStepPattern.exec(me.modules.dispatcher.interpolateText(selector.trim()));
         if (! match) { 
             throw new Error('invalid selector: [' + selector + ']');
         }
@@ -606,10 +606,13 @@
     };
     Selector.prototype.add = function(anotherSelectorOrElement) {
         var i;
-        if ((anotherSelectorOrElement instanceof Selector) || (anotherSelectorOrElement instanceof Array)) {
+        if ((anotherSelectorOrElement instanceof Selector) || (anotherSelectorOrElement instanceof Array) || ('string' === typeof anotherSelectorOrElement)) {
             var newElements = [];
             for (i = 0; i < this.length; i ++ ) {
                 newElements.push(this[i]);
+            }
+            if ('string' === typeof anotherSelectorOrElement) {
+                anotherSelectorOrElement = me.modules.api.find(anotherSelectorOrElement);
             }
             var description = this.description + ' + ' + ((anotherSelectorOrElement instanceof Selector) ? anotherSelectorOrElement.description : ('[' + anotherSelectorOrElement.length + ']'));
             for (i = 0; i < anotherSelectorOrElement.length; i ++) {
@@ -1912,7 +1915,11 @@
             return this;
         },
         find: function(selector) {
-            return new Selector([getDocument()], undefined, function(){ return [getDocument()]; }).find(selector);
+            if (undefined === selector) {
+                return new Selector([], undefined, function() { return []; });
+            } else {
+                return new Selector([getDocument()], undefined, function(){ return [getDocument()]; }).find(selector);
+            }
         },
         getSelectorClass: function() {
             return Selector;
@@ -2271,7 +2278,7 @@
                             return function() {
                                 var e = promise();
                                 if (e.length) {
-                                    e.arrow();
+                                    e.arrow(true);
                                 }
                                 return e.length;
                             };
@@ -2280,7 +2287,7 @@
                             return function() {
                                 var e = promise();
                                 if (e.length) {
-                                    e.arrow();
+                                    e.arrow(true);
                                 }
                                 return ! e.length;
                             };
@@ -2391,6 +2398,26 @@
                                 p.arrow(1).result(r ? '' : 'element did not disappear within timeout');
                             }, args[0] || undefined]);
                         }];
+                    } else if (name === 'add') {
+                        var selectorPromises = args.map(function(arg) {
+                            if (arg instanceof BuilderPromise) {
+                                return wrapSelectorBuilderPromise(arg.arr);
+                            } else {
+                                return function() {
+                                    return arg;
+                                };
+                            }
+                        });
+                        return [name + niceArgs(args), me.modules.dispatcher.injectTaskParameters(function(p) {
+                            if(me.modules.api.debug && me.modules.api.debug.stop) {
+                                debugger; // jshint ignore:line
+                            }
+                            var s = p;
+                            for (var i = 0; i < selectorPromises.length; i ++) {
+                                s = s.add(selectorPromises[i]());
+                            }
+                            s.arrow(1).nop();
+                        }, args)];
                     } else {
                         return [name + niceArgs(args), me.modules.dispatcher.injectTaskParameters(function(p) {
                             if(me.modules.api.debug && me.modules.api.debug.stop) {
@@ -2549,6 +2576,9 @@
                 }
                 var booleanBuilderPromise = makeBooleanBuilderPromise(condition);
                 return ['if' + (ifNot ? 'Not' : '') + niceArgs([condition]), function() {
+                    if(me.modules.api.debug && me.modules.api.debug.stop) {
+                        debugger; // jshint ignore:line
+                    }
                     var result = booleanBuilderPromise();
                     if ((! ifNot && ! result) || (ifNot && result)) {
                         api('skipStep', [actionStepsLen]);
@@ -4292,13 +4322,7 @@
          * @access public
          */
         onMessage_startReportingMousePointer: function(details) {
-            if (details.delay) {
-                setTimeout(function(){
-                    me.modules.ui.startReportingMousePointer();
-                }, 2000);
-            } else {
-                me.modules.ui.startReportingMousePointer();
-            }
+            me.modules.ui.startReportingMousePointer(details.delay);
         },
         /** 
          * Tries to find all elements that match specified CSS selector and 
@@ -6579,6 +6603,7 @@
         reportingMousePointerClickForWindow: function(x, y) {
             var stack = [];
             var el = me.modules.ui.mainFrameWindow.document.elementFromPoint(x,y);
+            me.modules.api.arrow(el);
             var prev;
             var i, n;
             if (el.nodeName === 'SELECT') {
@@ -6648,10 +6673,17 @@
          * @function CartFiller.UI#startReportingMousePointer
          * @access public
          */
-        startReportingMousePointer: function() {
+        startReportingMousePointer: function(delayAndAutoShoot, shoot) {
             try {
                 me.modules.ui.clearOverlaysAndReflect();
             } catch (e) {}
+            if (delayAndAutoShoot && ! shoot) {
+                setTimeout(function(){
+                    me.modules.ui.startReportingMousePointer(true, true);
+                    me.modules.dispatcher.postMessageToWorker('mousePointer', {autoshootReady: true});
+                }, 5000);
+                return;
+            }
             if (! reportMousePointer) {
                 var trackingDocument = isFramed ? document : getDocument();
                 var div = trackingDocument.createElement('div');
@@ -6665,14 +6697,10 @@
                 trackingDocument.getElementsByTagName('body')[0].appendChild(div);
                 reportMousePointer = div;
                 var x,y;
-                div.addEventListener('mousemove', function(event) {
-                    x = event.clientX;
-                    y = event.clientY;
-                },false);
-                div.addEventListener('click', function(event) {
-                    x = x || event.clientX;
-                    y = y || event.clientY;
+                var remove = function() {
                     trackingDocument.getElementsByTagName('body')[0].removeChild(reportMousePointer);
+                };
+                var shootFn = function() {
                     var windowIndex = 0;
                     var frameRect = {left: 0, top: 0};
                     reportMousePointer = false;
@@ -6690,6 +6718,23 @@
                         }
                     }
                     me.modules.ui.reportingMousePointerClick(x, y, windowIndex, frameRect.left, frameRect.top);
+                };
+                div.addEventListener('mousemove', function(event) {
+                    x = event.clientX;
+                    y = event.clientY;
+                    if (delayAndAutoShoot) {
+                        me.modules.dispatcher.postMessageToWorker('mousePointer', {autoshootCaptured: true});
+                        remove();
+                        setTimeout(function() {
+                            shootFn();
+                        }, 5000);
+                    }
+                },false);
+                div.addEventListener('click', function(event) {
+                    x = x || event.clientX;
+                    y = y || event.clientY;
+                    remove();
+                    shootFn();
                 });
             }
         },

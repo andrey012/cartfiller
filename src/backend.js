@@ -456,15 +456,17 @@ if (argv['serve-http']) {
     serveHttpApp.use('/cartfillerFiles', serveIndex(__dirname + '/..'));
     if (argv['proxy-to']) {
         var proxy = httpProxy.createProxyServer({
-            agent: http.globalAgent,
+            agent: 0 === argv['proxy-to'].indexOf('https:') ? https.globalAgent : http.globalAgent,
             protocolRewrite: true,
             timeout: 600000,
             proxyTimeout: 600000,
             changeOrigin: true,
-            hostRewrite: true
+            hostRewrite: true,
+            secure: false,
+            target: argv['proxy-to']
         });
         serveHttpApp.use(function(req, res) {
-            proxy.web(req, res, { target: argv['proxy-to'] });
+            proxy.web(req, res);
         });
     }
     startup.push(function() {

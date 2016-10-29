@@ -276,7 +276,7 @@
                 return new Selector(selector, undefined, [this, 'find', selector]);
             }
         }
-        var match = selectorStepPattern.exec(selector.trim());
+        var match = selectorStepPattern.exec(me.modules.dispatcher.interpolateText(selector.trim()));
         if (! match) { 
             throw new Error('invalid selector: [' + selector + ']');
         }
@@ -354,10 +354,13 @@
     };
     Selector.prototype.add = function(anotherSelectorOrElement) {
         var i;
-        if ((anotherSelectorOrElement instanceof Selector) || (anotherSelectorOrElement instanceof Array)) {
+        if ((anotherSelectorOrElement instanceof Selector) || (anotherSelectorOrElement instanceof Array) || ('string' === typeof anotherSelectorOrElement)) {
             var newElements = [];
             for (i = 0; i < this.length; i ++ ) {
                 newElements.push(this[i]);
+            }
+            if ('string' === typeof anotherSelectorOrElement) {
+                anotherSelectorOrElement = me.modules.api.find(anotherSelectorOrElement);
             }
             var description = this.description + ' + ' + ((anotherSelectorOrElement instanceof Selector) ? anotherSelectorOrElement.description : ('[' + anotherSelectorOrElement.length + ']'));
             for (i = 0; i < anotherSelectorOrElement.length; i ++) {
@@ -1660,7 +1663,11 @@
             return this;
         },
         find: function(selector) {
-            return new Selector([getDocument()], undefined, function(){ return [getDocument()]; }).find(selector);
+            if (undefined === selector) {
+                return new Selector([], undefined, function() { return []; });
+            } else {
+                return new Selector([getDocument()], undefined, function(){ return [getDocument()]; }).find(selector);
+            }
         },
         getSelectorClass: function() {
             return Selector;

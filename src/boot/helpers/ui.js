@@ -1253,6 +1253,7 @@
         reportingMousePointerClickForWindow: function(x, y) {
             var stack = [];
             var el = me.modules.ui.mainFrameWindow.document.elementFromPoint(x,y);
+            me.modules.api.arrow(el);
             var prev;
             var i, n;
             if (el.nodeName === 'SELECT') {
@@ -1322,10 +1323,17 @@
          * @function CartFiller.UI#startReportingMousePointer
          * @access public
          */
-        startReportingMousePointer: function() {
+        startReportingMousePointer: function(delayAndAutoShoot, shoot) {
             try {
                 me.modules.ui.clearOverlaysAndReflect();
             } catch (e) {}
+            if (delayAndAutoShoot && ! shoot) {
+                setTimeout(function(){
+                    me.modules.ui.startReportingMousePointer(true, true);
+                    me.modules.dispatcher.postMessageToWorker('mousePointer', {autoshootReady: true});
+                }, 5000);
+                return;
+            }
             if (! reportMousePointer) {
                 var trackingDocument = isFramed ? document : getDocument();
                 var div = trackingDocument.createElement('div');
@@ -1339,14 +1347,10 @@
                 trackingDocument.getElementsByTagName('body')[0].appendChild(div);
                 reportMousePointer = div;
                 var x,y;
-                div.addEventListener('mousemove', function(event) {
-                    x = event.clientX;
-                    y = event.clientY;
-                },false);
-                div.addEventListener('click', function(event) {
-                    x = x || event.clientX;
-                    y = y || event.clientY;
+                var remove = function() {
                     trackingDocument.getElementsByTagName('body')[0].removeChild(reportMousePointer);
+                };
+                var shootFn = function() {
                     var windowIndex = 0;
                     var frameRect = {left: 0, top: 0};
                     reportMousePointer = false;
@@ -1364,6 +1368,23 @@
                         }
                     }
                     me.modules.ui.reportingMousePointerClick(x, y, windowIndex, frameRect.left, frameRect.top);
+                };
+                div.addEventListener('mousemove', function(event) {
+                    x = event.clientX;
+                    y = event.clientY;
+                    if (delayAndAutoShoot) {
+                        me.modules.dispatcher.postMessageToWorker('mousePointer', {autoshootCaptured: true});
+                        remove();
+                        setTimeout(function() {
+                            shootFn();
+                        }, 5000);
+                    }
+                },false);
+                div.addEventListener('click', function(event) {
+                    x = x || event.clientX;
+                    y = y || event.clientY;
+                    remove();
+                    shootFn();
                 });
             }
         },
