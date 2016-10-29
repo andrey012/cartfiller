@@ -1,6 +1,6 @@
 (function(window, document, undefined){
     cartFillerAPI().registerWorker(function(window, document, api, task, job, globals){
-        window.parent.jQuery('iframe[name="cartFillerWorkerFrame"]')[0].contentWindow.jQuery('#workerContainer').css('opacity', 0.1);
+        window.parent.jQuery('iframe[name="cartFillerWorkerFrame"]')[0].contentWindow.jQuery('#workerContainer').css('opacity', globals.dev ? 1 : 0.1);
         function j(s) { return window.jQuery ? window.jQuery(s) : []; }
         function jc(s) { 
             var iframe = j('[name="cartFillerChooseJobFrame"]:visible');
