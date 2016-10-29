@@ -193,7 +193,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1503785060887';
+    config.gruntBuildTimeStamp='1503837235987';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -506,7 +506,10 @@
         return {attribute: name, equals: equals, value: value.substr(1, value.length - 2)};
     };
     var Selector = function(elementList, description, self) {
-        this.self = self;
+        if (self === undefined) {
+            throw new Error('self should not be undefined');
+        }
+        this.self = self || undefined;
         if (elementList) {
             this.length = elementList.length;
             this.description = description || ('[' + elementList.length + ']');
@@ -534,7 +537,7 @@
         }
         var firstSelector = match[1];
         var remainder = match[13];
-        var firstResult = new Selector([], this.description + ' ' + firstSelector);
+        var firstResult = new Selector([], this.description + ' ' + firstSelector, null);
         this.each(function(i,e) {
             firstResult = firstResult.add(getElementsBySelector(e, firstSelector));
         });
@@ -567,7 +570,7 @@
                 }
             }
         }
-        return new Selector([], description);
+        return new Selector([], description, [this, 'closest', selector]);
     };
     Selector.prototype.text = function() {
         if (this.length) {
@@ -783,19 +786,19 @@
     var getElementsBySelectorFirstStep = function(root, criterion) {
         switch (criterion[0]) {
             case 'nodeName': 
-                return new Selector(root.getElementsByTagName(criterion[1]));
+                return new Selector(root.getElementsByTagName(criterion[1]), undefined, null);
             case 'id': 
                 if ('#document' === root.nodeName) {
                     var e = root.getElementById(criterion[1]);
-                    return new Selector(e ? [e] : []);
+                    return new Selector(e ? [e] : [], undefined, null);
                 } 
-                return getElementsBySelectorSecondStep(new Selector(root.getElementsByTagName('*')), criterion);
+                return getElementsBySelectorSecondStep(new Selector(root.getElementsByTagName('*'), undefined, null), criterion);
             case 'class': 
-                return new Selector(root.getElementsByClassName(criterion[1]));
+                return new Selector(root.getElementsByClassName(criterion[1]), undefined, null);
             case 'attribute': 
             case 'modifier': 
             case 'not':
-                return getElementsBySelectorSecondStep(new Selector(root.getElementsByTagName('*')), criterion);
+                return getElementsBySelectorSecondStep(new Selector(root.getElementsByTagName('*'), undefined, null), criterion);
             default: 
                 throw new Error('unknown or invalid criterion type for first step: [' + criterion[0] + ']');
         }
@@ -1240,7 +1243,7 @@
         highlight: function(element, allElements, noScroll){
             try {
                 me.modules.ui.highlight(element, allElements, noScroll);
-                me.modules.dispatcher.setReturnedValueOfStep(element);
+                me.modules.dispatcher.setReturnedValueOfStep(element, true);
             } catch (e) {}
             return this;
         },
@@ -1259,7 +1262,7 @@
         arrow: function(element, allElements, noScroll){
             try {
                 me.modules.ui.arrowTo(element, allElements, noScroll);
-                me.modules.dispatcher.setReturnedValueOfStep(element);
+                me.modules.dispatcher.setReturnedValueOfStep(element, true);
             } catch (e){}
             return this;
         },
@@ -1271,7 +1274,7 @@
          * @access public
          */
         return: function(value) {
-            me.modules.dispatcher.setReturnedValueOfStep(value);
+            me.modules.dispatcher.setReturnedValueOfStep(value, false);
             return this;
         },
         /**
@@ -1949,155 +1952,7 @@
 }).call(this, document, window);
 
 /**
- * Represents the cf.* task Wrapper
- * 
- * cases: 
- * * linear
- * cf
- *  .find(...)
- *  .click()
- *  .then(function(){
- *    ...
- *    cf.result(...);
- *  })
- *  .export('task - click the button')
- * 
- * * static step list -
- * cf
- *  .find(...)
- *  .click()
- *  .share('myTwoSteps')
- *  .export('task - find and click')
- * 
- * cf
- *  .use('myTwoSteps')
- *  
- * * parametrized generator
- * cf
- *  .generator('buildSomeSteps', function (opts) {
- *   return cf
- *     .find(... opts.b ... opts.c ... )
- *     .click()
- *     .use(opts.a && cf
- *        .find(...)
- *        .click()
- *     )
- *     // no save here
- *   })
- *  .use('buildSomeSteps', {a: 'a0', b: 'b0', c: 'c0'})
- *  .export('task - generated with a0, b0 and c0)
- * 
- * cf
- *  .use('buildSomeSteps', {a: 'a', b: 'b', c: 'c'})
- *  .export('task - generated with a, b and c)
- *
- * cf
- *  .use('buildSomeSteps', {a: 'a1', b: 'b1', c: 'c1'})
- *  .export('task - gnerated with a1, b1 and c1)
- * 
- * * step slice reuse
- * cf
- *  .find(...)
- *  .click()
- *  .name('find theButton').find(...)
- *  .click()
- *  .since('find theButton').share('helperToFindAndClickTheButton')
- *  .find(...)
- *  .click()
- * 
- * cf
- *  .use('helperToFindAndClickTheButton')
- *  ...
- * 
- * * referencing results of earlier steps
- * cf
- *  .find(...).as('thelink')
- *  .find(...).as('theheading')
- *  .with('thelink').click()
- *  .with('thelink', 'theheading').then(function(a, th) {
- *    ... 
- *    cf.result();
- *  })
- *  .then(function(repeat10) {
- *    cf.result(cf.get('a').length || cf.get('th').length ? '' : 'not found');
- *  })
- * 
- * * repeat/skip/nop and conditional flow (skip/repeat)
- * cf
- *  .find(...).click()
- *  .repeatTask()
- * 
- * cf
- *  .name('a').find(...).click()
- *  .name('b').find(...).click()
- *  .then(function(){
- *    if (cf.find(...).length) cf.skipTask().result();
- *  })
- *  .repeatStep('b')
- * 
- * cf
- *  .ifNot(cf('isLoggedIn'), cf
- *    .find(cf('loginLink')).click().waitFor(cf('findLoginDialog'))
- *    .find('#username').type('login')
- *    .find('#password').type('password')
- *    .find('#rememberMe').ifNot(cf.is(':checked'), cf.click())
- *    .find('#loginButton').click().waitFor(cf('isLoggedIn'))
- *  )
- *  .share('loginIfNecessary')
- * * 
- * * declarative waitfors
- * cf
- *  .waitFor(function(){ return cf.find().length; }, <then>, <timeout>, <checkPeriod>)
- * 
- * * declaring and referencing lib element finders (page objects) and other lib helpers
- * 
- * cf
- *  .find('#navBar ul li.welcome span:nth-child(1)')
- *  ...
- * => 
- * cf
- *  .lib('welcomeSpan', cf.find('#navBar ul li.welcome span:nth-child(1)'))
- *  .find('welcomeSpan')
- *  .lib('isAdmin', cf.find('welcomeSpan').is('.admin'))
- *  ...
- * 
- * 
- * cf
- *  .lib('welcomeSpan', function() { return cf.find(...); })
- *  .lib('welcomeSpan', cf.find(...))
- *  .lib('isLoggedIn', function() { 
- *    return lib('welcomeSpan').length;
- *  })
- *  .lib('isLoggedIn', function(opts) {
- *    if (opts.isAdmin) return lib('welcomeSpan').length && lib('welcomeSpan').is('.admin');
- *    return lib('welcomeSpan').length;
- *  })
- *  .find(...).click().waitFor(lib('isLoggedIn', {isAdmin: true}))
- * 
- * cf
- *  .lib('findCellInTheTable', function(opts) { ... })
- *  .find(lib('findCellInTheTable', {header: 'Name', value: cf.task('name')}))
- *  .find(function(){
- *    return lib('findCellInTheTable', {header: 'Name', value: task.name});
- *  })
- *  .find(function(){
- *    return lib('findCellInTheTable', {header: 'Name', value: cf.task('name')});
- *  })
- * 
- * 
- * * make sure, that...
- * cf
- *  .find(...)
- *  .click()
- *  .name('is logged in').assertTrue(lib('isLoggedIn'))
- *  .name('is logged in as Michael').assertEquals(lib('welcomeSpan').text().trim(), 'Hello Michael!')
- *  .assertTrue(function(){
- *    return lib('welcomeSpan').text().trim() === 'Hello Michael!';
- *  })
- *  .then(function(){ 
- *    cf.result(cf.compare(lib('welcomeSpan').text().trim(), 'Hello Michael!'));
- *  })
- *  .name('is logged in as username specified in task').assertEquals(lib('welcomeSpan').text().trim(), cf.task('name'))
+ * see playground/todoMvcWorker.js
  */
 (function(document, window, undefined){
     'use strict';
@@ -2261,55 +2116,6 @@
                 throw new Error('unable to use declarative mode - probably browser incompatibility');
             }
 
-            var makeBooleanBuilderPromise = function(condition) {
-                if (condition instanceof Function) {
-                    return condition;
-                } else if ('string' === typeof condition) {
-                    return function() {
-                        return me.modules.dispatcher.interpolateText(condition).length;
-                    };
-                } else if (condition instanceof BuilderPromise) {
-                    var arr = condition.arr.slice();
-                    var check = arr.pop();
-                    var promise;
-                    switch (check[0]) {
-                        case 'exists': 
-                            promise = wrapSelectorBuilderPromise(arr);
-                            return function() {
-                                var e = promise();
-                                if (e.length) {
-                                    e.arrow(true);
-                                }
-                                return e.length;
-                            };
-                        case 'absent': 
-                            promise = wrapSelectorBuilderPromise(arr);
-                            return function() {
-                                var e = promise();
-                                if (e.length) {
-                                    e.arrow(true);
-                                }
-                                return ! e.length;
-                            };
-                        case 'find':
-                        case 'closest':
-                        case 'first':
-                        case 'get':
-                            promise = wrapSelectorBuilderPromise(condition.arr);
-                            return function() {
-                                var e = promise();
-                                if (e.length) {
-                                    e.arrow();
-                                }
-                                return e.length;
-                            };
-                        default: 
-                            throw new Error('unknown selector tail for boolean expression: [' + check[0] + ']');
-                    }
-                } else {
-                    throw new Error('unknown condition for boolean evaluation: [' + JSON.stringify(condition) + ']');
-                }
-            };
             var Builder = this.Builder = function() {
                 this.namedResults = {};
             };
@@ -2372,32 +2178,46 @@
                 }
                 return result;
             };
+            var wrapIntoImplicitSelectorWaitForWrapperIf = function(condition, fn, msg, afterWait, timeout) {
+                return condition ? 
+                    implicitSelectorWaitForWrapper(fn, msg, afterWait, timeout) : 
+                    function(p) {
+                        p.reevaluate();
+                        api('result', [fn(p) ? '' : msg]);
+                    };
+            };
+            var implicitSelectorWaitForWrapper = function(fn, msg, afterWait, timeout) {
+                return me.modules.dispatcher.injectTaskParameters(function(p) {
+                    api('waitFor', [function() {
+                        if(me.modules.api.debug && me.modules.api.debug.stop) {
+                            debugger; // jshint ignore:line
+                        }
+                        p.reevaluate();
+                        return fn(p);
+                    }, afterWait || function(r) {
+                        p.arrow(1).result(r ? '' : msg);
+                    }, timeout || undefined, undefined, [p]]);
+                }, [fn, msg, afterWait]);
+            };
             var buildProxyFunction = function(name, rename, afterWait) {
-                return function(args) {
-                    if (name === 'exists') {
-                        return [(rename || name) + niceArgs(args), function(p) {
-                            api('waitFor', [function() {
-                                if(me.modules.api.debug && me.modules.api.debug.stop) {
-                                    debugger; // jshint ignore:line
-                                }
-                                p.reevaluate(); 
-                                return p.length;
-                            }, afterWait || function(r) {
-                                p.arrow(1).result(r ? '' : 'element did not appear within timeout');
-                            }, args[0] || undefined, undefined, [p]]);
-                        }];
-                    } else if (name === 'absent') {
-                        return [(rename || name) + niceArgs(args), function(p) {
-                            api('waitFor', [function() { 
-                                if(me.modules.api.debug && me.modules.api.debug.stop) {
-                                    debugger; // jshint ignore:line
-                                }
-                                p.reevaluate();
-                                return ! p.length;
-                            }, afterWait || function(r) {
-                                p.arrow(1).result(r ? '' : 'element did not disappear within timeout');
-                            }, args[0] || undefined, undefined, [p]]);
-                        }];
+                return function(args, coords, flavor) {
+                    if (name === 'exists' || name === 'absent') {
+                        return [
+                            (rename || name) + niceArgs(args),
+                            wrapIntoImplicitSelectorWaitForWrapperIf(
+                                flavor !== 'condition',
+                                function(p) {
+                                    if (name === 'exists') {
+                                        return p.length;
+                                    } else {
+                                        return ! p.length;
+                                    }
+                                },
+                                name === 'exists' ? 'element did not appear within timeout' : 'element did not disappear within timeout',
+                                afterWait,
+                                args[0]
+                            )
+                        ];
                     } else if (name === 'add') {
                         var selectorPromises = args.map(function(arg) {
                             if (arg instanceof BuilderPromise) {
@@ -2419,17 +2239,25 @@
                             s.arrow(1).nop();
                         }, args)];
                     } else if (name === 'is' || name === 'isNot') {
-                        return [(rename || name) + niceArgs(args),
-                        me.modules.dispatcher.injectTaskParameters(function(p) {
-                            if(me.modules.api.debug && me.modules.api.debug.stop) {
-                                debugger; // jshint ignore:line
-                            }
-                            if (name === 'is') {
-                                p.result(p.is(args[0]) ? '' : 'element.is(\'' + args[0] + '\') is not true');
-                            } else {
-                                p.result(p.is(args[0]) ? 'element.is(\'' + args[0] + '\') is true but should not be' : '');
-                            }
-                        })];
+                        return [
+                            (rename || name) + niceArgs(args),
+                            wrapIntoImplicitSelectorWaitForWrapperIf(
+                                flavor !== 'condition',
+                                function(p) {
+                                    if(me.modules.api.debug && me.modules.api.debug.stop) {
+                                        debugger; // jshint ignore:line
+                                    }
+                                    if (name === 'is') {
+                                        return p.arrow(1).is(args[0]);
+                                    } else {
+                                        return ! p.arrow(1).is(args[0]);
+                                    }
+                                },
+                                name === 'is' ? ('element.is(\'' + args[0] + '\') is not true') : ('element.is(\'' + args[0] + '\') is true but should not be'),
+                                afterWait,
+                                args[1]
+                            )
+                        ];
                     } else {
                         return [(rename || name) + niceArgs(args), me.modules.dispatcher.injectTaskParameters(function(p) {
                             if(me.modules.api.debug && me.modules.api.debug.stop) {
@@ -2561,20 +2389,6 @@
                     api('onload', args);
                 }, args)];
             };
-            Builder.prototype.waitFor = function(args) {
-                var name = 'waitFor(' + niceArgs(args) + ')';
-                if (args[0] instanceof Function) {
-                    return [name, function() { 
-                        api('waitFor', args);
-                    }];
-                } else if (args[0] instanceof BuilderPromise) {
-                    // ok, this is the case where we should get promise of selector
-                    var promise = makeBooleanBuilderPromise(args[0]);
-                    return ['waitFor' + niceArgs(args), function() {
-                        api('waitFor', [promise].concat(args.slice(1)));
-                    }];
-                }
-            };
             Builder.prototype.use = function(args) {
                 if ('string' === typeof args[0]) {
                     var name = args[0];
@@ -2601,26 +2415,39 @@
             var generateIfOrIfNotSteps = function(args, builder, ifNot, isWhile) {
                 var condition = args[0];
                 var action = args[1];
+                var conditionSteps = builder.build(condition.arr, [], 'condition');
+                var conditionStepsLen = conditionSteps.length / 2;
                 var actionSteps = builder.build(action.arr);
-                var actionStepsLen = actionSteps.length / 2;
+                var actionStepsLen = actionSteps.length / 2 + (isWhile ? 1 : 0);
                 if (isWhile) {
                     actionStepsLen ++;
                     actionSteps.push('repeat', function() {
-                        api('repeatStep', [actionStepsLen + 1]);
-                        api('result');
+                        if(me.modules.api.debug && me.modules.api.debug.stop) {
+                            debugger; // jshint ignore:line
+                        }
+                        api('repeatStep', [actionStepsLen + conditionStepsLen]);
+                        api('nop');
                     });
                 }
-                var booleanBuilderPromise = makeBooleanBuilderPromise(condition);
-                return ['if' + (ifNot ? 'Not' : '') + niceArgs([condition]), function() {
+                conditionSteps[conditionSteps.length - 1].cartFillerCaptureResult = true;
+                conditionSteps.push((isWhile ? 'while' : 'if') + (ifNot ? 'Not' : '') + ' - check condition evaluation result', function(result) {
                     if(me.modules.api.debug && me.modules.api.debug.stop) {
                         debugger; // jshint ignore:line
                     }
-                    var result = booleanBuilderPromise();
-                    if ((! ifNot && ! result) || (ifNot && result)) {
+                    if (result[2]) {
+                        api('arrow', [result[1], 1]);
+                    } else {
+                        api('return', [result[1]]);
+                    }
+                    // result is notnull if evaluation failed
+                    if ((! ifNot && result[0]) || // if used with if/whilie, then we skip if evaluation failed
+                        (ifNot && ! result[0])) // if used with ifNot/whileNot, then we skip if evaluation succeeded
+                    {
                         api('skipStep', [actionStepsLen]);
                     }
-                    api('result');
-                }].concat(actionSteps);
+                    api('nop');
+                });
+                return conditionSteps.concat(actionSteps);
             };
             Builder.prototype.if = function(args) { 
                 return generateIfOrIfNotSteps(args, this);
@@ -2652,7 +2479,7 @@
                     BuilderPromise.prototype[i] = promiseProxyFactory(i);
                 }
             }
-            Builder.prototype.build = function(steps, prev) {
+            Builder.prototype.build = function(steps, prev, flavor) {
                 var result = (prev || []).slice();
                 var builder = this;
                 var rememberedName;
@@ -2663,7 +2490,7 @@
                     if (! builder[step[0]]) {
                         throw new Error('step [' + step[0] + '] is not known to builder');
                     }
-                    result.push.apply(result, flattenAndReplaceName(builder[step[0]](step[1], result.length / 2), rememberedName));
+                    result.push.apply(result, flattenAndReplaceName(builder[step[0]](step[1], result.length / 2, flavor), rememberedName));
                     rememberedName = step[0] === 'name' ? (rememberedName ? rememberedName : step[1][0]) : undefined;
                 });
                 return result;
@@ -2938,6 +2765,13 @@
      * which can be assigned from within worker and then reused.
      * @access private
      */
+    /**
+     * @var {boolean} CartFiller.Dispatcher~captureWorkerFnResult if set to true
+     * then api.result(v) call will be implicitly converted to api.return(v).result();
+     * @access private
+     */
+    var captureWorkerFnResult = false;
+
     var workerGlobals = {};
     var currentCf;
     var workerLibResolve = function(arg, promise, path) {
@@ -3178,6 +3012,7 @@
      */
     var returnedValuesOfStepsAreForTask;
     var mostRecentReturnedValueOfStep;
+    var mostRecentReturnedValueOfStepIsElement;
 
     /**
      * Cache job details to give it to worker in full. Purpose is to make it 
@@ -4283,6 +4118,7 @@
                             console.log('to stop debugging of this step type api.debug = 0; in console, or hover over any api.debug.stop property');
                         }
                         me.modules.api.env = currentStepEnv;
+                        captureWorkerFnResult = workerFn.cartFillerCaptureResult;
                         workerFn.apply(me.modules.ui.getMainFrameWindowDocument(), getWorkerFnParams());
                     }
                 } catch (err){
@@ -4827,6 +4663,10 @@
                 }
             }
             var status, m;
+            if (captureWorkerFnResult) {
+                this.setReturnedValueOfStep([message === '' ? undefined : message, mostRecentReturnedValueOfStep, mostRecentReturnedValueOfStepIsElement]);
+                message = undefined; // result = ok
+            }
             if ((undefined === message) || ('' === message)) {
                 status = 'ok';
             } else if ('string' === typeof message){
@@ -4912,8 +4752,9 @@
          * @param {jQuery|HtmlElement} element
          * @access public
          */
-        setReturnedValueOfStep: function(element){
+        setReturnedValueOfStep: function(element, isElement){
             returnedValuesOfSteps[workerCurrentStepIndex + 1] = mostRecentReturnedValueOfStep = element;
+            mostRecentReturnedValueOfStepIsElement = isElement;
             this.onMessage_bubbleRelayMessage({
                 message: 'broadcastReturnedValues', 
                 values: returnedValuesOfSteps.map(function(v) {
@@ -5315,7 +5156,11 @@
                 if (storeDiscoveredParametersHere) {
                     storeDiscoveredParametersHere[g2] = true;
                 }
-                return g1 + ((undefined === workerCurrentTask[g2] || null === workerCurrentTask[g2]) ? '' : String(workerCurrentTask[g2]));
+                var value = workerCurrentTask[g2];
+                if (undefined === value) {
+                    value = workerGlobals[g2];
+                }
+                return g1 + ((undefined === value || null === value) ? '' : String(value));
             }).replace(/\\\$/g, '$');
         }
     });

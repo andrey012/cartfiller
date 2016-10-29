@@ -176,6 +176,13 @@
      * which can be assigned from within worker and then reused.
      * @access private
      */
+    /**
+     * @var {boolean} CartFiller.Dispatcher~captureWorkerFnResult if set to true
+     * then api.result(v) call will be implicitly converted to api.return(v).result();
+     * @access private
+     */
+    var captureWorkerFnResult = false;
+
     var workerGlobals = {};
     var currentCf;
     var workerLibResolve = function(arg, promise, path) {
@@ -416,6 +423,7 @@
      */
     var returnedValuesOfStepsAreForTask;
     var mostRecentReturnedValueOfStep;
+    var mostRecentReturnedValueOfStepIsElement;
 
     /**
      * Cache job details to give it to worker in full. Purpose is to make it 
@@ -1521,6 +1529,7 @@
                             console.log('to stop debugging of this step type api.debug = 0; in console, or hover over any api.debug.stop property');
                         }
                         me.modules.api.env = currentStepEnv;
+                        captureWorkerFnResult = workerFn.cartFillerCaptureResult;
                         workerFn.apply(me.modules.ui.getMainFrameWindowDocument(), getWorkerFnParams());
                     }
                 } catch (err){
@@ -2065,6 +2074,10 @@
                 }
             }
             var status, m;
+            if (captureWorkerFnResult) {
+                this.setReturnedValueOfStep([message === '' ? undefined : message, mostRecentReturnedValueOfStep, mostRecentReturnedValueOfStepIsElement]);
+                message = undefined; // result = ok
+            }
             if ((undefined === message) || ('' === message)) {
                 status = 'ok';
             } else if ('string' === typeof message){
@@ -2150,8 +2163,9 @@
          * @param {jQuery|HtmlElement} element
          * @access public
          */
-        setReturnedValueOfStep: function(element){
+        setReturnedValueOfStep: function(element, isElement){
             returnedValuesOfSteps[workerCurrentStepIndex + 1] = mostRecentReturnedValueOfStep = element;
+            mostRecentReturnedValueOfStepIsElement = isElement;
             this.onMessage_bubbleRelayMessage({
                 message: 'broadcastReturnedValues', 
                 values: returnedValuesOfSteps.map(function(v) {
@@ -2553,7 +2567,11 @@
                 if (storeDiscoveredParametersHere) {
                     storeDiscoveredParametersHere[g2] = true;
                 }
-                return g1 + ((undefined === workerCurrentTask[g2] || null === workerCurrentTask[g2]) ? '' : String(workerCurrentTask[g2]));
+                var value = workerCurrentTask[g2];
+                if (undefined === value) {
+                    value = workerGlobals[g2];
+                }
+                return g1 + ((undefined === value || null === value) ? '' : String(value));
             }).replace(/\\\$/g, '$');
         }
     });

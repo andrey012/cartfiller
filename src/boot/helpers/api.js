@@ -254,7 +254,10 @@
         return {attribute: name, equals: equals, value: value.substr(1, value.length - 2)};
     };
     var Selector = function(elementList, description, self) {
-        this.self = self;
+        if (self === undefined) {
+            throw new Error('self should not be undefined');
+        }
+        this.self = self || undefined;
         if (elementList) {
             this.length = elementList.length;
             this.description = description || ('[' + elementList.length + ']');
@@ -282,7 +285,7 @@
         }
         var firstSelector = match[1];
         var remainder = match[13];
-        var firstResult = new Selector([], this.description + ' ' + firstSelector);
+        var firstResult = new Selector([], this.description + ' ' + firstSelector, null);
         this.each(function(i,e) {
             firstResult = firstResult.add(getElementsBySelector(e, firstSelector));
         });
@@ -315,7 +318,7 @@
                 }
             }
         }
-        return new Selector([], description);
+        return new Selector([], description, [this, 'closest', selector]);
     };
     Selector.prototype.text = function() {
         if (this.length) {
@@ -531,19 +534,19 @@
     var getElementsBySelectorFirstStep = function(root, criterion) {
         switch (criterion[0]) {
             case 'nodeName': 
-                return new Selector(root.getElementsByTagName(criterion[1]));
+                return new Selector(root.getElementsByTagName(criterion[1]), undefined, null);
             case 'id': 
                 if ('#document' === root.nodeName) {
                     var e = root.getElementById(criterion[1]);
-                    return new Selector(e ? [e] : []);
+                    return new Selector(e ? [e] : [], undefined, null);
                 } 
-                return getElementsBySelectorSecondStep(new Selector(root.getElementsByTagName('*')), criterion);
+                return getElementsBySelectorSecondStep(new Selector(root.getElementsByTagName('*'), undefined, null), criterion);
             case 'class': 
-                return new Selector(root.getElementsByClassName(criterion[1]));
+                return new Selector(root.getElementsByClassName(criterion[1]), undefined, null);
             case 'attribute': 
             case 'modifier': 
             case 'not':
-                return getElementsBySelectorSecondStep(new Selector(root.getElementsByTagName('*')), criterion);
+                return getElementsBySelectorSecondStep(new Selector(root.getElementsByTagName('*'), undefined, null), criterion);
             default: 
                 throw new Error('unknown or invalid criterion type for first step: [' + criterion[0] + ']');
         }
@@ -988,7 +991,7 @@
         highlight: function(element, allElements, noScroll){
             try {
                 me.modules.ui.highlight(element, allElements, noScroll);
-                me.modules.dispatcher.setReturnedValueOfStep(element);
+                me.modules.dispatcher.setReturnedValueOfStep(element, true);
             } catch (e) {}
             return this;
         },
@@ -1007,7 +1010,7 @@
         arrow: function(element, allElements, noScroll){
             try {
                 me.modules.ui.arrowTo(element, allElements, noScroll);
-                me.modules.dispatcher.setReturnedValueOfStep(element);
+                me.modules.dispatcher.setReturnedValueOfStep(element, true);
             } catch (e){}
             return this;
         },
@@ -1019,7 +1022,7 @@
          * @access public
          */
         return: function(value) {
-            me.modules.dispatcher.setReturnedValueOfStep(value);
+            me.modules.dispatcher.setReturnedValueOfStep(value, false);
             return this;
         },
         /**

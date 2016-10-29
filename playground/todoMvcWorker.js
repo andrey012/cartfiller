@@ -83,12 +83,12 @@
         cf.task('filter')
             .get('#filters:visible a:visible')
             .withText('${type}')
-            .exists() // just make visual pause
-            .click()
-            // let's make sure filter became selected
-            .get('#filters:visible a.selected:visible')
-            .withText('${type}')
-            .exists()
+            .ifNot(
+                cf.is('.selected'),
+                cf.click()
+                // let's make sure filter became selected
+                .is('.selected')
+            )
 
 
         cf.task('makeSureItemIsNotThere')

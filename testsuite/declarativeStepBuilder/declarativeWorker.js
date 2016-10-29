@@ -81,7 +81,7 @@
         cf
         .task('declarativeTypePartNumber')
         .lib('partNumberInput', cf.get('input[name="partNumber"][type="text"]:visible'))
-        .ifNot(lib('partNumberInput'), cf.use('declarativeOpenHomeGenerator', true))
+        .ifNot(lib('partNumberInput').exists(), cf.use('declarativeOpenHomeGenerator', true))
         .get(lib('partNumberInput')).as('searchBox')
         .lib('searchButton', cf.get('input[value="Search"][type="submit"]:visible'))
         .get(lib('searchButton')).as('searchButton')
@@ -110,7 +110,7 @@
             .closest('table')
             .find('tbody:visible tr:visible')
         )
-        .name('wait for results to appear').waitFor(lib('searchResultLines').exists())
+        .name('wait for results to appear').getlib('searchResultLines').exists()
         .since('wait for results to appear').share('waitForResultsToAppear')
         .if(
             lib('searchResultLines')

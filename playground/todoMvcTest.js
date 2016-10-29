@@ -1,6 +1,7 @@
 cartfiller = {
     title: 'sample test',
     globals: {
+        pure: false
     },
     details: [
         '# Sample test for TodoMVC',
@@ -32,7 +33,7 @@ cartfiller = {
         {triggerCheckbox: {name: 'item two'}},
         '## Set filter to show only active items',
         {if: 'pure', then: [], else: [
-            {_say: {message: 'Browser action syntax:\n\n\ncf.task(\'filter\')\n    .get(\'#filters:visible a:visible\')\n    .withText(\'${type}\')\n    .click()\n    // let\'s make sure filter became selected\n    .get(\'#filters:visible a.selected:visible\')\n    .withText(\'${type}\')\n    .exists()', pre: true, clear: true, sleepMs: 25000}},
+            {_say: {message: 'Browser action syntax:\n\ncf.task(\'filter\')\n    .get(\'#filters:visible a:visible\')\n    .withText(\'${type}\')\n    .ifNot(\n        cf.is(\'.selected\'),\n        cf.click()\n        // let\'s make sure filter became selected\n        .is(\'.selected\')\n    )', pre: true, clear: true, sleepMs: 25000}},
         ]},
         {filter: {type: 'Active'}},
         '## Verifications', 
