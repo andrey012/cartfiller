@@ -193,7 +193,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1503837235987';
+    config.gruntBuildTimeStamp='1503845755528';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -1999,6 +1999,12 @@
         throw new Error('step not found: [' + name + ']');
     };
     var actualWrapper = false;
+    var addMakePauseBeforeStepToFirstStep = function(steps) {
+        if ('function' === typeof steps[1]) {
+            steps[1].cartFillerMakePauseBeforeStep = true;
+        }
+        return steps;
+    };
     var onLoaded = function() {
         Runtime = function() {
 
@@ -2327,13 +2333,15 @@
              * wait for element, ms
              */
             Builder.prototype.click = function(args) {
-                return buildProxyFunction('exists', 'click', function(r, p) {
-                    if (r) {
-                        api('clicker')[1](p.arrow(1));
-                    } else {
-                        p.result('element did not appear within timeout');
-                    }
-                })(args);
+                return addMakePauseBeforeStepToFirstStep(
+                    buildProxyFunction('exists', 'click', function(r, p) {
+                        if (r) {
+                            api('clicker')[1](p.arrow(1));
+                        } else {
+                            p.result('element did not appear within timeout');
+                        }
+                    })(args)
+                );
             };
             Builder.prototype.isNot = function(args) {
                 return buildProxyFunction('isNot')(args);
@@ -2350,34 +2358,38 @@
              * boolean dont clear text before typing
              */
             Builder.prototype.type = function(args) {
-                return buildProxyFunction('exists', 'type', function(r, p) {
-                    if (r) {
-                        api('typer', [
-                            function() {
-                                return me.modules.dispatcher.interpolateText(args[0]);
-                            },
-                            undefined,
-                            args[1]
-                        ])[1](p.arrow(1));
-                    } else {
-                        p.result('element did not appear within timeout');
-                    }
-                })([]);
+                return addMakePauseBeforeStepToFirstStep(
+                    buildProxyFunction('exists', 'type', function(r, p) {
+                        if (r) {
+                            api('typer', [
+                                function() {
+                                    return me.modules.dispatcher.interpolateText(args[0]);
+                                },
+                                undefined,
+                                args[1]
+                            ])[1](p.arrow(1));
+                        } else {
+                            p.result('element did not appear within timeout');
+                        }
+                    })([])
+                );
             };
             Builder.prototype.enter = function() {
-                return buildProxyFunction('exists', 'enter', function(r, p) {
-                    if (r) {
-                        api('typer', [
-                            function() {
-                                return '\r';
-                            },
-                            undefined,
-                            true
-                        ])[1](p.arrow(1));
-                    } else {
-                        p.result('element did not appear within timeout');
-                    }
-                })([]);
+                return addMakePauseBeforeStepToFirstStep(
+                    buildProxyFunction('exists', 'enter', function(r, p) {
+                        if (r) {
+                            api('typer', [
+                                function() {
+                                    return '\r';
+                                },
+                                undefined,
+                                true
+                            ])[1](p.arrow(1));
+                        } else {
+                            p.result('element did not appear within timeout');
+                        }
+                    })([])
+                );
             };
             Builder.prototype.then = function(args) {
                 return ['then(' +niceArgs(args) + ')', me.modules.dispatcher.injectTaskParameters(function() {
@@ -3482,8 +3494,10 @@
         var list = {};
         var discoveredParameters = {};
         var stepDependencies = {};
+        var pausesBeforeSteps = {};
         for (var taskName in worker) {
             stepDependencies[taskName] = {};
+            pausesBeforeSteps[taskName] = {};
             var taskSteps = [];
             var params = {};
             var allParams = {};
@@ -3494,6 +3508,7 @@
                     if (worker[taskName][i+1] instanceof Function) {
                         params[taskSteps.length - 1] = discoverTaskParameters(worker[taskName][i+1], allParams);
                         stepDependencies[taskName][taskSteps.length - 1] = discoverStepDependencies(worker[taskName][i+1]);
+                        pausesBeforeSteps[taskName][taskSteps.length - 1] = worker[taskName][i+1].cartFillerMakePauseBeforeStep;
                     }
                 }
             }
@@ -3506,7 +3521,8 @@
             discoveredParameters: discoveredParameters, 
             workerTaskSources: workerTaskSources,
             stepDependencies: stepDependencies,
-            workerLib: workerLibBrief
+            workerLib: workerLibBrief,
+            pausesBeforeSteps: pausesBeforeSteps
         });
     };
     /**

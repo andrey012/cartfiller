@@ -893,8 +893,10 @@
         var list = {};
         var discoveredParameters = {};
         var stepDependencies = {};
+        var pausesBeforeSteps = {};
         for (var taskName in worker) {
             stepDependencies[taskName] = {};
+            pausesBeforeSteps[taskName] = {};
             var taskSteps = [];
             var params = {};
             var allParams = {};
@@ -905,6 +907,7 @@
                     if (worker[taskName][i+1] instanceof Function) {
                         params[taskSteps.length - 1] = discoverTaskParameters(worker[taskName][i+1], allParams);
                         stepDependencies[taskName][taskSteps.length - 1] = discoverStepDependencies(worker[taskName][i+1]);
+                        pausesBeforeSteps[taskName][taskSteps.length - 1] = worker[taskName][i+1].cartFillerMakePauseBeforeStep;
                     }
                 }
             }
@@ -917,7 +920,8 @@
             discoveredParameters: discoveredParameters, 
             workerTaskSources: workerTaskSources,
             stepDependencies: stepDependencies,
-            workerLib: workerLibBrief
+            workerLib: workerLibBrief,
+            pausesBeforeSteps: pausesBeforeSteps
         });
     };
     /**

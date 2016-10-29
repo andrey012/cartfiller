@@ -6,6 +6,5 @@ cartfiller = {
     ],
     tests: {
         todoMvcTest: true,
-        toggleAll: true,
     }
 }

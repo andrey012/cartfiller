@@ -47351,6 +47351,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
         $scope.jobTitle = '';
         $scope.jobId = '';
         $scope.stepDependencies = {};
+        $scope.pausesBeforeSteps = {};
         $scope.currentMainFrameWindow = 0;
         $scope.currentUrls = [false];
         $scope.dispatcherCurrentTask = 0;
@@ -47544,6 +47545,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                     $scope.jobTaskDiscoveredParameters = details.discoveredParameters;
                     $scope.workerTaskSources = details.workerTaskSources;
                     $scope.stepDependencies = details.stepDependencies;
+                    $scope.pausesBeforeSteps = details.pausesBeforeSteps;
                     $scope.updateIndexTitles();
                 });
                 if ($scope.clickedWhileWorkerWasInProgress) {
@@ -47602,6 +47604,9 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                     }
                 }
                 var nextStepTimeout = 0;
+                if ($scope.jobDetails[$scope.currentTask] && $scope.jobDetails[$scope.currentTask].task && $scope.pausesBeforeSteps[$scope.jobDetails[$scope.currentTask].task] && $scope.pausesBeforeSteps[$scope.jobDetails[$scope.currentTask].task][$scope.currentStep]) {
+                    details.nop = false;
+                }
                 if ($scope.running || ($scope.doingOneStep && ($scope.clickedWhileWorkerWasInProgress === 'step' || true === details.nop))){
                     if (proceed){
                         nextStepTimeout = (($scope.running === 'slow' || cfDebug.callPhantom) && (true !== details.nop)) ?
@@ -48446,7 +48451,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
             reportError('bootstrap message did not come');
         }
     }, 10000);
-    config.gruntBuildTimeStamp='1503837235987';
+    config.gruntBuildTimeStamp='1503845755528';
     window.addEventListener('message', function(event){
         var prefix = 'cartFillerMessage:';
         var isDist = true;
@@ -48556,7 +48561,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 if (message.tests) {
                     var x = new XMLHttpRequest();
                     x.onload = function(){
-                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1503837235987') {
+                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1503845755528') {
                             console.log('new version of CartFiller was deployed, switching to it');
                             var hash = window.location.href.split('#');
                             var pc = hash[0].split('?');

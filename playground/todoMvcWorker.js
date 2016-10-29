@@ -46,7 +46,6 @@
                 .find('button.destroy') // searching inside list
                 .first() // selecting first
                 .css('display', 'block') // force it to appear (since we can't simulate hover event)
-                .exists() // just make visual pause
                 .click() // and click on it
             )
             .say('all items removed')
@@ -54,7 +53,6 @@
 
         cf.task('addItem')
             .get('#new-todo:visible') // search for new task input
-            .exists() // just make visual pause
             .type('${name}')
             .enter()
             // make sure that item exists, use getItemLi
@@ -77,7 +75,6 @@
             )
             .getlib('getItemLi') // here we evaluate lib item, that we earlier defined
             .find('input[type="checkbox"]:visible') // inside it we are looking for checkbox input
-            .exists() // just make visual pause
             .click() 
 
         cf.task('filter')
@@ -99,24 +96,6 @@
         cf.task('makeSureItemIsThere')
             .getlib('getItemLi')
             .exists()
-
-
-        cf.task('clearCompleted')
-            .get('#clear-completed:visible')
-            .click()
-            
-        cf.task('makeSureThatItemIsNotDone')
-            .getlib('getItemLi').find('input[type="checkbox"]:visible')
-            .is(':not(:checked)')
-
-        cf.task('toggleAll')
-            .get('#toggle-all:visible')
-            .click()
-
-        cf.task('makeSureThatItemIsDone')
-            .getlib('getItemLi').find('input[type="checkbox"]:visible')
-            .is(':checked')
-            
             
     });
 })(window, document);

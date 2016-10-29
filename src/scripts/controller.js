@@ -98,6 +98,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
         $scope.jobTitle = '';
         $scope.jobId = '';
         $scope.stepDependencies = {};
+        $scope.pausesBeforeSteps = {};
         $scope.currentMainFrameWindow = 0;
         $scope.currentUrls = [false];
         $scope.dispatcherCurrentTask = 0;
@@ -291,6 +292,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                     $scope.jobTaskDiscoveredParameters = details.discoveredParameters;
                     $scope.workerTaskSources = details.workerTaskSources;
                     $scope.stepDependencies = details.stepDependencies;
+                    $scope.pausesBeforeSteps = details.pausesBeforeSteps;
                     $scope.updateIndexTitles();
                 });
                 if ($scope.clickedWhileWorkerWasInProgress) {
@@ -349,6 +351,9 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                     }
                 }
                 var nextStepTimeout = 0;
+                if ($scope.jobDetails[$scope.currentTask] && $scope.jobDetails[$scope.currentTask].task && $scope.pausesBeforeSteps[$scope.jobDetails[$scope.currentTask].task] && $scope.pausesBeforeSteps[$scope.jobDetails[$scope.currentTask].task][$scope.currentStep]) {
+                    details.nop = false;
+                }
                 if ($scope.running || ($scope.doingOneStep && ($scope.clickedWhileWorkerWasInProgress === 'step' || true === details.nop))){
                     if (proceed){
                         nextStepTimeout = (($scope.running === 'slow' || cfDebug.callPhantom) && (true !== details.nop)) ?
