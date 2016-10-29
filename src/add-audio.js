@@ -1,4 +1,10 @@
 'use strict';
+
+/*
+some commands
+sox -n -r 44100 -b 4 -c 2 -L /tmp/silence.wav trim 0.0 3600.000
+ffmpeg -i /tmp/silence.wav -y /src/silence.flac
+*/
 var argv = require('yargs')
     .help('help')
     .usage('Usage: $0 [options] <base video filename> <folder with audios>')
@@ -21,13 +27,13 @@ var injectAudioDelaysIntoMap = function(map, testName) {
         return (0 === file.indexOf('cartFillerAudio_' + testName + '___'));
     }).map(function(file) {
         var pc = file.split('___');
-        var ppc = pc[1].split('_');
+        var ppc = pc[1].split('.')[0].split('_');
         return {
             file: file, 
-            task: ppc[0], 
-            step: ppc[1], 
-            duration: ppc[2],
-            timestamp: ppc[3]
+            task: parseInt(ppc[0]), 
+            step: parseInt(ppc[1]), 
+            duration: parseInt(ppc[2]),
+            timestamp: parseInt(ppc[3])
         };
     }).sort(function(a,b){
         return a.timestamp - b.timestamp;
@@ -142,7 +148,7 @@ var processFrameFolder = function() {
             });
             args.push(
                 '-filter_complex',
-                audioFilterPieces.join('') + ' ' + audioFilterSinks.join('') + 'concat=n=' + (audioFilterSinks.length * 2) + ':v=0:a=1[a]',
+                audioFilterPieces.join('') + ' ' + audioFilterSinks.join('') + 'concat=n=' + (audioFilterSinks.length * 2) + ':v=0:a=1[all]; [all]dynaudnorm=g=7:f=250[a]',
                 '-map', '0:v',
                 '-map', '[a]',
                 '-strict', '-2',

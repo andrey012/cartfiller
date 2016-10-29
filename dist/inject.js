@@ -193,7 +193,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1503700078679';
+    config.gruntBuildTimeStamp='1503779439642';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -2372,33 +2372,33 @@
                 }
                 return result;
             };
-            var buildProxyFunction = function(name) {
+            var buildProxyFunction = function(name, rename, afterWait) {
                 return function(args) {
                     if (name === 'exists') {
-                        return [name + niceArgs(args), function(p) {
+                        return [(rename || name) + niceArgs(args), function(p) {
                             api('waitFor', [function() {
                                 if(me.modules.api.debug && me.modules.api.debug.stop) {
                                     debugger; // jshint ignore:line
                                 }
                                 p.reevaluate(); 
                                 return p.length;
-                            }, function(r) {
+                            }, afterWait || function(r) {
                                 p.arrow(1).result(r ? '' : 'element did not appear within timeout');
-                            }, args[0] || undefined]);
+                            }, args[0] || undefined, undefined, [p]]);
                         }];
                     } else if (name === 'absent') {
-                        return [name + niceArgs(args), function(p) {
+                        return [(rename || name) + niceArgs(args), function(p) {
                             api('waitFor', [function() { 
                                 if(me.modules.api.debug && me.modules.api.debug.stop) {
                                     debugger; // jshint ignore:line
                                 }
                                 p.reevaluate();
                                 return ! p.length;
-                            }, function(r) {
+                            }, afterWait || function(r) {
                                 p.arrow(1).result(r ? '' : 'element did not disappear within timeout');
-                            }, args[0] || undefined]);
+                            }, args[0] || undefined, undefined, [p]]);
                         }];
-                    } else if (name === 'add') {
+                    } else if ((rename || name) === 'add') {
                         var selectorPromises = args.map(function(arg) {
                             if (arg instanceof BuilderPromise) {
                                 return wrapSelectorBuilderPromise(arg.arr);
@@ -2408,7 +2408,7 @@
                                 };
                             }
                         });
-                        return [name + niceArgs(args), me.modules.dispatcher.injectTaskParameters(function(p) {
+                        return [(rename || name) + niceArgs(args), me.modules.dispatcher.injectTaskParameters(function(p) {
                             if(me.modules.api.debug && me.modules.api.debug.stop) {
                                 debugger; // jshint ignore:line
                             }
@@ -2419,7 +2419,7 @@
                             s.arrow(1).nop();
                         }, args)];
                     } else {
-                        return [name + niceArgs(args), me.modules.dispatcher.injectTaskParameters(function(p) {
+                        return [(rename || name) + niceArgs(args), me.modules.dispatcher.injectTaskParameters(function(p) {
                             if(me.modules.api.debug && me.modules.api.debug.stop) {
                                 debugger; // jshint ignore:line
                             }
@@ -2483,8 +2483,17 @@
             Builder.prototype.nop = function() {
                 return ['nop', function(){ api('nop'); }];
             };
+            /**
+             * wait for element, ms
+             */
             Builder.prototype.click = function(args) {
-                return buildProxyFunction('exists')([]).concat(api('clicker', args));
+                return buildProxyFunction('exists', 'click', function(r, p) {
+                    if (r) {
+                        api('clicker')[1](p.arrow(1));
+                    } else {
+                        p.result('element did not appear within timeout');
+                    }
+                })(args);
             };
             Builder.prototype.ready = function() {
                 return ['wait for readyState become complete', function() {
@@ -2498,22 +2507,34 @@
              * boolean dont clear text before typing
              */
             Builder.prototype.type = function(args) {
-                return buildProxyFunction('exists')([]).concat(api('typer', [
-                    function() {
-                        return me.modules.dispatcher.interpolateText(args[0]);
-                    },
-                    undefined,
-                    args[1]
-                ]));
+                return buildProxyFunction('exists', 'type', function(r, p) {
+                    if (r) {
+                        api('typer', [
+                            function() {
+                                return me.modules.dispatcher.interpolateText(args[0]);
+                            },
+                            undefined,
+                            args[1]
+                        ])[1](p.arrow(1));
+                    } else {
+                        p.result('element did not appear within timeout');
+                    }
+                })([]);
             };
             Builder.prototype.enter = function() {
-                return buildProxyFunction('exists')([]).concat(api('typer', [
-                    function() { 
-                        return '\r'; 
-                    }, 
-                    undefined, 
-                    true
-                ]));
+                return buildProxyFunction('exists', 'enter', function(r, p) {
+                    if (r) {
+                        api('typer', [
+                            function() {
+                                return '\r';
+                            },
+                            undefined,
+                            true
+                        ])[1](p.arrow(1));
+                    } else {
+                        p.result('element did not appear within timeout');
+                    }
+                })([]);
             };
             Builder.prototype.then = function(args) {
                 return ['then(' +niceArgs(args) + ')', me.modules.dispatcher.injectTaskParameters(function() {
@@ -2759,7 +2780,15 @@
             '_inc': ['inc [ref]', function() { api.internalDebugger(); task.ref = parseInt(task.ref) + 1; api.result(); }],
             '_assertEquals': ['assert that [ref] is equals to [value]', function() { api.internalDebugger().result(api.compare(task.value, task.ref)); }],
             '_wait': ['wait for tasks to be added', function() { api.internalDebugger().repeatTask().setTimeout(api.result, 1000);}],
-            '_say': ['say some static message', function() { api.internalDebugger().say(task.message).result(); }],
+            '_say': ['say some static message', function() { 
+                if (task.clear) {
+                    api.arrow();
+                }
+                api.internalDebugger()
+                    .say(task.message, task.pre, task.nextButton)
+                    .sleep(task.sleepMs)
+                    .result(); 
+            }],
             '_foreach': [
                 'check whether we are looping', function() {
                     api.internalDebugger();
@@ -5885,6 +5914,7 @@
             messageDiv.style.maxHeight = '100%';
             messageDiv.style.position = 'fixed';
             messageDiv.style.fontSize = '20px';
+            messageDiv.style.lineHeight = '1.4';
             messageDiv.className = overlayClassName + ' ' + overlayClassName + 'message';
 
             var innerDiv = overlayWindow().document.createElement(wrapMessageToSayWithPre ? 'pre' : 'div');
@@ -5892,7 +5922,10 @@
             if (messageToSayOptions.html) {
                 innerDiv.innerHTML = messageToSay;
             } else if (wrapMessageToSayWithPre) {
+                innerDiv.style.fontSize = '14px';
                 innerDiv.textContent = messageToSay;
+                innerDiv.style.whiteSpace = 'pre';
+                messageDiv.style.width = (getInnerWidth() - 40) + 'px';
             } else {
                 messageToSay.split('\n').filter(function(lineToSay, i) {
                     if (i) {
@@ -5909,10 +5942,15 @@
             innerDiv.onclick = function(e) { e.stopPropagation(); return false; };
             var closeButton = overlayWindow().document.createElement('button');
             messageDiv.appendChild(closeButton);
-            closeButton.textContent = messageToSayOptions.nextButton || 'Close';
+            closeButton.textContent = messageToSayOptions.nextButton || 'Close (spacebar)';
             closeButton.style.borderRadius = '4px';
             closeButton.style.fontSize = '14px';
             closeButton.style.float = 'right';
+            closeButton.style.borderColor = '#bbb';
+            closeButton.style.padding = '2px 6px';
+            closeButton.style.borderWidth = '2px';
+            closeButton.style.backgroundColor = '#fff';
+            closeButton.style.borderStyle = 'outset';
             if (messageToSayOptions.nextButton) {
                 if (me.modules.dispatcher.running === true) {
                     setTimeout(function() {
@@ -5922,11 +5960,15 @@
                     closeButton.onclick = function(e) { 
                         e.stopPropagation(); 
                         me.modules.ui.clearOverlaysAndReflect();
+                        me.modules.dispatcher.postMessageToWorker('messageCloseClicked', {});
                         return false;
                     };
                 }
             }
-            messageDiv.onclick = function(){me.modules.ui.clearOverlaysAndReflect();};
+            messageDiv.onclick = function(){
+                me.modules.ui.clearOverlaysAndReflect();
+                me.modules.dispatcher.postMessageToWorker('messageCloseClicked', {});
+            };
             overlayWindow().document.getElementsByTagName('body')[0].appendChild(messageDiv);
             closeButton.focus();
             messageAdjustmentRemainingAttempts = 100;

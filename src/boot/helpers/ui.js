@@ -535,6 +535,7 @@
             messageDiv.style.maxHeight = '100%';
             messageDiv.style.position = 'fixed';
             messageDiv.style.fontSize = '20px';
+            messageDiv.style.lineHeight = '1.4';
             messageDiv.className = overlayClassName + ' ' + overlayClassName + 'message';
 
             var innerDiv = overlayWindow().document.createElement(wrapMessageToSayWithPre ? 'pre' : 'div');
@@ -542,7 +543,10 @@
             if (messageToSayOptions.html) {
                 innerDiv.innerHTML = messageToSay;
             } else if (wrapMessageToSayWithPre) {
+                innerDiv.style.fontSize = '14px';
                 innerDiv.textContent = messageToSay;
+                innerDiv.style.whiteSpace = 'pre';
+                messageDiv.style.width = (getInnerWidth() - 40) + 'px';
             } else {
                 messageToSay.split('\n').filter(function(lineToSay, i) {
                     if (i) {
@@ -559,10 +563,15 @@
             innerDiv.onclick = function(e) { e.stopPropagation(); return false; };
             var closeButton = overlayWindow().document.createElement('button');
             messageDiv.appendChild(closeButton);
-            closeButton.textContent = messageToSayOptions.nextButton || 'Close';
+            closeButton.textContent = messageToSayOptions.nextButton || 'Close (spacebar)';
             closeButton.style.borderRadius = '4px';
             closeButton.style.fontSize = '14px';
             closeButton.style.float = 'right';
+            closeButton.style.borderColor = '#bbb';
+            closeButton.style.padding = '2px 6px';
+            closeButton.style.borderWidth = '2px';
+            closeButton.style.backgroundColor = '#fff';
+            closeButton.style.borderStyle = 'outset';
             if (messageToSayOptions.nextButton) {
                 if (me.modules.dispatcher.running === true) {
                     setTimeout(function() {
@@ -572,11 +581,15 @@
                     closeButton.onclick = function(e) { 
                         e.stopPropagation(); 
                         me.modules.ui.clearOverlaysAndReflect();
+                        me.modules.dispatcher.postMessageToWorker('messageCloseClicked', {});
                         return false;
                     };
                 }
             }
-            messageDiv.onclick = function(){me.modules.ui.clearOverlaysAndReflect();};
+            messageDiv.onclick = function(){
+                me.modules.ui.clearOverlaysAndReflect();
+                me.modules.dispatcher.postMessageToWorker('messageCloseClicked', {});
+            };
             overlayWindow().document.getElementsByTagName('body')[0].appendChild(messageDiv);
             closeButton.focus();
             messageAdjustmentRemainingAttempts = 100;
@@ -1253,7 +1266,7 @@
         reportingMousePointerClickForWindow: function(x, y) {
             var stack = [];
             var el = me.modules.ui.mainFrameWindow.document.elementFromPoint(x,y);
-            me.modules.api.arrow(el);
+            me.modules.api.arrow(el, true, true);
             var prev;
             var i, n;
             if (el.nodeName === 'SELECT') {

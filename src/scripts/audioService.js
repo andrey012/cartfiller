@@ -8,9 +8,10 @@ define('audioService', ['app', 'audioService'], function(app){
         var analyserNode;
         var zeroGain;
         var node;
-        var buffers;
-        var bufferLength;
+        var buffers = [];
+        var bufferLength = 0;
         var sampleRate;
+        var snd;
         var initialize = function() {
             if (initialized) {
                 return;
@@ -92,13 +93,20 @@ define('audioService', ['app', 'audioService'], function(app){
 
         };
         return {
-            toggle: function(link, testName, task, step) {
+            toggle: function(link, testName, task, step, cb) {
                 if (! recording) {
                     recording = (new Date()).getTime();
-                    buffers = [];
-                    bufferLength = 0;
+                    if (snd) {
+                        snd.pause();
+                    }
+                    setTimeout(function go() {
+                        buffers = [];
+                        bufferLength = 0;
+                        cb(true);
+                    }, 500);
                     initialize();
                 } else {
+                    cb(false);
                     var buffer = new ArrayBuffer(44 + bufferLength * 4);
                     var view = new DataView(buffer);
 
@@ -154,7 +162,7 @@ define('audioService', ['app', 'audioService'], function(app){
                     reader.onload = function() {
                         var dataUrl = reader.result;
                         var base64 = dataUrl.split(',')[1];
-                        var snd = new Audio('data:audio/wav;base64,' + base64);
+                        snd = new Audio('data:audio/wav;base64,' + base64);
                         snd.play();
                     };
                     reader.readAsDataURL(blob);

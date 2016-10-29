@@ -100,6 +100,8 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
         $scope.stepDependencies = {};
         $scope.currentMainFrameWindow = 0;
         $scope.currentUrls = [false];
+        $scope.dispatcherCurrentTask = 0;
+        $scope.dispatcherCurrentStep = 0;
         var rememberedScrollPositionBeforeSearch = false;
         var autorunSpeed;
         var mouseDownTime;
@@ -202,9 +204,9 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                         // this is just test update
                         $scope.jobDetails = details.$cartFillerTestUpdate.details;
                         (function() {
-                            for (var i in $scope.jobDetails[$scope.currentTask]) {
-                                if ($scope.jobDetails[$scope.currentTask].hasOwnProperty(i)) {
-                                    cfMessage.send('updateProperty', {index: $scope.currentTask, name: i, value: $scope.jobDetails[$scope.currentTask][i]});
+                            for (var i in $scope.jobDetails[$scope.dispatcherCurrentTask]) {
+                                if ($scope.jobDetails[$scope.dispatcherCurrentTask].hasOwnProperty(i)) {
+                                    cfMessage.send('updateProperty', {index: $scope.dispatcherCurrentTask, name: i, value: $scope.jobDetails[$scope.dispatcherCurrentTask][i]});
                                 }
                             }
                         })();
@@ -295,6 +297,8 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                     run($scope.clickedWhileWorkerWasInProgress);
                 }
             } else if (cmd === 'workerStepResult'){
+                $scope.dispatcherCurrentStep = details.step;
+                $scope.dispatcherCurrentTask = details.index;
                 $scope.jobTaskProgress[details.index].stepsInProgress[details.step] = false;
                 setStepStatus(details.index, details.step, details.status, details.message, details.response);
                 if (-1 !== details.nextTaskFlow.indexOf('skipTask')) {
@@ -423,7 +427,8 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 } else {
                     (function(){
                         var scope = angular.element(document.getElementById('searchResults')).scope();
-                        if (! scope.searchVisible && trackMousePointerWithDelay) {
+                        if (trackMousePointerWithDelay) {
+                            skipMousePointerAutoRefresh = 3;
                             setTimeout(function refreshPointer() {
                                 if (! skipMousePointerAutoRefresh) {
                                     scope.send();
@@ -449,6 +454,12 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 console.log(JSON.stringify(details));
                 if (details.scroll && details.scroll.rect) {
                     cfScroll(null, null, null, details.scroll.rect.top);
+                }
+            } else if (cmd === 'messageCloseClicked') {
+                if (nextStepTimeoutHandle) {
+                    clearTimeout(nextStepTimeoutHandle);
+                    nextStepTimeoutHandle = false;
+                    $scope.doNextStep();
                 }
             }
         });
@@ -1140,7 +1151,13 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
         };
         $scope.recordAudioNoWatch = function(event) {
             var button = $('#recordAudio');
-            var recording = cfAudioService.toggle(button[0], $scope.jobName, $scope.currentTask, $scope.currentStep);
+            var recording = cfAudioService.toggle(button[0], $scope.jobName, $scope.currentTask, $scope.currentStep, function(recording) {
+                if (recording) {
+                    $('#dashboardMessage').show().text('RECORDING HAS STARTED');
+                } else {
+                    $('#dashboardMessage').hide();
+                }
+            });
             if (recording) {
                 event.stopPropagation();
                 button.removeClass('btn-info').addClass('btn-danger');

@@ -6770,6 +6770,7 @@ button.close {
         #jobDetails .pause {padding: 6px 5px 9px 5px; }
         #jobDetails .alert {padding: 5px; margin-bottom: 5px;}
         #jobDetails h1, #jobDetails h2, #jobDetails h3, #jobDetails h4 {margin: 0px;}
+        #jobDetails > h3 {margin: 8px;}
         #jobDetails .btn.dependent-step {opacity: 0.5;}
         #testslist h1, #testslist h2, #testslist h3, #testslist h4, #testslist h5 {margin: 0px;}
         .pause-active, .pause-active:hover, .pause-active:focus, .pause-active:active, .pause-active:visited  {background-color: red;}
@@ -7169,6 +7170,7 @@ button.close {
             <h3 ng-if="jobTitle">
                 {{jobTitle.substr(0,128)}}
             </h3>
+            <hr/>
             <div id="{{'taskDiv_' + jobTaskIndex}}"
                  class="alert"
                  ng-class="(! jobTask.task && jobTask.heading) ? '' : (jobTaskProgress[jobTaskIndex].complete ? 'alert-success' : 'alert-danger')"
@@ -47080,9 +47082,10 @@ define('audioService', ['app', 'audioService'], function(app){
         var analyserNode;
         var zeroGain;
         var node;
-        var buffers;
-        var bufferLength;
+        var buffers = [];
+        var bufferLength = 0;
         var sampleRate;
+        var snd;
         var initialize = function() {
             if (initialized) {
                 return;
@@ -47164,13 +47167,20 @@ define('audioService', ['app', 'audioService'], function(app){
 
         };
         return {
-            toggle: function(link, testName, task, step) {
+            toggle: function(link, testName, task, step, cb) {
                 if (! recording) {
                     recording = (new Date()).getTime();
-                    buffers = [];
-                    bufferLength = 0;
+                    if (snd) {
+                        snd.pause();
+                    }
+                    setTimeout(function go() {
+                        buffers = [];
+                        bufferLength = 0;
+                        cb(true);
+                    }, 500);
                     initialize();
                 } else {
+                    cb(false);
                     var buffer = new ArrayBuffer(44 + bufferLength * 4);
                     var view = new DataView(buffer);
 
@@ -47226,7 +47236,7 @@ define('audioService', ['app', 'audioService'], function(app){
                     reader.onload = function() {
                         var dataUrl = reader.result;
                         var base64 = dataUrl.split(',')[1];
-                        var snd = new Audio('data:audio/wav;base64,' + base64);
+                        snd = new Audio('data:audio/wav;base64,' + base64);
                         snd.play();
                     };
                     reader.readAsDataURL(blob);
@@ -47342,6 +47352,8 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
         $scope.stepDependencies = {};
         $scope.currentMainFrameWindow = 0;
         $scope.currentUrls = [false];
+        $scope.dispatcherCurrentTask = 0;
+        $scope.dispatcherCurrentStep = 0;
         var rememberedScrollPositionBeforeSearch = false;
         var autorunSpeed;
         var mouseDownTime;
@@ -47444,9 +47456,9 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                         // this is just test update
                         $scope.jobDetails = details.$cartFillerTestUpdate.details;
                         (function() {
-                            for (var i in $scope.jobDetails[$scope.currentTask]) {
-                                if ($scope.jobDetails[$scope.currentTask].hasOwnProperty(i)) {
-                                    cfMessage.send('updateProperty', {index: $scope.currentTask, name: i, value: $scope.jobDetails[$scope.currentTask][i]});
+                            for (var i in $scope.jobDetails[$scope.dispatcherCurrentTask]) {
+                                if ($scope.jobDetails[$scope.dispatcherCurrentTask].hasOwnProperty(i)) {
+                                    cfMessage.send('updateProperty', {index: $scope.dispatcherCurrentTask, name: i, value: $scope.jobDetails[$scope.dispatcherCurrentTask][i]});
                                 }
                             }
                         })();
@@ -47537,6 +47549,8 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                     run($scope.clickedWhileWorkerWasInProgress);
                 }
             } else if (cmd === 'workerStepResult'){
+                $scope.dispatcherCurrentStep = details.step;
+                $scope.dispatcherCurrentTask = details.index;
                 $scope.jobTaskProgress[details.index].stepsInProgress[details.step] = false;
                 setStepStatus(details.index, details.step, details.status, details.message, details.response);
                 if (-1 !== details.nextTaskFlow.indexOf('skipTask')) {
@@ -47691,6 +47705,12 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 console.log(JSON.stringify(details));
                 if (details.scroll && details.scroll.rect) {
                     cfScroll(null, null, null, details.scroll.rect.top);
+                }
+            } else if (cmd === 'messageCloseClicked') {
+                if (nextStepTimeoutHandle) {
+                    clearTimeout(nextStepTimeoutHandle);
+                    nextStepTimeoutHandle = false;
+                    $scope.doNextStep();
                 }
             }
         });
@@ -48382,7 +48402,13 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
         };
         $scope.recordAudioNoWatch = function(event) {
             var button = $('#recordAudio');
-            var recording = cfAudioService.toggle(button[0], $scope.jobName, $scope.currentTask, $scope.currentStep);
+            var recording = cfAudioService.toggle(button[0], $scope.jobName, $scope.currentTask, $scope.currentStep, function(recording) {
+                if (recording) {
+                    $('#dashboardMessage').show().text('RECORDING HAS STARTED');
+                } else {
+                    $('#dashboardMessage').hide();
+                }
+            });
             if (recording) {
                 event.stopPropagation();
                 button.removeClass('btn-info').addClass('btn-danger');
@@ -48418,7 +48444,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
             reportError('bootstrap message did not come');
         }
     }, 10000);
-    config.gruntBuildTimeStamp='1503700078679';
+    config.gruntBuildTimeStamp='1503779439642';
     window.addEventListener('message', function(event){
         var prefix = 'cartFillerMessage:';
         var isDist = true;
@@ -48528,7 +48554,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 if (message.tests) {
                     var x = new XMLHttpRequest();
                     x.onload = function(){
-                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1503700078679') {
+                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1503779439642') {
                             console.log('new version of CartFiller was deployed, switching to it');
                             var hash = window.location.href.split('#');
                             var pc = hash[0].split('?');

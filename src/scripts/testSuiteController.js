@@ -447,9 +447,9 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                                 .push($scope.discovery.currentRootFile);
                             if (pc.length < 3) {
                                 $scope.discovery.state = -1;
-                                $scope.discovery.error = 'neither cartfiller.js nor cartfiller.json was not found, visited: ' + $scope.discovery.visitedRootPaths.join(', ');
+                                $scope.discovery.error = 'neither cartfiller.js nor cartfiller.json was not found, visited: ';
                                 $scope.discovery.currentRootFile = false;
-                                $scope.discovery.currentRootPath = $scope.params.root ? $scope.params.root : getLocation().split('?')[0].replace(/\/[^\/]*/, '/');
+                                $scope.discovery.currentRootPath = $scope.initialRootPath;
                             } else {
                                 $scope.discovery.currentRootPath = pc.join('/');
                             }
@@ -624,7 +624,8 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             if (reset) {
                 useJsInsteadOfJson = false;
                 $scope.discovery.visitedRootPaths = [];
-                $scope.discovery.currentRootPath = $scope.params.root ? $scope.params.root : window.location.href.split(/[#?]/)[0].replace(/\/[^\/]*/, '/');
+                $scope.initialRootPath = $scope.params.root ? $scope.params.root : window.location.href.split(/[#?]/)[0].replace(/\/[^\/]*$/, '');
+                $scope.discovery.currentRootPath = $scope.initialRootPath;
                 if (/^\./.test($scope.discovery.currentRootPath)) {
                     var pc = (window.location.href.split(/[#?]/)[0].replace(/\/[^/]*$/, '/') + $scope.discovery.currentRootPath) . split('//');
                     var protocol = pc.shift();

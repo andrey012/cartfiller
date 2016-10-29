@@ -1663,7 +1663,7 @@
             return this;
         },
         find: function(selector) {
-            if (undefined === selector) {
+            if (undefined === selector || '' === selector) {
                 return new Selector([], undefined, function() { return []; });
             } else {
                 return new Selector([getDocument()], undefined, function(){ return [getDocument()]; }).find(selector);

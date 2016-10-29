@@ -6,5 +6,6 @@ cartfiller = {
     ],
     tests: {
         todoMvcTest: true,
+        'todoMvcTest?pure=true': true,
     }
 }

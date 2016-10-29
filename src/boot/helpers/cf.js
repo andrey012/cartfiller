@@ -422,33 +422,33 @@
                 }
                 return result;
             };
-            var buildProxyFunction = function(name) {
+            var buildProxyFunction = function(name, rename, afterWait) {
                 return function(args) {
                     if (name === 'exists') {
-                        return [name + niceArgs(args), function(p) {
+                        return [(rename || name) + niceArgs(args), function(p) {
                             api('waitFor', [function() {
                                 if(me.modules.api.debug && me.modules.api.debug.stop) {
                                     debugger; // jshint ignore:line
                                 }
                                 p.reevaluate(); 
                                 return p.length;
-                            }, function(r) {
+                            }, afterWait || function(r) {
                                 p.arrow(1).result(r ? '' : 'element did not appear within timeout');
-                            }, args[0] || undefined]);
+                            }, args[0] || undefined, undefined, [p]]);
                         }];
                     } else if (name === 'absent') {
-                        return [name + niceArgs(args), function(p) {
+                        return [(rename || name) + niceArgs(args), function(p) {
                             api('waitFor', [function() { 
                                 if(me.modules.api.debug && me.modules.api.debug.stop) {
                                     debugger; // jshint ignore:line
                                 }
                                 p.reevaluate();
                                 return ! p.length;
-                            }, function(r) {
+                            }, afterWait || function(r) {
                                 p.arrow(1).result(r ? '' : 'element did not disappear within timeout');
-                            }, args[0] || undefined]);
+                            }, args[0] || undefined, undefined, [p]]);
                         }];
-                    } else if (name === 'add') {
+                    } else if ((rename || name) === 'add') {
                         var selectorPromises = args.map(function(arg) {
                             if (arg instanceof BuilderPromise) {
                                 return wrapSelectorBuilderPromise(arg.arr);
@@ -458,7 +458,7 @@
                                 };
                             }
                         });
-                        return [name + niceArgs(args), me.modules.dispatcher.injectTaskParameters(function(p) {
+                        return [(rename || name) + niceArgs(args), me.modules.dispatcher.injectTaskParameters(function(p) {
                             if(me.modules.api.debug && me.modules.api.debug.stop) {
                                 debugger; // jshint ignore:line
                             }
@@ -469,7 +469,7 @@
                             s.arrow(1).nop();
                         }, args)];
                     } else {
-                        return [name + niceArgs(args), me.modules.dispatcher.injectTaskParameters(function(p) {
+                        return [(rename || name) + niceArgs(args), me.modules.dispatcher.injectTaskParameters(function(p) {
                             if(me.modules.api.debug && me.modules.api.debug.stop) {
                                 debugger; // jshint ignore:line
                             }
@@ -533,8 +533,17 @@
             Builder.prototype.nop = function() {
                 return ['nop', function(){ api('nop'); }];
             };
+            /**
+             * wait for element, ms
+             */
             Builder.prototype.click = function(args) {
-                return buildProxyFunction('exists')([]).concat(api('clicker', args));
+                return buildProxyFunction('exists', 'click', function(r, p) {
+                    if (r) {
+                        api('clicker')[1](p.arrow(1));
+                    } else {
+                        p.result('element did not appear within timeout');
+                    }
+                })(args);
             };
             Builder.prototype.ready = function() {
                 return ['wait for readyState become complete', function() {
@@ -548,22 +557,34 @@
              * boolean dont clear text before typing
              */
             Builder.prototype.type = function(args) {
-                return buildProxyFunction('exists')([]).concat(api('typer', [
-                    function() {
-                        return me.modules.dispatcher.interpolateText(args[0]);
-                    },
-                    undefined,
-                    args[1]
-                ]));
+                return buildProxyFunction('exists', 'type', function(r, p) {
+                    if (r) {
+                        api('typer', [
+                            function() {
+                                return me.modules.dispatcher.interpolateText(args[0]);
+                            },
+                            undefined,
+                            args[1]
+                        ])[1](p.arrow(1));
+                    } else {
+                        p.result('element did not appear within timeout');
+                    }
+                })([]);
             };
             Builder.prototype.enter = function() {
-                return buildProxyFunction('exists')([]).concat(api('typer', [
-                    function() { 
-                        return '\r'; 
-                    }, 
-                    undefined, 
-                    true
-                ]));
+                return buildProxyFunction('exists', 'enter', function(r, p) {
+                    if (r) {
+                        api('typer', [
+                            function() {
+                                return '\r';
+                            },
+                            undefined,
+                            true
+                        ])[1](p.arrow(1));
+                    } else {
+                        p.result('element did not appear within timeout');
+                    }
+                })([]);
             };
             Builder.prototype.then = function(args) {
                 return ['then(' +niceArgs(args) + ')', me.modules.dispatcher.injectTaskParameters(function() {

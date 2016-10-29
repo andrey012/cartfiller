@@ -33,7 +33,15 @@
             '_inc': ['inc [ref]', function() { api.internalDebugger(); task.ref = parseInt(task.ref) + 1; api.result(); }],
             '_assertEquals': ['assert that [ref] is equals to [value]', function() { api.internalDebugger().result(api.compare(task.value, task.ref)); }],
             '_wait': ['wait for tasks to be added', function() { api.internalDebugger().repeatTask().setTimeout(api.result, 1000);}],
-            '_say': ['say some static message', function() { api.internalDebugger().say(task.message).result(); }],
+            '_say': ['say some static message', function() { 
+                if (task.clear) {
+                    api.arrow();
+                }
+                api.internalDebugger()
+                    .say(task.message, task.pre, task.nextButton)
+                    .sleep(task.sleepMs)
+                    .result(); 
+            }],
             '_foreach': [
                 'check whether we are looping', function() {
                     api.internalDebugger();

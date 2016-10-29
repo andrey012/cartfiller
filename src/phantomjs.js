@@ -2,7 +2,7 @@ var system = require('system');
 var webPage = require('webpage');
 var page = webPage.create();
 page.viewportSize = {
-      width: 1024,//1282,
+      width: 1280,//1282,
       height: 600000 
 };
 var say = function(msg) {
@@ -12,7 +12,7 @@ page.onConsoleMessage = function(msg) {
     say(msg);
 };
 var setScrollPosition = function(top) {
-    page.clipRect = { top: top, left: 0, width: 1024, height: 600 }; // if you will decide to change dimensions - change hardcoded empty PNG below
+    page.clipRect = { top: top, left: 0, width: 1280, height: 600 }; // if you will decide to change dimensions - change hardcoded empty PNG below
 };
 
 var currentVideoFrame = 1;
