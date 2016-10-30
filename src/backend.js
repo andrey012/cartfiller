@@ -364,7 +364,7 @@ if (onlyServeHttp) {
         argv['serve-http'] = '.';
     }
     console.log('running in dumb http server mode, serving [' + argv['serve-http'] + '] on port ' + serveHttpPort);
-    testUrl = 'http' + (argv.https ? 's' : '') + '://localhost/' + (argv['proxy-to'] ? 'cartfillerFiles/dist/index.html#root=/cartfillerTests/' : '');
+    testUrl = 'http' + (argv.https ? 's' : '') + '://localhost/' + (argv['proxy-to'] ? 'cartfillerFiles/dist/index.html#root=/cartfillerTests/playground&editor=1' : 'dist/index.html#root=../playground&editor=1');
 }
 
 if (! onlyServeHttp) {
@@ -590,7 +590,7 @@ startup.push(function() {
         testUrl = testUrl + (-1 === testUrl.indexOf('#') ? '#' : '&') + args.join('&');
     } else {
         if (argv['proxy-to']) {
-            testUrl = testUrl + (-1 === testUrl.indexOf('#') ? '#' : '&') + 'editor=1&globals[baseUrl]=' + encodeURIComponent('http' + (argv.https ? 's' : '') + '://localhost:' + serveHttpPort);
+            testUrl = testUrl + (-1 === testUrl.indexOf('#') ? '#' : '&') + 'globals[baseUrl]=' + encodeURIComponent('http' + (argv.https ? 's' : '') + '://localhost:' + serveHttpPort);
         }
     }
     if (isPhantomJs) {
