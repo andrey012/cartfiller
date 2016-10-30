@@ -146,6 +146,8 @@ var processFrameFolder = function() {
                 }
                 totalInjectedTime += duration;
             });
+            // normalize audio: 
+            // ffmpeg -i in.mp4 -filter_complex [0:a]dynaudnorm=g=7:f=250[a] -map 0:v -map [a] -strict -2 -ac 1 -c:a libvorbis out.mp4
             args.push(
                 '-filter_complex',
                 audioFilterPieces.join('') + ' ' + audioFilterSinks.join('') + 'concat=n=' + (audioFilterSinks.length * 2) + ':v=0:a=1[all]; [all]dynaudnorm=g=7:f=250[a]',
