@@ -7,6 +7,5 @@ cartfiller = {
     ],
     "tests": {
         "demo": true,
-        "selectorBuilder": true,
     }
 }
