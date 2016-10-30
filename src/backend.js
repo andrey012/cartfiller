@@ -572,7 +572,7 @@ startup.push(function() {
         args.push('editor=1');
     }
     if (root) {
-        if (argv['serve-http']) {
+        if (argv['serve-http'] && /^https?:/.test(root)) {
             root = injectPortIntoUrl(root, serveHttpPort);
         }
         args.push('root=' + encodeURIComponent(root));

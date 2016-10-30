@@ -46,7 +46,8 @@
     "grunt-inline": "~0.3.4"
   },
   "scripts": {
-    "test": "grunt travis --verbose"
+    "test": "grunt travis --verbose",
+    "demo": "node src/backend.js -"
   },
   "dependencies": {
     "body-parser": "^1.15.0",
