@@ -34,7 +34,7 @@ Tests are in /playground and /tutorial
 
 ## Tutorial
 
-[Walk through files in the /tutorial directory](tutorial)
+[Check out tutorial README](tutorial)
 
 ## To build
 
