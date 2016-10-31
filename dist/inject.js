@@ -193,7 +193,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1503845755528';
+    config.gruntBuildTimeStamp='1503958287978';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -2127,13 +2127,17 @@
             };
             Builder.prototype = Object.create({});
             Builder.prototype.getlib = function(args) {
-                var promise = wrapSelectorBuilderPromise(wrapper.lib[args[0]].arr);
-                return ['get' + niceArgs(args), me.modules.dispatcher.injectTaskParameters(function() {
-                    if(me.modules.api.debug && me.modules.api.debug.stop) {
-                        debugger; // jshint ignore:line
+                if (! wrapper.lib[args[0]]) {
+                    throw new Error('lib entry \'' + args[0] + '\' is not defined');
+                }
+                var steps = this.build(wrapper.lib[args[0]].arr).map(function(v, index) {
+                    if (index % 2 === 0) {
+                        return 'getlib(\'' + args[0] + '\')->' + v;
+                    } else {
+                        return v;
                     }
-                    promise().arrow(1).result(); 
-                }, [promise])];
+                });
+                return steps;
             };
             Builder.prototype.clear = function(){
                 return ['remove all arrows', function() {
@@ -2362,6 +2366,23 @@
                     buildProxyFunction('exists', 'type', function(r, p) {
                         if (r) {
                             api('typer', [
+                                function() {
+                                    return me.modules.dispatcher.interpolateText(args[0]);
+                                },
+                                undefined,
+                                args[1]
+                            ])[1](p.arrow(1));
+                        } else {
+                            p.result('element did not appear within timeout');
+                        }
+                    })([])
+                );
+            };
+            Builder.prototype.paste = function(args) {
+                return addMakePauseBeforeStepToFirstStep(
+                    buildProxyFunction('exists', 'type', function(r, p) {
+                        if (r) {
+                            api('paster', [
                                 function() {
                                     return me.modules.dispatcher.interpolateText(args[0]);
                                 },
@@ -2675,8 +2696,8 @@
                     task.index = index;
                     task.value = values[index];
                     if (task.fields) {
-                        var valuePc = task.value.split(',').map(function(v){ return v.trim(); });
-                        task.fields.split(',').filter(function(field) {
+                        var valuePc = task.value.split(task.fieldSeparator || ',').map(function(v){ return v.trim(); });
+                        task.fields.split(task.fieldSeparator || ',').filter(function(field) {
                             workerGlobals[field] = valuePc.shift();
                         });
                     }
@@ -5386,6 +5407,7 @@
      */
     var reportMousePointer = false;
     var prepareToClearOverlays = false;
+    var adjustMessageDivTimeout = false;
     /**
      * Returns window, that will be used to draw overlays
      * @function {Window} CartFiller.UI~overlayWindow
@@ -5801,7 +5823,8 @@
                 innerDiv.style.fontSize = '14px';
                 innerDiv.textContent = messageToSay;
                 innerDiv.style.whiteSpace = 'pre';
-                messageDiv.style.width = (getInnerWidth() - 40) + 'px';
+                messageDiv.style.left = '3px';
+                messageDiv.style.width = (getInnerWidth() - 60) + 'px';
             } else {
                 messageToSay.split('\n').filter(function(lineToSay, i) {
                     if (i) {
@@ -6300,7 +6323,10 @@
          */
         adjustMessageDiv: function(div){
             var ui = this;
-            setTimeout(function adjustMessageDivTimeoutFn(){
+            if (adjustMessageDivTimeout) {
+                clearTimeout(adjustMessageDivTimeout);
+            }
+            adjustMessageDivTimeout = setTimeout(function adjustMessageDivTimeoutFn(){
                 var ok = true;
                 if (messageAdjustmentRemainingAttempts > 0){
                     if (! div.parentNode) {
@@ -6329,19 +6355,19 @@
                     if (ok){
                         div.style.opacity = '1';
                         messageAdjustmentRemainingAttempts = 0;
-                        currentMessageOnScreen = messageToSay;
+                        adjustMessageDivTimeout = false;
                     } else {
                         messageAdjustmentRemainingAttempts --;
-                        currentMessageOnScreen = undefined;
-                        //setTimeout(drawMessage, 100);
+                        adjustMessageDivTimeout = setTimeout(adjustMessageDivTimeoutFn, 10);
                     }
                 } else {
                     messageAdjustmentRemainingAttempts = 0;
-                    currentMessageOnScreen = messageToSay;
                     div.style.opacity = '1';
+                    adjustMessageDivTimeout = false;
                 }
                 scrollIfNecessary();
             },0);
+            currentMessageOnScreen = messageToSay;
             
         },
         /**

@@ -47367,9 +47367,13 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
             return a > b ? 1 : a < b ? -1 : 0;
         };
         var updateGlobalsOrdered = function() {
+            var unique = {_random: true};
             $scope.workerGlobalsOrdered = ['_random'];
             for (var i in $scope.workerGlobals) {
-                $scope.workerGlobalsOrdered.push(i);
+                if (! unique[i]) {
+                    $scope.workerGlobalsOrdered.push(i);
+                    unique[i] = true;
+                }
             }
             $scope.workerGlobalsOrdered.sort(function(a, b) {
                 if (a.substr(0, 1) === '_') {
@@ -48451,7 +48455,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
             reportError('bootstrap message did not come');
         }
     }, 10000);
-    config.gruntBuildTimeStamp='1503845755528';
+    config.gruntBuildTimeStamp='1503958287978';
     window.addEventListener('message', function(event){
         var prefix = 'cartFillerMessage:';
         var isDist = true;
@@ -48561,7 +48565,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 if (message.tests) {
                     var x = new XMLHttpRequest();
                     x.onload = function(){
-                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1503845755528') {
+                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1503958287978') {
                             console.log('new version of CartFiller was deployed, switching to it');
                             var hash = window.location.href.split('#');
                             var pc = hash[0].split('?');
@@ -48716,6 +48720,21 @@ define('testSuiteController', ['app', 'scroll'], function(app){
         if (! cfMessage.testSuite) {
             return;
         }
+        var fetchFunctionComments = function(o) {
+            if (o instanceof Array) {
+                return o.map(fetchFunctionComments);
+            } else if ('object' === typeof o) {
+                var r = {};
+                for (var i in o) {
+                    r[i] = fetchFunctionComments(o[i]);
+                }
+                return r;
+            } else if ('function' === typeof o) {
+                return o.toString().replace(/^function\s*\(\s*\)\s*\{\s*\/\*/, '').replace(/\*\/\s*\}\s*$/, '');
+            } else {
+                return o;
+            }
+        };
         var parseJson = function(s){
             s = s.replace(/^\s*cartfiller\s*=\s*/, '')
                 .replace(/\,[ \t\n\r]*\]/g, ']')
@@ -48725,8 +48744,11 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                     data = JSON.stringify(data);
                     return data.substr(1,data.length-2);
                 });
+            if (! s.trim().length) {
+                throw new Error('empty file');
+            }
             if (useJsInsteadOfJson) {
-                return eval('var json = ' + s + '; json'); // jshint ignore:line
+                return fetchFunctionComments(eval('var json = ' + s + '; json')); // jshint ignore:line
             } else {
                 return JSON.parse(s);
             }

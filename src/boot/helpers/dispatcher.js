@@ -74,8 +74,8 @@
                     task.index = index;
                     task.value = values[index];
                     if (task.fields) {
-                        var valuePc = task.value.split(',').map(function(v){ return v.trim(); });
-                        task.fields.split(',').filter(function(field) {
+                        var valuePc = task.value.split(task.fieldSeparator || ',').map(function(v){ return v.trim(); });
+                        task.fields.split(task.fieldSeparator || ',').filter(function(field) {
                             workerGlobals[field] = valuePc.shift();
                         });
                     }

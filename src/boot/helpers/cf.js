@@ -174,13 +174,17 @@
             };
             Builder.prototype = Object.create({});
             Builder.prototype.getlib = function(args) {
-                var promise = wrapSelectorBuilderPromise(wrapper.lib[args[0]].arr);
-                return ['get' + niceArgs(args), me.modules.dispatcher.injectTaskParameters(function() {
-                    if(me.modules.api.debug && me.modules.api.debug.stop) {
-                        debugger; // jshint ignore:line
+                if (! wrapper.lib[args[0]]) {
+                    throw new Error('lib entry \'' + args[0] + '\' is not defined');
+                }
+                var steps = this.build(wrapper.lib[args[0]].arr).map(function(v, index) {
+                    if (index % 2 === 0) {
+                        return 'getlib(\'' + args[0] + '\')->' + v;
+                    } else {
+                        return v;
                     }
-                    promise().arrow(1).result(); 
-                }, [promise])];
+                });
+                return steps;
             };
             Builder.prototype.clear = function(){
                 return ['remove all arrows', function() {
@@ -409,6 +413,23 @@
                     buildProxyFunction('exists', 'type', function(r, p) {
                         if (r) {
                             api('typer', [
+                                function() {
+                                    return me.modules.dispatcher.interpolateText(args[0]);
+                                },
+                                undefined,
+                                args[1]
+                            ])[1](p.arrow(1));
+                        } else {
+                            p.result('element did not appear within timeout');
+                        }
+                    })([])
+                );
+            };
+            Builder.prototype.paste = function(args) {
+                return addMakePauseBeforeStepToFirstStep(
+                    buildProxyFunction('exists', 'type', function(r, p) {
+                        if (r) {
+                            api('paster', [
                                 function() {
                                     return me.modules.dispatcher.interpolateText(args[0]);
                                 },

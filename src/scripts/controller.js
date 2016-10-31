@@ -114,9 +114,13 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
             return a > b ? 1 : a < b ? -1 : 0;
         };
         var updateGlobalsOrdered = function() {
+            var unique = {_random: true};
             $scope.workerGlobalsOrdered = ['_random'];
             for (var i in $scope.workerGlobals) {
-                $scope.workerGlobalsOrdered.push(i);
+                if (! unique[i]) {
+                    $scope.workerGlobalsOrdered.push(i);
+                    unique[i] = true;
+                }
             }
             $scope.workerGlobalsOrdered.sort(function(a, b) {
                 if (a.substr(0, 1) === '_') {

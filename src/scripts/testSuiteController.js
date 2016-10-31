@@ -16,6 +16,21 @@ define('testSuiteController', ['app', 'scroll'], function(app){
         if (! cfMessage.testSuite) {
             return;
         }
+        var fetchFunctionComments = function(o) {
+            if (o instanceof Array) {
+                return o.map(fetchFunctionComments);
+            } else if ('object' === typeof o) {
+                var r = {};
+                for (var i in o) {
+                    r[i] = fetchFunctionComments(o[i]);
+                }
+                return r;
+            } else if ('function' === typeof o) {
+                return o.toString().replace(/^function\s*\(\s*\)\s*\{\s*\/\*/, '').replace(/\*\/\s*\}\s*$/, '');
+            } else {
+                return o;
+            }
+        };
         var parseJson = function(s){
             s = s.replace(/^\s*cartfiller\s*=\s*/, '')
                 .replace(/\,[ \t\n\r]*\]/g, ']')
@@ -25,8 +40,11 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                     data = JSON.stringify(data);
                     return data.substr(1,data.length-2);
                 });
+            if (! s.trim().length) {
+                throw new Error('empty file');
+            }
             if (useJsInsteadOfJson) {
-                return eval('var json = ' + s + '; json'); // jshint ignore:line
+                return fetchFunctionComments(eval('var json = ' + s + '; json')); // jshint ignore:line
             } else {
                 return JSON.parse(s);
             }

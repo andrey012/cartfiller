@@ -30,7 +30,11 @@ bower install
 npm run demo
 ```
 
-Tests are in /playground. 
+Tests are in /playground and /tutorial
+
+## Tutorial
+
+[Walk through files in the /tutorial directory](tutorial)
 
 ## To build
 

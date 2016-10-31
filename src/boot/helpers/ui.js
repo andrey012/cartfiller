@@ -131,6 +131,7 @@
      */
     var reportMousePointer = false;
     var prepareToClearOverlays = false;
+    var adjustMessageDivTimeout = false;
     /**
      * Returns window, that will be used to draw overlays
      * @function {Window} CartFiller.UI~overlayWindow
@@ -546,7 +547,8 @@
                 innerDiv.style.fontSize = '14px';
                 innerDiv.textContent = messageToSay;
                 innerDiv.style.whiteSpace = 'pre';
-                messageDiv.style.width = (getInnerWidth() - 40) + 'px';
+                messageDiv.style.left = '3px';
+                messageDiv.style.width = (getInnerWidth() - 60) + 'px';
             } else {
                 messageToSay.split('\n').filter(function(lineToSay, i) {
                     if (i) {
@@ -1045,7 +1047,10 @@
          */
         adjustMessageDiv: function(div){
             var ui = this;
-            setTimeout(function adjustMessageDivTimeoutFn(){
+            if (adjustMessageDivTimeout) {
+                clearTimeout(adjustMessageDivTimeout);
+            }
+            adjustMessageDivTimeout = setTimeout(function adjustMessageDivTimeoutFn(){
                 var ok = true;
                 if (messageAdjustmentRemainingAttempts > 0){
                     if (! div.parentNode) {
@@ -1074,19 +1079,19 @@
                     if (ok){
                         div.style.opacity = '1';
                         messageAdjustmentRemainingAttempts = 0;
-                        currentMessageOnScreen = messageToSay;
+                        adjustMessageDivTimeout = false;
                     } else {
                         messageAdjustmentRemainingAttempts --;
-                        currentMessageOnScreen = undefined;
-                        //setTimeout(drawMessage, 100);
+                        adjustMessageDivTimeout = setTimeout(adjustMessageDivTimeoutFn, 10);
                     }
                 } else {
                     messageAdjustmentRemainingAttempts = 0;
-                    currentMessageOnScreen = messageToSay;
                     div.style.opacity = '1';
+                    adjustMessageDivTimeout = false;
                 }
                 scrollIfNecessary();
             },0);
+            currentMessageOnScreen = messageToSay;
             
         },
         /**
