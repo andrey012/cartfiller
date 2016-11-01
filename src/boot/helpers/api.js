@@ -350,10 +350,19 @@
             }
         }
     };
-    Selector.prototype.attr = function(name) {
-        if (this.length) {
-            return this[0].getAttribute(name);
+    Selector.prototype.attr = function(name, value) {
+        if (arguments.length === 1) {
+            if (this.length) {
+                return this[0].getAttribute(name);
+            }
+        } else if (arguments.length === 2) {
+            for (var i = 0; i < this.length; i ++) {
+                this[i].setAttribute(name, value);
+            }
+        } else {
+            throw new Error('incorrect use of .attr - should have 1 or 2 arguments');
         }
+        return this;
     };
     Selector.prototype.add = function(anotherSelectorOrElement) {
         var i;

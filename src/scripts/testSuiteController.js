@@ -16,6 +16,11 @@ define('testSuiteController', ['app', 'scroll'], function(app){
         if (! cfMessage.testSuite) {
             return;
         }
+        var cleanFunctionComment = function(s) {
+            return s
+                .replace(/^function\s*\(\s*\)\s*\{\s*\/\*[ \t]*[\r\n]*/, '')
+                .replace(/\*\/\s*\}\s*$/, '');
+        };
         var fetchFunctionComments = function(o) {
             if (o instanceof Array) {
                 return o.map(fetchFunctionComments);
@@ -26,7 +31,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                 }
                 return r;
             } else if ('function' === typeof o) {
-                return o.toString().replace(/^function\s*\(\s*\)\s*\{\s*\/\*/, '').replace(/\*\/\s*\}\s*$/, '');
+                return cleanFunctionComment(o.toString());
             } else {
                 return o;
             }

@@ -1,6 +1,14 @@
 (function(window, document, undefined){
     cartFillerAPI().registerWorker(function(window, document, api, task, job, globals, lib, cf){
         
+        /**
+         * Assertions have 2 modes: 
+         * * usually then will cause test failure if condition is not met. Assertions will wait
+         *   for some time to let things stabilize. 
+         * * when used as a first parameter in if/ifNot/while/whileNot - they will be evaluated
+         *   as a boolean expression. In this case assertions will not wait.
+         *   See 008.if.js and 009.while.js for examples. 
+         */
         cf.task('makeSureItemExists')
             .get('#todo-list:visible label:visible')
             .withText("${name}")

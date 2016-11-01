@@ -1,8 +1,17 @@
 (function(window, document, undefined){
     cartFillerAPI().registerWorker(function(window, document, api, task, job, globals, lib, cf){
         
+        /**
+         * Globals is a key-value storage specific to test. Globals may have initial values, but may 
+         * also be changed during test execution as well as from dashboard by doubleclicking on global value. 
+         * On the dashboard they live at the very bottom of right dashboard. There are some predefined globals
+         * that start with _ (underscore): 
+         * * _random -- gives new random value each time
+         * * _cartFillerInstallationUrl -- gives url from where CartFiller was launched
+         * * _rootCartfillerPath -- gives url where the testsuite file cartfiller.js/json is
+         */
         cf.task('readGlobalIntoItemName')
-            .get('#new-todo:visible')
+            .getlib('newTodoItem')
             /**
              * First of all .type and .paste will first look into task parameters, and 
              * if referenced parameter is not there - they will look in globals

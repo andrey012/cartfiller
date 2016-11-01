@@ -52,7 +52,7 @@ cartfiller = {
         /**
          * Now we can change global parameters. This comes from the fact, that task can change globals 
          * in two ways: 
-         * 1. first of all task can change globals by addressing globals directly. See workers/globals.js
+         * 1. first of all task can change globals by addressing globals directly. See workers/007.globals.js
          * 2. but also, task can change task parameters, which, when refer to global variables will in 
          *    turn change global variable values. For example builtin task _set inside its code says
          *    task.ref = task.value. If you say
@@ -83,7 +83,7 @@ cartfiller = {
         {_say: {message: ['email of admin user is: ', [['emailOf', ['adminUser']]]]}},
         {_assertEquals: {ref: ['email of admin user is: ', [['emailOf', ['adminUser']]]], value: 'email of admin user is: usera111@example.com'}},
         /**
-         * There are also some helpers - see loopingTest.js
+         * There are also some helpers - see 005.loopingTest.js
          */
 
         

@@ -15,9 +15,9 @@ This let's
          * In order to make IDE happy there is another workaround: 
          */
         {_say: {message: function() { /*
-This let's
-    you have any non-JSON-friendly 
-    text here" with quotas, newlines", etc
+            This let's
+            you have any non-JSON-friendly 
+            text here" with quotas, newlines", etc
         */}, pre: true}}
     ]
 }

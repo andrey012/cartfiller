@@ -193,7 +193,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1503958287978';
+    config.gruntBuildTimeStamp='1504042334904';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -602,10 +602,19 @@
             }
         }
     };
-    Selector.prototype.attr = function(name) {
-        if (this.length) {
-            return this[0].getAttribute(name);
+    Selector.prototype.attr = function(name, value) {
+        if (arguments.length === 1) {
+            if (this.length) {
+                return this[0].getAttribute(name);
+            }
+        } else if (arguments.length === 2) {
+            for (var i = 0; i < this.length; i ++) {
+                this[i].setAttribute(name, value);
+            }
+        } else {
+            throw new Error('incorrect use of .attr - should have 1 or 2 arguments');
         }
+        return this;
     };
     Selector.prototype.add = function(anotherSelectorOrElement) {
         var i;
@@ -2145,6 +2154,17 @@
                     api('nop');
                 }];
             };
+            Builder.prototype.set = function(args) {
+                if (args.length !== 2) {
+                    throw new Error('cf.set only makes sense with 2 arguments - global variable name and value');
+                }
+                var ref = args[0];
+                var value = args[1];
+                return ['set global variable [' + ref + '] to [' + value + ']', function() {
+                    me.modules.dispatcher.getWorkerGlobals()[ref] = value;
+                    api('nop');
+                }];
+            };
             Builder.prototype.get = function(args) {
                 if (args[0] instanceof BuilderPromise || args[0] instanceof LibReferencePromise) {
                     var promise;
@@ -2177,7 +2197,12 @@
                 return [];                
             };
             var withFactory = function(name, argumentOffset) { 
-                return ['with("' + name + '")', function() { arguments[argumentOffset].arrow().result(); }];
+                return ['with("' + name + '")', function() { 
+                    if(me.modules.api.debug && me.modules.api.debug.stop) {
+                        debugger; // jshint ignore:line
+                    }
+                    arguments[argumentOffset].arrow().result(); 
+                }];
             };
             Builder.prototype.with = function(args, index) {
                 var result = [];
@@ -2269,11 +2294,20 @@
                             )
                         ];
                     } else {
+                        if (name === 'val' && args.length !== 1) {
+                            throw new Error('cf.val at build stage only makes sense with one argument to set element.value');
+                        }
+                        if (name === 'attr' && args.length !== 2) {
+                            throw new Error('cf.attr at build stage only makes sense with two arguments to set element attribute to');
+                        }
                         return [(rename || name) + niceArgs(args), me.modules.dispatcher.injectTaskParameters(function(p) {
                             if(me.modules.api.debug && me.modules.api.debug.stop) {
                                 debugger; // jshint ignore:line
                             }
                             var s = p[name].apply(p, args);
+                            if (name === 'val') {
+                                s = p;
+                            }
                             s.arrow(1).nop();
                         }, args)];
                     }
@@ -2445,12 +2479,12 @@
                 return args[0] ? [] : this.use(args.slice(1));
             };
             Builder.prototype.name = function() { return []; };
-            var generateIfOrIfNotSteps = function(args, builder, ifNot, isWhile) {
+            var generateIfOrIfNotSteps = function(args, builder, ifNot, isWhile, offset) {
                 var condition = args[0];
                 var action = args[1];
-                var conditionSteps = builder.build(condition.arr, [], 'condition');
+                var conditionSteps = builder.build(condition.arr, [], 'condition', offset);
                 var conditionStepsLen = conditionSteps.length / 2;
-                var actionSteps = builder.build(action.arr);
+                var actionSteps = builder.build(action.arr, [], undefined, offset + conditionStepsLen + 1);
                 var actionStepsLen = actionSteps.length / 2 + (isWhile ? 1 : 0);
                 if (isWhile) {
                     actionStepsLen ++;
@@ -2482,17 +2516,17 @@
                 });
                 return conditionSteps.concat(actionSteps);
             };
-            Builder.prototype.if = function(args) { 
-                return generateIfOrIfNotSteps(args, this);
+            Builder.prototype.if = function(args, offset) { 
+                return generateIfOrIfNotSteps(args, this, false, false, offset);
             };
-            Builder.prototype.ifNot = function(args) { 
-                return generateIfOrIfNotSteps(args, this, true);
+            Builder.prototype.ifNot = function(args, offset) { 
+                return generateIfOrIfNotSteps(args, this, true, false, offset);
             };
-            Builder.prototype.while = function(args) { 
-                return generateIfOrIfNotSteps(args, this, false, true);
+            Builder.prototype.while = function(args, offset) { 
+                return generateIfOrIfNotSteps(args, this, false, true, offset);
             };
-            Builder.prototype.whileNot = function(args) { 
-                return generateIfOrIfNotSteps(args, this, true, true);
+            Builder.prototype.whileNot = function(args, offset) { 
+                return generateIfOrIfNotSteps(args, this, true, true, offset);
             };
             Builder.prototype.task = function() {
                 // just declare task name
@@ -2512,7 +2546,8 @@
                     BuilderPromise.prototype[i] = promiseProxyFactory(i);
                 }
             }
-            Builder.prototype.build = function(steps, prev, flavor) {
+            Builder.prototype.build = function(steps, prev, flavor, offset) {
+                offset = offset || 0;
                 var result = (prev || []).slice();
                 var builder = this;
                 var rememberedName;
@@ -2523,7 +2558,7 @@
                     if (! builder[step[0]]) {
                         throw new Error('step [' + step[0] + '] is not known to builder');
                     }
-                    result.push.apply(result, flattenAndReplaceName(builder[step[0]](step[1], result.length / 2, flavor), rememberedName));
+                    result.push.apply(result, flattenAndReplaceName(builder[step[0]](step[1], result.length / 2 + offset, flavor), rememberedName));
                     rememberedName = step[0] === 'name' ? (rememberedName ? rememberedName : step[1][0]) : undefined;
                 });
                 return result;
@@ -2661,8 +2696,10 @@
                 }
                 api.internalDebugger()
                     .say(task.message, task.pre, task.nextButton)
-                    .sleep(task.sleepMs)
-                    .result(); 
+                    .sleep(task.sleepMs);
+                if (! task.nextButton) {
+                    api.result(); 
+                }
             }],
             '_foreach': [
                 'check whether we are looping', function() {
@@ -4748,6 +4785,10 @@
                 sleep: sleepAfterThisStep
             };
             workerCurrentStepIndex = false;
+            if (currentInvokeWorkerMessage && currentInvokeWorkerMessage.details && currentInvokeWorkerMessage.details.task === '_wait') {
+                // this is a specific case when we do not want to cache task parameters for _wait task
+                workerCurrentTaskIndex = false;
+            }
             workerOnLoadHandler = false;
             suspendAjaxRequestsCallback = false;
             this.postMessageToWorker(

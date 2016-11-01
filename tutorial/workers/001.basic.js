@@ -66,8 +66,15 @@
              * cf.ready waits until document.readyState will become 'complete'
              */
             .ready()
+            /**
+             * cf.pause just waits for defined timeout in ms. Generally it is discouraged to use it,
+             * but still sometimes you want it to be there
+             */
+            .pause(200)
             
 
+        cf.task('More human readable task name')
+            .say('Tasks can have more human readable names as well')
 
 
     });

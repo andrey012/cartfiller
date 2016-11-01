@@ -2,7 +2,25 @@ cartfiller = {
     details: [
         {openTodomvc: {}},
         {removeAllItems: {}},
+        {addItem: {name: 'item one'}},
+        {toggleItem: {name: 'item one'}},
+        {selectorsDemo: {taskParam: 'All'}},
 
+        {removeAllItemsUsingWhileNot: {}},
+        {addItem: {name: 'item one'}},
+
+        {ifDemo: {}},
+        {_assertEquals: {ref: ['ifDemo'], value: 'label exists'}},
+        {_assertEquals: {ref: ['ifNotDemo'], value: 'iframe does not exist'}},
+        {_assertEquals: {ref: ['ifLibDemo'], value: 'input exists'}},
+        {_assertEquals: {ref: ['customCondition1'], value: 'YES'}},
+        {_assertEquals: {ref: ['customCondition2'], value: 'NO'}},
+        {removeAllItems: {}},
+
+        {passingData: {}},
+
+        {makeSureItemExists: {name: "myNewTodo Item"}},
+        {removeAllItems: {}},
 
         {typeExampleWithStaticText: {}},
         {makeSureThatNewItemInputHasText: {text: 'static text'}},

@@ -20,6 +20,9 @@
              * message stay forever when launched in slow mode (kind of demo)
              */
             .say('${message}', true, 'Give me more')
+        /**
+         * COMING SOON - SOME EXAMPLES ABOUT MODALS WILL BE HERE
+         */
                
     });
 })(window, document);

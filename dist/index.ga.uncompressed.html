@@ -48470,7 +48470,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
             reportError('bootstrap message did not come');
         }
     }, 10000);
-    config.gruntBuildTimeStamp='1503958287978';
+    config.gruntBuildTimeStamp='1504042334904';
     window.addEventListener('message', function(event){
         var prefix = 'cartFillerMessage:';
         var isDist = true;
@@ -48580,7 +48580,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 if (message.tests) {
                     var x = new XMLHttpRequest();
                     x.onload = function(){
-                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1503958287978') {
+                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1504042334904') {
                             console.log('new version of CartFiller was deployed, switching to it');
                             var hash = window.location.href.split('#');
                             var pc = hash[0].split('?');
@@ -48735,6 +48735,11 @@ define('testSuiteController', ['app', 'scroll'], function(app){
         if (! cfMessage.testSuite) {
             return;
         }
+        var cleanFunctionComment = function(s) {
+            return s
+                .replace(/^function\s*\(\s*\)\s*\{\s*\/\*[ \t]*[\r\n]*/, '')
+                .replace(/\*\/\s*\}\s*$/, '');
+        };
         var fetchFunctionComments = function(o) {
             if (o instanceof Array) {
                 return o.map(fetchFunctionComments);
@@ -48745,7 +48750,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                 }
                 return r;
             } else if ('function' === typeof o) {
-                return o.toString().replace(/^function\s*\(\s*\)\s*\{\s*\/\*/, '').replace(/\*\/\s*\}\s*$/, '');
+                return cleanFunctionComment(o.toString());
             } else {
                 return o;
             }

@@ -39,8 +39,10 @@
                 }
                 api.internalDebugger()
                     .say(task.message, task.pre, task.nextButton)
-                    .sleep(task.sleepMs)
-                    .result(); 
+                    .sleep(task.sleepMs);
+                if (! task.nextButton) {
+                    api.result(); 
+                }
             }],
             '_foreach': [
                 'check whether we are looping', function() {
@@ -2126,6 +2128,10 @@
                 sleep: sleepAfterThisStep
             };
             workerCurrentStepIndex = false;
+            if (currentInvokeWorkerMessage && currentInvokeWorkerMessage.details && currentInvokeWorkerMessage.details.task === '_wait') {
+                // this is a specific case when we do not want to cache task parameters for _wait task
+                workerCurrentTaskIndex = false;
+            }
             workerOnLoadHandler = false;
             suspendAjaxRequestsCallback = false;
             this.postMessageToWorker(

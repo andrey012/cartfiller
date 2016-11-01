@@ -17,7 +17,7 @@ cartfiller = {
         {_set: {ref: ['i'], value: 0}},
 
         /**
-         * Add item named 'item %i' (see referencingGlobalsTest.js)
+         * Add item named 'item %i' (see 004.referencingGlobalsTest.js)
          */
         
         {addItem: {name: ['item ', ['i']]}},

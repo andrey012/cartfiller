@@ -25,9 +25,25 @@ cartfiller = {
      */
     details: [
         /**
+         * First of all you can decorate your tests with headings and pieces of texts
+         */
+        '# The heading',
+        '## The subheading',
+        '### The smaller subheading',
+        'Just text comment',
+        /**
+         * If you want to put something fancy and are not eager to escape it, you can use following 
+         * feature - all functions are converted to strings by fetching comment between /* and */
+        /** Like this
+         */
+        function() {/* I don't want to escape quotes when I say "Hello World!".
+            And this way I can write multiline comments.*/},
+        /**
          * Tasks are defined as nested object, whoes key is name of task and value keeps task 
          * parameters. If task have no parameters you still have to specify empty object.
-         * Task names are case sensitive.
+         * Task names are case sensitive. In test scenarios you refer to a task, and in 
+         * workers (which contain browser objects) you define what actions should a task do.
+         * This task is defined in workers/001.basic.js
          */
         {openTodomvc: {}},
         /**
@@ -35,6 +51,14 @@ cartfiller = {
          * {addTask: {task: 'myTask'}}
          */
         {addItem: {name: 'item one'}},
+        /**
+         * There are some predefined tasks, which start with _ (underscore): 
+         */
+        {_say: {message: 'Hello World!'}},
+        /**
+         * Of course task names can be more human readable, i.e. not camelcase
+         */
+        {'More human readable task name': {}},
 
     ]
 }
