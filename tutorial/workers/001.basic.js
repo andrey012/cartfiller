@@ -40,8 +40,11 @@
          */
         cf.task('openTodomvc')
             /**
-             * cf.openUrl simply makes window.location.href = specified url. It does not wait for page
-             * to get loaded. 
+             * cf.openUrl simply makes window.location.href = specified url. It waits for 
+             * document.readyState to become 'complete', but of course it does not wait for 
+             * JS framework of web app being tested to spin up. 
+             * Also, if current URL excluding hash is same as new URL that you try to open - it will refresh 
+             * current page. So you shouldn't use this function to change page's hash. 
              */
             .openUrl(globals.baseUrl)
             /**
@@ -63,7 +66,8 @@
                 api.result(); // submits successful result
             })
             /**
-             * cf.ready waits until document.readyState will become 'complete'
+             * cf.ready waits until document.readyState will become 'complete'.
+             * Normally you will not need it because cf.openUrl includes waiting for that as well.
              */
             .ready()
             /**

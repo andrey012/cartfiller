@@ -193,7 +193,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1504042334904';
+    config.gruntBuildTimeStamp='1504130240728';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -2350,7 +2350,9 @@
                                 return;
                             }
                         }
-                        if (submitResult) {
+                        if (fn === 'openUrl') {
+                            api('onload');
+                        } else if (submitResult) {
                             apiOrElement.result();
                         }
                     }];

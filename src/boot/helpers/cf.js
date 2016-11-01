@@ -388,7 +388,9 @@
                                 return;
                             }
                         }
-                        if (submitResult) {
+                        if (fn === 'openUrl') {
+                            api('onload');
+                        } else if (submitResult) {
                             apiOrElement.result();
                         }
                     }];
