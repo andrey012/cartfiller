@@ -487,9 +487,7 @@
                 );
             };
             Builder.prototype.then = function(args) {
-                return ['then(' +niceArgs(args) + ')', me.modules.dispatcher.injectTaskParameters(function() {
-                    args[0].apply(this, arguments);
-                }, args)];
+                return ['then(' +niceArgs(args) + ')', me.modules.dispatcher.injectTaskParameters(args[0], args)];
             };
             Builder.prototype.onload = function(args) {
                 return ['onload(' +niceArgs(args) + ')', me.modules.dispatcher.injectTaskParameters(function() {

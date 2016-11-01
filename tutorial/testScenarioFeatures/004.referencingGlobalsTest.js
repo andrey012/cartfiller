@@ -45,9 +45,9 @@ cartfiller = {
          * be resolved into 'email of admin user is: usera@example.com'
          * This message will say 'email of admin user is: usera@example.com'
          */
-        "### {_say: {message: ['email of admin user is: ', [['emailOf', ['adminUser']]]]}}",
-        {_say: {message: ['email of admin user is: ', [['emailOf', ['adminUser']]]]}},
-        {_assertEquals: {ref: ['email of admin user is: ', [['emailOf', ['adminUser']]]], value: 'email of admin user is: usera@example.com'}},
+        "### {_say: {message: ['admin user is ', ['adminUser'], ' and his email is: ', [['emailOf', ['adminUser']]]]}}",
+        {_say: {message: ['admin user is ', ['adminUser'], ' and his email is: ', [['emailOf', ['adminUser']]]]}},
+        {_assertEquals: {ref: ['admin user is ', ['adminUser'], ' and his email is: ', [['emailOf', ['adminUser']]]], value: 'admin user is UserA and his email is: usera@example.com'}},
 
         /**
          * Now we can change global parameters. This comes from the fact, that task can change globals 
