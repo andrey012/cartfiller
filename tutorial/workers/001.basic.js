@@ -71,6 +71,13 @@
              * but still sometimes you want it to be there
              */
             .pause(200)
+            /**
+             * cf.name names a step. This can be useful for 2 purposes: 
+             * 1. name will become a title (shown when mouse hovered) for a step in the dashboard. By default
+             *    step is named by the function that created it
+             * 2. name can be referred to when sharing pieces of tasks (see 013.sharingSteps.js)
+             */
+            .name('myStepName').say('Hello')
             
 
         cf.task('More human readable task name')

@@ -36,6 +36,17 @@ cartfiller = {
         {clickExample: {}},
         {makeSureItemIsChecked: {name: "text from task parameter"}},
 
+        {task2usesTask1: {}},
+        {coolTask: {}},
+        {taskThatContainsSharedPieceOfBaseTask: {}},
+        {outerTask: {}},
+        {removeAllItems: {}},
+        {addItemWithItemName: {itemName: 'itemName1'}},
+        {addItemWithTodoItemName: {todoItemName: 'todoItemName1'}},
+        {makeSureItemExists: {name: "itemName1"}},
+        {makeSureItemExists: {name: "todoItemName1"}},
+        {addItemWithItemNameWithoutMessage: {}},
+
 /* commenting this out since paste simulation is not working on PhantomJs
         {pasteExample: {text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.'}},
         {makeSureThatNewItemInputHasText: {text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.'}},
