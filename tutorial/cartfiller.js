@@ -21,7 +21,7 @@ cartfiller = {
         'workers/005.passingDataBetweenSteps.js',
         'workers/006.library.js',
         'workers/007.globals.js',
-        'workers/008.if.js',
+        'workers/008.ifElse.js',
         'workers/009.while.js',
         'workers/010.taskParameters.js',
         'workers/011.customSteps.js',

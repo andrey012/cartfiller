@@ -38,8 +38,9 @@ define('testSuiteController', ['app', 'scroll'], function(app){
         };
         var parseJson = function(s){
             s = s.replace(/^\s*cartfiller\s*=\s*/, '')
-                .replace(/\,[ \t\n\r]*\]/g, ']')
-                .replace(/\,[ \t\n\r]*\}/g, '}')
+                .replace(/\,([ \t\n\r]*(\]|\}))/g, function(match, group1) { 
+                    return group1;
+                })
                 .replace(/\r/g, '')
                 .replace(/<\!\[CDATA\[(([^\]]|\][^\]]|\]\][^\>])*)\]\]\>/g, function(m,data) {
                     data = JSON.stringify(data);

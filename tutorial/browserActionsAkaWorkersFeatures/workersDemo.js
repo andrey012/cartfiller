@@ -7,10 +7,20 @@ cartfiller = {
         {selectorsDemo: {taskParam: 'All'}},
 
         {removeAllItemsUsingWhileNot: {}},
+        {whileBreakExample: {}},
+        {_assertEquals: {ref: ['whileBreakExample'], value: 'ok'}},
+        {whileBreakExample2: {}},
+        {_assertEquals: {ref: ['whileBreakExample2a'], value: 'ok'}},
+        {_assertEquals: {ref: ['whileBreakExample2b'], value: 'ok'}},
+        {whileBreakExample3: {}},
+        {_assertEquals: {ref: ['whileBreakExample3a'], value: 'ok'}},
+        {_assertEquals: {ref: ['whileBreakExample3b'], value: 'ok'}},
+
         {addItem: {name: 'item one'}},
 
         {ifDemo: {}},
         {_assertEquals: {ref: ['ifDemo'], value: 'label exists'}},
+        {_assertEquals: {ref: ['ifDemo_else'], value: 'iframe does not exist'}},
         {_assertEquals: {ref: ['ifNotDemo'], value: 'iframe does not exist'}},
         {_assertEquals: {ref: ['ifLibDemo'], value: 'input exists'}},
         {_assertEquals: {ref: ['customCondition1'], value: 'YES'}},

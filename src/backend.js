@@ -42,6 +42,7 @@ var argv = yargs
     .boolean('https')
     .describe('https', 'use https for both test progress and serve-http/proxy-to connections')
     .describe('browser-args', 'add additional arguments when launching browser. PhantomJS args ' + PHANTOM_DEFAULT_ARGS.join(', ') + ' are automatically used when \'' + PHANTOM_COMMAND_SUBSTRING + '\' is found in browser name, useful parameters for Chrome: \n\n--browser-args=\'--ignore-certificate-errors \n --user-data-dir=/tmp/mytests-chrome-data-dir \n--no-first-run\'\nAlso in this case browser is launched as child prcess directly, without OS specific launchers, this happens if you specify empty browser-args as well (--browser-args=). No escaping supported in this argument, so aviod having spaces in browser args values, spaces are treated as parameter separators.')
+    .describe('proxy-delay', 'add delay when proxying calls, ms')
     .argv;
 var express = require('express');
 var serveIndex = require('serve-index');
@@ -449,6 +450,8 @@ startup.push(function() {
     }
 });
 
+var proxyDelay = argv['proxy-delay'] || 0;
+
 if (argv['serve-http']) {
     serveHttpApp.use((argv['proxy-to'] ? '/cartfillerTests' : '/'), express.static(argv['serve-http']));
     serveHttpApp.use((argv['proxy-to'] ? '/cartfillerTests' : '/'), serveIndex(argv['serve-http']));
@@ -465,8 +468,23 @@ if (argv['serve-http']) {
             secure: false,
             target: argv['proxy-to']
         });
+        proxy.on('error', function(err, req, res) {
+            console.log('proxy error: ' + err);
+            res.writeHead(500);
+            res.end();
+        });
         serveHttpApp.use(function(req, res) {
-            proxy.web(req, res);
+            console.log(req.headers);
+            console.log('proxy request ' + req.url);
+            if (proxyDelay) {
+                console.log('proxy delay: ' + proxyDelay);
+            }
+            setTimeout(function() {
+                if (proxyDelay) {
+                    console.log('doing proxy request ' + req.url);
+                }
+                proxy.web(req, res);
+            }, proxyDelay);
         });
     }
     startup.push(function() {

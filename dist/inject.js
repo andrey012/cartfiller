@@ -193,7 +193,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1504130240728';
+    config.gruntBuildTimeStamp='1504734343751';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -2014,6 +2014,28 @@
         }
         return steps;
     };
+    var makeConstantConditionSteps = function(arg) {
+        if (true === arg) {
+            return ['return true', function() { api('nop'); }];
+        } else if (false === arg) {
+            return ['return false', function() { api('result', ['false']); }];
+        } else if ('string' === typeof arg) {
+            return makeConstantConditionSteps(me.modules.dispatcher.interpolateText(arg).length ? true : false);
+        }
+    };
+    var makeBreakStep = function(args, stepsToSkip) {
+        var fn = function() { 
+            if(me.modules.api.debug && me.modules.api.debug.stop) {
+                debugger; // jshint ignore:line
+            }
+            if (stepsToSkip) {
+                api('skipStep', [stepsToSkip]);
+            }
+            api('nop');
+        };
+        fn.cartFillerBreakFactor = args.length === 0 ? 1 : args[0];
+        return ['break: ' + niceArgs(args), fn];
+    };
     var onLoaded = function() {
         Runtime = function() {
 
@@ -2449,9 +2471,7 @@
                 );
             };
             Builder.prototype.then = function(args) {
-                return ['then(' +niceArgs(args) + ')', me.modules.dispatcher.injectTaskParameters(function() {
-                    args[0].apply(this, arguments);
-                }, args)];
+                return ['then(' +niceArgs(args) + ')', me.modules.dispatcher.injectTaskParameters(args[0], args)];
             };
             Builder.prototype.onload = function(args) {
                 return ['onload(' +niceArgs(args) + ')', me.modules.dispatcher.injectTaskParameters(function() {
@@ -2484,10 +2504,14 @@
             var generateIfOrIfNotSteps = function(args, builder, ifNot, isWhile, offset) {
                 var condition = args[0];
                 var action = args[1];
-                var conditionSteps = builder.build(condition.arr, [], 'condition', offset);
+                var elseAction = isWhile ? undefined : args[2];
+                var conditionSteps = makeConstantConditionSteps(args[0]) || builder.build(condition.arr, [], 'condition', offset);
                 var conditionStepsLen = conditionSteps.length / 2;
                 var actionSteps = builder.build(action.arr, [], undefined, offset + conditionStepsLen + 1);
                 var actionStepsLen = actionSteps.length / 2 + (isWhile ? 1 : 0);
+                var elseSteps = elseAction ? builder.build(elseAction.arr, [], undefined, offset + conditionStepsLen + 1 + actionStepsLen + 1) : [];
+                var elseStepsLen = elseSteps.length / 2;
+                var hasElse = elseSteps.length ? true : false;
                 if (isWhile) {
                     actionStepsLen ++;
                     actionSteps.push('repeat', function() {
@@ -2495,6 +2519,25 @@
                             debugger; // jshint ignore:line
                         }
                         api('repeatStep', [actionStepsLen + conditionStepsLen]);
+                        api('nop');
+                    });
+                    // fix break steps
+                    actionSteps = actionSteps.map(function(step, index) {
+                        if (index % 2) {
+                            if (step.cartFillerBreakFactor) {
+                                return makeBreakStep([step.cartFillerBreakFactor - 1], actionStepsLen - 1 - index / 2)[1];
+                            }
+                        }
+                        return step;
+                    });
+                }
+                if (hasElse) {
+                    actionStepsLen ++;
+                    actionSteps.push('skip else section', function() {
+                        if(me.modules.api.debug && me.modules.api.debug.stop) {
+                            debugger; // jshint ignore:line
+                        }
+                        api('skipStep', [elseStepsLen]);
                         api('nop');
                     });
                 }
@@ -2516,7 +2559,7 @@
                     }
                     api('nop');
                 });
-                return conditionSteps.concat(actionSteps);
+                return conditionSteps.concat(actionSteps).concat(elseSteps);
             };
             Builder.prototype.if = function(args, offset) { 
                 return generateIfOrIfNotSteps(args, this, false, false, offset);
@@ -2529,6 +2572,9 @@
             };
             Builder.prototype.whileNot = function(args, offset) { 
                 return generateIfOrIfNotSteps(args, this, true, true, offset);
+            };
+            Builder.prototype.break = function(args) {
+                return makeBreakStep(args);
             };
             Builder.prototype.task = function() {
                 // just declare task name

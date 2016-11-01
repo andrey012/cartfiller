@@ -7,7 +7,7 @@
          *   for some time to let things stabilize. 
          * * when used as a first parameter in if/ifNot/while/whileNot - they will be evaluated
          *   as a boolean expression. In this case assertions will not wait.
-         *   See 008.if.js and 009.while.js for examples. 
+         *   See 008.ifElse.js and 009.while.js for examples. 
          */
         cf.task('makeSureItemExists')
             .get('#todo-list:visible label:visible')

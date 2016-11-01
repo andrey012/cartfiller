@@ -3,12 +3,20 @@
 
         cf.task('ifDemo')
         /**
-         * .if gets two parameters - condition and action. If condition is not met then
-         * action steps are skipped
+         * .if gets two or three parameters - condition, action and optional `else` action. 
+         * If condition is not met then action steps are skipped
          */
             .if(
                 cf.get('label:visible').exists(),
                 cf.say('label exists').set('ifDemo', 'label exists')
+            )
+        /**
+         * Here is example with `else` action steps
+         */
+            .if(
+                cf.get('iframe:visible').exists(),
+                cf.say('iframe exists').set('ifDemo_else', 'iframe exists'),
+                cf.say('iframe does not exist').set('ifDemo_else', 'iframe does not exist')
             )
 
         /**
@@ -16,7 +24,8 @@
          */
             .ifNot(
                 cf.get('iframe:visible').exists(),
-                cf.say('iframe does not exist').set('ifNotDemo', 'iframe does not exist')
+                cf.say('iframe does not exist').set('ifNotDemo', 'iframe does not exist'),
+                cf.say('iframe exists').set('ifNotDemo', 'iframe exists')
             )
 
         /**
