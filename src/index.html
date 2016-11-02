@@ -28,7 +28,6 @@
         #testsearch { margin-right: -20px; }
         #tasksearch { margin-right: -20px; }
         #templates input, #templates textarea { width: 100%; }
-        .hoverclick { font-size: 8px; }
         #workerContainer div#dashboardMessage { word-break: normal; }
     </style>
 </head>
@@ -283,29 +282,23 @@
                         <div style="max-height: 60vh; overflow: scroll">
                             <div ng-repeat="(elementIndex, element) in stack">
                                 <span ng-if="element.lib">lib: </span>
-                                <button data-index="{{elementIndex}}" class="btn btn-xs" ng-class="element.selectNodeName ? 'btn-success' : element.lib ? 'btn-info' : 'btn-warning'" ng-click="toggle('selectNodeName', element)" onmouseenter="angular.element(this).scope().highlight(this);">
+                                <button data-index="{{elementIndex}}" class="btn btn-xs" ng-class="element.selectNodeName ? 'btn-success' : element.lib ? 'btn-info' : 'btn-warning'" ng-click="toggle('selectNodeName', element)" onmouseenter="angular.element(this).scope().highlight(this);" onmousemove="var event = arguments[0] || window.event; angular.element(this).scope().triggerWithShiftNoWatch(event)">
                                     {{element.element || element.lib}}
-                                    <span ng-if="delay" class="hoverclick" onmouseenter="this.parentNode.click()">[]</span>
                                 </button>
-                                <button class="btn btn-xs" ng-class="element.selectId ? 'btn-success' : 'btn-danger'" ng-click="toggle('selectId', element)" ng-if="element.id">
+                                <button class="btn btn-xs" ng-class="element.selectId ? 'btn-success' : 'btn-danger'" ng-click="toggle('selectId', element)" ng-if="element.id" onmousemove="var event = arguments[0] || window.event; angular.element(this).scope().triggerWithShiftNoWatch(event)">
                                     #{{element.id}}
-                                    <span ng-if="delay" class="hoverclick" onmouseenter="this.parentNode.click()">[]</span>
                                 </button>
-                                <button class="btn btn-xs" ng-class="element.selectClass[index] ? 'btn-success' : 'btn-default'" ng-click="toggle('selectClass', element, index)" ng-repeat="(index, class) in element.classes">
+                                <button class="btn btn-xs" ng-class="element.selectClass[index] ? 'btn-success' : 'btn-default'" ng-click="toggle('selectClass', element, index)" ng-repeat="(index, class) in element.classes" onmousemove="var event = arguments[0] || window.event; angular.element(this).scope().triggerWithShiftNoWatch(event)">
                                     .{{class}}
-                                    <span ng-if="delay" class="hoverclick" onmouseenter="this.parentNode.click()">[]</span>
                                 </button>
-                                <button class="btn btn-xs" ng-class="element.selectAttribute[index] ? 'btn-success' : 'btn-disabled'" ng-click="toggle('selectAttribute', element, index)" ng-repeat="(index, a) in element.attrs">
+                                <button class="btn btn-xs" ng-class="element.selectAttribute[index] ? 'btn-success' : 'btn-disabled'" ng-click="toggle('selectAttribute', element, index)" ng-repeat="(index, a) in element.attrs" onmousemove="var event = arguments[0] || window.event; angular.element(this).scope().triggerWithShiftNoWatch(event)">
                                     .{{a.n + '="' + a.v + '"'}}
-                                    <span ng-if="delay" class="hoverclick" onmouseenter="this.parentNode.click()">[]</span>
                                 </button>
-                                <button class="btn btn-xs" ng-class="element.selectIndex ? 'btn-success' : 'btn-default'" ng-click="toggle('selectIndex', element)" ng-if="element.element">
+                                <button class="btn btn-xs" ng-class="element.selectIndex ? 'btn-success' : 'btn-default'" ng-click="toggle('selectIndex', element)" ng-if="element.element" onmousemove="var event = arguments[0] || window.event; angular.element(this).scope().triggerWithShiftNoWatch(event)">
                                     nth({{element.index}})
-                                    <span ng-if="delay" class="hoverclick" onmouseenter="this.parentNode.click()">[]</span>
                                 </button>
-                                <button class="btn btn-xs" ng-class="element.selectText ? 'btn-success' : 'btn-default'" ng-click="toggle('selectText', element)" ng-if="element.text">
+                                <button class="btn btn-xs" ng-class="element.selectText ? 'btn-success' : 'btn-default'" ng-click="toggle('selectText', element)" ng-if="element.text" onmousemove="var event = arguments[0] || window.event; angular.element(this).scope().triggerWithShiftNoWatch(event)">
                                     text
-                                    <span ng-if="delay" class="hoverclick" onmouseenter="this.parentNode.click()">[]</span>
                                 </button>
                             </div>
                         </div>
@@ -408,7 +401,7 @@
             </div>
         </div>
         <div id="jobDetails">
-            <a class="btn btn-info btn-xs" style="width: 100%; margin-top: 120px; margin-bottom: 5px;" onclick="alert('* shift+click on a step = debug (browser debugger window should be open, be aware, that some steps are purely declarative, when being debugged - you will find yourself deep in cartfiller code)\r\n* double click on task property or global value = change property value, double click on pause = set pause here and run\r\n* grayed step buttons mean, that this step depends on previous step, and will most likely fail if launched out of a sequence.\r\n* shift+click on search button makes 2 second delay before overlapping target frame with mouse capturing div');">help</a>
+            <a class="btn btn-info btn-xs" style="width: 100%; margin-top: 120px; margin-bottom: 5px;" onclick="alert('* shift+click on a step = debug (browser debugger window should be open, be aware, that some steps are purely declarative, when being debugged - you will find yourself deep in cartfiller code)\r\n* double click on task property or global value = change property value, double click on pause = set pause here and run\r\n* grayed step buttons mean, that this step depends on previous step, and will most likely fail if launched out of a sequence.\r\n* shift+click on search button makes 2 second delay before overlapping target frame with mouse capturing div\r\n* ctrl+click and shift+ctrl+click does direct way of search without overlay div');">help</a>
             <h3 ng-if="jobTitle">
                 {{jobTitle.substr(0,128)}}
             </h3>

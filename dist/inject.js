@@ -231,7 +231,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1505338875834';
+    config.gruntBuildTimeStamp='1505482157585';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -4424,7 +4424,7 @@
          * @access public
          */
         onMessage_startReportingMousePointer: function(details) {
-            me.modules.ui.startReportingMousePointer(details.delay);
+            me.modules.ui.startReportingMousePointer(details);
         },
         /** 
          * Tries to find all elements that match specified CSS selector and 
@@ -4667,7 +4667,7 @@
          * @access public
          */
         onMessage_updateTitle: function(details) {
-            window.document.title = details.title;
+            window.document.title = me.modules.ui.rootWindowTitle() || details.title;
         },
         /**
          * Passes loadWorker message to chooseJobFrame
@@ -5301,7 +5301,7 @@
             return 'undefined' !== typeof currentInvokeWorkerMessage.drillToFrame;
         },
         getFrameToDrill: function() {
-            return currentInvokeWorkerMessage.drillToFrame ? currentInvokeWorkerMessage.drillToFrame : [];
+            return currentInvokeWorkerMessage && currentInvokeWorkerMessage.drillToFrame ? currentInvokeWorkerMessage.drillToFrame : [];
         },
         isSlave: function() {
             return relay.isSlave;
@@ -5662,6 +5662,13 @@
         div.style.zIndex = getZIndexForOverlay();
         div.className = overlayClassName + ' ' + overlayClassName + type;
         div.onclick = function(){me.modules.ui.clearOverlaysAndReflect();};
+        // this adds flickering to let user still interact with underlying page elements
+        div.addEventListener('mousemove', function() {
+            div.style.display = 'none';
+            setTimeout(function() {
+                div.style.display = 'block';
+            }, 100);
+        });
         var body = overlayWindow().document.getElementsByTagName('body')[0];
         if (body) {
             var messageDiv = body.getElementsByClassName('cartFillerOverlayDivmessage');
@@ -5691,11 +5698,12 @@
      * @param {integer} height
      * @access private
      */
-    var verticalLineOverlay = function(type, left, top, height){
+    var verticalLineOverlay = function(type, left, top, height, width){
+        width = String(width || 20) + 'px';
         var div = getOverlayDiv2(type);
         div.style.left = left + 'px';
         div.style.top = top + 'px';
-        div.style.width = '20px';
+        div.style.width = width;
         div.style.height = height + 'px';
     };
     /**
@@ -5706,12 +5714,13 @@
      * @param {integer} width
      * @access private
      */
-    var horizontalLineOverlay = function(type, left, top, width) {
+    var horizontalLineOverlay = function(type, left, top, width, height) {
+        height = String(height || 20) + 'px';
         var div = getOverlayDiv2(type);
         div.style.left = left + 'px';
         div.style.top = top + 'px';
         div.style.width = width + 'px';
-        div.style.height = '20px';
+        div.style.height = height;
     };
     /**
      * Draws horizontal overlay arrow, direction = right
@@ -5926,14 +5935,11 @@
         .filter(function(el) { return el.currentMainFrameWindow === me.modules.dispatcher.getFrameWindowIndex(); })
         .map(addFrameCoordinatesMap)
         .filter(function(el, i) {
-            var div = getOverlayDiv2('arrow');
-            div.style.backgroundColor = 'transparent';
-            div.style.borderLeft = div.style.borderTop = div.style.borderRight = div.style.borderBottom = '5px solid rgba(255,0,0,0.3)';
-            div.style.left = el.rect.left + 'px';
-            div.style.top = el.rect.top + 'px';
-            div.style.width = el.rect.width + 'px';
-            div.style.height = el.rect.height + 'px';
-            div.style.boxSizing = 'border-box';
+            var border = 5;
+            horizontalLineOverlay('arrow', el.rect.left - border, el.rect.top - border, el.rect.width + border * 2, border);
+            horizontalLineOverlay('arrow', el.rect.left - border, el.rect.bottom, el.rect.width + border * 2, border);
+            verticalLineOverlay('arrow', el.rect.left - border, el.rect.top, el.rect.height, border);
+            verticalLineOverlay('arrow', el.rect.right, el.rect.top, el.rect.height, border);
             if (el.rect.left > 40) {
                 top = el.rect.top + Math.round(el.rect.height/2);
                 verticalLineOverlay('arrow', 0, 0, top - 10);
@@ -6773,6 +6779,7 @@
          */
         clean: function(document, window) {
             uiType = 'clean';
+            window.document.title = this.rootWindowTitle();
             cleanUIRootWindowSize = {
                 width: window.opener && ((window.opener.screen && window.opener.screen.availWidth || window.opener.screen.width) || window.opener.outerWidth || window.opener.innerWidth),
                 height: window.opener && ((window.opener.screen && window.opener.screen.availHeight || window.opener.screen.height) || window.opener.outerHeight || window.opener.innerHeight) 
@@ -6870,9 +6877,13 @@
             me.modules.dispatcher.postMessageToWorker('mousePointer', {x: x, y: y, stack: [], w: me.modules.dispatcher.getFrameWindowIndex()});
         },
         reportingMousePointerClickForWindow: function(x, y) {
-            var stack = [];
             var el = me.modules.ui.mainFrameWindow.document.elementFromPoint(x,y);
-            me.modules.api.arrow(el, true, true);
+            me.modules.ui.reportingMousePointerClickForElement(el);
+        },
+        reportingMousePointerClickForElement: function(el, notFinal) {
+            var stack = [];
+            me.modules.ui.clearOverlaysAndReflect();
+            me.modules.ui.arrowTo(el, true, true);
             var prev;
             var i, n;
             if (el.nodeName === 'SELECT') {
@@ -6933,7 +6944,51 @@
                     text: ''
                 });
             }
-            me.modules.dispatcher.postMessageToWorker('mousePointer', {x: x, y: y, stack: stack, w: me.modules.dispatcher.getFrameWindowIndex()});
+            me.modules.dispatcher.postMessageToWorker('mousePointer', {stack: stack, w: me.modules.dispatcher.getFrameWindowIndex(), notFinal: notFinal});
+        },
+        startReportingMousePointerDirect: function() {
+            var trackingDocument = getDocument();
+            var elements = trackingDocument.getElementsByTagName('body')[0].getElementsByTagName('*');
+            var done = false;
+            var shoot = function() {
+                done = true;
+                for (var i = 0; i < elements.length; i ++) {
+                    elements[i].removeEventListener('mousedown', clickListener, true);
+                    elements[i].removeEventListener('mousemove', moveListener, true);
+                    elements[i].removeEventListener('mouseenter', moveListener, true);
+                    elements[i].removeEventListener('mouseleave', leaveListener, true);
+                }
+            };
+            var clickListener = function(event) { 
+                if (! done) {
+                    me.modules.ui.reportingMousePointerClickForElement(event.target);
+                    shoot();
+                    event.stopPropagation();
+                    return false;
+                }
+            };
+            var moveListener = function(event) { 
+                if (! done) {
+                    if (event.shiftKey) {
+                        me.modules.ui.reportingMousePointerClickForElement(event.target);
+                        shoot();
+                    } else {
+                        me.modules.ui.reportingMousePointerClickForElement(event.target, true);
+                    }
+                }
+            };
+            var leaveListener = function(event) { 
+                if (! done && event.shiftKey) {
+                    me.modules.ui.reportingMousePointerClickForElement(event.target);
+                    shoot();
+                }
+            };
+            for (var i = 0; i < elements.length; i ++) {
+                elements[i].addEventListener('mousedown', clickListener, true);
+                elements[i].addEventListener('mousemove', moveListener, true);
+                elements[i].addEventListener('mouseenter', moveListener, true);
+                elements[i].addEventListener('mouseleave', leaveListener, true);
+            }
         },
         /**
          * Starts reporting mouse pointer - on each mousemove dispatcher 
@@ -6942,11 +6997,22 @@
          * @function CartFiller.UI#startReportingMousePointer
          * @access public
          */
-        startReportingMousePointer: function(delayAndAutoShoot, shoot) {
+        startReportingMousePointer: function(details, shoot) {
             try {
                 me.modules.ui.clearOverlaysAndReflect();
             } catch (e) {}
-            if (delayAndAutoShoot && ! shoot) {
+            if (details.direct) {
+                if (details.delay && ! shoot) {
+                    setTimeout(function(){
+                        me.modules.ui.startReportingMousePointerDirect(details);
+                        me.modules.dispatcher.postMessageToWorker('mousePointer', {autoshootReady: true});
+                    }, 5000);
+                    return;
+                } else {
+                    return this.startReportingMousePointerDirect(details);
+                }
+            }
+            if (details.delay && ! shoot) {
                 setTimeout(function(){
                     me.modules.ui.startReportingMousePointer(true, true);
                     me.modules.dispatcher.postMessageToWorker('mousePointer', {autoshootReady: true});
@@ -6991,7 +7057,7 @@
                 div.addEventListener('mousemove', function(event) {
                     x = event.clientX;
                     y = event.clientY;
-                    if (delayAndAutoShoot) {
+                    if (details.delay) {
                         me.modules.dispatcher.postMessageToWorker('mousePointer', {autoshootCaptured: true});
                         remove();
                         setTimeout(function() {
@@ -7013,14 +7079,16 @@
          * @access public
          */
         preventPageReload: function(){
-            setInterval(function() {
-                window.onbeforeunload=function() {
-                    setTimeout(function(){
-                        me.modules.ui.mainFrameWindow.location.reload();
-                    },0);
-                    return 'This will cause CartFiller to reload. Choose not to reload if you want just to refresh the main frame.';
-                };
-            },2000);
+            if (uiType !== 'clean') {
+                setInterval(function() {
+                    window.onbeforeunload=function() {
+                        setTimeout(function(){
+                            me.modules.ui.mainFrameWindow.location.reload();
+                        },0);
+                        return 'This will cause CartFiller to reload. Choose not to reload if you want just to refresh the main frame.';
+                    };
+                },2000);
+            }
         },
         /**
          * Getter for messageToSay
@@ -7269,6 +7337,9 @@
         },
         isMessageStable: function() { 
             return messageAdjustmentRemainingAttempts === 0;
+        },
+        rootWindowTitle: function() {
+            return uiType === 'clean' ? 'CartFiller Dashboard' : undefined;
         }
     });
 }).call(this, document, window);

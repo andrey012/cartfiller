@@ -1631,7 +1631,7 @@
          * @access public
          */
         onMessage_startReportingMousePointer: function(details) {
-            me.modules.ui.startReportingMousePointer(details.delay);
+            me.modules.ui.startReportingMousePointer(details);
         },
         /** 
          * Tries to find all elements that match specified CSS selector and 
@@ -1874,7 +1874,7 @@
          * @access public
          */
         onMessage_updateTitle: function(details) {
-            window.document.title = details.title;
+            window.document.title = me.modules.ui.rootWindowTitle() || details.title;
         },
         /**
          * Passes loadWorker message to chooseJobFrame
@@ -2508,7 +2508,7 @@
             return 'undefined' !== typeof currentInvokeWorkerMessage.drillToFrame;
         },
         getFrameToDrill: function() {
-            return currentInvokeWorkerMessage.drillToFrame ? currentInvokeWorkerMessage.drillToFrame : [];
+            return currentInvokeWorkerMessage && currentInvokeWorkerMessage.drillToFrame ? currentInvokeWorkerMessage.drillToFrame : [];
         },
         isSlave: function() {
             return relay.isSlave;

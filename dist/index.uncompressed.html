@@ -6787,7 +6787,6 @@ button.close {
         #testsearch { margin-right: -20px; }
         #tasksearch { margin-right: -20px; }
         #templates input, #templates textarea { width: 100%; }
-        .hoverclick { font-size: 8px; }
         #workerContainer div#dashboardMessage { word-break: normal; }
     </style>
 </head>
@@ -7042,29 +7041,23 @@ button.close {
                         <div style="max-height: 60vh; overflow: scroll">
                             <div ng-repeat="(elementIndex, element) in stack">
                                 <span ng-if="element.lib">lib: </span>
-                                <button data-index="{{elementIndex}}" class="btn btn-xs" ng-class="element.selectNodeName ? 'btn-success' : element.lib ? 'btn-info' : 'btn-warning'" ng-click="toggle('selectNodeName', element)" onmouseenter="angular.element(this).scope().highlight(this);">
+                                <button data-index="{{elementIndex}}" class="btn btn-xs" ng-class="element.selectNodeName ? 'btn-success' : element.lib ? 'btn-info' : 'btn-warning'" ng-click="toggle('selectNodeName', element)" onmouseenter="angular.element(this).scope().highlight(this);" onmousemove="var event = arguments[0] || window.event; angular.element(this).scope().triggerWithShiftNoWatch(event)">
                                     {{element.element || element.lib}}
-                                    <span ng-if="delay" class="hoverclick" onmouseenter="this.parentNode.click()">[]</span>
                                 </button>
-                                <button class="btn btn-xs" ng-class="element.selectId ? 'btn-success' : 'btn-danger'" ng-click="toggle('selectId', element)" ng-if="element.id">
+                                <button class="btn btn-xs" ng-class="element.selectId ? 'btn-success' : 'btn-danger'" ng-click="toggle('selectId', element)" ng-if="element.id" onmousemove="var event = arguments[0] || window.event; angular.element(this).scope().triggerWithShiftNoWatch(event)">
                                     #{{element.id}}
-                                    <span ng-if="delay" class="hoverclick" onmouseenter="this.parentNode.click()">[]</span>
                                 </button>
-                                <button class="btn btn-xs" ng-class="element.selectClass[index] ? 'btn-success' : 'btn-default'" ng-click="toggle('selectClass', element, index)" ng-repeat="(index, class) in element.classes">
+                                <button class="btn btn-xs" ng-class="element.selectClass[index] ? 'btn-success' : 'btn-default'" ng-click="toggle('selectClass', element, index)" ng-repeat="(index, class) in element.classes" onmousemove="var event = arguments[0] || window.event; angular.element(this).scope().triggerWithShiftNoWatch(event)">
                                     .{{class}}
-                                    <span ng-if="delay" class="hoverclick" onmouseenter="this.parentNode.click()">[]</span>
                                 </button>
-                                <button class="btn btn-xs" ng-class="element.selectAttribute[index] ? 'btn-success' : 'btn-disabled'" ng-click="toggle('selectAttribute', element, index)" ng-repeat="(index, a) in element.attrs">
+                                <button class="btn btn-xs" ng-class="element.selectAttribute[index] ? 'btn-success' : 'btn-disabled'" ng-click="toggle('selectAttribute', element, index)" ng-repeat="(index, a) in element.attrs" onmousemove="var event = arguments[0] || window.event; angular.element(this).scope().triggerWithShiftNoWatch(event)">
                                     .{{a.n + '="' + a.v + '"'}}
-                                    <span ng-if="delay" class="hoverclick" onmouseenter="this.parentNode.click()">[]</span>
                                 </button>
-                                <button class="btn btn-xs" ng-class="element.selectIndex ? 'btn-success' : 'btn-default'" ng-click="toggle('selectIndex', element)" ng-if="element.element">
+                                <button class="btn btn-xs" ng-class="element.selectIndex ? 'btn-success' : 'btn-default'" ng-click="toggle('selectIndex', element)" ng-if="element.element" onmousemove="var event = arguments[0] || window.event; angular.element(this).scope().triggerWithShiftNoWatch(event)">
                                     nth({{element.index}})
-                                    <span ng-if="delay" class="hoverclick" onmouseenter="this.parentNode.click()">[]</span>
                                 </button>
-                                <button class="btn btn-xs" ng-class="element.selectText ? 'btn-success' : 'btn-default'" ng-click="toggle('selectText', element)" ng-if="element.text">
+                                <button class="btn btn-xs" ng-class="element.selectText ? 'btn-success' : 'btn-default'" ng-click="toggle('selectText', element)" ng-if="element.text" onmousemove="var event = arguments[0] || window.event; angular.element(this).scope().triggerWithShiftNoWatch(event)">
                                     text
-                                    <span ng-if="delay" class="hoverclick" onmouseenter="this.parentNode.click()">[]</span>
                                 </button>
                             </div>
                         </div>
@@ -7167,7 +7160,7 @@ button.close {
             </div>
         </div>
         <div id="jobDetails">
-            <a class="btn btn-info btn-xs" style="width: 100%; margin-top: 120px; margin-bottom: 5px;" onclick="alert('* shift+click on a step = debug (browser debugger window should be open, be aware, that some steps are purely declarative, when being debugged - you will find yourself deep in cartfiller code)\r\n* double click on task property or global value = change property value, double click on pause = set pause here and run\r\n* grayed step buttons mean, that this step depends on previous step, and will most likely fail if launched out of a sequence.\r\n* shift+click on search button makes 2 second delay before overlapping target frame with mouse capturing div');">help</a>
+            <a class="btn btn-info btn-xs" style="width: 100%; margin-top: 120px; margin-bottom: 5px;" onclick="alert('* shift+click on a step = debug (browser debugger window should be open, be aware, that some steps are purely declarative, when being debugged - you will find yourself deep in cartfiller code)\r\n* double click on task property or global value = change property value, double click on pause = set pause here and run\r\n* grayed step buttons mean, that this step depends on previous step, and will most likely fail if launched out of a sequence.\r\n* shift+click on search button makes 2 second delay before overlapping target frame with mouse capturing div\r\n* ctrl+click and shift+ctrl+click does direct way of search without overlay div');">help</a>
             <h3 ng-if="jobTitle">
                 {{jobTitle.substr(0,128)}}
             </h3>
@@ -47257,6 +47250,9 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
     .controller('indexController', ['$scope', 'cfMessage', '$timeout', 'cfDebug', 'cfScroll', 'cfAudioService', function ($scope, cfMessage, $timeout, cfDebug, cfScroll, cfAudioService){
         var nextStepTimeoutHandle = false;
         var trackMousePointerWithDelay = false;
+        var trackMousePointerDirect = false;
+        var triggerWithShiftNoWatchShiftState = false;
+        var directMousePointerCaptureMessage = 'Click on the element you want to analyze, you can use right click to prevent action. Use shift key + small mouse move as an alternative way to capture element';
         var skipMousePointerAutoRefresh = 0;
         if (cfMessage.testSuite) {
             return;
@@ -47683,13 +47679,17 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 $scope.updateCurrentUrl();
             } else if (cmd === 'mousePointer') {
                 if (details.autoshootReady) {
-                    $('#dashboardMessage').show().text('now make small movement of your mouse');
+                    $('#dashboardMessage').show().text(
+                        trackMousePointerDirect ? 
+                        directMousePointerCaptureMessage : 
+                        'now make small movement of your mouse'
+                    );
                 } else if (details.autoshootCaptured) {
                     $('#dashboardMessage').show().text('your mouse position is captured, now you have another 5 seconds before element lookup will happen');
                 } else {
                     (function(){
                         var scope = angular.element(document.getElementById('searchResults')).scope();
-                        if (trackMousePointerWithDelay) {
+                        if (trackMousePointerWithDelay && (!trackMousePointerDirect || !details.notFinal)) {
                             skipMousePointerAutoRefresh = 3;
                             setTimeout(function refreshPointer() {
                                 if (! skipMousePointerAutoRefresh) {
@@ -47708,7 +47708,9 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                         scope.delay = trackMousePointerWithDelay;
                         scope.$digest();
                     })();
-                    $('#dashboardMessage').hide();
+                    if (! details.notFinal) {
+                        $('#dashboardMessage').hide();
+                    }
                 }
             } else if (cmd === 'cssSelectorEvaluateResult') {
                 $('#searchButton').text('Search (' + details.count + ')').removeClass('btn-success btn-danger').addClass(details.count === 1 ? 'btn-success': 'btn-danger');
@@ -48090,11 +48092,20 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
         };
         $scope.performSearchNoWatch = function($event) {
             trackMousePointerWithDelay = $event.shiftKey;
-            $('#dashboardMessage').show().text(trackMousePointerWithDelay ? 
-                'Move your mouse to the element you want to analyze, you have 5 seconds for that, then the layover will appear, make a short mouse movement to let layover notice your mouse position' : 
-                'Click on the element you want to analyze'
+            trackMousePointerDirect = $event.ctrlKey;
+            $('#dashboardMessage').show().text(trackMousePointerDirect ? 
+                (
+                    trackMousePointerWithDelay ? 
+                    'Prepare your application for capture, e.g. focus the input, start typing to let auto-suggest list to appear, etc. Capture will start in 5 seconds' :
+                    directMousePointerCaptureMessage
+                ) :
+                (
+                    trackMousePointerWithDelay ? 
+                    'Move your mouse to the element you want to analyze, you have 5 seconds for that, then the layover will appear, make a short mouse movement to let layover notice your mouse position' : 
+                    'Click on the element you want to analyze'
+                )
             );
-            cfMessage.send('startReportingMousePointer', trackMousePointerWithDelay ? {delay: true} : undefined);
+            cfMessage.send('startReportingMousePointer', {delay: trackMousePointerWithDelay, direct: trackMousePointerDirect});
             var scope = angular.element(document.getElementById('searchResults')).scope();
             if (! scope.searchVisible) {
                 rememberedScrollPositionBeforeSearch = window.scrollY;
@@ -48124,6 +48135,16 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 setTimeout(function() {
                     $('#selectorSearchQueryInput')[0].select();
                 }, 0);
+            };
+            scope.triggerWithShiftNoWatch = function(event) {
+                if (event.shiftKey) {
+                    if (!triggerWithShiftNoWatchShiftState) {
+                        event.target.click();
+                        triggerWithShiftNoWatchShiftState = true;
+                    }
+                } else {
+                    triggerWithShiftNoWatchShiftState = false;
+                }
             };
             scope.getCssSelector = function(){
                 var generateCompareCleanTextExpression = function(s) {
@@ -48187,6 +48208,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 scope.searchVisible = ! scope.searchVisible;
                 if (! scope.searchVisible) {
                     window.scrollTo(0, rememberedScrollPositionBeforeSearch);
+                    $('#dashboardMessage').hide();
                 }
             };
             scope.textareaKeyUp = function($event){
@@ -48455,7 +48477,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
             reportError('bootstrap message did not come');
         }
     }, 10000);
-    config.gruntBuildTimeStamp='1505338875834';
+    config.gruntBuildTimeStamp='1505482157585';
     window.addEventListener('message', function(event){
         var prefix = 'cartFillerMessage:';
         var isDist = true;
@@ -48565,7 +48587,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 if (message.tests) {
                     var x = new XMLHttpRequest();
                     x.onload = function(){
-                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1505338875834') {
+                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1505482157585') {
                             console.log('new version of CartFiller was deployed, switching to it');
                             var hash = window.location.href.split('#');
                             var pc = hash[0].split('?');

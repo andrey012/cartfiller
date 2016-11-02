@@ -4,6 +4,9 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
     .controller('indexController', ['$scope', 'cfMessage', '$timeout', 'cfDebug', 'cfScroll', 'cfAudioService', function ($scope, cfMessage, $timeout, cfDebug, cfScroll, cfAudioService){
         var nextStepTimeoutHandle = false;
         var trackMousePointerWithDelay = false;
+        var trackMousePointerDirect = false;
+        var triggerWithShiftNoWatchShiftState = false;
+        var directMousePointerCaptureMessage = 'Click on the element you want to analyze, you can use right click to prevent action. Use shift key + small mouse move as an alternative way to capture element';
         var skipMousePointerAutoRefresh = 0;
         if (cfMessage.testSuite) {
             return;
@@ -430,13 +433,17 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 $scope.updateCurrentUrl();
             } else if (cmd === 'mousePointer') {
                 if (details.autoshootReady) {
-                    $('#dashboardMessage').show().text('now make small movement of your mouse');
+                    $('#dashboardMessage').show().text(
+                        trackMousePointerDirect ? 
+                        directMousePointerCaptureMessage : 
+                        'now make small movement of your mouse'
+                    );
                 } else if (details.autoshootCaptured) {
                     $('#dashboardMessage').show().text('your mouse position is captured, now you have another 5 seconds before element lookup will happen');
                 } else {
                     (function(){
                         var scope = angular.element(document.getElementById('searchResults')).scope();
-                        if (trackMousePointerWithDelay) {
+                        if (trackMousePointerWithDelay && (!trackMousePointerDirect || !details.notFinal)) {
                             skipMousePointerAutoRefresh = 3;
                             setTimeout(function refreshPointer() {
                                 if (! skipMousePointerAutoRefresh) {
@@ -455,7 +462,9 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                         scope.delay = trackMousePointerWithDelay;
                         scope.$digest();
                     })();
-                    $('#dashboardMessage').hide();
+                    if (! details.notFinal) {
+                        $('#dashboardMessage').hide();
+                    }
                 }
             } else if (cmd === 'cssSelectorEvaluateResult') {
                 $('#searchButton').text('Search (' + details.count + ')').removeClass('btn-success btn-danger').addClass(details.count === 1 ? 'btn-success': 'btn-danger');
@@ -837,11 +846,20 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
         };
         $scope.performSearchNoWatch = function($event) {
             trackMousePointerWithDelay = $event.shiftKey;
-            $('#dashboardMessage').show().text(trackMousePointerWithDelay ? 
-                'Move your mouse to the element you want to analyze, you have 5 seconds for that, then the layover will appear, make a short mouse movement to let layover notice your mouse position' : 
-                'Click on the element you want to analyze'
+            trackMousePointerDirect = $event.ctrlKey;
+            $('#dashboardMessage').show().text(trackMousePointerDirect ? 
+                (
+                    trackMousePointerWithDelay ? 
+                    'Prepare your application for capture, e.g. focus the input, start typing to let auto-suggest list to appear, etc. Capture will start in 5 seconds' :
+                    directMousePointerCaptureMessage
+                ) :
+                (
+                    trackMousePointerWithDelay ? 
+                    'Move your mouse to the element you want to analyze, you have 5 seconds for that, then the layover will appear, make a short mouse movement to let layover notice your mouse position' : 
+                    'Click on the element you want to analyze'
+                )
             );
-            cfMessage.send('startReportingMousePointer', trackMousePointerWithDelay ? {delay: true} : undefined);
+            cfMessage.send('startReportingMousePointer', {delay: trackMousePointerWithDelay, direct: trackMousePointerDirect});
             var scope = angular.element(document.getElementById('searchResults')).scope();
             if (! scope.searchVisible) {
                 rememberedScrollPositionBeforeSearch = window.scrollY;
@@ -871,6 +889,16 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 setTimeout(function() {
                     $('#selectorSearchQueryInput')[0].select();
                 }, 0);
+            };
+            scope.triggerWithShiftNoWatch = function(event) {
+                if (event.shiftKey) {
+                    if (!triggerWithShiftNoWatchShiftState) {
+                        event.target.click();
+                        triggerWithShiftNoWatchShiftState = true;
+                    }
+                } else {
+                    triggerWithShiftNoWatchShiftState = false;
+                }
             };
             scope.getCssSelector = function(){
                 var generateCompareCleanTextExpression = function(s) {
@@ -934,6 +962,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 scope.searchVisible = ! scope.searchVisible;
                 if (! scope.searchVisible) {
                     window.scrollTo(0, rememberedScrollPositionBeforeSearch);
+                    $('#dashboardMessage').hide();
                 }
             };
             scope.textareaKeyUp = function($event){
