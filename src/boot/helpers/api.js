@@ -461,6 +461,9 @@
         return new Selector(this.length ? [this[this.length - 1]] : [], this.description + ' last()', [this, 'last']);
     };
     Selector.prototype.nthOfType = function(n) {
+        if ('string' === typeof n) {
+            n = parseInt(me.modules.dispatcher.interpolateText(String(n)));
+        }
         return this.filter(function(i,el){ 
             var c = 0; 
             for (var x = el.previousSibling; x; x = x.previousSibling) {
@@ -475,7 +478,7 @@
             text = text.toLowerCase();
         }
         return this.filter(function(i,el){
-            return me.modules.api.compareCleanText(text, ignoreCase ? el.textContent.toLowerCase : el.textContent);
+            return me.modules.api.compareCleanText(text, ignoreCase ? el.textContent.toLowerCase() : el.textContent);
         });
     };
     Selector.prototype.reevaluate = function() {

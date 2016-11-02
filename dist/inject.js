@@ -220,7 +220,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1505028950793';
+    config.gruntBuildTimeStamp='1505078090790';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -740,6 +740,9 @@
         return new Selector(this.length ? [this[this.length - 1]] : [], this.description + ' last()', [this, 'last']);
     };
     Selector.prototype.nthOfType = function(n) {
+        if ('string' === typeof n) {
+            n = parseInt(me.modules.dispatcher.interpolateText(String(n)));
+        }
         return this.filter(function(i,el){ 
             var c = 0; 
             for (var x = el.previousSibling; x; x = x.previousSibling) {
@@ -754,7 +757,7 @@
             text = text.toLowerCase();
         }
         return this.filter(function(i,el){
-            return me.modules.api.compareCleanText(text, ignoreCase ? el.textContent.toLowerCase : el.textContent);
+            return me.modules.api.compareCleanText(text, ignoreCase ? el.textContent.toLowerCase() : el.textContent);
         });
     };
     Selector.prototype.reevaluate = function() {
@@ -2067,7 +2070,12 @@
         } else if (false === arg) {
             return ['return false', function() { api('result', ['false']); }];
         } else if ('string' === typeof arg) {
-            return makeConstantConditionSteps(me.modules.dispatcher.interpolateText(arg).length ? true : false);
+            return ['check string: ' + arg, function() {
+                if(me.modules.api.debug && me.modules.api.debug.stop) {
+                    debugger; // jshint ignore:line
+                }
+                api('result', [me.modules.dispatcher.interpolateText(arg).length ? '' : 'empty string']);
+            }];
         }
     };
     var makeBreakStep = function(args, stepsToSkip) {

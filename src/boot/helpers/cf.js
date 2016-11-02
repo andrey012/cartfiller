@@ -58,7 +58,12 @@
         } else if (false === arg) {
             return ['return false', function() { api('result', ['false']); }];
         } else if ('string' === typeof arg) {
-            return makeConstantConditionSteps(me.modules.dispatcher.interpolateText(arg).length ? true : false);
+            return ['check string: ' + arg, function() {
+                if(me.modules.api.debug && me.modules.api.debug.stop) {
+                    debugger; // jshint ignore:line
+                }
+                api('result', [me.modules.dispatcher.interpolateText(arg).length ? '' : 'empty string']);
+            }];
         }
     };
     var makeBreakStep = function(args, stepsToSkip) {
