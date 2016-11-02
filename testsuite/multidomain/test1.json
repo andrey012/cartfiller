@@ -32,5 +32,6 @@ cartfiller={
         {"task": "clicklink", "name": "127.0.0.2"},
         {"task": "clicklink", "name": "127.0.0.3"},
         {"task": "clicklink", "name": "127.0.0.4"},
+        {"task": "clicklink", "name": "127.0.0.1"},
     ],
 }

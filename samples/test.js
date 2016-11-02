@@ -10,14 +10,22 @@ var success = false;
 while (tries --){
     try {
         service = server.listen(port, function (request, response) {
+            console.log('phantomjs webserver start: ' + request.method + ' ' + request.url);
             response.statusCode = 200;
             response.headers = {
                 'Cache': 'no-cache',
                 'Content-Type': 'text/html'
             };
-            var data = fs.read(request.url.substr(1).split('?')[0]);
-            response.write(data);
-            response.close();
+            try {
+
+                var data = fs.read(request.url.substr(1).split('?')[0]);
+                response.write(data);
+                response.close();
+                console.log('phantomjs webserver  done: ' + request.method + ' ' + request.url);
+            } catch (e) {
+                console.log('phantomjs webserver exception: '); 
+                console.log(e);
+            }
         });
         success = true;
         break;

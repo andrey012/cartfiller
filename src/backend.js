@@ -451,12 +451,17 @@ startup.push(function() {
 });
 
 var proxyDelay = argv['proxy-delay'] || 0;
-
+var logWrapper = function(cb) {
+    return function(req, res, next) {
+        console.log('serveHttp: ' + req.method + ' ' + req.url);
+        cb(req, res, next);
+    };
+};
 if (argv['serve-http']) {
-    serveHttpApp.use((argv['proxy-to'] ? '/cartfillerTests' : '/'), express.static(argv['serve-http']));
-    serveHttpApp.use((argv['proxy-to'] ? '/cartfillerTests' : '/'), serveIndex(argv['serve-http']));
-    serveHttpApp.use('/cartfillerFiles', express.static(__dirname + '/..'));
-    serveHttpApp.use('/cartfillerFiles', serveIndex(__dirname + '/..'));
+    serveHttpApp.use((argv['proxy-to'] ? '/cartfillerTests' : '/'), logWrapper(express.static(argv['serve-http'])));
+    serveHttpApp.use((argv['proxy-to'] ? '/cartfillerTests' : '/'), logWrapper(serveIndex(argv['serve-http'])));
+    serveHttpApp.use('/cartfillerFiles', logWrapper(express.static(__dirname + '/..')));
+    serveHttpApp.use('/cartfillerFiles', logWrapper(serveIndex(__dirname + '/..')));
     if (argv['proxy-to']) {
         var proxy = httpProxy.createProxyServer({
             agent: 0 === argv['proxy-to'].indexOf('https:') ? https.globalAgent : http.globalAgent,

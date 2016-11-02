@@ -53,7 +53,7 @@
     var as = document.getElementsByTagName('a');
     for (var i = 0; i < as.length; i ++) {
         as[i].setAttribute('href', window.location.href.replace(/^(https?\:\/\/[^\/]+)\//, function(match, p1) {
-            return p1.replace(/127\.0\.0\.\d*$/, '') + as[i].textContent + '/';
+            return p1.replace(/127\.0\.0\.\d*/, as[i].textContent) + '/';
         }));
     }
     var level = /\?(\d+)$/.exec(window.location.href);
@@ -62,7 +62,7 @@
         var f = document.createElement('iframe');
         f.style.width = (500 - level * 100) + 'px';
         f.style.height = (500 - level * 100) + 'px';
-        var me = /127\.0\.0\.(\d?)\//.exec(window.location.href)[1];
+        var me = /127\.0\.0\.(\d?)(\/|:)/.exec(window.location.href)[1];
         if (! me ) me = 1;
         f.setAttribute('src', as[(parseInt(me)) % 4].getAttribute('href').split('?')[0] + '?' + (level + 1));
         f.setAttribute('name', 'theframe');
@@ -70,7 +70,7 @@
         f = document.createElement('iframe');
         f.style.width = (500 - level * 100) + 'px';
         f.style.height = (500 - level * 100) + 'px';
-        var me = /127\.0\.0\.(\d?)\//.exec(window.location.href)[1];
+        var me = /127\.0\.0\.(\d?)(\/|:)/.exec(window.location.href)[1];
         if (! me ) me = 1;
         f.setAttribute('src', as[(parseInt(me)-1) % 4].getAttribute('href').split('?')[0] + '?' + (level + 1));
         f.setAttribute('name', 'theframe');

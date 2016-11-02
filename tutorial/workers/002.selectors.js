@@ -76,7 +76,10 @@
          * .add adds items found by another selector to this one. 
          */
             .get('a:visible').withText("All")
-            .add(cf.get('a:visible').withText("Active")).exists()
+            .add(cf.get('a:visible').withText("Active"))
+            .then(function(s) { 
+                api.result(api.compare(2, s.length));
+            })
         /**
          * .filter obviously filters elements
          */

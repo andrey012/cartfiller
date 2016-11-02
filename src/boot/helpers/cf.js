@@ -74,6 +74,16 @@
         fn.cartFillerBreakFactor = args.length === 0 ? 1 : args[0];
         return ['break: ' + niceArgs(args), fn];
     };
+    var makeFlavor = function(old, add) {
+        var result = {};
+        for (var i in old) {
+            result[i] = old[i];
+        }
+        for (i in add) {
+            result[i] = add[i];
+        }
+        return result;
+    };
     var onLoaded = function() {
         Runtime = function() {
 
@@ -225,24 +235,17 @@
                     api('nop');
                 }];
             };
-            Builder.prototype.get = function(args) {
+            Builder.prototype.get = function(args, offset, flavor) {
                 if (args[0] instanceof BuilderPromise || args[0] instanceof LibReferencePromise) {
-                    var promise;
                     if (args[0] instanceof BuilderPromise) {
                         if (args[0].arr[0][0] === 'lib') {
-                            promise = wrapSelectorBuilderPromise(wrapper.lib[args[0].arr[0][1][0]].arr);
+                            return this.build(wrapper.lib[args[0].arr[0][1][0]].arr, [], offset, flavor);
                         } else {
-                            promise = wrapSelectorBuilderPromise(args[0].arr);
+                            return this.build(args[0].arr, [], offset, flavor);
                         }
                     } else { //args[0] instanceof LibReferencePromise
-                        promise = wrapSelectorBuilderPromise(wrapper.lib[args[0].name].arr);
+                        return this.build(wrapper.lib[args[0].name].arr, offset, flavor);
                     }
-                    return ['get' + niceArgs(args), me.modules.dispatcher.injectTaskParameters(function() {
-                        if(me.modules.api.debug && me.modules.api.debug.stop) {
-                            debugger; // jshint ignore:line
-                        }
-                        promise().arrow(1).nop(); 
-                    }, [promise])];
                 } else {
                     return ['get' + niceArgs(args), function() { 
                         if(me.modules.api.debug && me.modules.api.debug.stop) {
@@ -296,11 +299,12 @@
             };
             var buildProxyFunction = function(name, rename, afterWait) {
                 return function(args, coords, flavor) {
+                    var builder = this;
                     if (name === 'exists' || name === 'absent') {
                         return [
                             (rename || name) + niceArgs(args),
                             wrapIntoImplicitSelectorWaitForWrapperIf(
-                                flavor !== 'condition',
+                                ! flavor.condition,
                                 function(p) {
                                     if (name === 'exists') {
                                         return p.length;
@@ -314,30 +318,25 @@
                             )
                         ];
                     } else if (name === 'add') {
-                        var selectorPromises = args.map(function(arg) {
-                            if (arg instanceof BuilderPromise) {
-                                return wrapSelectorBuilderPromise(arg.arr);
-                            } else {
-                                return function() {
-                                    return arg;
-                                };
-                            }
-                        });
-                        return [(rename || name) + niceArgs(args), me.modules.dispatcher.injectTaskParameters(function(p) {
-                            if(me.modules.api.debug && me.modules.api.debug.stop) {
-                                debugger; // jshint ignore:line
-                            }
-                            var s = p;
-                            for (var i = 0; i < selectorPromises.length; i ++) {
-                                s = s.add(selectorPromises[i]());
-                            }
-                            s.arrow(1).nop();
-                        }, args)];
+                        if (args.length !== 1) {
+                            throw new Error('add can only have 1 argument');
+                        }
+                        var selectorSteps = builder.get([args[0]], coords, flavor);
+                        return selectorSteps.concat([
+                            (rename || name) + niceArgs(args), 
+                            me.modules.dispatcher.injectTaskParameters(function() {
+                                if(me.modules.api.debug && me.modules.api.debug.stop) {
+                                    debugger; // jshint ignore:line
+                                }
+                                var base = arguments[selectorSteps.length / 2];
+                                var s = base.add(arguments[0]);
+                                s.arrow(1).nop();
+                            }, args)]);
                     } else if (name === 'is' || name === 'isNot') {
                         return [
                             (rename || name) + niceArgs(args),
                             wrapIntoImplicitSelectorWaitForWrapperIf(
-                                flavor !== 'condition',
+                                ! flavor.condition,
                                 function(p) {
                                     if(me.modules.api.debug && me.modules.api.debug.stop) {
                                         debugger; // jshint ignore:line
@@ -432,7 +431,7 @@
             /**
              * wait for element, ms
              */
-            Builder.prototype.click = function(args) {
+            Builder.prototype.click = function(args, offset, flavor) {
                 return addMakePauseBeforeStepToFirstStep(
                     buildProxyFunction('exists', 'click', function(r, p) {
                         if (r) {
@@ -440,11 +439,11 @@
                         } else {
                             p.result('element did not appear within timeout');
                         }
-                    })(args)
+                    })(args, offset, flavor)
                 );
             };
-            Builder.prototype.isNot = function(args) {
-                return buildProxyFunction('isNot')(args);
+            Builder.prototype.isNot = function(args, offset, flavor) {
+                return buildProxyFunction('isNot')(args, offset, flavor);
             };
             Builder.prototype.ready = function() {
                 return ['wait for readyState become complete', function() {
@@ -457,7 +456,7 @@
              * string text to type
              * boolean dont clear text before typing
              */
-            Builder.prototype.type = function(args) {
+            Builder.prototype.type = function(args, offset, flavor) {
                 return addMakePauseBeforeStepToFirstStep(
                     buildProxyFunction('exists', 'type', function(r, p) {
                         if (r) {
@@ -471,10 +470,10 @@
                         } else {
                             p.result('element did not appear within timeout');
                         }
-                    })([])
+                    })([], offset, flavor)
                 );
             };
-            Builder.prototype.paste = function(args) {
+            Builder.prototype.paste = function(args, offset, flavor) {
                 return addMakePauseBeforeStepToFirstStep(
                     buildProxyFunction('exists', 'type', function(r, p) {
                         if (r) {
@@ -488,10 +487,10 @@
                         } else {
                             p.result('element did not appear within timeout');
                         }
-                    })([])
+                    })([], offset, flavor)
                 );
             };
-            Builder.prototype.enter = function() {
+            Builder.prototype.enter = function(args, offset, flavor) {
                 return addMakePauseBeforeStepToFirstStep(
                     buildProxyFunction('exists', 'enter', function(r, p) {
                         if (r) {
@@ -505,7 +504,7 @@
                         } else {
                             p.result('element did not appear within timeout');
                         }
-                    })([])
+                    })([], offset, flavor)
                 );
             };
             Builder.prototype.then = function(args) {
@@ -539,13 +538,13 @@
                 return args[0] ? [] : this.use(args.slice(1));
             };
             Builder.prototype.name = function() { return []; };
-            var generateIfOrIfNotSteps = function(args, builder, ifNot, isWhile, offset) {
+            var generateIfOrIfNotSteps = function(args, builder, ifNot, isWhile, offset, flavor) {
                 var condition = args[0];
                 var action = args[1];
                 var elseAction = isWhile ? undefined : args[2];
-                var conditionSteps = makeConstantConditionSteps(args[0]) || builder.build(condition.arr, [], 'condition', offset);
+                var conditionSteps = makeConstantConditionSteps(args[0]) || builder.build(condition.arr, [], makeFlavor(flavor, {condition: true}), offset);
                 var conditionStepsLen = conditionSteps.length / 2;
-                var actionSteps = builder.build(action.arr, [], undefined, offset + conditionStepsLen + 1);
+                var actionSteps = action ? builder.build(action.arr, [], undefined, offset + conditionStepsLen + 1) : [];
                 var actionStepsLen = actionSteps.length / 2 + (isWhile ? 1 : 0);
                 var elseSteps = elseAction ? builder.build(elseAction.arr, [], undefined, offset + conditionStepsLen + 1 + actionStepsLen + 1) : [];
                 var elseStepsLen = elseSteps.length / 2;
@@ -579,7 +578,11 @@
                         api('nop');
                     });
                 }
-                conditionSteps[conditionSteps.length - 1].cartFillerCaptureResult = true;
+                conditionSteps.filter(function(step, i) { 
+                    if (i % 2) {
+                        step.cartFillerCaptureResult = conditionStepsLen - (i - 1) / 2;
+                    }
+                });
                 conditionSteps.push((isWhile ? 'while' : 'if') + (ifNot ? 'Not' : '') + ' - check condition evaluation result', function(result) {
                     if(me.modules.api.debug && me.modules.api.debug.stop) {
                         debugger; // jshint ignore:line
@@ -599,17 +602,41 @@
                 });
                 return conditionSteps.concat(actionSteps).concat(elseSteps);
             };
-            Builder.prototype.if = function(args, offset) { 
-                return generateIfOrIfNotSteps(args, this, false, false, offset);
+            Builder.prototype.inside = function(args, offset, flavor) {
+                var steps = this.build(args[0].arr, [], makeFlavor(flavor, {inside: true}), offset);
+                return steps.map(function(step, index) {
+                    if (index % 2) {
+                        return function() {
+                            if(me.modules.api.debug && me.modules.api.debug.stop) {
+                                debugger; // jshint ignore:line
+                            }
+                            var prev = arguments[(index - 1) / 2];
+                            var args = copyArguments(arguments);
+                            api('drill', [
+                                function() {
+                                    return prev[0].contentWindow;
+                                },
+                                function() {
+                                    step.apply(this, args);
+                                }
+                            ]);
+                        };
+                    } else {
+                        return step;
+                    }
+                });
             };
-            Builder.prototype.ifNot = function(args, offset) { 
-                return generateIfOrIfNotSteps(args, this, true, false, offset);
+            Builder.prototype.if = function(args, offset, flavor) { 
+                return generateIfOrIfNotSteps(args, this, false, false, offset, flavor);
             };
-            Builder.prototype.while = function(args, offset) { 
-                return generateIfOrIfNotSteps(args, this, false, true, offset);
+            Builder.prototype.ifNot = function(args, offset, flavor) { 
+                return generateIfOrIfNotSteps(args, this, true, false, offset, flavor);
             };
-            Builder.prototype.whileNot = function(args, offset) { 
-                return generateIfOrIfNotSteps(args, this, true, true, offset);
+            Builder.prototype.while = function(args, offset, flavor) { 
+                return generateIfOrIfNotSteps(args, this, false, true, offset, flavor);
+            };
+            Builder.prototype.whileNot = function(args, offset, flavor) { 
+                return generateIfOrIfNotSteps(args, this, true, true, offset, flavor);
             };
             Builder.prototype.break = function(args) {
                 return makeBreakStep(args);
@@ -633,6 +660,7 @@
                 }
             }
             Builder.prototype.build = function(steps, prev, flavor, offset) {
+                flavor = flavor || {};
                 offset = offset || 0;
                 var result = (prev || []).slice();
                 var builder = this;
@@ -659,7 +687,6 @@
         };
         Wrapper.prototype.libFunction = function(){
             var name = arguments[0];
-            var args = copyArguments(arguments).slice(1);
             if (this.mode === 0) {
                 if (name instanceof this.BuilderPromise) {
                     var libElement = name.arr.filter(function(v) { return v[0] === 'lib'; });
@@ -677,14 +704,7 @@
                     return new this.LibReferencePromise(name);
                 }
             } else {
-                // proxy
-                if ('function' === typeof this.lib[name]) {
-                    return this.lib[name].apply(null, args);
-                } else if (this.lib[name] instanceof this.BuilderPromise) {
-                    return wrapSelectorBuilderPromise(this.lib[name].arr)();
-                } else {
-                    throw new Error('not sure how to handle lib item: ' + JSON.stringify(this.lib[name]));
-                }
+                throw new Error('lib is not available in runtime');
             }
         };
         Wrapper.prototype.getLib = function() {

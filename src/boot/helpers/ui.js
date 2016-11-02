@@ -287,10 +287,12 @@
                 height = Math.round(rect.height + 9);
                 width = Math.round(rect.width + 9);
             } else {
+                me.log(element);
                 rebuild.any = true;
                 if (element.type) {
                     rebuild[element.type] = true;
                 }
+                me.log(rebuild);
                 element.deleted = true;
                 element.element = null;
                 continue;   
@@ -299,10 +301,12 @@
                 (left !== element.left) ||
                 (height !== element.height) ||
                 (width !== element.width)){
+                me.log(element);
                 rebuild.any = true;
                 if (element.type) {
                     rebuild[element.type] = true;
                 }
+                me.log(rebuild);
                 element.top = top;
                 element.left = left;
                 element.height = height;
@@ -322,6 +326,7 @@
         return rebuild;
     };
     var addFrameCoordinatesMap = function(element) {
+        me.log(element);
         if (! element.path || ! element.path.length) {
             return element;
         }
@@ -340,6 +345,7 @@
                 rect.top += iframe.rect.top;
             }
         }
+        me.log(rect);
         return {rect: rect};
     };
     var sendScrollToPhantom = function(mapped) {
@@ -401,6 +407,7 @@
      * @access private
      */
     var drawArrows = function(){
+        me.log();
         scrollIfNecessary();
         deleteOverlaysOfType('arrow');
         for (var path in elementsToDrawByPath) {
@@ -408,6 +415,7 @@
         }
     };
     var drawArrowsForPath = function(elements) {
+        me.log(elements);
         var top, left, bottom;
         elements
         .filter(function(el) { return 'arrow' === el.type && ! el.deleted; })
@@ -1460,11 +1468,13 @@
             }
         },
         prepareTolearOverlaysAndReflect: function() {
+            me.log();
             me.modules.dispatcher.onMessage_bubbleRelayMessage({
                 message: 'prepareToClearOverlays'
             });
         },
         prepareToClearOverlays: function() {
+            me.log();
             prepareToClearOverlays = true;
             messageToSay = '';
             if (me.modules.dispatcher.haveAccess()) {
@@ -1472,6 +1482,7 @@
             }
         },
         clearOverlaysAndReflect: function(ignoreNextButton) {
+            me.log();
             if (! ignoreNextButton && messageToSayOptions.nextButton) {
                 me.modules.api.result();
                 messageToSayOptions.nextButton = false;
@@ -1481,8 +1492,16 @@
             });
         },
         clearOverlays: function() {
+            me.log();
             prepareToClearOverlays = false;
-            elementsToTrack = [];
+            elementsToTrack = elementsToTrack
+                .filter(function(e) { 
+                    return e.type === 'iframe' && ! e.isOld; 
+                })
+                .map(function(e) { 
+                    e.isOld = true;
+                    return e;
+                });
             elementsToDrawByPath = {};
             messageToSay = '';
             if (me.modules.dispatcher.haveAccess()) {
@@ -1492,6 +1511,7 @@
             }
         },
         drawOverlays: function(details) {
+            me.log(details);
             var framesUpdated = false, path;
             for (path in details.iframesByPath) {
                 trackedIframes[path] = details.iframesByPath[path][0];
@@ -1515,13 +1535,16 @@
             }
         },
         drawOverlaysAndReflect: function(details) {
+            me.log();
             details.message = 'drawOverlays';
             me.modules.dispatcher.onMessage_bubbleRelayMessage(details);
         },
         tellWhatYouHaveToDraw: function() {
+            me.log();
             arrowToFunction();
         },
         addElementToTrack: function(type, element, noScroll, addPath) {
+            me.log(type, noScroll, addPath);
             elementsToTrack.push({
                 element: element, 
                 type: type, 
@@ -1534,9 +1557,13 @@
                 element.scrollIntoView();
             }
         },
-        getMainFrameWindowDocument: function() {
+        getMainFrameWindow: function() {
+            return me.modules.ui.mainFrameWindow;
+        },
+        getMainFrameWindowDocument: function(overrideWindow) {
+            overrideWindow = overrideWindow || this.getMainFrameWindow();
             var mainFrameWindowDocument;
-            try { mainFrameWindowDocument = me.modules.ui.mainFrameWindow.document; } catch (e) {}
+            try { mainFrameWindowDocument = overrideWindow.document; } catch (e) {}
             return mainFrameWindowDocument;
         },
         setAdditionalWindows: function(descriptors, noResultCall) {

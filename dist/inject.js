@@ -175,6 +175,33 @@
      * @access public
      */
     config['data-debug'] = false;
+
+    config.log = function() {
+        if (false) {
+            try {
+                var d = new Date();
+                var e = new Error();
+                var stack = (e.stack ? e.stack.replace(/[\r\n]/g, ' ') : '') || '';
+                var srcPattern = /([a-zA-Z0-9.?]*:\d+:\d+)(.*)$/;
+                var fnPattern = /at\s+([a-zA-Z0-9.]+)(.*)$/;
+                var preSrc = srcPattern.exec(stack);
+                var src = preSrc ? srcPattern.exec(preSrc[2])[1] : '';
+                var preFn = fnPattern.exec(stack);
+                var fn = preFn ? fnPattern.exec(preFn[2])[1] : '';
+                console.log(('0' + d.getUTCMinutes()).substr(-2) + ':' + ('0' + d.getSeconds()).substr(-2) + '.' + ('000' + d.getMilliseconds()).substr(-3) + ' (' + window.document.domain + '): ' + src + ': ' + fn + ': ');
+                for (var i = 0 ; i < arguments.length; i ++ ) {
+                    try {
+                        console.log(JSON.stringify(arguments[i], null, 4));
+                    } catch (e) {
+                        console.log('cant serialize argument ' + i);
+                    }
+                }
+            } catch (e) {
+                console.log('cant log');
+                console.log(e);
+            }
+        }
+    };
     
     /**
      * Overrides worker URL. This is used to debug worker - in this
@@ -193,7 +220,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1504734343751';
+    config.gruntBuildTimeStamp='1505028950793';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -897,6 +924,7 @@
         });
         return result;
     };
+    var currentDrillDepth = 0;
 
     var getAbsolutePosition = function(el, recursive) {
         var rect = el.getBoundingClientRect();
@@ -1857,6 +1885,16 @@
             me.modules.dispatcher.setSleepAfterThisStep(time);
             return this;
         },
+        window: function() {
+            var window = me.modules.ui.getMainFrameWindow();
+            me.modules.dispatcher.getFrameToDrill().filter(function(pathStep) {
+                window = window.frames[pathStep];
+            });
+            return window;
+        },
+        document: function() {
+            return me.modules.ui.getMainFrameWindowDocument(this.window());
+        },
         /**
          * @function CartFiller.Api#drill
          * @param {Function} cb This function should return iframe's contentWindow object if needed to 
@@ -1865,29 +1903,37 @@
          * @return {CartFiller.Api} for chaining
          * @access public
          */
-        drill: function() {
-            var originalPath = me.modules.dispatcher.getFrameToDrill();
-            var path = originalPath.filter(function(){return 1;});
-            var frame = me.modules.ui.mainFrameWindow;
-            var level = path.length;
-            while (path.length) {
-                frame = frame.frames[path.shift()];
-            }
-            var result = arguments[level](frame);
-            if (result) {
-                // drill further
-                for (var i = 0; i < frame.frames.length; i ++) {
-                    if (result === frame.frames[i]){
-                        var elements = frame.document.getElementsByTagName('iframe');
-                        for (var j = 0 ; j < elements.length; j++){
-                            if (elements[j].contentWindow === result) {
-                                me.modules.ui.addElementToTrack('iframe', elements[j], true, [j]);
+        drill: function(chooseFrameFunction, insideFrameFunction) {
+            var frame = this.window();
+            var level = me.modules.dispatcher.getFrameToDrill().length;
+            currentDrillDepth ++;
+            try {
+                if (level >= currentDrillDepth) {
+                    insideFrameFunction.apply(frame.document);
+                } else {
+                    var choosenFrame = chooseFrameFunction.apply(frame.document);
+                    if (! choosenFrame) {
+                        throw new Error('frame was not selected for drill function');
+                    }
+                    // drill further
+                    for (var i = 0; i < frame.frames.length; i ++) {
+                        if (choosenFrame === frame.frames[i]){
+                            var elements = frame.document.getElementsByTagName('iframe');
+                            for (var j = 0 ; j < elements.length; j++){
+                                if (elements[j].contentWindow === choosenFrame) {
+                                    me.log('adding iframe to track');
+                                    me.modules.ui.addElementToTrack('iframe', elements[j], true, [j]);
+                                }
                             }
+                            return me.modules.dispatcher.drill(i);
                         }
-                        return me.modules.dispatcher.drill(i);
                     }
                 }
+            } catch (e) {
+                currentDrillDepth --;
+                throw e;
             }
+            currentDrillDepth --;
             return this;
         },
         compareCleanText: function(a, b) {
@@ -1926,11 +1972,11 @@
             me.modules.dispatcher.switchToWindow(index);
             return this;
         },
-        find: function(selector) {
+        find: function(selector, alternativeDocument) {
             if (undefined === selector || '' === selector) {
                 return new Selector([], undefined, function() { return []; });
             } else {
-                return new Selector([getDocument()], undefined, function(){ return [getDocument()]; }).find(selector);
+                return new Selector([alternativeDocument || this.document()], undefined, function(){ return [alternativeDocument || me.modules.api.document()]; }).find(selector);
             }
         },
         getSelectorClass: function() {
@@ -1956,7 +2002,8 @@
                 debugger;  // jshint ignore:line
             }
             return this;
-        }
+        },
+        resetDrillDepth: function() { currentDrillDepth = 0; }
     });
 }).call(this, document, window);
 
@@ -2035,6 +2082,16 @@
         };
         fn.cartFillerBreakFactor = args.length === 0 ? 1 : args[0];
         return ['break: ' + niceArgs(args), fn];
+    };
+    var makeFlavor = function(old, add) {
+        var result = {};
+        for (var i in old) {
+            result[i] = old[i];
+        }
+        for (i in add) {
+            result[i] = add[i];
+        }
+        return result;
     };
     var onLoaded = function() {
         Runtime = function() {
@@ -2187,24 +2244,17 @@
                     api('nop');
                 }];
             };
-            Builder.prototype.get = function(args) {
+            Builder.prototype.get = function(args, offset, flavor) {
                 if (args[0] instanceof BuilderPromise || args[0] instanceof LibReferencePromise) {
-                    var promise;
                     if (args[0] instanceof BuilderPromise) {
                         if (args[0].arr[0][0] === 'lib') {
-                            promise = wrapSelectorBuilderPromise(wrapper.lib[args[0].arr[0][1][0]].arr);
+                            return this.build(wrapper.lib[args[0].arr[0][1][0]].arr, [], offset, flavor);
                         } else {
-                            promise = wrapSelectorBuilderPromise(args[0].arr);
+                            return this.build(args[0].arr, [], offset, flavor);
                         }
                     } else { //args[0] instanceof LibReferencePromise
-                        promise = wrapSelectorBuilderPromise(wrapper.lib[args[0].name].arr);
+                        return this.build(wrapper.lib[args[0].name].arr, offset, flavor);
                     }
-                    return ['get' + niceArgs(args), me.modules.dispatcher.injectTaskParameters(function() {
-                        if(me.modules.api.debug && me.modules.api.debug.stop) {
-                            debugger; // jshint ignore:line
-                        }
-                        promise().arrow(1).nop(); 
-                    }, [promise])];
                 } else {
                     return ['get' + niceArgs(args), function() { 
                         if(me.modules.api.debug && me.modules.api.debug.stop) {
@@ -2258,11 +2308,12 @@
             };
             var buildProxyFunction = function(name, rename, afterWait) {
                 return function(args, coords, flavor) {
+                    var builder = this;
                     if (name === 'exists' || name === 'absent') {
                         return [
                             (rename || name) + niceArgs(args),
                             wrapIntoImplicitSelectorWaitForWrapperIf(
-                                flavor !== 'condition',
+                                ! flavor.condition,
                                 function(p) {
                                     if (name === 'exists') {
                                         return p.length;
@@ -2276,30 +2327,25 @@
                             )
                         ];
                     } else if (name === 'add') {
-                        var selectorPromises = args.map(function(arg) {
-                            if (arg instanceof BuilderPromise) {
-                                return wrapSelectorBuilderPromise(arg.arr);
-                            } else {
-                                return function() {
-                                    return arg;
-                                };
-                            }
-                        });
-                        return [(rename || name) + niceArgs(args), me.modules.dispatcher.injectTaskParameters(function(p) {
-                            if(me.modules.api.debug && me.modules.api.debug.stop) {
-                                debugger; // jshint ignore:line
-                            }
-                            var s = p;
-                            for (var i = 0; i < selectorPromises.length; i ++) {
-                                s = s.add(selectorPromises[i]());
-                            }
-                            s.arrow(1).nop();
-                        }, args)];
+                        if (args.length !== 1) {
+                            throw new Error('add can only have 1 argument');
+                        }
+                        var selectorSteps = builder.get([args[0]], coords, flavor);
+                        return selectorSteps.concat([
+                            (rename || name) + niceArgs(args), 
+                            me.modules.dispatcher.injectTaskParameters(function() {
+                                if(me.modules.api.debug && me.modules.api.debug.stop) {
+                                    debugger; // jshint ignore:line
+                                }
+                                var base = arguments[selectorSteps.length / 2];
+                                var s = base.add(arguments[0]);
+                                s.arrow(1).nop();
+                            }, args)]);
                     } else if (name === 'is' || name === 'isNot') {
                         return [
                             (rename || name) + niceArgs(args),
                             wrapIntoImplicitSelectorWaitForWrapperIf(
-                                flavor !== 'condition',
+                                ! flavor.condition,
                                 function(p) {
                                     if(me.modules.api.debug && me.modules.api.debug.stop) {
                                         debugger; // jshint ignore:line
@@ -2394,7 +2440,7 @@
             /**
              * wait for element, ms
              */
-            Builder.prototype.click = function(args) {
+            Builder.prototype.click = function(args, offset, flavor) {
                 return addMakePauseBeforeStepToFirstStep(
                     buildProxyFunction('exists', 'click', function(r, p) {
                         if (r) {
@@ -2402,11 +2448,11 @@
                         } else {
                             p.result('element did not appear within timeout');
                         }
-                    })(args)
+                    })(args, offset, flavor)
                 );
             };
-            Builder.prototype.isNot = function(args) {
-                return buildProxyFunction('isNot')(args);
+            Builder.prototype.isNot = function(args, offset, flavor) {
+                return buildProxyFunction('isNot')(args, offset, flavor);
             };
             Builder.prototype.ready = function() {
                 return ['wait for readyState become complete', function() {
@@ -2419,7 +2465,7 @@
              * string text to type
              * boolean dont clear text before typing
              */
-            Builder.prototype.type = function(args) {
+            Builder.prototype.type = function(args, offset, flavor) {
                 return addMakePauseBeforeStepToFirstStep(
                     buildProxyFunction('exists', 'type', function(r, p) {
                         if (r) {
@@ -2433,10 +2479,10 @@
                         } else {
                             p.result('element did not appear within timeout');
                         }
-                    })([])
+                    })([], offset, flavor)
                 );
             };
-            Builder.prototype.paste = function(args) {
+            Builder.prototype.paste = function(args, offset, flavor) {
                 return addMakePauseBeforeStepToFirstStep(
                     buildProxyFunction('exists', 'type', function(r, p) {
                         if (r) {
@@ -2450,10 +2496,10 @@
                         } else {
                             p.result('element did not appear within timeout');
                         }
-                    })([])
+                    })([], offset, flavor)
                 );
             };
-            Builder.prototype.enter = function() {
+            Builder.prototype.enter = function(args, offset, flavor) {
                 return addMakePauseBeforeStepToFirstStep(
                     buildProxyFunction('exists', 'enter', function(r, p) {
                         if (r) {
@@ -2467,7 +2513,7 @@
                         } else {
                             p.result('element did not appear within timeout');
                         }
-                    })([])
+                    })([], offset, flavor)
                 );
             };
             Builder.prototype.then = function(args) {
@@ -2501,13 +2547,13 @@
                 return args[0] ? [] : this.use(args.slice(1));
             };
             Builder.prototype.name = function() { return []; };
-            var generateIfOrIfNotSteps = function(args, builder, ifNot, isWhile, offset) {
+            var generateIfOrIfNotSteps = function(args, builder, ifNot, isWhile, offset, flavor) {
                 var condition = args[0];
                 var action = args[1];
                 var elseAction = isWhile ? undefined : args[2];
-                var conditionSteps = makeConstantConditionSteps(args[0]) || builder.build(condition.arr, [], 'condition', offset);
+                var conditionSteps = makeConstantConditionSteps(args[0]) || builder.build(condition.arr, [], makeFlavor(flavor, {condition: true}), offset);
                 var conditionStepsLen = conditionSteps.length / 2;
-                var actionSteps = builder.build(action.arr, [], undefined, offset + conditionStepsLen + 1);
+                var actionSteps = action ? builder.build(action.arr, [], undefined, offset + conditionStepsLen + 1) : [];
                 var actionStepsLen = actionSteps.length / 2 + (isWhile ? 1 : 0);
                 var elseSteps = elseAction ? builder.build(elseAction.arr, [], undefined, offset + conditionStepsLen + 1 + actionStepsLen + 1) : [];
                 var elseStepsLen = elseSteps.length / 2;
@@ -2541,7 +2587,11 @@
                         api('nop');
                     });
                 }
-                conditionSteps[conditionSteps.length - 1].cartFillerCaptureResult = true;
+                conditionSteps.filter(function(step, i) { 
+                    if (i % 2) {
+                        step.cartFillerCaptureResult = conditionStepsLen - (i - 1) / 2;
+                    }
+                });
                 conditionSteps.push((isWhile ? 'while' : 'if') + (ifNot ? 'Not' : '') + ' - check condition evaluation result', function(result) {
                     if(me.modules.api.debug && me.modules.api.debug.stop) {
                         debugger; // jshint ignore:line
@@ -2561,17 +2611,41 @@
                 });
                 return conditionSteps.concat(actionSteps).concat(elseSteps);
             };
-            Builder.prototype.if = function(args, offset) { 
-                return generateIfOrIfNotSteps(args, this, false, false, offset);
+            Builder.prototype.inside = function(args, offset, flavor) {
+                var steps = this.build(args[0].arr, [], makeFlavor(flavor, {inside: true}), offset);
+                return steps.map(function(step, index) {
+                    if (index % 2) {
+                        return function() {
+                            if(me.modules.api.debug && me.modules.api.debug.stop) {
+                                debugger; // jshint ignore:line
+                            }
+                            var prev = arguments[(index - 1) / 2];
+                            var args = copyArguments(arguments);
+                            api('drill', [
+                                function() {
+                                    return prev[0].contentWindow;
+                                },
+                                function() {
+                                    step.apply(this, args);
+                                }
+                            ]);
+                        };
+                    } else {
+                        return step;
+                    }
+                });
             };
-            Builder.prototype.ifNot = function(args, offset) { 
-                return generateIfOrIfNotSteps(args, this, true, false, offset);
+            Builder.prototype.if = function(args, offset, flavor) { 
+                return generateIfOrIfNotSteps(args, this, false, false, offset, flavor);
             };
-            Builder.prototype.while = function(args, offset) { 
-                return generateIfOrIfNotSteps(args, this, false, true, offset);
+            Builder.prototype.ifNot = function(args, offset, flavor) { 
+                return generateIfOrIfNotSteps(args, this, true, false, offset, flavor);
             };
-            Builder.prototype.whileNot = function(args, offset) { 
-                return generateIfOrIfNotSteps(args, this, true, true, offset);
+            Builder.prototype.while = function(args, offset, flavor) { 
+                return generateIfOrIfNotSteps(args, this, false, true, offset, flavor);
+            };
+            Builder.prototype.whileNot = function(args, offset, flavor) { 
+                return generateIfOrIfNotSteps(args, this, true, true, offset, flavor);
             };
             Builder.prototype.break = function(args) {
                 return makeBreakStep(args);
@@ -2595,6 +2669,7 @@
                 }
             }
             Builder.prototype.build = function(steps, prev, flavor, offset) {
+                flavor = flavor || {};
                 offset = offset || 0;
                 var result = (prev || []).slice();
                 var builder = this;
@@ -2621,7 +2696,6 @@
         };
         Wrapper.prototype.libFunction = function(){
             var name = arguments[0];
-            var args = copyArguments(arguments).slice(1);
             if (this.mode === 0) {
                 if (name instanceof this.BuilderPromise) {
                     var libElement = name.arr.filter(function(v) { return v[0] === 'lib'; });
@@ -2639,14 +2713,7 @@
                     return new this.LibReferencePromise(name);
                 }
             } else {
-                // proxy
-                if ('function' === typeof this.lib[name]) {
-                    return this.lib[name].apply(null, args);
-                } else if (this.lib[name] instanceof this.BuilderPromise) {
-                    return wrapSelectorBuilderPromise(this.lib[name].arr)();
-                } else {
-                    throw new Error('not sure how to handle lib item: ' + JSON.stringify(this.lib[name]));
-                }
+                throw new Error('lib is not available in runtime');
             }
         };
         Wrapper.prototype.getLib = function() {
@@ -3276,10 +3343,13 @@
             details = {};
         }
         details.cmd = cmd;
-        toWindow.postMessage(
-            messageName + ':' + JSON.stringify(details),
-            '*'
-        );
+        var json = JSON.stringify(details);
+        var payload = messageName + ':' + json;
+        if ('function' === typeof toWindow.postMessage) {
+            toWindow.postMessage(payload, '*');
+        } else {
+            console.log('unable to send message to window: ' + payload);
+        }
     };
     /**
      * Resets worker if worker did not report result using 
@@ -3361,6 +3431,7 @@
      * @access private
      */
     var fillWorkerGlobals = function(src) {
+        me.log(src);
         for (var oldKey in workerGlobals){
             if (workerGlobals.hasOwnProperty(oldKey)){
                 delete workerGlobals[oldKey];
@@ -3746,6 +3817,7 @@
                 var prefix = 'cartFillerMessage:';
                 if (prefix === event.data.substr(0, prefix.length)) {
                     var message = JSON.parse(event.data.substr(prefix.length));
+                    me.log(event.origin, message.cmd, message);
                     if (message.cmd === 'actAsSlaveHelper') {
                         // ok, we are just a helper tab, our purpose is simply to discover those
                         // frames of our opener, that are available to us and 
@@ -3761,6 +3833,7 @@
                     }
                     if (event.source === relay.nextRelay && message.cmd !== 'register' && message.cmd !== 'bubbleRelayMessage' && message.cmd !== 'locate') {
                         if (message.cmd === 'workerStepResult') {
+                            me.log('going to fillWorkerGlobals due to workerStepResult message', message);
                             fillWorkerGlobals(message.globals);
                         }
                         if (message.cmd === 'currentUrl') {
@@ -4006,6 +4079,7 @@
                 }
                 reinitializeWorker();
                 workerGlobals = message.globals = message.globals ? message.globals : {};
+                me.log('setting workerGlobals to', workerGlobals);
                 message.details = convertObjectToArray(message.details);
                 workerEventListeners = {};
             } else if (undefined !== message.$cartFillerTestUpdate) {
@@ -4109,6 +4183,7 @@
          * @access public
          */
         onMessage_invokeWorker: function(message){
+            me.modules.api.resetDrillDepth();
             if (message.index === 0 && message.step === 0 && me.modules.ui.currentMainFrameWindow > 0) {
                 // for first step of first task we force switch to primary winodow
                 this.switchToWindow(0);
@@ -4125,6 +4200,7 @@
             var err;
             currentInvokeWorkerMessage = message;
             if (message.globals) {
+                me.log('going to fillWorkerGlobals due to invokeWorker message');
                 fillWorkerGlobals(message.globals);
             } 
             this.running = message.running;
@@ -4133,17 +4209,20 @@
                 me.modules.ui.prepareTolearOverlaysAndReflect();
             }
             if (this.reflectMessage(message, message.drillToFrame)) {
+                me.log('invokeWorker reflected');
                 if (message.debug) {
                     console.log('Debugger call went to slave tab - look for it there!');
                 }
                 if (! relay.nextRelay) {
                     // we are last one in the slave chain, so this is clearly "access denied"
                     message.failures = (message.failures || 0) + 1;
+                    me.log(message);
                     me.modules.dispatcher.onMessage_bubbleRelayMessage({message: 'retryInvokeWorker', payload: message});
                 }
 
                 return;
             }
+            me.log('invokeWorker will be processed here');
             if (false !== workerCurrentStepIndex){
                 err = 'ERROR: worker task is in still in progress';
                 alert(err);
@@ -4423,7 +4502,7 @@
                     returnedValuesOfStepsAreForTask = details.returnedValuesOfStepsAreForTask;
                 }
                 details.values.filter(function(value, index) {
-                    if (undefined !== value) {
+                    if (undefined !== value && null !== value) {
                         returnedValuesOfSteps[index] = value;
                     }
                 });
@@ -4432,19 +4511,21 @@
                     me.modules.ui.reportingMousePointerClickForWindow(details.x, details.y);
                 }
             } else if (details.message === 'retryInvokeWorker' && ! relay.isSlave) {
+                me.log('retryInvokeWorker', details);
                 if (details.payload.failures < 15) {
                     setTimeout(function() {
                         me.modules.dispatcher.onMessage_invokeWorker(details.payload);
                     }, 1000);
                 } else {
                     // recover if there is recovery point
-                    if (relay.recoveryPoints[me.modules.ui.currentMainFrameWindow][details.payload.index]) {
-                        me.modules.ui.mainFrames[me.modules.ui.currentMainFrameWindow].setAttribute('src', relay.recoveryPoints[me.modules.ui.currentMainFrameWindow][details.payload.index]);
+                    var recoveryUrl = relay.recoveryPoints[me.modules.ui.currentMainFrameWindow][details.payload.index] || 'about:blank';
+                    if (recoveryUrl) {
+                        me.modules.ui.mainFrames[me.modules.ui.currentMainFrameWindow].setAttribute('src', recoveryUrl);
                         // this is rather rare situation, so let's just wait for some 20 seconds
                         setTimeout(function() {
                             workerCurrentTaskIndex = details.payload.index;
                             workerCurrentStepIndex = details.payload.step; // to prevent alert
-                            me.modules.api.repeatTask().result('recovering after access deined', 1);
+                            me.modules.api.repeatTask().result('recovering after access deined into: ' + recoveryUrl, 1);
                             workerCurrentTaskIndex = false; // to make it load task again
                         }, 20000);
                     }
@@ -4785,8 +4866,9 @@
                 }
             }
             var status, m;
-            if (captureWorkerFnResult) {
+            if (captureWorkerFnResult === 1 || (captureWorkerFnResult > 1 && message)) {
                 this.setReturnedValueOfStep([message === '' ? undefined : message, mostRecentReturnedValueOfStep, mostRecentReturnedValueOfStepIsElement]);
+                nextTaskFlow = captureWorkerFnResult > 1 ? ('skipStep,' + (captureWorkerFnResult - 1)) : 'normal';
                 message = undefined; // result = ok
             }
             if ((undefined === message) || ('' === message)) {
@@ -4940,8 +5022,11 @@
             if (! windowToCheck) {
                 return false;
             }
+            var d;
+            var f = function() { };
             try {
-                windowToCheck.location.href;
+                d = windowToCheck.document;
+                f(d.getElementsByTagName('body')[0]);
             } catch (e){
                 return false;
             }
@@ -4957,11 +5042,17 @@
          * @access public
          */
         reflectMessage: function(message, framesPath) {
-            if (this.haveAccess(framesPath) && ((! message.hasOwnProperty('currentMainFrameWindow')) || relay.currentMainFrameWindow === message.currentMainFrameWindow)) {
+            var access = this.haveAccess(framesPath);
+            if (access && ((! message.hasOwnProperty('currentMainFrameWindow')) || relay.currentMainFrameWindow === message.currentMainFrameWindow)) {
+                me.log('dispatcher.reflectMessage - false', access, framesPath);
                 return false;
             }
+            me.log('dispatcher.reflectMessage - true', access, framesPath);
             if (message.cmd === 'invokeWorker') {
-                message.globals = workerGlobals;
+                message.globals = {};
+                for (var i in workerGlobals) {
+                    message.globals[i] = workerGlobals[i];
+                }
             }
             openRelay('', message);
             return true;
@@ -5171,6 +5262,7 @@
             sleepAfterThisStep = sleep;
         },
         drill: function(frameIndexes) {
+            me.log('dispatcher.drill', frameIndexes);
             workerCurrentStepIndex = workerOnLoadHandler = suspendAjaxRequestsCallback = false;
             currentInvokeWorkerMessage.drillToFrame = this.getFrameToDrill();
             currentInvokeWorkerMessage.drillToFrame.push(frameIndexes);
@@ -5188,12 +5280,26 @@
         isSlave: function() {
             return relay.isSlave;
         },
+        onMessage_closeRelay: function() {
+            if (relay.nextRelay && relay.nextRelayRegistered) {
+                openRelay('', {cmd: 'closeRelay'});
+            }
+            if (relay.isSlave) {
+                window.close();
+            }
+        },
         resetRelays: function() {
+            this.onMessage_closeRelay();
             relay.nextRelay = relay.nextRelayRegistered = false;
             relay.nextRelayQueue = [];
             relay.knownDomains = {};
             relay.registeredDomains = {};
             relay.slaveCounter = 0;
+            relay.recoveryPoints = {};
+            knownCurrentUrls = {};
+            me.modules.ui.slaveFrames = [undefined];
+            me.modules.ui.slaveFramesWindows = [undefined];
+            me.modules.ui.slaveFramesHelperWindows = {};
         },
         getSlaveCounter: function() { return relay.slaveCounter; },
         onMessage_resetAdditionalWindows: function() { 
@@ -5222,6 +5328,7 @@
                     workerCurrentStepIndex = details.workerCurrentStepIndex;
                     nextTaskFlow = details.nextTaskFlow;
                     sleepAfterThisStep = details.sleepAfterThisStep;
+                    me.log('setting workerGlobals to: ', workerGlobals);
                     workerGlobals = details.workerGlobals;
                 }
             }
@@ -5652,10 +5759,12 @@
                 height = Math.round(rect.height + 9);
                 width = Math.round(rect.width + 9);
             } else {
+                me.log(element);
                 rebuild.any = true;
                 if (element.type) {
                     rebuild[element.type] = true;
                 }
+                me.log(rebuild);
                 element.deleted = true;
                 element.element = null;
                 continue;   
@@ -5664,10 +5773,12 @@
                 (left !== element.left) ||
                 (height !== element.height) ||
                 (width !== element.width)){
+                me.log(element);
                 rebuild.any = true;
                 if (element.type) {
                     rebuild[element.type] = true;
                 }
+                me.log(rebuild);
                 element.top = top;
                 element.left = left;
                 element.height = height;
@@ -5687,6 +5798,7 @@
         return rebuild;
     };
     var addFrameCoordinatesMap = function(element) {
+        me.log(element);
         if (! element.path || ! element.path.length) {
             return element;
         }
@@ -5705,6 +5817,7 @@
                 rect.top += iframe.rect.top;
             }
         }
+        me.log(rect);
         return {rect: rect};
     };
     var sendScrollToPhantom = function(mapped) {
@@ -5766,6 +5879,7 @@
      * @access private
      */
     var drawArrows = function(){
+        me.log();
         scrollIfNecessary();
         deleteOverlaysOfType('arrow');
         for (var path in elementsToDrawByPath) {
@@ -5773,6 +5887,7 @@
         }
     };
     var drawArrowsForPath = function(elements) {
+        me.log(elements);
         var top, left, bottom;
         elements
         .filter(function(el) { return 'arrow' === el.type && ! el.deleted; })
@@ -6825,11 +6940,13 @@
             }
         },
         prepareTolearOverlaysAndReflect: function() {
+            me.log();
             me.modules.dispatcher.onMessage_bubbleRelayMessage({
                 message: 'prepareToClearOverlays'
             });
         },
         prepareToClearOverlays: function() {
+            me.log();
             prepareToClearOverlays = true;
             messageToSay = '';
             if (me.modules.dispatcher.haveAccess()) {
@@ -6837,6 +6954,7 @@
             }
         },
         clearOverlaysAndReflect: function(ignoreNextButton) {
+            me.log();
             if (! ignoreNextButton && messageToSayOptions.nextButton) {
                 me.modules.api.result();
                 messageToSayOptions.nextButton = false;
@@ -6846,8 +6964,16 @@
             });
         },
         clearOverlays: function() {
+            me.log();
             prepareToClearOverlays = false;
-            elementsToTrack = [];
+            elementsToTrack = elementsToTrack
+                .filter(function(e) { 
+                    return e.type === 'iframe' && ! e.isOld; 
+                })
+                .map(function(e) { 
+                    e.isOld = true;
+                    return e;
+                });
             elementsToDrawByPath = {};
             messageToSay = '';
             if (me.modules.dispatcher.haveAccess()) {
@@ -6857,6 +6983,7 @@
             }
         },
         drawOverlays: function(details) {
+            me.log(details);
             var framesUpdated = false, path;
             for (path in details.iframesByPath) {
                 trackedIframes[path] = details.iframesByPath[path][0];
@@ -6880,13 +7007,16 @@
             }
         },
         drawOverlaysAndReflect: function(details) {
+            me.log();
             details.message = 'drawOverlays';
             me.modules.dispatcher.onMessage_bubbleRelayMessage(details);
         },
         tellWhatYouHaveToDraw: function() {
+            me.log();
             arrowToFunction();
         },
         addElementToTrack: function(type, element, noScroll, addPath) {
+            me.log(type, noScroll, addPath);
             elementsToTrack.push({
                 element: element, 
                 type: type, 
@@ -6899,9 +7029,13 @@
                 element.scrollIntoView();
             }
         },
-        getMainFrameWindowDocument: function() {
+        getMainFrameWindow: function() {
+            return me.modules.ui.mainFrameWindow;
+        },
+        getMainFrameWindowDocument: function(overrideWindow) {
+            overrideWindow = overrideWindow || this.getMainFrameWindow();
             var mainFrameWindowDocument;
-            try { mainFrameWindowDocument = me.modules.ui.mainFrameWindow.document; } catch (e) {}
+            try { mainFrameWindowDocument = overrideWindow.document; } catch (e) {}
             return mainFrameWindowDocument;
         },
         setAdditionalWindows: function(descriptors, noResultCall) {

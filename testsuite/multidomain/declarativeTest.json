@@ -1,0 +1,11 @@
+cartfiller={
+    "details": [
+        {"task": "open"},
+        {"_say": {"message": "one"}},
+        "# Relays",
+        {"task": "open relay", "host": "127.0.0.2"},
+        {"task": "open relay", "host": "127.0.0.3"},
+        {"_say": {"message": "one"}},
+        {"try drilling": {}},
+    ],
+}

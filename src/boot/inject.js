@@ -162,6 +162,33 @@
      * @access public
      */
     config['data-debug'] = false;
+
+    config.log = function() {
+        if (false) {
+            try {
+                var d = new Date();
+                var e = new Error();
+                var stack = (e.stack ? e.stack.replace(/[\r\n]/g, ' ') : '') || '';
+                var srcPattern = /([a-zA-Z0-9.?]*:\d+:\d+)(.*)$/;
+                var fnPattern = /at\s+([a-zA-Z0-9.]+)(.*)$/;
+                var preSrc = srcPattern.exec(stack);
+                var src = preSrc ? srcPattern.exec(preSrc[2])[1] : '';
+                var preFn = fnPattern.exec(stack);
+                var fn = preFn ? fnPattern.exec(preFn[2])[1] : '';
+                console.log(('0' + d.getUTCMinutes()).substr(-2) + ':' + ('0' + d.getSeconds()).substr(-2) + '.' + ('000' + d.getMilliseconds()).substr(-3) + ' (' + window.document.domain + '): ' + src + ': ' + fn + ': ');
+                for (var i = 0 ; i < arguments.length; i ++ ) {
+                    try {
+                        console.log(JSON.stringify(arguments[i], null, 4));
+                    } catch (e) {
+                        console.log('cant serialize argument ' + i);
+                    }
+                }
+            } catch (e) {
+                console.log('cant log');
+                console.log(e);
+            }
+        }
+    };
     
     /**
      * Overrides worker URL. This is used to debug worker - in this

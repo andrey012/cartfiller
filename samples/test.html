@@ -31,6 +31,7 @@
                 var testFrameSrc;
                 var reloadCounter = 0;
                 QUnit.test("Find number of bookmarklets", function (assert){
+                    assert.timeout(120000);
                     var done = assert.async();
                     setTimeout(function waitForTestFrameToCountBookmarklets(){
 

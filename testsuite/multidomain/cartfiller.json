@@ -1,8 +1,14 @@
 cartfiller={
-    "worker": "worker.js",
+    "worker": [
+        "worker.js",
+        "declarativeWorker.js"
+    ],
     "tests": {
-        "test1?value=1": true,
-        "test1?value=1&withThankYou=1": true,
-        "recovery": true,
+        "test1?value=1": false,
+        "test1?withHelper=true": true,
+        "test1?value=1&withThankYou=1": false,
+        "recovery": false,
+        "declarativeTest": false,
+        "declarativeTest?withHelper=true": true
     },
 }

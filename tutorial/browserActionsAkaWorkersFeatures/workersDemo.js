@@ -15,6 +15,9 @@ cartfiller = {
         {whileBreakExample3: {}},
         {_assertEquals: {ref: ['whileBreakExample3a'], value: 'ok'}},
         {_assertEquals: {ref: ['whileBreakExample3b'], value: 'ok'}},
+        {useWhileNotToRetry: {}},
+        {_assertEquals: {ref: ['useWhileNotToRetry1Counter'], value: 2}},
+        {_assertEquals: {ref: ['useWhileNotToRetry2Counter'], value: 1}},
 
         {addItem: {name: 'item one'}},
 

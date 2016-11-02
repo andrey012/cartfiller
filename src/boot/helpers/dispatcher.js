@@ -571,10 +571,13 @@
             details = {};
         }
         details.cmd = cmd;
-        toWindow.postMessage(
-            messageName + ':' + JSON.stringify(details),
-            '*'
-        );
+        var json = JSON.stringify(details);
+        var payload = messageName + ':' + json;
+        if ('function' === typeof toWindow.postMessage) {
+            toWindow.postMessage(payload, '*');
+        } else {
+            console.log('unable to send message to window: ' + payload);
+        }
     };
     /**
      * Resets worker if worker did not report result using 
@@ -656,6 +659,7 @@
      * @access private
      */
     var fillWorkerGlobals = function(src) {
+        me.log(src);
         for (var oldKey in workerGlobals){
             if (workerGlobals.hasOwnProperty(oldKey)){
                 delete workerGlobals[oldKey];
@@ -1041,6 +1045,7 @@
                 var prefix = 'cartFillerMessage:';
                 if (prefix === event.data.substr(0, prefix.length)) {
                     var message = JSON.parse(event.data.substr(prefix.length));
+                    me.log(event.origin, message.cmd, message);
                     if (message.cmd === 'actAsSlaveHelper') {
                         // ok, we are just a helper tab, our purpose is simply to discover those
                         // frames of our opener, that are available to us and 
@@ -1056,6 +1061,7 @@
                     }
                     if (event.source === relay.nextRelay && message.cmd !== 'register' && message.cmd !== 'bubbleRelayMessage' && message.cmd !== 'locate') {
                         if (message.cmd === 'workerStepResult') {
+                            me.log('going to fillWorkerGlobals due to workerStepResult message', message);
                             fillWorkerGlobals(message.globals);
                         }
                         if (message.cmd === 'currentUrl') {
@@ -1301,6 +1307,7 @@
                 }
                 reinitializeWorker();
                 workerGlobals = message.globals = message.globals ? message.globals : {};
+                me.log('setting workerGlobals to', workerGlobals);
                 message.details = convertObjectToArray(message.details);
                 workerEventListeners = {};
             } else if (undefined !== message.$cartFillerTestUpdate) {
@@ -1404,6 +1411,7 @@
          * @access public
          */
         onMessage_invokeWorker: function(message){
+            me.modules.api.resetDrillDepth();
             if (message.index === 0 && message.step === 0 && me.modules.ui.currentMainFrameWindow > 0) {
                 // for first step of first task we force switch to primary winodow
                 this.switchToWindow(0);
@@ -1420,6 +1428,7 @@
             var err;
             currentInvokeWorkerMessage = message;
             if (message.globals) {
+                me.log('going to fillWorkerGlobals due to invokeWorker message');
                 fillWorkerGlobals(message.globals);
             } 
             this.running = message.running;
@@ -1428,17 +1437,20 @@
                 me.modules.ui.prepareTolearOverlaysAndReflect();
             }
             if (this.reflectMessage(message, message.drillToFrame)) {
+                me.log('invokeWorker reflected');
                 if (message.debug) {
                     console.log('Debugger call went to slave tab - look for it there!');
                 }
                 if (! relay.nextRelay) {
                     // we are last one in the slave chain, so this is clearly "access denied"
                     message.failures = (message.failures || 0) + 1;
+                    me.log(message);
                     me.modules.dispatcher.onMessage_bubbleRelayMessage({message: 'retryInvokeWorker', payload: message});
                 }
 
                 return;
             }
+            me.log('invokeWorker will be processed here');
             if (false !== workerCurrentStepIndex){
                 err = 'ERROR: worker task is in still in progress';
                 alert(err);
@@ -1718,7 +1730,7 @@
                     returnedValuesOfStepsAreForTask = details.returnedValuesOfStepsAreForTask;
                 }
                 details.values.filter(function(value, index) {
-                    if (undefined !== value) {
+                    if (undefined !== value && null !== value) {
                         returnedValuesOfSteps[index] = value;
                     }
                 });
@@ -1727,19 +1739,21 @@
                     me.modules.ui.reportingMousePointerClickForWindow(details.x, details.y);
                 }
             } else if (details.message === 'retryInvokeWorker' && ! relay.isSlave) {
+                me.log('retryInvokeWorker', details);
                 if (details.payload.failures < 15) {
                     setTimeout(function() {
                         me.modules.dispatcher.onMessage_invokeWorker(details.payload);
                     }, 1000);
                 } else {
                     // recover if there is recovery point
-                    if (relay.recoveryPoints[me.modules.ui.currentMainFrameWindow][details.payload.index]) {
-                        me.modules.ui.mainFrames[me.modules.ui.currentMainFrameWindow].setAttribute('src', relay.recoveryPoints[me.modules.ui.currentMainFrameWindow][details.payload.index]);
+                    var recoveryUrl = relay.recoveryPoints[me.modules.ui.currentMainFrameWindow][details.payload.index] || 'about:blank';
+                    if (recoveryUrl) {
+                        me.modules.ui.mainFrames[me.modules.ui.currentMainFrameWindow].setAttribute('src', recoveryUrl);
                         // this is rather rare situation, so let's just wait for some 20 seconds
                         setTimeout(function() {
                             workerCurrentTaskIndex = details.payload.index;
                             workerCurrentStepIndex = details.payload.step; // to prevent alert
-                            me.modules.api.repeatTask().result('recovering after access deined', 1);
+                            me.modules.api.repeatTask().result('recovering after access deined into: ' + recoveryUrl, 1);
                             workerCurrentTaskIndex = false; // to make it load task again
                         }, 20000);
                     }
@@ -2080,8 +2094,9 @@
                 }
             }
             var status, m;
-            if (captureWorkerFnResult) {
+            if (captureWorkerFnResult === 1 || (captureWorkerFnResult > 1 && message)) {
                 this.setReturnedValueOfStep([message === '' ? undefined : message, mostRecentReturnedValueOfStep, mostRecentReturnedValueOfStepIsElement]);
+                nextTaskFlow = captureWorkerFnResult > 1 ? ('skipStep,' + (captureWorkerFnResult - 1)) : 'normal';
                 message = undefined; // result = ok
             }
             if ((undefined === message) || ('' === message)) {
@@ -2235,8 +2250,11 @@
             if (! windowToCheck) {
                 return false;
             }
+            var d;
+            var f = function() { };
             try {
-                windowToCheck.location.href;
+                d = windowToCheck.document;
+                f(d.getElementsByTagName('body')[0]);
             } catch (e){
                 return false;
             }
@@ -2252,11 +2270,17 @@
          * @access public
          */
         reflectMessage: function(message, framesPath) {
-            if (this.haveAccess(framesPath) && ((! message.hasOwnProperty('currentMainFrameWindow')) || relay.currentMainFrameWindow === message.currentMainFrameWindow)) {
+            var access = this.haveAccess(framesPath);
+            if (access && ((! message.hasOwnProperty('currentMainFrameWindow')) || relay.currentMainFrameWindow === message.currentMainFrameWindow)) {
+                me.log('dispatcher.reflectMessage - false', access, framesPath);
                 return false;
             }
+            me.log('dispatcher.reflectMessage - true', access, framesPath);
             if (message.cmd === 'invokeWorker') {
-                message.globals = workerGlobals;
+                message.globals = {};
+                for (var i in workerGlobals) {
+                    message.globals[i] = workerGlobals[i];
+                }
             }
             openRelay('', message);
             return true;
@@ -2466,6 +2490,7 @@
             sleepAfterThisStep = sleep;
         },
         drill: function(frameIndexes) {
+            me.log('dispatcher.drill', frameIndexes);
             workerCurrentStepIndex = workerOnLoadHandler = suspendAjaxRequestsCallback = false;
             currentInvokeWorkerMessage.drillToFrame = this.getFrameToDrill();
             currentInvokeWorkerMessage.drillToFrame.push(frameIndexes);
@@ -2483,12 +2508,26 @@
         isSlave: function() {
             return relay.isSlave;
         },
+        onMessage_closeRelay: function() {
+            if (relay.nextRelay && relay.nextRelayRegistered) {
+                openRelay('', {cmd: 'closeRelay'});
+            }
+            if (relay.isSlave) {
+                window.close();
+            }
+        },
         resetRelays: function() {
+            this.onMessage_closeRelay();
             relay.nextRelay = relay.nextRelayRegistered = false;
             relay.nextRelayQueue = [];
             relay.knownDomains = {};
             relay.registeredDomains = {};
             relay.slaveCounter = 0;
+            relay.recoveryPoints = {};
+            knownCurrentUrls = {};
+            me.modules.ui.slaveFrames = [undefined];
+            me.modules.ui.slaveFramesWindows = [undefined];
+            me.modules.ui.slaveFramesHelperWindows = {};
         },
         getSlaveCounter: function() { return relay.slaveCounter; },
         onMessage_resetAdditionalWindows: function() { 
@@ -2517,6 +2556,7 @@
                     workerCurrentStepIndex = details.workerCurrentStepIndex;
                     nextTaskFlow = details.nextTaskFlow;
                     sleepAfterThisStep = details.sleepAfterThisStep;
+                    me.log('setting workerGlobals to: ', workerGlobals);
                     workerGlobals = details.workerGlobals;
                 }
             }

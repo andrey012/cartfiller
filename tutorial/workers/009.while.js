@@ -3,7 +3,7 @@
         
         cf.task('removeAllItems')
         /**
-         * .while has two parameters - condition and action. It acts same as if but loops while
+         * .while has usually two parameters - condition and action. It acts same as if but loops while
          * condition is met
          */
             .while(
@@ -24,6 +24,39 @@
                 .click()
             )
         
+        /**
+         * .whileNot can be easily used to repeat steps until success. That said, 
+         * if condition has few steps, that failure in any of them will result in
+         * condition being evaluated to 'false'. Thus construction like
+         */
+        cf.task('useWhileNotToRetry')
+            .set('useWhileNotToRetry1Counter', 0)
+            .set('useWhileNotToRetry2Counter', 0)
+            .whileNot(
+                cf 
+        /**
+         * This will be executed twice, first time it will fail, thus indicating
+         * that condition == false and whileNot should continue looping
+         */
+                    .then(function() { 
+                        globals.useWhileNotToRetry1Counter ++;
+                        if (globals.useWhileNotToRetry1Counter === 2) {
+                            api.result();
+                        } else {
+                            api.result('error');
+                        }
+                    })
+        /**
+         * This will be executed only once, because during first loop, previous .then()
+         * will fail earlier preventing this .then() from being executed, so this .then()
+         * will only be executed on second loop
+         */
+                    .then(function() { 
+                        globals.useWhileNotToRetry2Counter ++;
+                        api.result();
+                    })
+            )
+
         cf.task('whileBreakExample')
         /**
          * You can also do while(true) { ... } type of things by setting first parameter to true

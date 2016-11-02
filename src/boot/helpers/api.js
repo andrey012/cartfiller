@@ -645,6 +645,7 @@
         });
         return result;
     };
+    var currentDrillDepth = 0;
 
     var getAbsolutePosition = function(el, recursive) {
         var rect = el.getBoundingClientRect();
@@ -1605,6 +1606,16 @@
             me.modules.dispatcher.setSleepAfterThisStep(time);
             return this;
         },
+        window: function() {
+            var window = me.modules.ui.getMainFrameWindow();
+            me.modules.dispatcher.getFrameToDrill().filter(function(pathStep) {
+                window = window.frames[pathStep];
+            });
+            return window;
+        },
+        document: function() {
+            return me.modules.ui.getMainFrameWindowDocument(this.window());
+        },
         /**
          * @function CartFiller.Api#drill
          * @param {Function} cb This function should return iframe's contentWindow object if needed to 
@@ -1613,29 +1624,37 @@
          * @return {CartFiller.Api} for chaining
          * @access public
          */
-        drill: function() {
-            var originalPath = me.modules.dispatcher.getFrameToDrill();
-            var path = originalPath.filter(function(){return 1;});
-            var frame = me.modules.ui.mainFrameWindow;
-            var level = path.length;
-            while (path.length) {
-                frame = frame.frames[path.shift()];
-            }
-            var result = arguments[level](frame);
-            if (result) {
-                // drill further
-                for (var i = 0; i < frame.frames.length; i ++) {
-                    if (result === frame.frames[i]){
-                        var elements = frame.document.getElementsByTagName('iframe');
-                        for (var j = 0 ; j < elements.length; j++){
-                            if (elements[j].contentWindow === result) {
-                                me.modules.ui.addElementToTrack('iframe', elements[j], true, [j]);
+        drill: function(chooseFrameFunction, insideFrameFunction) {
+            var frame = this.window();
+            var level = me.modules.dispatcher.getFrameToDrill().length;
+            currentDrillDepth ++;
+            try {
+                if (level >= currentDrillDepth) {
+                    insideFrameFunction.apply(frame.document);
+                } else {
+                    var choosenFrame = chooseFrameFunction.apply(frame.document);
+                    if (! choosenFrame) {
+                        throw new Error('frame was not selected for drill function');
+                    }
+                    // drill further
+                    for (var i = 0; i < frame.frames.length; i ++) {
+                        if (choosenFrame === frame.frames[i]){
+                            var elements = frame.document.getElementsByTagName('iframe');
+                            for (var j = 0 ; j < elements.length; j++){
+                                if (elements[j].contentWindow === choosenFrame) {
+                                    me.log('adding iframe to track');
+                                    me.modules.ui.addElementToTrack('iframe', elements[j], true, [j]);
+                                }
                             }
+                            return me.modules.dispatcher.drill(i);
                         }
-                        return me.modules.dispatcher.drill(i);
                     }
                 }
+            } catch (e) {
+                currentDrillDepth --;
+                throw e;
             }
+            currentDrillDepth --;
             return this;
         },
         compareCleanText: function(a, b) {
@@ -1674,11 +1693,11 @@
             me.modules.dispatcher.switchToWindow(index);
             return this;
         },
-        find: function(selector) {
+        find: function(selector, alternativeDocument) {
             if (undefined === selector || '' === selector) {
                 return new Selector([], undefined, function() { return []; });
             } else {
-                return new Selector([getDocument()], undefined, function(){ return [getDocument()]; }).find(selector);
+                return new Selector([alternativeDocument || this.document()], undefined, function(){ return [alternativeDocument || me.modules.api.document()]; }).find(selector);
             }
         },
         getSelectorClass: function() {
@@ -1704,6 +1723,7 @@
                 debugger;  // jshint ignore:line
             }
             return this;
-        }
+        },
+        resetDrillDepth: function() { currentDrillDepth = 0; }
     });
 }).call(this, document, window);
