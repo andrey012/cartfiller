@@ -231,7 +231,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1505602598369';
+    config.gruntBuildTimeStamp='1505653094643';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -2833,6 +2833,7 @@
         var payload = 'cartFillerMessage:' + JSON.stringify(details);
         from.eval('tmpReference1892049810jf10jfa.postMessage(' + JSON.stringify(payload) + ', "*");');
     };
+    var evaluatedCssSelectorElements = [];
     var reinitializeWorker = function() {
         var task = workerCurrentTask;
         var api = me.modules.api;
@@ -4474,8 +4475,11 @@
             for (var i = 0; i < elements.length && i < 16 ; i ++ ) {
                 arrow.push(elements[i]);
             }
-            me.modules.ui.clearOverlays();
-            me.modules.ui.arrowTo(arrow, true, true);
+            if (details.initial || elements.length !== evaluatedCssSelectorElements.length || elements.filter(function(e) { return -1 === evaluatedCssSelectorElements.indexOf(e); }).length) {
+                evaluatedCssSelectorElements = elements;
+                me.modules.ui.clearOverlays();
+                me.modules.ui.arrowTo(arrow, true, true);
+            }
             this.postMessageToWorker('cssSelectorEvaluateResult', {count: elements.length});
         },
         /**
@@ -6975,8 +6979,10 @@
         },
         startReportingMousePointerDirect: function() {
             var trackingDocument = getDocument();
-            var elements = trackingDocument.getElementsByTagName('body')[0].getElementsByTagName('*');
+            var elements = [];
             var done = false;
+            var hoveredElement = false;
+            var highlightedElement = false;
             var shoot = function() {
                 done = true;
                 for (var i = 0; i < elements.length; i ++) {
@@ -7000,7 +7006,7 @@
                         me.modules.ui.reportingMousePointerClickForElement(event.target);
                         shoot();
                     } else {
-                        me.modules.ui.reportingMousePointerClickForElement(event.target, true);
+                        hoveredElement = event.target;
                     }
                 }
             };
@@ -7010,12 +7016,26 @@
                     shoot();
                 }
             };
-            for (var i = 0; i < elements.length; i ++) {
-                elements[i].addEventListener('mousedown', clickListener, true);
-                elements[i].addEventListener('mousemove', moveListener, true);
-                elements[i].addEventListener('mouseenter', moveListener, true);
-                elements[i].addEventListener('mouseleave', leaveListener, true);
+            function addElements() {
+                if (! done) {
+                    if (hoveredElement && hoveredElement !== highlightedElement) {
+                        me.modules.ui.reportingMousePointerClickForElement(hoveredElement, true);
+                        highlightedElement = hoveredElement;
+                    }
+                    var discovered = trackingDocument.getElementsByTagName('body')[0].getElementsByTagName('*');
+                    for (var i = 0; i < discovered.length; i ++) {
+                        if (-1 === elements.indexOf(discovered[i])) {
+                            elements.push(discovered[i]);
+                            discovered[i].addEventListener('mousedown', clickListener, true);
+                            discovered[i].addEventListener('mousemove', moveListener, true);
+                            discovered[i].addEventListener('mouseenter', moveListener, true);
+                            discovered[i].addEventListener('mouseleave', leaveListener, true);
+                        }
+                    }
+                    setTimeout(addElements, 100);
+                }
             }
+            addElements();
         },
         /**
          * Starts reporting mouse pointer - on each mousemove dispatcher 

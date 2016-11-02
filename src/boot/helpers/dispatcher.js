@@ -18,6 +18,7 @@
         var payload = 'cartFillerMessage:' + JSON.stringify(details);
         from.eval('tmpReference1892049810jf10jfa.postMessage(' + JSON.stringify(payload) + ', "*");');
     };
+    var evaluatedCssSelectorElements = [];
     var reinitializeWorker = function() {
         var task = workerCurrentTask;
         var api = me.modules.api;
@@ -1659,8 +1660,11 @@
             for (var i = 0; i < elements.length && i < 16 ; i ++ ) {
                 arrow.push(elements[i]);
             }
-            me.modules.ui.clearOverlays();
-            me.modules.ui.arrowTo(arrow, true, true);
+            if (details.initial || elements.length !== evaluatedCssSelectorElements.length || elements.filter(function(e) { return -1 === evaluatedCssSelectorElements.indexOf(e); }).length) {
+                evaluatedCssSelectorElements = elements;
+                me.modules.ui.clearOverlays();
+                me.modules.ui.arrowTo(arrow, true, true);
+            }
             this.postMessageToWorker('cssSelectorEvaluateResult', {count: elements.length});
         },
         /**
