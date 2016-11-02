@@ -508,7 +508,7 @@
         }
         return this;
     };
-    ['result', 'nop', 'skipStep', 'skipTask', 'repeatStep', 'repeatTask', 'repeatJob', 'skipJob'].filter(function(name) {
+    ['result', 'nop', 'skipStep', 'skipTask', 'repeatStep', 'repeatTask', 'repeatJob', 'skipJob', 'stop'].filter(function(name) {
         Selector.prototype[name] = function(){
             me.modules.api[name].apply(me.modules.api, arguments);
             return this;
@@ -798,6 +798,10 @@
             me.modules.dispatcher.manageTaskFlow('skipTask,' + number);
             return this;
         },
+        switchTestSuite: function(params) {
+            me.modules.dispatcher.manageTaskFlow({switchTestSuite: params});
+            return this;
+        },
         /**
          * Tells that next n steps should be skipped. After using this function you 
          * still have to call api.result, and it is important to call api.skipTask first 
@@ -812,6 +816,14 @@
                 n = 1;
             }
             me.modules.dispatcher.manageTaskFlow('skipStep,' + n);
+            return this;
+        },
+        stop: function() {
+            me.modules.dispatcher.manageTaskFlow('stop');
+            return this;
+        },
+        closeCartFiller: function() {
+            me.modules.ui.closeCartFiller();
             return this;
         },
         /**

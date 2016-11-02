@@ -1842,6 +1842,11 @@
         },
         rootWindowTitle: function() {
             return uiType === 'clean' ? 'CartFiller Dashboard' : undefined;
+        },
+        closeCartFiller: function() {
+            if (uiType === 'clean') {
+                window.close();
+            }
         }
     });
 }).call(this, document, window);

@@ -4,18 +4,15 @@ define('testSuiteController', ['app', 'scroll'], function(app){
     .config(['$compileProvider', function($compileProvider){
         $compileProvider.aHrefSanitizationWhitelist(/^\s*(https?|ftp|mailto|file|javascript|data):/);
     }])
-    .controller('testSuiteController', ['$scope', 'cfMessage', '$timeout', 'cfDebug', '$location', function ($scope, cfMessage, $timeout, cfDebug, $location){
-        $location;
-        cfDebug;
-        $timeout;
-        var useJsInsteadOfJson = false;
+    .controller('testSuiteController', ['$scope', 'cfMessage', 'cfDebug', function ($scope, cfMessage, cfDebug){
+        var timeouts = {};
+        var useJsInsteadOfJson;
+        var preventAutorun = false;
         var getJsOrJsonFileType = function() { 
             return 'js' + (useJsInsteadOfJson ? '' : 'on');
         };
+        var overrideParams = {};
 
-        if (! cfMessage.testSuite) {
-            return;
-        }
         var cleanFunctionComment = function(s) {
             return s
                 .replace(/^function\s*\(\s*\)\s*\{\s*\/\*[ \t]*[\r\n]*/, '')
@@ -55,9 +52,9 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                 return JSON.parse(s);
             }
         };
-        var testsToCheck = [];
-        var currentTest = false;
-        var testDependencies = {};
+        var testsToCheck;
+        var currentTest;
+        var testDependencies;
         var getIncludedTests = function(index, result) {
             result.push(index);
             if (testDependencies[index]) {
@@ -67,11 +64,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             }
             return result;
         };
-        var backendPendingRequestCounter = 0;
-        $scope.params = {};
-        $scope.expandedTest = false;
-        $scope.showConfigure = false;
-        $scope.selectedTests = {};
+        var backendPendingRequestCounter;
         var isLaunchedFromLocalFilesystem = function() {
             return document.getElementById('testSuiteManager').getAttribute('data-local-href') ? true : false;
         };
@@ -79,15 +72,17 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             var localHref = document.getElementById('testSuiteManager').getAttribute('data-local-href');
             return localHref ? localHref : cfMessage.hashUrl;
         };
-        $scope.maxSimultaneousDownloads = isLaunchedFromLocalFilesystem() ? 1 : 10;
-        var updateRunSelectedTestsButton = function() {
+        var updateRunSelectedTestsButton = function(noDigest) {
+            timeouts.updateRunSelectedTestsButton = false;
             var buttonPanelScope = angular.element($('#testsuiteButtonPanel')[0]).scope();
             if (undefined === buttonPanelScope) {
-                return setTimeout(updateRunSelectedTestsButton, 100);
+                timeouts.updateRunSelectedTestsButton = setTimeout(updateRunSelectedTestsButton, 100);
+                return;
             }
             var selectedTestCountScope = angular.element($('#selectedTestCount')[0]).scope();
             if (undefined === selectedTestCountScope) {
-                return setTimeout(updateRunSelectedTestsButton, 100);
+                timeouts.updateRunSelectedTestsButton = setTimeout(updateRunSelectedTestsButton, 100);
+                return;
             }
             buttonPanelScope.someTestsAreSelected = false;
             selectedTestCountScope.selectedTestCount = 0;
@@ -97,10 +92,11 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                     selectedTestCountScope.selectedTestCount ++;
                 }
             }
-            buttonPanelScope.$digest();
+            if (! noDigest) {
+                buttonPanelScope.$digest();
+            }
             selectedTestCountScope.$digest();
         };
-        $scope.downloadsInProgress = [];
         var currentJobId;
         var parseParams = function() {
             angular.forEach(getLocation().replace(/^#*\/*/, '').split('&'), function(v) {
@@ -126,34 +122,14 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                     $scope.params[name] = decodeURIComponent(value);
                 }
             });
-            updateRunSelectedTestsButton();
+            for (var i in overrideParams) {
+                $scope.params[i] = overrideParams[i];
+            }
+            updateRunSelectedTestsButton(true);
             if ($scope.params.editor) {
                 $.cartFillerPlugin({'$preventPageReload': true});
             }
         };
-        parseParams();
-        $scope.discovery = {
-            state: 0,
-            currentRootPath: '',
-            visitedRootPaths: [],
-            rootCartfillerJson: {},
-            scripts: {
-                flat: [],
-                tweaks: [],
-                currentDownloadingIndex: false,
-                contents: [],
-                rawContents: [],
-                enabled: [],
-                success: [],
-                urls: [],
-                hrefs: [],
-                errors: {}
-            }
-        };
-        $scope.filterTestsByText = '';
-        $scope.filterTasksByText = '';
-        $scope.runningAll = false;
-        $scope.runningSelected = false;
         var getNextTestToRunAll = function(index) {
             index = index ? index : 0;
             while (index < $scope.discovery.scripts.enabled.length && ! $scope.discovery.scripts.enabled[index]) {
@@ -185,6 +161,9 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             if ($scope.discovery.scripts.contents.length) {
                 $scope.runTest(index);
             }
+        };
+        $scope.preventAutorun = function() {
+            preventAutorun = true;
         };
         $scope.stopRunningAll = function() {
             $scope.runningAll = false;
@@ -522,7 +501,8 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             $scope.discovery.state = 2;
             $scope.$digest();
             if ($scope.params.backend && ! $scope.params.editor) {
-                setTimeout(function(){
+                timeouts.processScriptFilesAfterDownloadOne = setTimeout(function(){
+                    timeouts.processScriptFilesAfterDownloadOne = false;
                     if ('undefined' !== typeof $scope.params.job && 
                            'undefined' !== typeof $scope.params.task && 
                            'undefined' !== typeof $scope.params.step
@@ -538,9 +518,10 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                         $scope.runAll();
                     }
                 }, $scope.params.wait ? ($scope.params.wait * 1000) : 0);
-            } else if ($scope.params.goto && ! $scope.alreadyWentTo) {
+            } else if ($scope.params.goto && ! $scope.alreadyWentTo && ! preventAutorun) {
                 $scope.alreadyWentTo = true;
-                setTimeout(function() {
+                timeouts.processScriptFilesAfterDownloadTwo = setTimeout(function() {
+                    timeouts.processScriptFilesAfterDownloadTwo = false;
                     var index = $scope.getTestIndexByUrl($scope.params.goto);
                     if (undefined === index) {
                         alert('test not found: ' + $scope.params.goto);
@@ -551,7 +532,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             } else if ('undefined' !== typeof $scope.params.job && 
                        'undefined' !== typeof $scope.params.task && 
                        'undefined' !== typeof $scope.params.step && 
-                       ! $scope.alreadyWentTo) 
+                       ! $scope.alreadyWentTo && ! preventAutorun) 
             {
                 $scope.alreadyWentTo = true;
                 for (i = 0; i < $scope.discovery.scripts.urls.length; i ++) {
@@ -679,49 +660,6 @@ define('testSuiteController', ['app', 'scroll'], function(app){
 
             }
         };
-        $scope.discover(true);
-        if ($scope.params.editor) {
-            setTimeout(function refreshCurrentTest(){
-                // check whether currently loaded test have changed and we need to replace it
-                if (testsToCheck.length) {
-                    $.cartFillerPlugin.ajax({
-                        url: $scope.discovery.scripts.hrefs[testsToCheck[0].test] + '?' + (new Date()).getTime(),
-                        complete: function(xhr) {
-                            if (xhr.status === 200) {
-                                var oldContents = $scope.discovery.scripts.rawContents[testsToCheck[0].test];
-                                if (oldContents !== xhr.responseText || testsToCheck[0].force) {
-                                    try {
-                                        rememberDownloadedTest(xhr.responseText, testsToCheck[0].test);
-                                        if (oldContents !== xhr.responseText) {
-                                            testsToCheck = testsToCheck.map(function(v) {
-                                                return {
-                                                    test: v.test, 
-                                                    force: true
-                                                };
-                                            });
-                                        }
-                                        processDownloadedTest(currentTest);
-                                        $scope.submitTestUpdate(currentTest);
-                                        $scope.$digest();
-                                    } catch (e){
-                                        alert('Something went wrong when processing updated test file - looks like JSON is invalid: ' + String(e));
-                                        $scope.discovery.scripts.rawContents[testsToCheck[0].test] = xhr.responseText;
-                                    }
-                                }
-                            }
-                            testsToCheck.push({ 
-                                test: testsToCheck.shift().test,
-                                force: false
-                            });
-                            setTimeout(refreshCurrentTest, 1000 / testsToCheck.length);
-                        },
-                        cartFillerTrackSomething: true
-                    });
-                } else {
-                    setTimeout(refreshCurrentTest, 1000);
-                }
-            }, 1000);
-        }
         $scope.submitTestUpdate = function(index) {
             var test = $scope.discovery.scripts.contents[index];
             $.cartFillerPlugin({'$cartFillerTestUpdate': test, trackWorker: $scope.params.editor});
@@ -804,6 +742,12 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                     if (data.jobId !== currentJobId) {
                         return;
                     }
+                    if (data.switchTestSuite) {
+                        overrideParams = data.switchTestSuite;
+                        $scope.initialize();
+                        $scope.$digest();
+                        return;
+                    }
                     if ($scope.params.backend && false !== data.currentTaskIndex && false !== data.currentTaskStepIndex) {
                         var videoFrame = getVideoFrame();
                         var json = {
@@ -852,9 +796,10 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                             $scope.runningAll = false;
                             $.cartFillerPlugin.showChooseJobFrame();
                             if ($scope.params.backend && ! $scope.params.editor) {
-                                setTimeout(function reportFinishToBackend(){
+                                timeouts.reportFinishToBackend = setTimeout(function reportFinishToBackend(){
+                                    timeouts.reportFinishToBackend = false;
                                     if (backendPendingRequestCounter) {
-                                        setTimeout(reportFinishToBackend, 100);
+                                        timeouts.reportFinishToBackend = setTimeout(reportFinishToBackend, 100);
                                     } else {
                                         $.ajax({
                                             url: $scope.params.backend.replace(/\/+$/, '') + '/finish/' + $scope.params.key + '?' + (new Date()).getTime(),
@@ -958,14 +903,15 @@ define('testSuiteController', ['app', 'scroll'], function(app){
         $scope.searchForTaskNoWatch = function() {
             var val = $('#tasksearch').val();
             var go = function() {
+                timeouts.go = false;
                 $scope.filterTasksByText = $('#tasksearch').val();
                 $scope.expandedTest = false;
                 angular.element($('#testslist')[0]).scope().$digest();
             };
             if (val.length === 1) {
-                setTimeout(go, 2000);
+                timeouts.go = setTimeout(go, 2000);
             } else if (val.length === 2) {
-                setTimeout(go, 1000);
+                timeouts.go = setTimeout(go, 1000);
             } else {
                 go();
             }
@@ -1039,41 +985,13 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             }
         };
         function focusOnSearchField() {
+            timeouts.focusOnSearchField = false;
             if ($('#testsearch.rendered').is(':visible')) {
                 $('#testsearch.rendered')[0].focus();
             } else {
-                setTimeout(focusOnSearchField, 100);
+                timeouts.focusOnSearchField = setTimeout(focusOnSearchField, 100);
             }
         }
-        focusOnSearchField();
-        $scope.templates = {
-            cartfiller: 'base64-content-of-cartfiller.js-goes-here',
-            test: 'base64-content-of-test.js-goes-here',
-            worker: 'base64-content-of-worker.js-goes-here',
-        };
-        (function(){
-            var base64Pattern = /base64-content-of-([^-]+)-goes-here/;
-            var getter = function(i) {
-                $.cartFillerPlugin.ajax({
-                    url: window.location.href.split('#')[0].replace(/\/[^\/]*$/, '/templates/') + base64Pattern.exec($scope.templates[i])[1],
-                    complete: function(xhr) {
-                        if (xhr.status === 200) {
-                            $scope.templates[i] = $scope.templates[i].replace(base64Pattern, (xhr.responseText));
-                            if (angular.element($('#templates')) && angular.element($('#templates')).scope()) {
-                                angular.element($('#templates')).scope().$digest();
-                            }
-                        }
-                    }
-                });
-            };
-            for (var i in $scope.templates) {
-                if (base64Pattern.test($scope.templates[i])) {
-                    getter(i);
-                } else {
-                    $scope.templates[i] = atob($scope.templates[i]);
-                }
-            }
-        })();
         $scope.toggleConfigure = function() {
             $scope.showConfigure = ! $scope.showConfigure;
         };
@@ -1097,25 +1015,8 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             }
             $.cartFillerPlugin.postMessageToDispatcher('updateHashUrl', {params: params});
         };
-        var srcUrl = cfDebug.src.replace(/\/+$/, '');
-        $scope.bookmarklets = [];
-        ['framed', 'popup', 'clean'].filter(function(type) {
-            ['script', 'eval', 'iframe'].filter(function(inject) {
-                var options = {
-                    name: type + '-' + inject,
-                    baseUrl: srcUrl,
-                    chooseJob: window.location.href + '#' + getLocation().replace(/^#+/, ''),
-                    debug: true,
-                    inject: inject,
-                    minified: false,
-                    type: type,
-                    useSource: cfDebug.useSource
-                };
-                options.code = $.cartFillerPlugin.getBookmarkletCode(options);
-                $scope.bookmarklets.push(options);
-            });
-        });
-        $scope.previouslyClickedSelectTestCheckbox = undefined;
+        
+        var srcUrl;
         $scope.clickSelectedTestsToRun = function(event, clickedOnTd) {
             var $this = $(event.target);
             if (clickedOnTd) {
@@ -1139,7 +1040,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             } else {
                 $scope.previouslyClickedSelectTestCheckbox = index;
             }
-            updateRunSelectedTestsButton();
+            updateRunSelectedTestsButton(true);
             event.stopPropagation();
             $scope.updateParams();
         };
@@ -1148,10 +1049,149 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                 $scope.selectedTests[i] = select;
                 $('input[name="select-test-to-run-' + i + '"]').prop('checked', select);
             }
-            updateRunSelectedTestsButton();
+            updateRunSelectedTestsButton(true);
             $scope.updateParams();
             event.stopPropagation();
             return false;
         };
+        $scope.initialize = function() {
+            $scope.alreadyWentTo = false;
+            for (var i in timeouts) {
+                if (timeouts[i]) {
+                    clearTimeout(timeouts[i]);
+                    timeouts[i] = false;
+                }
+            }
+            useJsInsteadOfJson = false;
+            if (! cfMessage.testSuite) {
+                return;
+            }
+            testsToCheck = [];
+            currentTest = false;
+            testDependencies = {};
+            backendPendingRequestCounter = 0;
+            $scope.params = {};
+            $scope.expandedTest = false;
+            $scope.showConfigure = false;
+            $scope.selectedTests = {};
+            $scope.maxSimultaneousDownloads = isLaunchedFromLocalFilesystem() ? 1 : 10;
+            $scope.downloadsInProgress = [];
+            parseParams();
+            $scope.discovery = {
+                state: 0,
+                currentRootPath: '',
+                visitedRootPaths: [],
+                rootCartfillerJson: {},
+                scripts: {
+                    flat: [],
+                    tweaks: [],
+                    currentDownloadingIndex: false,
+                    contents: [],
+                    rawContents: [],
+                    enabled: [],
+                    success: [],
+                    urls: [],
+                    hrefs: [],
+                    errors: {}
+                }
+            };
+            $scope.filterTestsByText = '';
+            $scope.filterTasksByText = '';
+            $scope.runningAll = false;
+            $scope.runningSelected = false;
+            focusOnSearchField();
+            $scope.templates = {
+                cartfiller: 'base64-content-of-cartfiller.js-goes-here',
+                test: 'base64-content-of-test.js-goes-here',
+                worker: 'base64-content-of-worker.js-goes-here',
+            };
+            (function(){
+                var base64Pattern = /base64-content-of-([^-]+)-goes-here/;
+                var getter = function(i) {
+                    $.cartFillerPlugin.ajax({
+                        url: window.location.href.split('#')[0].replace(/\/[^\/]*$/, '/templates/') + base64Pattern.exec($scope.templates[i])[1],
+                        complete: function(xhr) {
+                            if (xhr.status === 200) {
+                                $scope.templates[i] = $scope.templates[i].replace(base64Pattern, (xhr.responseText));
+                                if (angular.element($('#templates')) && angular.element($('#templates')).scope()) {
+                                    angular.element($('#templates')).scope().$digest();
+                                }
+                            }
+                        }
+                    });
+                };
+                for (var i in $scope.templates) {
+                    if (base64Pattern.test($scope.templates[i])) {
+                        getter(i);
+                    } else {
+                        $scope.templates[i] = atob($scope.templates[i]);
+                    }
+                }
+            })();
+            srcUrl = cfDebug.src.replace(/\/+$/, '');
+            $scope.bookmarklets = [];
+            ['framed', 'popup', 'clean'].filter(function(type) {
+                ['script', 'eval', 'iframe'].filter(function(inject) {
+                    var options = {
+                        name: type + '-' + inject,
+                        baseUrl: srcUrl,
+                        chooseJob: window.location.href + '#' + getLocation().replace(/^#+/, ''),
+                        debug: true,
+                        inject: inject,
+                        minified: false,
+                        type: type,
+                        useSource: cfDebug.useSource
+                    };
+                    options.code = $.cartFillerPlugin.getBookmarkletCode(options);
+                    $scope.bookmarklets.push(options);
+                });
+            });
+            $scope.previouslyClickedSelectTestCheckbox = undefined;
+            $scope.discover(true);
+            if ($scope.params.editor) {
+                timeouts.refreshCurrentTest = setTimeout(function refreshCurrentTest(){
+                    timeouts.refreshCurrentTest = false;
+                    // check whether currently loaded test have changed and we need to replace it
+                    if (testsToCheck.length) {
+                        $.cartFillerPlugin.ajax({
+                            url: $scope.discovery.scripts.hrefs[testsToCheck[0].test] + '?' + (new Date()).getTime(),
+                            complete: function(xhr) {
+                                if (xhr.status === 200) {
+                                    var oldContents = $scope.discovery.scripts.rawContents[testsToCheck[0].test];
+                                    if (oldContents !== xhr.responseText || testsToCheck[0].force) {
+                                        try {
+                                            rememberDownloadedTest(xhr.responseText, testsToCheck[0].test);
+                                            if (oldContents !== xhr.responseText) {
+                                                testsToCheck = testsToCheck.map(function(v) {
+                                                    return {
+                                                        test: v.test, 
+                                                        force: true
+                                                    };
+                                                });
+                                            }
+                                            processDownloadedTest(currentTest);
+                                            $scope.submitTestUpdate(currentTest);
+                                            $scope.$digest();
+                                        } catch (e){
+                                            alert('Something went wrong when processing updated test file - looks like JSON is invalid: ' + String(e));
+                                            $scope.discovery.scripts.rawContents[testsToCheck[0].test] = xhr.responseText;
+                                        }
+                                    }
+                                }
+                                testsToCheck.push({ 
+                                    test: testsToCheck.shift().test,
+                                    force: false
+                                });
+                                timeouts.refreshCurrentTest = setTimeout(refreshCurrentTest, 1000 / testsToCheck.length);
+                            },
+                            cartFillerTrackSomething: true
+                        });
+                    } else {
+                        timeouts.refreshCurrentTest = setTimeout(refreshCurrentTest, 1000);
+                    }
+                }, 1000);
+            }
+        };
+        $scope.initialize();
     }]);
 });

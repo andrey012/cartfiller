@@ -104,6 +104,11 @@
                     setStack(pc);
                     api.repeatTask(1 + api.env.taskIndex - parseInt(ppc[0])).nop();
                 }
+            ],
+            '_closeCartFiller':[
+                'close CartFiller, only for \'clean\' injection mode', function() {
+                    api.closeCartFiller().result();
+                }
             ]
         };
     };

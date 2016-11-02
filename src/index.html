@@ -32,7 +32,7 @@
     </style>
 </head>
 <body data-cartfiller-is-here="1">
-    <div id="testSuiteManager" style="display: none;" ng-controller="testSuiteController" data-local-href="" ng-class="'rendered'">
+    <div id="testSuiteManager" style="display: none;" ng-controller="testSuiteController" data-local-href="" ng-class="'rendered'" onmousemove="var event = arguments[0] || window.event; if (event.shiftKey) angular.element(this).scope().preventAutorun();">
         <div class="col-xs-6">
             <div class="alert alert-danger" ng-if="discovery.state == -1">
                 Error discovering cartfiller.js or cartfiller.json:<br/>

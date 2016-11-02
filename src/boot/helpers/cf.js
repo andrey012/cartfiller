@@ -240,6 +240,16 @@
                     api('nop');
                 }];
             };
+            Builder.prototype.stop = function() {
+                return ['stop letting user interact', function() {
+                    api('stop').result();
+                }];
+            };
+            Builder.prototype.closeCartfiller = function() {
+                return ['exit CartFiller', function() {
+                    api('closeCartFiller').result();
+                }];
+            };
             Builder.prototype.get = function(args, offset, flavor) {
                 if (args[0] instanceof BuilderPromise || args[0] instanceof LibReferencePromise) {
                     if (args[0] instanceof BuilderPromise) {
@@ -378,7 +388,7 @@
                 };
             };
             for (i in me.modules.api.getSelectorClass().prototype) {
-                if (i !== 'arrow' && i !== 'highlight' && i !== 'result' && i !== 'nop') {
+                if (i !== 'arrow' && i !== 'highlight' && i !== 'result' && i !== 'nop' && i !== 'stop') {
                     Builder.prototype[i] = buildProxyFunction(i);
                 }
             }

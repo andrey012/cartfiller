@@ -184,7 +184,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 }
             } else {
                 // wait some more time
-                setTimeout(autorun, 1000);
+                setTimeout(autorun, 100);
             }
         };
         var updateTopWindowHash = function() {
@@ -310,87 +310,94 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 $scope.dispatcherCurrentTask = details.index;
                 $scope.jobTaskProgress[details.index].stepsInProgress[details.step] = false;
                 setStepStatus(details.index, details.step, details.status, details.message, details.response);
-                if (-1 !== details.nextTaskFlow.indexOf('skipTask')) {
-                    var tasksToSkip = parseInt(details.nextTaskFlow.split(',')[1]);
-                    for (i = details.index; i < details.index + tasksToSkip; i ++ ) {
-                        $scope.jobTaskProgress[i].complete = true;
-                    }
-                } else if ($scope.updateTaskCompleteMark(details.index)) {
-                    $scope.jobTaskProgress[details.index].complete = true;
-                } else {
-                    $scope.jobTaskProgress[details.index].complete = false;
-                }
-                var proceed;
+                var switchTestSuite;
                 var pause = false;
                 var stopTestsuite = false;
-                if ('ok' === details.status){
-                    pause = $scope.incrementCurrentStep(false, details.nextTaskFlow);
-                    proceed = true;
-                } else if ('skip' === details.status){
-                    pause = $scope.incrementCurrentStep(true, details.nextTaskFlow);
-                    proceed = true;
-                } else {
-                    if ($('#alertOnErrors').is(':checked') && $scope.running){
-                        alert('error');
-                        stopTestsuite = true;
-                    }
-                    if ($scope.noTaskSteps($scope.jobDetails[$scope.currentTask])) {
-                        $('#taskDiv_' + $scope.currentTask + ' textarea').focus().select();
-                    }
-                    proceed = false;
-                }
-                if ($scope.runUntilTask !== false && $scope.runUntilStep !== false && ($scope.runUntilTask < $scope.currentTask || ($scope.runUntilStep <= $scope.currentStep && $scope.runUntilTask === $scope.currentTask))) {
-                    $scope.runUntilTask = $scope.runUntilStep = false;
-                    proceed = false;
-                }
-                if (pause) {
-                    proceed = false;
-                    scrollCurrentTaskIntoView();
-                }
+                var proceed;
                 var wasRunning = $scope.running;
-                if (proceed && $scope.clickedWhileWorkerWasInProgress) {
-                    if ($scope.clickedWhileWorkerWasInProgress === 'fast' || $scope.clickedWhileWorkerWasInProgress === 'slow') {
-                        $scope.running = $scope.clickedWhileWorkerWasInProgress;
-                        $scope.doingOneStep = false;
-                    } else if ($scope.clickedWhileWorkerWasInProgress === 'step') {
-                        $scope.running = false;
-                        $scope.doingOneStep = true;
-                    }
-                }
                 var nextStepTimeout = 0;
-                if ($scope.jobDetails[$scope.currentTask] && $scope.jobDetails[$scope.currentTask].task && $scope.pausesBeforeSteps[$scope.jobDetails[$scope.currentTask].task] && $scope.pausesBeforeSteps[$scope.jobDetails[$scope.currentTask].task][$scope.currentStep]) {
-                    details.nop = false;
-                }
-                if ($scope.running || ($scope.doingOneStep && ($scope.clickedWhileWorkerWasInProgress === 'step' || true === details.nop))){
-                    if (proceed){
-                        nextStepTimeout = (($scope.running === 'slow' || cfDebug.callPhantom) && (true !== details.nop)) ?
-                            (('undefined' !== typeof details.sleep) ? details.sleep : 1000) : 
-                            0;
-                        if (nextStepTimeoutHandle) {
-                            // looks like we already have something pending from older times - cancel it
-                            clearTimeout(nextStepTimeoutHandle);
+                if ('object' === typeof details.nextTaskFlow && details.nextTaskFlow.switchTestSuite) {
+                    switchTestSuite = details.nextTaskFlow.switchTestSuite;
+                    proceed = false;
+                    $scope.running = false;
+                } else {
+                    if (-1 !== details.nextTaskFlow.indexOf('skipTask')) {
+                        var tasksToSkip = parseInt(details.nextTaskFlow.split(',')[1]);
+                        for (i = details.index; i < details.index + tasksToSkip; i ++ ) {
+                            $scope.jobTaskProgress[i].complete = true;
                         }
-                        if (cfDebug.callPhantom) {
-                            cfDebug.callPhantom({preventRenderingUntilNextFrame: true});
-                            nextStepTimeoutHandle = setTimeout(function() {
-                                nextStepTimeoutHandle = false;
-                                cfDebug.callPhantom({renderNextFrame: true});
-                                $scope.doNextStep();
-                            }, 100); // give it some time to stabilize
-                        } else {
-                            nextStepTimeoutHandle = setTimeout(
-                                function(){
-                                    nextStepTimeoutHandle = false;
-                                    $scope.doNextStep();
-                                }, 
-                                nextStepTimeout
-                            );
-                        }
+                    } else if ($scope.updateTaskCompleteMark(details.index)) {
+                        $scope.jobTaskProgress[details.index].complete = true;
                     } else {
-                        $scope.running = $scope.doingOneStep = false;
+                        $scope.jobTaskProgress[details.index].complete = false;
                     }
+                    if ('ok' === details.status){
+                        pause = $scope.incrementCurrentStep(false, details.nextTaskFlow);
+                        proceed = true;
+                    } else if ('skip' === details.status){
+                        pause = $scope.incrementCurrentStep(true, details.nextTaskFlow);
+                        proceed = true;
+                    } else {
+                        if ($('#alertOnErrors').is(':checked') && $scope.running){
+                            alert('error');
+                            stopTestsuite = true;
+                        }
+                        if ($scope.noTaskSteps($scope.jobDetails[$scope.currentTask])) {
+                            $('#taskDiv_' + $scope.currentTask + ' textarea').focus().select();
+                        }
+                        proceed = false;
+                    }
+                    if ($scope.runUntilTask !== false && $scope.runUntilStep !== false && ($scope.runUntilTask < $scope.currentTask || ($scope.runUntilStep <= $scope.currentStep && $scope.runUntilTask === $scope.currentTask))) {
+                        $scope.runUntilTask = $scope.runUntilStep = false;
+                        proceed = false;
+                    }
+                    if (pause) {
+                        proceed = false;
+                        scrollCurrentTaskIntoView();
+                    }
+                    if (proceed && $scope.clickedWhileWorkerWasInProgress) {
+                        if ($scope.clickedWhileWorkerWasInProgress === 'fast' || $scope.clickedWhileWorkerWasInProgress === 'slow') {
+                            $scope.running = $scope.clickedWhileWorkerWasInProgress;
+                            $scope.doingOneStep = false;
+                        } else if ($scope.clickedWhileWorkerWasInProgress === 'step') {
+                            $scope.running = false;
+                            $scope.doingOneStep = true;
+                        }
+                    }
+                    if ($scope.jobDetails[$scope.currentTask] && $scope.jobDetails[$scope.currentTask].task && $scope.pausesBeforeSteps[$scope.jobDetails[$scope.currentTask].task] && $scope.pausesBeforeSteps[$scope.jobDetails[$scope.currentTask].task][$scope.currentStep]) {
+                        details.nop = false;
+                    }
+                    if ($scope.running || ($scope.doingOneStep && ($scope.clickedWhileWorkerWasInProgress === 'step' || true === details.nop))){
+                        if (proceed && details.nextTaskFlow !== 'stop'){
+                            nextStepTimeout = (($scope.running === 'slow' || cfDebug.callPhantom) && (true !== details.nop)) ?
+                                (('undefined' !== typeof details.sleep) ? details.sleep : 1000) : 
+                                0;
+                            if (nextStepTimeoutHandle) {
+                                // looks like we already have something pending from older times - cancel it
+                                clearTimeout(nextStepTimeoutHandle);
+                            }
+                            if (cfDebug.callPhantom) {
+                                cfDebug.callPhantom({preventRenderingUntilNextFrame: true});
+                                nextStepTimeoutHandle = setTimeout(function() {
+                                    nextStepTimeoutHandle = false;
+                                    cfDebug.callPhantom({renderNextFrame: true});
+                                    $scope.doNextStep();
+                                }, 100); // give it some time to stabilize
+                            } else {
+                                nextStepTimeoutHandle = setTimeout(
+                                    function(){
+                                        nextStepTimeoutHandle = false;
+                                        $scope.doNextStep();
+                                    }, 
+                                    nextStepTimeout
+                                );
+                            }
+                        } else {
+                            $scope.running = $scope.doingOneStep = false;
+                        }
+                    }
+                    $scope.clickedWhileWorkerWasInProgress = false;
                 }
-                $scope.clickedWhileWorkerWasInProgress = false;
                 cfMessage.send(
                     'sendStatus', 
                     {
@@ -405,7 +412,8 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                         nextTaskStepIndex: $scope.currentStep,
                         nextTaskSleep: nextStepTimeout,
                         globals: details.globals,
-                        jobId: $scope.jobId
+                        jobId: $scope.jobId,
+                        switchTestSuite: switchTestSuite
                     });
                 $scope.workerInProgress = false;
                 if (!proceed){

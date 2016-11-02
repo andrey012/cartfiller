@@ -231,7 +231,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1505482157585';
+    config.gruntBuildTimeStamp='1505602598369';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -798,7 +798,7 @@
         }
         return this;
     };
-    ['result', 'nop', 'skipStep', 'skipTask', 'repeatStep', 'repeatTask', 'repeatJob', 'skipJob'].filter(function(name) {
+    ['result', 'nop', 'skipStep', 'skipTask', 'repeatStep', 'repeatTask', 'repeatJob', 'skipJob', 'stop'].filter(function(name) {
         Selector.prototype[name] = function(){
             me.modules.api[name].apply(me.modules.api, arguments);
             return this;
@@ -1088,6 +1088,10 @@
             me.modules.dispatcher.manageTaskFlow('skipTask,' + number);
             return this;
         },
+        switchTestSuite: function(params) {
+            me.modules.dispatcher.manageTaskFlow({switchTestSuite: params});
+            return this;
+        },
         /**
          * Tells that next n steps should be skipped. After using this function you 
          * still have to call api.result, and it is important to call api.skipTask first 
@@ -1102,6 +1106,14 @@
                 n = 1;
             }
             me.modules.dispatcher.manageTaskFlow('skipStep,' + n);
+            return this;
+        },
+        stop: function() {
+            me.modules.dispatcher.manageTaskFlow('stop');
+            return this;
+        },
+        closeCartFiller: function() {
+            me.modules.ui.closeCartFiller();
             return this;
         },
         /**
@@ -2263,6 +2275,16 @@
                     api('nop');
                 }];
             };
+            Builder.prototype.stop = function() {
+                return ['stop letting user interact', function() {
+                    api('stop').result();
+                }];
+            };
+            Builder.prototype.closeCartfiller = function() {
+                return ['exit CartFiller', function() {
+                    api('closeCartFiller').result();
+                }];
+            };
             Builder.prototype.get = function(args, offset, flavor) {
                 if (args[0] instanceof BuilderPromise || args[0] instanceof LibReferencePromise) {
                     if (args[0] instanceof BuilderPromise) {
@@ -2401,7 +2423,7 @@
                 };
             };
             for (i in me.modules.api.getSelectorClass().prototype) {
-                if (i !== 'arrow' && i !== 'highlight' && i !== 'result' && i !== 'nop') {
+                if (i !== 'arrow' && i !== 'highlight' && i !== 'result' && i !== 'nop' && i !== 'stop') {
                     Builder.prototype[i] = buildProxyFunction(i);
                 }
             }
@@ -2896,6 +2918,11 @@
                     pc.push(recent);
                     setStack(pc);
                     api.repeatTask(1 + api.env.taskIndex - parseInt(ppc[0])).nop();
+                }
+            ],
+            '_closeCartFiller':[
+                'close CartFiller, only for \'clean\' injection mode', function() {
+                    api.closeCartFiller().result();
                 }
             ]
         };
@@ -7340,6 +7367,11 @@
         },
         rootWindowTitle: function() {
             return uiType === 'clean' ? 'CartFiller Dashboard' : undefined;
+        },
+        closeCartFiller: function() {
+            if (uiType === 'clean') {
+                window.close();
+            }
         }
     });
 }).call(this, document, window);
