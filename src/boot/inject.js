@@ -110,8 +110,17 @@
         if (document.getElementsByTagName('body')[0].getAttribute('data-old-cartfiller-version-detected')) {
             return; // no launch
         }
-        if (((! ignoreOpener) && window.opener && window.opener !== window) || (window.parent && /\#?\/?launchSlaveInFrame$/.test(window.location.hash))) {
+        if (((! ignoreOpener) && window.opener && window.opener !== window && String(config['data-type']) !== '2') || (window.parent && /\#?\/?launchSlaveInFrame$/.test(window.location.hash))) {
             this.modules.dispatcher.startSlaveMode();
+        } else if ((! ignoreOpener) && String(config['data-type']) === '2' && config.localIndexHtml) {
+            // this is 'serve from filesystem' in clean mode. There are two options: 
+            // 1. there is already a service tab with local.html opened 
+            // 2. there is no service tab and we should open one
+            if (window.opener && window.opener !== window && window.opener.opener && window.opener.opener !== window.opener) {
+                this.modules.dispatcher.startSlaveMode(window.opener.opener);
+            } else {
+                alert('to be done');
+            }
         } else {
             if (! config.uiLaunched) {
                 config.uiLaunched = true;
@@ -119,6 +128,8 @@
                     this.modules.ui.framed(document, window);
                 } else if (String(config['data-type']) === '1'){
                     this.modules.ui.popup(document, window);
+                } else if (String(config['data-type']) === '2'){
+                    this.modules.ui.clean(document, window);
                 } else {
                     alert('Type not specified, should be 0 for framed, 1 for popup');
                 }

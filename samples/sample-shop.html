@@ -38,13 +38,16 @@
                     var minifiedNames = ['Unminified', 'Minified', 'Source'];
                     var injects = ['script', 'eval', 'iframe'];
                     var injectNames = ['Script', 'Eval', 'Iframe'];
+                    var types = ['framed', 'popup', 'clean'];
+                    var typeNames = ['Framed', 'Popup', 'Clean'];
                     for (var minified = 0; minified < 3; minified++){
-                        for (var type = 0; type < 2; type++){
+                        for (var type = 0; type < 3; type++){
                             for (var inject = 0; inject < 3; inject++){
                                 a = document.createElement('a');
+                                //if (type === 2) a.style.fontWeight = 'bold';
                                 a.setAttribute('class', 'bookmarklet');
                                 jQuery(a).cartFillerPlugin({
-                                    type: type ? 'popup' : 'framed', 
+                                    type: types[type], 
                                     minified: (minified === 2) ? 0 : minified, 
                                     chooseJob: chooseJobUrl, 
                                     debug: true, 
@@ -56,7 +59,7 @@
                                 });
                                 a.textContent = 
                                     minifiedNames[minified] + ' ' +
-                                    (type ? 'Popup ' : 'Framed ') + 
+                                    typeNames[type] + ' ' +
                                     injectNames[inject];
                                 div.appendChild(a);
                                 div.appendChild(document.createTextNode(' : '));

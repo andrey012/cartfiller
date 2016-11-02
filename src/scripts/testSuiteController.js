@@ -1099,7 +1099,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
         };
         var srcUrl = cfDebug.src.replace(/\/+$/, '');
         $scope.bookmarklets = [];
-        ['framed', 'popup'].filter(function(type) {
+        ['framed', 'popup', 'clean'].filter(function(type) {
             ['script', 'eval', 'iframe'].filter(function(inject) {
                 var options = {
                     name: type + '-' + inject,

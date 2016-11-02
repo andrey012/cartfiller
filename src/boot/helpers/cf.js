@@ -398,6 +398,8 @@
                             if (tweakedArgs[2]) {
                                 submitResult = false;
                             }
+                        } else if (fn === 'openUrl') {
+                            tweakedArgs[0] = me.modules.dispatcher.interpolateText(tweakedArgs[0]);
                         }
                         var apiOrElement;
                         if (fn === 'say' && p instanceof me.modules.api.getSelectorClass()) {

@@ -128,7 +128,7 @@
              */
             clearCart: [
                 lib('goToHomeSteps'),
-                'find total amount of items in the cart', [function(el){
+                'find total amount of items in the cart', [function(el, repeat10){
                     if (api.env.params.theParam !== 1) throw "params are passed incorrectly";
                     var strong = lib.cartAmountElement();
                     api.highlight(strong).arrow(strong).say(globals.skipMessages?'':'Here is total amount in cart. To start filling the cart we need to make sure, that cart is empty.').result((1 === strong.length) ? "" : "Cant find amount in cart");

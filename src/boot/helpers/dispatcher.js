@@ -1078,7 +1078,7 @@
                     }
                 } else if (0 === event.data.indexOf('cartFillerFilePopupUrl') || 0 === event.data.indexOf('cartFillerFilePopupPing')) {
                     // just relay
-                    window.opener.postMessage(event.data, '*');
+                    relay.parent.postMessage(event.data, '*');
                 } else if ('/^\'cartFillerEval\'/' === event.data) {
                     // launch slave frame
                     event.source.postMessage(me.localInjectJs, '*');
@@ -1982,6 +1982,9 @@
                 onLoadHappened = true;
             }
         },
+        setMainFrameLoaded: function() {
+            mainFrameLoaded = true;
+        },
         /**
          * Sends message to worker (job progress frame)
          * @function CartFiller.Dispatcher#postMessageToWorker
@@ -2290,7 +2293,7 @@
          * @function CartFiller.Dispatcher~startSlaveMode
          * @access public
          */
-        startSlaveMode: function() {
+        startSlaveMode: function(overrideParent) {
             // operating in slave mode, show message to user
             var body = document.getElementsByTagName('body')[0];
             while (body.children.length) {
@@ -2314,7 +2317,9 @@
             } catch (e) {}
             // initialize
             reinitializeWorker();
-            if (window.opener) {
+            if (overrideParent) {
+                relay.parent = overrideParent;
+            } else if (window.opener) {
                 relay.parent = window.opener;
             } else if (window.parent) {
                 // we are opened as frame, we are going to find last slave and 

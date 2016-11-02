@@ -14,7 +14,7 @@
 
         cf.task('openTodomvc')
             // we have sample distribution of TodoMVC in node_modules
-            .openUrl(globals.baseUrl)
+            .openUrl('${baseUrl}')
             // let's wait for some element to appear and then make sure
             // that at least document.readyState is complete
             .get('input#new-todo:visible')

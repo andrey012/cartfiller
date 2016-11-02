@@ -23,7 +23,6 @@
 /** @namespace CartFillerPlugin */
 
 ;(function ( $, window, document, undefined ) {
-
     'use strict';
     /**
      * @constant {string}
@@ -179,6 +178,8 @@
                 return 0;
             } else if (this.settings.type === 'popup'){
                 return 1;
+            } else if (this.settings.type === 'clean'){
+                return 2;
             } else {
                 alert('type not set or invalid, should be either "framed" or "popup"');
                 return 0;
@@ -209,11 +210,23 @@
             }
             return '(new Date()).getTime()';
         },
+        cleanPopup: function(popupWindowVariableName, documentVariableName) {
+            return this.getTypeId() === 2 ? 
+                (
+                    popupWindowVariableName + '=window.open(\'about:blank\',\'_blank\',\'resizable=1,height=1,width=1,scrollbars=1\')||alert(\'Allow popups and retry\');' +
+                    this.trace('popped up') +
+                    (documentVariableName ? (documentVariableName + '=' + popupWindowVariableName + '.document;') : '')
+                ) : '';
+        },
+        typeIdWithSlaveWorkaround: function() {
+            return (this.getTypeId() === 2 ? 'window.opener&&window.opener!==window?0:2' : this.getTypeId());
+        },
         scriptBookmarklet: function(){
             return 'try{' +
                 this.trace('start') + 
-                '(function(d,c,a,t,o,b,e,u,v,j,k,x,y,w,z,m,n,s){' + 
+                '(function(d,c,a,t,o,b,e,u,v,j,k,x,y,w,z,m,n,s,f){' + 
                     this.trace('in function') +
+                    this.cleanPopup('f', 'd') + 
                     's=d.createElement(\'script\');' + 
                     this.trace('script element created') +
                     's[a](c+t,o);' +
@@ -238,7 +251,7 @@
                     'document,' +
                     '\'data-\',' +
                     '\'setAttribute\',' +
-                    '\'type\',' + this.getTypeId() + ',' +
+                    '\'type\',' + this.typeIdWithSlaveWorkaround() + ',' +
                     '\'base-url\',\'' + this.settings.baseUrl + '\',' +
                     '\'src\',\'' + this.getInjectUrl() + '\',' +
                     '\'choose-job\',\'' + this.settings.chooseJob + '\',' +
@@ -251,8 +264,9 @@
         evalBookmarklet: function(){
             return 'try{' +
                 this.trace('start') +
-                '(function(f,x,t,u,v,j,d,w,y){' +
+                '(function(f,x,u,v,p){' +
                     this.trace('in function') +
+                    this.cleanPopup('p') + 
                     'x.open(' +
                         '\'GET\',' +
                         'u+v+\'?\'+' + this.getVersion() + ',' +
@@ -263,10 +277,17 @@
                         'try{' +
                             this.trace('x onload called') +
                             'f=1;' +
-                            'eval(' +
+                            (this.getTypeId() === 2 ? 'p.' : '') + 'eval(' +
                                 '\'(function(){\'+' +
                                 'x.response+' +
-                                '\'}).call({cartFillerEval:[u,t,j,d,w,y]});\'' +
+                                '\'}).call({cartFillerEval:[' +
+                                    '\\\'\'+u+\'\\\',' +
+                                    this.getTypeId() + ',' +
+                                    '\\\'' + this.settings.chooseJob + '\\\',' +
+                                    (this.settings.debug ? 1 : 0) + ',' +
+                                    '\\\'' + this.settings.worker + '\\\',' +
+                                    '\\\'' + this.settings.workerFrameUrl + '\\\'' +
+                                ']});\'' +
                             ');' +
                             this.trace('eval complete') +
                         '}catch(e){alert(e);}' +
@@ -279,66 +300,85 @@
                 '})(' +
                     '0,' +
                     'new XMLHttpRequest(),' + 
-                    this.getTypeId() + ',' +
                     '\'' + this.settings.baseUrl + '\',' +
-                    '\'' + this.getInjectUrl() + '\',' +
-                    '\'' + this.settings.chooseJob + '\',' +
-                    (this.settings.debug ? 1 : 0) + ',' +
-                    '\'' + this.settings.worker + '\',' +
-                    '\'' + this.settings.workerFrameUrl + '\'' +
+                    '\'' + this.getInjectUrl() + '\'' +
                 ');' +
             '}catch(e){alert(e);}';
         },
+        cleanWrapForEval: function(code) {
+            return this.getTypeId() === 2 ? (
+                code.replace(/(\\*)'/g, function(m, g) {
+                    return g + g + '\\\'';
+                })
+            ) : (
+                code
+            );
+        },
         iframeBookmarklet: function(){
-            return 'try{' +
-                this.trace('start') +
-                '(function(f,d,p,t,u,v,m,j,y,x,i,w){' +
-                    this.trace('in') +
-                    'window.addEventListener(' +
-                        '\'message\',' +
-                        'function(e){' +
-                            'if(f)return;' +
-                            'try{' +
-                                this.trace('event') +
-                                'if(p.test(x=e.data)){' +
-                                    this.trace('event+') +
-                                    'f=1;' +
-                                    'eval(' +
-                                        '\'(function(){\'+' +
-                                        'x+' +
-                                        '\'}).call({cartFillerEval:[u,t,j,y,w,"",x]});\'' +
-                                   ');' +
-                                    this.trace('eval done') +
-                                '}' +
-                            '}catch(e){alert(e);}' +
-                        '}' +
-                        ',true' +
-                    ');' +
-                    'if(!u){' +
-                        this.trace('local') +
-                        'window.opener.postMessage(p.toString(),\'*\');' +
-                    '}else{' +
+            var listener = 'p=/^\'cartFillerEval\'/;' +
+                'window.addEventListener(' +
+                    '\'message\',' +
+                    'function(e){' +
+                        'if(f)return;' +
+                        'try{' +
+                            this.trace('event') +
+                            'if(p.test(x=e.data)){' +
+                                this.trace('event+') +
+                                'f=1;' +
+                                'eval(' +
+                                    '\'(function(){\'+' +
+                                    'x+' +
+                                    '\'}).call({cartFillerEval:[' +
+                                        '\\\'\'+u+\'\\\',' +
+                                        this.getTypeId() + ',' +
+                                        '\\\'' + this.settings.chooseJob + '\\\',' +
+                                        (this.settings.debug ? 1 : 0) + ',' +
+                                        ',' +
+                                        '\\\'\\\',' +
+                                        '\\\'' + this.settings.workerFrameUrl + '\\\'' +
+                                    ']});\'' +
+                                ');' +
+                                this.trace('eval done') +
+                            '}' +
+                        '}catch(e){alert(e);}' +
+                    '}' +
+                    ',true' +
+                ');' +
+                ( this.settings.baseUrl ? 
+                    (
                         this.trace('lstnr+') +
                         'i=d.createElement(\'iframe\');' +
                         this.trace('iframe') +
                         'd.getElementsByTagName(\'body\')[0].appendChild(i);' +
                         this.trace('iframe+') +
-                        'i.contentWindow.location.href=u+v+(m?\'?min&\':\'?\')+' + this.getVersion() + ';' +
-                        this.trace('iframe++') +
-                    '}' +
-                    'setTimeout(function(){if(!f)alert(\'error\');},5000);' +
-                    this.trace('timeout set') +
+                        'i.contentWindow.location.href=u+v+\'' + (this.settings.minified ? '?min&\'+' : '?\'+') + this.getVersion() + ';' +
+                        this.trace('iframe++')
+                    ) :
+                    (
+                        this.trace('local') +
+                        'window.opener' + (this.getTypeId() === 2 ? '.opener' : '') + '.postMessage(p.toString(),\'*\');'
+                    )
+                ) +
+                'setTimeout(function(){if(!f)alert(\'error\');},5000);' +
+                this.trace('timeout set');
+            return 'try{' +
+                this.trace('start') +
+                '(function(f,d,u,v,i,w,y,p){' +
+                    this.trace('in') +
+                    (this.getTypeId() === 2 ? (
+                        this.cleanPopup('y') +
+                        'y.eval(\'' +
+                            'var u=\\\'\'+u+\'\\\',v=\\\'\'+v+\'\\\',d=document,f,p;' + 
+                            this.cleanWrapForEval(listener) + 
+                        '\');'
+                    ): (
+                        listener
+                    )) +
                 '})(' +
-                    '0,' +
-                    'document,' +
-                    '/^\'cartFillerEval\'/,' + 
-                    this.getTypeId() + ',' +
-                    '\'' + this.settings.baseUrl +'\',' +
-                    '\'' + this.getIframeUrl() + '\',' + 
-                    (this.settings.minified ? 1:0) + ',' +
-                    '\'' + this.settings.chooseJob + '\',' +
-                    (this.settings.debug ? 1 : 0) + ',' +
-                    '\'' + this.settings.workerFrameUrl + '\'' +
+                    '0,' + //f
+                    'document,' + //d
+                    '\'' + this.settings.baseUrl +'\',' + //u
+                    '\'' + this.getIframeUrl() + '\'' + //v
                 ');' +
             '}catch(e){alert(e);}';
         },

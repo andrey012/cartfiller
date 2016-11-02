@@ -43,13 +43,15 @@
                                 var bookmarklet = 
                                     testFrame
                                         .jQuery('#bookmarklets a.bookmarklet:nth('+i+')');
-                                (function(i){
-                                    console.log('registering test ' + i);
-                                    QUnit.test("QuickRun " + i + " (" + bookmarklet.text() + ")", function(assert){
-                                        console.log('test ' + i + ' started');
-                                        processNextBookmarklet(i, assert, assert.async());
-                                    });
-                                })(i);
+                                if (-1 === bookmarklet.text().indexOf('Clean')) {
+                                    (function(i){
+                                        console.log('registering test ' + i);
+                                        QUnit.test("QuickRun " + i + " (" + bookmarklet.text() + ")", function(assert){
+                                            console.log('test ' + i + ' started');
+                                            processNextBookmarklet(i, assert, assert.async());
+                                        });
+                                    })(i);
+                                }
                             }
                             assert.ok(bookmarkletCount > 0);
                             done();

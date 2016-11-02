@@ -123,8 +123,17 @@
         if (document.getElementsByTagName('body')[0].getAttribute('data-old-cartfiller-version-detected')) {
             return; // no launch
         }
-        if (((! ignoreOpener) && window.opener && window.opener !== window) || (window.parent && /\#?\/?launchSlaveInFrame$/.test(window.location.hash))) {
+        if (((! ignoreOpener) && window.opener && window.opener !== window && String(config['data-type']) !== '2') || (window.parent && /\#?\/?launchSlaveInFrame$/.test(window.location.hash))) {
             this.modules.dispatcher.startSlaveMode();
+        } else if ((! ignoreOpener) && String(config['data-type']) === '2' && config.localIndexHtml) {
+            // this is 'serve from filesystem' in clean mode. There are two options: 
+            // 1. there is already a service tab with local.html opened 
+            // 2. there is no service tab and we should open one
+            if (window.opener && window.opener !== window && window.opener.opener && window.opener.opener !== window.opener) {
+                this.modules.dispatcher.startSlaveMode(window.opener.opener);
+            } else {
+                alert('to be done');
+            }
         } else {
             if (! config.uiLaunched) {
                 config.uiLaunched = true;
@@ -132,6 +141,8 @@
                     this.modules.ui.framed(document, window);
                 } else if (String(config['data-type']) === '1'){
                     this.modules.ui.popup(document, window);
+                } else if (String(config['data-type']) === '2'){
+                    this.modules.ui.clean(document, window);
                 } else {
                     alert('Type not specified, should be 0 for framed, 1 for popup');
                 }
@@ -220,7 +231,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1505078090790';
+    config.gruntBuildTimeStamp='1505338875834';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -2410,6 +2421,8 @@
                             if (tweakedArgs[2]) {
                                 submitResult = false;
                             }
+                        } else if (fn === 'openUrl') {
+                            tweakedArgs[0] = me.modules.dispatcher.interpolateText(tweakedArgs[0]);
                         }
                         var apiOrElement;
                         if (fn === 'say' && p instanceof me.modules.api.getSelectorClass()) {
@@ -3858,7 +3871,7 @@
                     }
                 } else if (0 === event.data.indexOf('cartFillerFilePopupUrl') || 0 === event.data.indexOf('cartFillerFilePopupPing')) {
                     // just relay
-                    window.opener.postMessage(event.data, '*');
+                    relay.parent.postMessage(event.data, '*');
                 } else if ('/^\'cartFillerEval\'/' === event.data) {
                     // launch slave frame
                     event.source.postMessage(me.localInjectJs, '*');
@@ -4762,6 +4775,9 @@
                 onLoadHappened = true;
             }
         },
+        setMainFrameLoaded: function() {
+            mainFrameLoaded = true;
+        },
         /**
          * Sends message to worker (job progress frame)
          * @function CartFiller.Dispatcher#postMessageToWorker
@@ -5070,7 +5086,7 @@
          * @function CartFiller.Dispatcher~startSlaveMode
          * @access public
          */
-        startSlaveMode: function() {
+        startSlaveMode: function(overrideParent) {
             // operating in slave mode, show message to user
             var body = document.getElementsByTagName('body')[0];
             while (body.children.length) {
@@ -5094,7 +5110,9 @@
             } catch (e) {}
             // initialize
             reinitializeWorker();
-            if (window.opener) {
+            if (overrideParent) {
+                relay.parent = overrideParent;
+            } else if (window.opener) {
                 relay.parent = window.opener;
             } else if (window.parent) {
                 // we are opened as frame, we are going to find last slave and 
@@ -5594,10 +5612,11 @@
     /**
      * Is set to true if UI is working in framed mode
      * This lets us draw overlays in main window instead of main frame
-     * @member {boolean} CartFiller.UI~isFramed
+     * @member {string} CartFiller.UI~uiType can be 'clean', 'framed', 'popup'
      * @access private
      */
-    var isFramed = false;
+    var uiType = 'framed';
+    var cleanUIRootWindowSize;
     /**
      * Keeps current size of worker (job progress) frame, can be either 'small' or 'big'
      * @member {String} CartFiller.UI~currentWorkerFrameSize
@@ -5618,7 +5637,7 @@
      * @access private
      */
     var overlayWindow = function(){
-        return isFramed && 0 ? window : me.modules.ui.mainFrameWindow;
+        return me.modules.ui.mainFrameWindow;
     };
     /**
      * Returns color for red overlay arrows
@@ -5645,7 +5664,12 @@
         div.onclick = function(){me.modules.ui.clearOverlaysAndReflect();};
         var body = overlayWindow().document.getElementsByTagName('body')[0];
         if (body) {
-            body.appendChild(div);
+            var messageDiv = body.getElementsByClassName('cartFillerOverlayDivmessage');
+            if (messageDiv.length) {
+                body.insertBefore(div, messageDiv[0]);
+            } else {
+                body.appendChild(div);
+            }
         }
         return div;
     };
@@ -6012,7 +6036,7 @@
             messageDiv.style.backgroundColor = '#fff';
             messageDiv.style.padding = '10px';
             messageDiv.style.fontSize = '20px;';
-            messageDiv.style.zIndex = getZIndexForOverlay() + 1;
+            messageDiv.style.zIndex = getZIndexForOverlay();
             messageDiv.style.border = '#bbb solid 10px';
             messageDiv.style.borderRadius = '20px';
             messageDiv.style.overflow = 'auto';
@@ -6171,8 +6195,8 @@
     var adjustFrameCoordinates = function(forceRedraw){
         var windowWidth = window.innerWidth,
             windowHeight = window.innerHeight,
-            outerWidth = isFramed ? false : window.outerWidth,
-            outerHeight = isFramed ? false : window.outerHeight;
+            outerWidth = uiType === 'framed' ? false : window.outerWidth,
+            outerHeight = uiType === 'framed' ? false : window.outerHeight;
 
         me.modules.ui.checkAndUpdateCurrentUrl();
         if (currentWindowDimensions.width !== windowWidth ||
@@ -6180,7 +6204,7 @@
             currentWindowDimensions.outerWidth !== outerWidth ||
             currentWindowDimensions.outerHeight !== outerHeight ||
             currentWindowDimensions.workerFrameSize !== currentWorkerFrameSize ||
-            (isFramed && me.modules.ui.currentMainFrameWindow !== me.modules.ui.drawnMainFrameWindow) ||
+            (uiType === 'framed' && me.modules.ui.currentMainFrameWindow !== me.modules.ui.drawnMainFrameWindow) ||
             forceRedraw) {
             (function() {
                 var mainFrameWidthBig = windowWidth * 0.8 - 1,
@@ -6189,17 +6213,17 @@
                     workerFrameWidthSmall = windowWidth * 0.2 - 1,
                     slaveFramesHeight = 20,
                     mainFramesHeight = Math.floor(
-                        (windowHeight - 15 - (isFramed ? ((me.modules.ui.mainFrames.length - 1) * slaveFramesHeight) : 0)) / (isFramed ? me.modules.ui.mainFrames.length : 1)
+                        (windowHeight - 15 - (uiType === 'framed' ? ((me.modules.ui.mainFrames.length - 1) * slaveFramesHeight) : 0)) / (uiType === 'framed' ? me.modules.ui.mainFrames.length : 1)
                     ),
                     workerFrameHeight = windowHeight - 15,
-                    chooseJobFrameLeft = 0.02 * windowWidth + (isFramed ? 0 : 200),
-                    chooseJobFrameWidth = 0.76 * windowWidth - (isFramed ? 0 : 200),
-                    chooseJobFrameTop = 0.02 * windowHeight,
-                    chooseJobFrameHeight = 0.96 * windowHeight;
+                    chooseJobFrameLeft = uiType === 'clean' ? (0.02 * cleanUIRootWindowSize.width) : (0.02 * windowWidth + (uiType === 'framed' ? 0 : 200)),
+                    chooseJobFrameWidth = uiType === 'clean' ? (0.76 * cleanUIRootWindowSize.width) : (0.76 * windowWidth - (uiType === 'framed' ? 0 : 200)),
+                    chooseJobFrameTop = 0.02 * (uiType === 'clean' ? cleanUIRootWindowSize.height : windowHeight),
+                    chooseJobFrameHeight = 0.96 * (uiType === 'clean' ? cleanUIRootWindowSize.height : windowHeight);
 
                     var frameHeights = [];
 
-                    if (isFramed) {
+                    if (uiType === 'framed') {
                         me.modules.ui.mainFrames.filter(function(mainFrame, index) {
                             frameHeights[index] = Math.floor(mainFramesHeight * (me.modules.ui.mainFrames.length === 1 ? 1 : (index === me.modules.ui.currentMainFrameWindow ? (0.3 + 0.7 * me.modules.ui.mainFrames.length) : 0.3)));
                             mainFrame.style.height =  frameHeights[index] + 'px';
@@ -6208,16 +6232,18 @@
                             }
                         });
                     }
-                    try {
-                        me.modules.ui.workerFrame.style.height = workerFrameHeight + 'px';
-                    } catch (e) {}
+                    if (uiType !== 'clean') {
+                        try {
+                            me.modules.ui.workerFrame.style.height = workerFrameHeight + 'px';
+                        } catch (e) {}
+                    }
                     try {
                         me.modules.ui.chooseJobFrame.style.height = chooseJobFrameHeight + 'px';
                         me.modules.ui.chooseJobFrame.style.top = chooseJobFrameTop + 'px';
                         me.modules.ui.chooseJobFrame.style.left = chooseJobFrameLeft + 'px';
                         me.modules.ui.chooseJobFrame.style.width = chooseJobFrameWidth + 'px';
                     } catch (e) {}
-                    if (isFramed) {
+                    if (uiType === 'framed') {
                         me.modules.ui.mainFrames.filter(function(mainFrame, index) {
                             try {
                                 var mainFrameTop = frameHeights.slice(0, index).reduce(function(acc, v) { return acc + v + slaveFramesHeight; }, 0);
@@ -6230,7 +6256,7 @@
                     }
 
                     if (currentWorkerFrameSize === 'big') {
-                        if (isFramed) {
+                        if (uiType === 'framed') {
                             try {
                                 me.modules.ui.workerFrame.style.width = workerFrameWidthBig + 'px';
                                 me.modules.ui.workerFrame.style.left = mainFrameWidthSmall + 'px';
@@ -6244,7 +6270,7 @@
                                     }
                                 } catch (e) {}
                             });
-                        } else {
+                        } else if (uiType === 'popup') {
                             try {
                                 me.modules.ui.mainFrameWindow.resizeTo(1,1);
                             } catch (e) {}
@@ -6252,9 +6278,14 @@
                                 me.modules.ui.workerFrame.style.width = workerFrameWidthBig + 'px';
                                 me.modules.ui.workerFrame.style.left = (windowWidth - workerFrameWidthBig - 5) + 'px';
                             } catch (e) {}
+                        } else if (uiType === 'clean') {
+                            try {
+                                window.resizeTo(cleanUIRootWindowSize.width,cleanUIRootWindowSize.height);
+                                window.moveTo(0, 0);
+                            } catch (e) {}
                         }
                     } else if (currentWorkerFrameSize === 'small') {
-                        if (isFramed) {
+                        if (uiType === 'framed') {
                             try {
                                 me.modules.ui.workerFrame.style.width = workerFrameWidthSmall + 'px';
                                 me.modules.ui.workerFrame.style.left = mainFrameWidthBig + 'px';
@@ -6267,13 +6298,18 @@
                                     }
                                 } catch (e) {}
                             });
-                        } else {
+                        } else if (uiType === 'popup') {
                             try {
                                 me.modules.ui.mainFrameWindow.resizeTo(Math.round(outerWidth*0.8 - 10), Math.round(outerHeight));
                             } catch (e) {}
                             try {
                                 me.modules.ui.workerFrame.style.width = workerFrameWidthSmall + 'px';
                                 me.modules.ui.workerFrame.style.left = (windowWidth - workerFrameWidthSmall - 5) + 'px';
+                            } catch (e) {}
+                        } else {
+                            try {
+                                window.resizeTo(Math.floor(cleanUIRootWindowSize.width * 0.2), cleanUIRootWindowSize.height);
+                                window.moveTo(Math.floor(cleanUIRootWindowSize.width * 0.8), 0);
                             } catch (e) {}
                         }
                     }
@@ -6319,7 +6355,12 @@
         div.style.zIndex = getZIndexForOverlay();
         div.className = overlayClassName + ' ' + overlayClassName + 'highlight';
         div.onclick = function(){me.modules.ui.clearOverlaysAndReflect();};
-        getDocument().getElementsByTagName('body')[0].appendChild(div);
+        var messageDiv = getDocument().getElementsByClassName('cartFillerOverlayDivmessage');
+        if (messageDiv.length) {
+            getDocument().getElementsByTagName('body')[0].insertBefore(div, messageDiv[0]);
+        } else {
+            getDocument().getElementsByTagName('body')[0].appendChild(div);
+        }
 
     };
 
@@ -6369,7 +6410,7 @@
         index = index || 0;
         me.modules.ui.currentMainFrameWindow = index;
         me.modules.ui.mainFrameWindow = me.modules.ui.mainFrameWindows[0]; // always set to first
-        if (isFramed) {
+        if (uiType === 'framed') {
             // adjust borders
             if (me.modules.ui.mainFrames && me.modules.ui.mainFrames.length > 1) {
                 for (var i = me.modules.ui.mainFrames.length - 1 ; i >= 0; i --) {
@@ -6421,6 +6462,9 @@
                 chooseJobFrameLoaded = true;
             }
             this.chooseJobFrame.style.display = show ? 'block' : 'none';
+            if (uiType === 'clean') {
+                this.setSize(show ? 'big' : 'small');
+            }
         },
         /**
          * Closes popup window in case of popup UI
@@ -6591,6 +6635,7 @@
          */
         popup: function(document, window){
             me.modules.dispatcher.init();
+            uiType = 'popup';
             this.mainFrameWindows = [
                 window.open(window.location.href, '_blank', 'resizable=1, height=1, width=1, scrollbars=1')
             ];
@@ -6624,7 +6669,7 @@
             this.workerFrame.style.position='fixed';
             this.workerFrame.style.top = '0px';
             this.workerFrame.style.height = '100%';
-            this.workerFrame.style.zIndex = '100000';
+            this.workerFrame.style.zIndex = 2147483647;
             body.appendChild(this.workerFrame);
             this.workerFrameWindow = window.frames[workerFrameName];
             if (me.localIndexHtml) {
@@ -6640,7 +6685,7 @@
             this.chooseJobFrame.style.top = '0px';
             this.chooseJobFrame.style.left = '0px';
             this.chooseJobFrame.style.width = '0px';
-            this.chooseJobFrame.style.zIndex = '10000002';
+            this.chooseJobFrame.style.zIndex = 2147483647;
             this.chooseJobFrame.style.background = 'white';
             body.appendChild(this.chooseJobFrame);
             this.chooseJobFrameWindow = window.frames[chooseJobFrameName];
@@ -6656,7 +6701,7 @@
          * @access public
          */
         framed: function(document, window) {
-            isFramed = true;
+            uiType = 'framed';
             me.modules.dispatcher.init();
             var body = document.getElementsByTagName('body')[0];
             var mainFrameSrc = window.location.href;
@@ -6690,7 +6735,7 @@
             this.chooseJobFrame.style.width = '0px';
             this.chooseJobFrame.style.position = 'fixed';
             this.chooseJobFrame.style.background = 'white';
-            this.chooseJobFrame.style.zIndex = '10000002';
+            this.chooseJobFrame.style.zIndex = 2147483647;
             body.appendChild(this.mainFrames[0]);
             this.mainFrameWindows = [window.frames[mainFrameName + '-0']];
             setMainFrameWindow();
@@ -6716,6 +6761,74 @@
             };
 
             this.setSize('small');
+            // Launch adjustFrameCoordinates
+            setInterval(adjustFrameCoordinates, 2000);
+        },
+        /**
+         * Starts Clean type UI
+         * @function CartFiller.UI#clean
+         * @param {Document} document Document where we are at the moment of injecting
+         * @param {Window} window Window, that we are at the moment of injecting
+         * @access public
+         */
+        clean: function(document, window) {
+            uiType = 'clean';
+            cleanUIRootWindowSize = {
+                width: window.opener && ((window.opener.screen && window.opener.screen.availWidth || window.opener.screen.width) || window.opener.outerWidth || window.opener.innerWidth),
+                height: window.opener && ((window.opener.screen && window.opener.screen.availHeight || window.opener.screen.height) || window.opener.outerHeight || window.opener.innerHeight) 
+            };
+            me.modules.dispatcher.setMainFrameLoaded();
+            me.modules.dispatcher.init();
+            this.mainFrameWindows = [
+                window.opener
+            ];
+            setMainFrameWindow();
+            this.mainFrameWindow = this.mainFrameWindows[0];
+            this.closePopup = function(){
+            };
+            this.focusMainFrameWindow = function(){
+            };
+            me.modules.dispatcher.registerLoadWatcher();
+
+            var body = window.document.getElementsByTagName('body')[0];
+            this.setSize = function(size){
+                if (undefined === size) {
+                    size = (currentWorkerFrameSize === 'big') ? 'small' : 'big';
+                }
+                currentWorkerFrameSize = size;
+                adjustFrameCoordinates();
+                if (size === 'small') {
+                    this.mainFrameWindow.focus();
+                }
+            };
+
+            this.workerFrame = window.document.createElement('iframe');
+            this.workerFrame.setAttribute('name', workerFrameName);
+            this.workerFrame.style.position='fixed';
+            this.workerFrame.style.top = '0px';
+            this.workerFrame.style.left = '0px';
+            this.workerFrame.style.height = '100%';
+            this.workerFrame.style.width = '100%';
+            body.appendChild(this.workerFrame);
+            this.workerFrameWindow = window.frames[workerFrameName];
+            if (me.localIndexHtml) {
+                this.workerFrameWindow.document.write(me.localIndexHtml);
+            } else {
+                this.workerFrameWindow.location.href = getWorkerFrameSrc();
+            }
+
+            this.chooseJobFrame = window.document.createElement('iframe');
+            this.chooseJobFrame.setAttribute('name', chooseJobFrameName);
+            this.chooseJobFrame.style.position='fixed';
+            this.chooseJobFrame.style.height = '0px';
+            this.chooseJobFrame.style.top = '0px';
+            this.chooseJobFrame.style.left = '0px';
+            this.chooseJobFrame.style.width = '0px';
+            this.chooseJobFrame.style.zIndex = 2147483647;
+            this.chooseJobFrame.style.background = 'white';
+            body.appendChild(this.chooseJobFrame);
+            this.chooseJobFrameWindow = window.frames[chooseJobFrameName];
+            this.setSize('big');
             // Launch adjustFrameCoordinates
             setInterval(adjustFrameCoordinates, 2000);
         },
@@ -6841,7 +6954,7 @@
                 return;
             }
             if (! reportMousePointer) {
-                var trackingDocument = isFramed ? document : getDocument();
+                var trackingDocument = uiType === 'framed' ? document : getDocument();
                 var div = trackingDocument.createElement('div');
                 div.style.height = window.innerHeight + 'px';
                 div.style.width = window.innerWidth + 'px';
@@ -6860,7 +6973,7 @@
                     var windowIndex = 0;
                     var frameRect = {left: 0, top: 0};
                     reportMousePointer = false;
-                    if (isFramed) {
+                    if (uiType === 'framed') {
                         var frame = trackingDocument.elementFromPoint(x,y);
                         if (frame) {
                             var match = /^cartFillerMainFrame-(\d+)$/.exec(frame.getAttribute('name'));
@@ -7047,7 +7160,7 @@
             return mainFrameWindowDocument;
         },
         setAdditionalWindows: function(descriptors, noResultCall) {
-            if (! isFramed) {
+            if (uiType !== 'framed') {
                 if (descriptors && descriptors.length) {
                     throw new Error('this function is only availabled in framed mode');
                 }
