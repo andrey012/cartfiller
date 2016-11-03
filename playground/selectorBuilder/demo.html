@@ -1,15 +1,30 @@
 <!DOCTYPE html>
 <html>
     <head>
+        <title>CartFiller SelectorBuilder</title>
     </head>
     <body>
-        <h3>
-            SelectorBuilder link
-        </h3>
+        <div class="container">
+            <h2>CartFiller SelectorBuilder</h2>
+            <div class="section">
+                <h3>Try right here</h3>
+                <ul class="list">
+                    <li data-my-attribute="Hello World!">Use this link: <a class="bookmarklet" href="javascript:try{(function(f,d,u,v,i,w,y,p){y=window.open('about:blank','_blank','resizable=1,height=1,width=1,scrollbars=1')||alert('Allow popups and retry');y.eval('var u=\''+u+'\',v=\''+v+'\',d=document,f,p;p=/^\'cartFillerEval\'/;window.addEventListener(\'message\',function(e){if(f)return;try{if(p.test(x=e.data)){f=1;eval(\'(function(){\'+x+\'}).call({cartFillerEval:[\\\'\'+u+\'\\\',2,\\\'https://andrey012.github.io/cartfiller/dist/?cfv1505723763721#root=..%2Fplayground%2FselectorBuilder&job=selectorBuilder\\\',1,,\\\'\\\',\\\'\\\']});\');}}catch(e){alert(e);}},true);i=d.createElement(\'iframe\');d.getElementsByTagName(\'body\')[0].appendChild(i);i.contentWindow.location.href=u+v+\'?\'+(new Date()).getTime();setTimeout(function(){if(!f)alert(\'error\');},5000);');})(0,document,'https://andrey012.github.io/cartfiller/dist','/i.htm');}catch(e){alert(e);}">SelectorBuilder</a></li>
+                    <li>Your browser will probably complain about popup windows, enable popups and click link again</li>
+                    <li>When the popup window will appear look for Search button in the popup window and click it</li>
+                    <li>In your main browser window (not popup) point your mouse to the element that you want to build selector for and click</li>
+                    <li>You will see DOM tree buttons in the popup window, click them to build selector. The selector is mixture of standard CSS selectors and CartFiller specific methods when CSS selectors are not enough. Would you like specific selectors to be built - let me know.</li>
+                    <li>Sometimes target webpage will hide elements when page loses focus. In this case use shift+mousemove instead of click. This works both for Search button and for selecting an element on target page.</li>
+                </ul>
+            </div>
+            <div class="section">
+                <h3>On other websites</h3>
+                <ul class="list">
+                    <li>Drag-and-drop the SelectorBuilder link from above to your bookmarks bar.</li>
+                    <li>Open target page</li>
+                    <li>Click SelectorBuilder bookmark</li>
+                </ul>
+            </div>
         <div>
-            <p>
-                <a href="javascript:try{(function(f,d,u,v,i,w,y,p){y=window.open('about:blank','_blank','resizable=1,height=1,width=1,scrollbars=1')||alert('Allow popups and retry');y.eval('var u=\''+u+'\',v=\''+v+'\',d=document,f,p;p=/^\'cartFillerEval\'/;window.addEventListener(\'message\',function(e){if(f)return;try{if(p.test(x=e.data)){f=1;eval(\'(function(){\'+x+\'}).call({cartFillerEval:[\\\'\'+u+\'\\\',2,\\\'https://andrey012.github.io/cartfiller/dist/?cfv1505723763721#root=..%2Fplayground%2FselectorBuilder&job=selectorBuilder\\\',1,,\\\'\\\',\\\'\\\']});\');}}catch(e){alert(e);}},true);i=d.createElement(\'iframe\');d.getElementsByTagName(\'body\')[0].appendChild(i);i.contentWindow.location.href=u+v+\'?\'+(new Date()).getTime();setTimeout(function(){if(!f)alert(\'error\');},5000);');})(0,document,'https://andrey012.github.io/cartfiller/dist','/i.htm');}catch(e){alert(e);}">SelectorBuilder</a>
-            </p>
-        </div>
     </body>
 </html>

@@ -34,19 +34,8 @@ npm run demo
 Tests are in /playground and /tutorial
 
 ## To try Selector Builder without cloning
-### Right here
-- <a href="https://andrey012.github.com/cartfiller/playground/selectorBuilder/demo.html">This page</a> will contain a ***SelectorBuilder*** link: 
-- Click the link
-- Your browser will probably complain about popup windows, enable popups and click link again
-- When the popup window will appear look for ***Search*** button and click it
-- In your main browser window (not popup) point your mouse to the element that you want to build selector for and click
-- You will see DOM tree buttons in the popup window, click them to build selector.
-- When UI is damaged if browser window looses focus - use shift+mousemove instead of click everywhere. It will let you preserve focus in the target browser window and still build selector.
 
-### On other websites
-- Drag-and-drop the ***SelectorBuilder*** link from above to your bookmarks bar.
-- Open target page
-- Click SelectorBuilder bookmark 
+See <a href="https://andrey012.github.com/cartfiller/playground/selectorBuilder/demo.html">SelectorBuilder demo page</a>
 
 ## Tutorial
 
