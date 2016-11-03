@@ -35,7 +35,8 @@ Tests are in /playground and /tutorial
 
 ## To try Selector Builder without cloning
 ### Right here
-- Click the link: <a href="(javascript:try{(function(f,d,u,v,i,w,y,p){y=window.open('about:blank','_blank','resizable=1,height=1,width=1,scrollbars=1')||alert('Allow popups and retry');y.eval('var u=\''+u+'\',v=\''+v+'\',d=document,f,p;p=/^\'cartFillerEval\'/;window.addEventListener(\'message\',function(e){if(f)return;try{if(p.test(x=e.data)){f=1;eval(\'(function(){\'+x+\'}).call({cartFillerEval:[\\\'\'+u+\'\\\',2,\\\'https://andrey012.github.io/cartfiller/dist/?cfv1505723763721#root=..%2Fplayground%2FselectorBuilder&job=selectorBuilder\\\',1,,\\\'\\\',\\\'\\\']});\');}}catch(e){alert(e);}},true);i=d.createElement(\'iframe\');d.getElementsByTagName(\'body\')[0].appendChild(i);i.contentWindow.location.href=u+v+\'?\'+(new Date()).getTime();setTimeout(function(){if(!f)alert(\'error\');},5000);');})(0,document,'https://andrey012.github.io/cartfiller/dist','/i.htm');}catch(e){alert(e);})">SelectorBuilder</a>
+- <a href="https://andrey012.github.com/cartfiller/playground/selectorBuilder/demo.html">This page</a> will contain a ***SelectorBuilder*** link: 
+- Click the link
 - Your browser will probably complain about popup windows, enable popups and click link again
 - When the popup window will appear look for ***Search*** button and click it
 - In your main browser window (not popup) point your mouse to the element that you want to build selector for and click
