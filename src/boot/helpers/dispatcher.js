@@ -1660,8 +1660,8 @@
             for (var i = 0; i < elements.length && i < 16 ; i ++ ) {
                 arrow.push(elements[i]);
             }
-            if (details.initial || elements.length !== evaluatedCssSelectorElements.length || elements.filter(function(e) { return -1 === evaluatedCssSelectorElements.indexOf(e); }).length) {
-                evaluatedCssSelectorElements = elements;
+            if (details.initial || arrow.length !== evaluatedCssSelectorElements.length || arrow.filter(function(e) { return -1 === evaluatedCssSelectorElements.indexOf(e); }).length) {
+                evaluatedCssSelectorElements = arrow;
                 me.modules.ui.clearOverlays();
                 me.modules.ui.arrowTo(arrow, true, true);
             }

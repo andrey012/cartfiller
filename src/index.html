@@ -13,6 +13,7 @@
         #jobDetails h1, #jobDetails h2, #jobDetails h3, #jobDetails h4 {margin: 0px;}
         #jobDetails > h3 {margin: 8px;}
         #jobDetails .btn.dependent-step {opacity: 0.5;}
+        #jobDetails .comment {word-break: normal;}
         #testslist h1, #testslist h2, #testslist h3, #testslist h4, #testslist h5 {margin: 0px;}
         .pause-active, .pause-active:hover, .pause-active:focus, .pause-active:active, .pause-active:visited  {background-color: red;}
         .nobr {display: inline-block; white-space: nowrap;}
@@ -203,7 +204,7 @@
             </table>
         </div>
     </div>
-    <div id="workerContainer" style="display: none;" ng-controller="indexController" ng-class="'rendered'">
+    <div id="workerContainer" style="display: none;" ng-controller="indexController" ng-class="'rendered'" onmousemove="var event = arguments[0] || window.event; angular.element(this).scope().onMouseMoveNoWatch(event)">
         <div id="buttonPanel"
              style="text-align: right; z-index: 101; position: fixed; top: 0px; width: 100%; padding: 2px;" 
              class="alert alert-warning"
@@ -270,7 +271,7 @@
             </div>
             <div ng-if="debugEnabled" style="text-align: left;">
                 <a class="btn btn-xs btn-success" onclick="var event = arguments[0] || window.event; return angular.element(this).scope().refreshPageNoWatch(event);" href="#" title="Refresh page in the main frame">Refresh</a>
-                <a id="searchButton" class="btn btn-xs btn-success" onclick="var event = arguments[0] || window.event; return angular.element(this).scope().performSearchNoWatch(event);" title="Show DOM path for an element and build jQuery selector. For tricky elements click with shift." onmousemove="var event = arguments[0] || window.event; if (event.shiftKey) angular.element(this).scope().performSearchNoWatch(event, true);">Search</a>
+                <a id="searchButton" class="btn btn-xs btn-success" onclick="var event = arguments[0] || window.event; return angular.element(this).scope().performSearchNoWatch(event);" title="Show DOM path for an element and build jQuery selector. For tricky elements click with shift.">Search</a>
                 <a id="suggestButton" class="btn btn-xs btn-success" onclick="return angular.element(this).scope().suggestTaskNameNoWatch();" title="Search for task name from worker">Suggest</a>
                 <a id="libButton" class="btn btn-xs btn-success" onclick="return angular.element(this).scope().browseLibNoWatch();" title="Search for step builders and helpers">Lib</a>
                 <div id="dashboardMessage" class="alert alert-info" style="display: none;"></div>
@@ -282,22 +283,22 @@
                         <div style="max-height: 60vh; overflow: scroll">
                             <div ng-repeat="(elementIndex, element) in stack">
                                 <span ng-if="element.lib">lib: </span>
-                                <button data-index="{{elementIndex}}" class="btn btn-xs" ng-class="element.selectNodeName ? 'btn-success' : element.lib ? 'btn-info' : 'btn-warning'" ng-click="toggle('selectNodeName', element)" onmouseenter="angular.element(this).scope().highlight(this);" onmouseleave="angular.element(this).scope().unhighlight(this);" onmousemove="var event = arguments[0] || window.event; angular.element(this).scope().triggerWithShiftNoWatch(event)">
+                                <button data-index="{{elementIndex}}" class="btn btn-xs" ng-class="element.selectNodeName ? 'btn-success' : element.lib ? 'btn-info' : 'btn-warning'" ng-click="toggle('selectNodeName', element)" onmouseenter="angular.element(this).scope().highlight(this);" onmouseleave="angular.element(this).scope().unhighlight(this);">
                                     {{element.element || element.lib}}
                                 </button>
-                                <button class="btn btn-xs" ng-class="element.selectId ? 'btn-success' : 'btn-danger'" ng-click="toggle('selectId', element)" ng-if="element.id" onmousemove="var event = arguments[0] || window.event; angular.element(this).scope().triggerWithShiftNoWatch(event)">
+                                <button class="btn btn-xs" ng-class="element.selectId ? 'btn-success' : 'btn-danger'" ng-click="toggle('selectId', element)" ng-if="element.id">
                                     #{{element.id}}
                                 </button>
-                                <button class="btn btn-xs" ng-class="element.selectClass[index] ? 'btn-success' : 'btn-default'" ng-click="toggle('selectClass', element, index)" ng-repeat="(index, class) in element.classes" onmousemove="var event = arguments[0] || window.event; angular.element(this).scope().triggerWithShiftNoWatch(event)">
+                                <button class="btn btn-xs" ng-class="element.selectClass[index] ? 'btn-success' : 'btn-default'" ng-click="toggle('selectClass', element, index)" ng-repeat="(index, class) in element.classes">
                                     .{{class}}
                                 </button>
-                                <button class="btn btn-xs" ng-class="element.selectAttribute[index] ? 'btn-success' : 'btn-disabled'" ng-click="toggle('selectAttribute', element, index)" ng-repeat="(index, a) in element.attrs" onmousemove="var event = arguments[0] || window.event; angular.element(this).scope().triggerWithShiftNoWatch(event)">
+                                <button class="btn btn-xs" ng-class="element.selectAttribute[index] ? 'btn-success' : 'btn-disabled'" ng-click="toggle('selectAttribute', element, index)" ng-repeat="(index, a) in element.attrs">
                                     .{{a.n + '="' + a.v + '"'}}
                                 </button>
-                                <button class="btn btn-xs" ng-class="element.selectIndex ? 'btn-success' : 'btn-default'" ng-click="toggle('selectIndex', element)" ng-if="element.element" onmousemove="var event = arguments[0] || window.event; angular.element(this).scope().triggerWithShiftNoWatch(event)">
-                                    nth({{element.index}})
+                                <button class="btn btn-xs" ng-class="element.selectIndex ? 'btn-success' : 'btn-default'" ng-click="toggle('selectIndex', element)" ng-if="element.element">
+                                    nth({{element.index}}) of {{element.indexOf}}
                                 </button>
-                                <button class="btn btn-xs" ng-class="element.selectText ? 'btn-success' : 'btn-default'" ng-click="toggle('selectText', element)" ng-if="element.text" onmousemove="var event = arguments[0] || window.event; angular.element(this).scope().triggerWithShiftNoWatch(event)">
+                                <button class="btn btn-xs" ng-class="element.selectText ? 'btn-success' : 'btn-default'" ng-click="toggle('selectText', element)" ng-if="element.text">
                                     text
                                 </button>
                             </div>
@@ -415,7 +416,7 @@
                 <h2 ng-if="! jobTask.task && jobTask.heading && jobTask.level == 1">{{jobTask.heading}}</h2>
                 <h3 ng-if="! jobTask.task && jobTask.heading && jobTask.level == 2">{{jobTask.heading}}</h3>
                 <h4 ng-if="! jobTask.task && jobTask.heading && jobTask.level == 3">{{jobTask.heading}}</h4>
-                <span ng-if="! jobTask.task && jobTask.heading && jobTask.level == 4">{{jobTask.heading}}</span>
+                <span class="comment" ng-if="! jobTask.task && jobTask.heading && jobTask.level == 4">{{jobTask.heading}}</span>
                 <span ng-if="jobTask.task" ng-dblclick="doubleClickTaskName(jobTask.task)"><strong>{{jobTaskIndex + 1}}. {{jobTitleMap[jobTask.task] ? jobTitleMap[jobTask.task] : jobTask.task}}</strong></span><span ng-repeat="(propertyName, propertyValue) in jobTask" ng-if="propertyName != 'task' && jobTask.task" ng-dblclick="doubleClickTaskInput(jobTaskIndex, propertyName, propertyValue)">, 
                     <span>{{jobTitleMap[propertyName] ? jobTitleMap[propertyName] : propertyName}}:</span>
                     <span><strong>{{getPropertyValue(propertyValue)}}</strong></span></span>

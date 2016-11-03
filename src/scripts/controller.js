@@ -75,6 +75,17 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
             $scope.chooseJobState = !$scope.chooseJobState;
             cfMessage.send($scope.chooseJobState ? 'chooseJob' : 'chooseJobCancel', {hideHashDetails: ! initial});
         };
+        var mouseMoveShift = false;
+        $scope.onMouseMoveNoWatch = function(event) {
+            if (mouseMoveShift !== event.shiftKey) {
+                mouseMoveShift = event.shiftKey;
+                if (mouseMoveShift) {
+                    mouseDownTime = event.timeStamp || (new Date()).getTime();
+                } else {
+                    event.target.click();
+                }
+            }
+        };
         $scope.jobDetails = [];
         $scope.jobTaskProgress = [];
         $scope.jobTaskDescriptions = {};

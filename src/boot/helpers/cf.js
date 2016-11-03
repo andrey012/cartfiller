@@ -395,6 +395,9 @@
             ['say', 'repeatTask', 'repeatStep', 'skipTask', 'skipStep', 'repeatJob', 'skipJob', 'openUrl', 'sleep'].filter(function(fn) {
                 wrapper.Builder.prototype[fn] = function(args, index) {
                     return [fn + niceArgs(args), function(p) {
+                        if(me.modules.api.debug && me.modules.api.debug.stop) {
+                            debugger; // jshint ignore:line
+                        }
                         var tweakedArgs;
                         if (fn === 'repeatStep' || fn === 'skipStep') {
                             var target = findStepIndexByName(args[0], me.modules.api.env.taskSteps);
@@ -443,7 +446,12 @@
                 }];
             };
             Builder.prototype.nop = function() {
-                return ['nop', function(){ api('nop'); }];
+                return ['nop', function(){ 
+                    if(me.modules.api.debug && me.modules.api.debug.stop) {
+                        debugger; // jshint ignore:line
+                    }
+                    api('nop'); 
+                }];
             };
             /**
              * wait for element, ms

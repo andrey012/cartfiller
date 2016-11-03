@@ -1386,8 +1386,8 @@
             var stack = [];
             me.modules.ui.clearOverlaysAndReflect();
             me.modules.ui.arrowTo(el, true, true);
-            var prev;
-            var i, n;
+            var prev, next;
+            var i, j, n;
             if (el.nodeName === 'SELECT') {
                 // we'd rather report an option for this select, this way user can 
                 // build selector for either select element or an option - whichever he likes
@@ -1424,6 +1424,11 @@
                         i++;
                     }
                 }
+                for (next = el, j = 0; next; next = next.nextElementSibling) {
+                    if (next.nodeName === el.nodeName) {
+                        j++;
+                    }
+                }
                 stack.unshift({
                     element: el.nodeName.toLowerCase(), 
                     lib: undefined,
@@ -1431,6 +1436,7 @@
                     classes: ('string' === typeof el.className) ? el.className.split(' ').filter(function(v){return v;}) : [], 
                     id: 'string' === typeof el.id ? el.id : undefined, 
                     index: i,
+                    indexOf: i + j - 1,
                     text: String(el.textContent).length < 200 ? String(el.textContent) : ''
                 });
                 el = el.parentNode;

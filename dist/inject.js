@@ -231,7 +231,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1505653094643';
+    config.gruntBuildTimeStamp='1505723763721';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -2430,6 +2430,9 @@
             ['say', 'repeatTask', 'repeatStep', 'skipTask', 'skipStep', 'repeatJob', 'skipJob', 'openUrl', 'sleep'].filter(function(fn) {
                 wrapper.Builder.prototype[fn] = function(args, index) {
                     return [fn + niceArgs(args), function(p) {
+                        if(me.modules.api.debug && me.modules.api.debug.stop) {
+                            debugger; // jshint ignore:line
+                        }
                         var tweakedArgs;
                         if (fn === 'repeatStep' || fn === 'skipStep') {
                             var target = findStepIndexByName(args[0], me.modules.api.env.taskSteps);
@@ -2478,7 +2481,12 @@
                 }];
             };
             Builder.prototype.nop = function() {
-                return ['nop', function(){ api('nop'); }];
+                return ['nop', function(){ 
+                    if(me.modules.api.debug && me.modules.api.debug.stop) {
+                        debugger; // jshint ignore:line
+                    }
+                    api('nop'); 
+                }];
             };
             /**
              * wait for element, ms
@@ -4475,8 +4483,8 @@
             for (var i = 0; i < elements.length && i < 16 ; i ++ ) {
                 arrow.push(elements[i]);
             }
-            if (details.initial || elements.length !== evaluatedCssSelectorElements.length || elements.filter(function(e) { return -1 === evaluatedCssSelectorElements.indexOf(e); }).length) {
-                evaluatedCssSelectorElements = elements;
+            if (details.initial || arrow.length !== evaluatedCssSelectorElements.length || arrow.filter(function(e) { return -1 === evaluatedCssSelectorElements.indexOf(e); }).length) {
+                evaluatedCssSelectorElements = arrow;
                 me.modules.ui.clearOverlays();
                 me.modules.ui.arrowTo(arrow, true, true);
             }
@@ -6915,8 +6923,8 @@
             var stack = [];
             me.modules.ui.clearOverlaysAndReflect();
             me.modules.ui.arrowTo(el, true, true);
-            var prev;
-            var i, n;
+            var prev, next;
+            var i, j, n;
             if (el.nodeName === 'SELECT') {
                 // we'd rather report an option for this select, this way user can 
                 // build selector for either select element or an option - whichever he likes
@@ -6953,6 +6961,11 @@
                         i++;
                     }
                 }
+                for (next = el, j = 0; next; next = next.nextElementSibling) {
+                    if (next.nodeName === el.nodeName) {
+                        j++;
+                    }
+                }
                 stack.unshift({
                     element: el.nodeName.toLowerCase(), 
                     lib: undefined,
@@ -6960,6 +6973,7 @@
                     classes: ('string' === typeof el.className) ? el.className.split(' ').filter(function(v){return v;}) : [], 
                     id: 'string' === typeof el.id ? el.id : undefined, 
                     index: i,
+                    indexOf: i + j - 1,
                     text: String(el.textContent).length < 200 ? String(el.textContent) : ''
                 });
                 el = el.parentNode;

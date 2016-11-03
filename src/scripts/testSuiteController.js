@@ -529,15 +529,13 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                         $scope.runTest(index, $scope.params.slow ? 'slow' : 'fast', parseInt($scope.params.task) - 1, parseInt($scope.params.step) - 1);
                     }
                 });
-            } else if ('undefined' !== typeof $scope.params.job && 
-                       'undefined' !== typeof $scope.params.task && 
-                       'undefined' !== typeof $scope.params.step && 
+            } else if ('undefined' !== typeof $scope.params.job &&
                        ! $scope.alreadyWentTo && ! preventAutorun) 
             {
                 $scope.alreadyWentTo = true;
                 for (i = 0; i < $scope.discovery.scripts.urls.length; i ++) {
                     if ($scope.discovery.scripts.urls[i] === $scope.params.job) {
-                        $scope.runTest(i, $scope.params.slow ? 'slow' : 'fast', parseInt($scope.params.task) - 1, parseInt($scope.params.step) - 1);
+                        $scope.runTest(i, $scope.params.slow ? 'slow' : 'fast', parseInt($scope.params.task || 0) - 1, parseInt($scope.params.step || 1) - 1);
                         return;
                     }
                 }
