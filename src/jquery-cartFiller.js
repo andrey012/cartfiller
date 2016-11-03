@@ -202,13 +202,20 @@
             }
             return '(new Date()).getTime()';
         },
-        cleanPopup: function(popupWindowVariableName, documentVariableName) {
+        cleanPopup: function(popupWindowVariableName, documentVariableName, code) {
             return this.getTypeId() === 2 ? 
                 (
                     popupWindowVariableName + '=window.open(\'about:blank\',\'_blank\',\'resizable=1,height=1,width=1,scrollbars=1\')||alert(\'Allow popups and retry\');' +
                     this.trace('popped up') +
-                    (documentVariableName ? (documentVariableName + '=' + popupWindowVariableName + '.document;') : '')
-                ) : '';
+                    'function D(' + documentVariableName + '){' +
+                        documentVariableName + '=' + popupWindowVariableName + '.document;' +
+                        'if (' + documentVariableName + '.readyState===\'complete\'){' +
+                            code + 
+                        '}else{' +
+                            'setTimeout(D,10);' +
+                        '}' +
+                    '};D();'
+                ) : code;
         },
         typeIdWithSlaveWorkaround: function() {
             return (this.getTypeId() === 2 ? 'window.opener&&window.opener!==window?0:2' : this.getTypeId());
@@ -218,27 +225,28 @@
                 this.trace('start') + 
                 '(function(d,c,a,t,o,b,e,u,v,j,k,x,y,w,z,m,n,s,f){' + 
                     this.trace('in function') +
-                    this.cleanPopup('f', 'd') + 
-                    's=d.createElement(\'script\');' + 
-                    this.trace('script element created') +
-                    's[a](c+t,o);' +
-                    this.trace('type set') +
-                    's[a](c+b,e);' + 
-                    this.trace('base-url set') +
-                    's[a](u,e+v+\'?\'+' + this.getVersion() + ');' + 
-                    this.trace('src set') +
-                    's[a](c+j,k);' +
-                    this.trace('choose-job set') +
-                    'if(x)s[a](c+x,y);' + 
-                    this.trace('debug set') +
-                    'if(w)s[a](c+w,z);' + 
-                    this.trace('worker set') +
-                    'if(m)s[a](c+m,n);' + 
-                    this.trace('worker URL set') +
-                    's.onerror=function(){alert(\'error\');};' +
-                    this.trace('onerror set') +
-                    'd.getElementsByTagName(\'head\')[0].appendChild(s);' +
-                    this.trace('script element added') +
+                    this.cleanPopup('f', 'd',
+                        's=d.createElement(\'script\');' + 
+                        this.trace('script element created') +
+                        's[a](c+t,o);' +
+                        this.trace('type set') +
+                        's[a](c+b,e);' + 
+                        this.trace('base-url set') +
+                        's[a](u,e+v+\'?\'+' + this.getVersion() + ');' + 
+                        this.trace('src set') +
+                        's[a](c+j,k);' +
+                        this.trace('choose-job set') +
+                        'if(x)s[a](c+x,y);' + 
+                        this.trace('debug set') +
+                        'if(w)s[a](c+w,z);' + 
+                        this.trace('worker set') +
+                        'if(m)s[a](c+m,n);' + 
+                        this.trace('worker URL set') +
+                        's.onerror=function(){alert(\'error\');};' +
+                        this.trace('onerror set') +
+                        'd.getElementsByTagName(\'head\')[0].appendChild(s);' +
+                        this.trace('script element added')
+                    ) +
                 '})(' +
                     'document,' +
                     '\'data-\',' +
@@ -258,37 +266,38 @@
                 this.trace('start') +
                 '(function(f,x,u,v,p){' +
                     this.trace('in function') +
-                    this.cleanPopup('p') + 
-                    'x.open(' +
-                        '\'GET\',' +
-                        'u+v+\'?\'+' + this.getVersion() + ',' +
-                        'true' +
-                    ');' +
-                    this.trace('x opened') +
-                    'x.onload=function(){' +
-                        'try{' +
-                            this.trace('x onload called') +
-                            'f=1;' +
-                            (this.getTypeId() === 2 ? 'p.' : '') + 'eval(' +
-                                '\'(function(){\'+' +
-                                'x.response+' +
-                                '\'}).call({cartFillerEval:[' +
-                                    '\\\'\'+u+\'\\\',' +
-                                    this.getTypeId() + ',' +
-                                    '\\\'' + this.settings.chooseJob + '\\\',' +
-                                    (this.settings.debug ? 1 : 0) + ',' +
-                                    '\\\'' + this.settings.worker + '\\\',' +
-                                    '\\\'' + this.settings.workerFrameUrl + '\\\'' +
-                                ']});\'' +
-                            ');' +
-                            this.trace('eval complete') +
-                        '}catch(e){alert(e);}' +
-                    '};' +
-                    this.trace('x onload set') +
-                    'setTimeout(function(){if(!f)alert(\'error\');},5000);' +
-                    this.trace('onerror set') +
-                    'x.send();' +
-                    this.trace('x sent') +
+                    this.cleanPopup('p', 'd', 
+                        'x.open(' +
+                            '\'GET\',' +
+                            'u+v+\'?\'+' + this.getVersion() + ',' +
+                            'true' +
+                        ');' +
+                        this.trace('x opened') +
+                        'x.onload=function(){' +
+                            'try{' +
+                                this.trace('x onload called') +
+                                'f=1;' +
+                                (this.getTypeId() === 2 ? 'p.' : '') + 'eval(' +
+                                    '\'(function(){\'+' +
+                                    'x.response+' +
+                                    '\'}).call({cartFillerEval:[' +
+                                        '\\\'\'+u+\'\\\',' +
+                                        this.getTypeId() + ',' +
+                                        '\\\'' + this.settings.chooseJob + '\\\',' +
+                                        (this.settings.debug ? 1 : 0) + ',' +
+                                        '\\\'' + this.settings.worker + '\\\',' +
+                                        '\\\'' + this.settings.workerFrameUrl + '\\\'' +
+                                    ']});\'' +
+                                ');' +
+                                this.trace('eval complete') +
+                            '}catch(e){alert(e);}' +
+                        '};' +
+                        this.trace('x onload set') +
+                        'setTimeout(function(){if(!f)alert(\'error\');},5000);' +
+                        this.trace('onerror set') +
+                        'x.send();' +
+                        this.trace('x sent')
+                    ) +
                 '})(' +
                     '0,' +
                     'new XMLHttpRequest(),' + 
@@ -358,11 +367,12 @@
                 '(function(f,d,u,v,i,w,y,p){' +
                     this.trace('in') +
                     (this.getTypeId() === 2 ? (
-                        this.cleanPopup('y') +
-                        'y.eval(\'' +
-                            'var u=\\\'\'+u+\'\\\',v=\\\'\'+v+\'\\\',d=document,f,p;' + 
-                            this.cleanWrapForEval(listener) + 
-                        '\');'
+                        this.cleanPopup('y', 'a', 
+                            'y.eval(\'' +
+                                'var u=\\\'\'+u+\'\\\',v=\\\'\'+v+\'\\\',d=document,f,p;' + 
+                                this.cleanWrapForEval(listener) + 
+                            '\');'
+                        )
                     ): (
                         listener
                     )) +
