@@ -344,7 +344,7 @@
     Selector.prototype.val = function() {
         if (this.length) {
             if (arguments.length) {
-                this[0].value = arguments[0];
+                this[0].value = me.modules.dispatcher.interpolateText(arguments[0]);
             } else {
                 return this[0].value;
             }

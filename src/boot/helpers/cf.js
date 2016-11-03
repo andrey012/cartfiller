@@ -631,7 +631,7 @@
                 var steps = this.build(args[0].arr, [], makeFlavor(flavor, {inside: true}), offset);
                 return steps.map(function(step, index) {
                     if (index % 2) {
-                        return function() {
+                        var f = function() {
                             if(me.modules.api.debug && me.modules.api.debug.stop) {
                                 debugger; // jshint ignore:line
                             }
@@ -646,6 +646,10 @@
                                 }
                             ]);
                         };
+                        if (step.cartFillerCaptureResult) {
+                            f.cartFillerCaptureResult = step.cartFillerCaptureResult;
+                        }
+                        return f;
                     } else {
                         return step;
                     }

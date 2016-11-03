@@ -231,7 +231,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1505782434308';
+    config.gruntBuildTimeStamp='1509574595260';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -634,7 +634,7 @@
     Selector.prototype.val = function() {
         if (this.length) {
             if (arguments.length) {
-                this[0].value = arguments[0];
+                this[0].value = me.modules.dispatcher.interpolateText(arguments[0]);
             } else {
                 return this[0].value;
             }
@@ -2666,7 +2666,7 @@
                 var steps = this.build(args[0].arr, [], makeFlavor(flavor, {inside: true}), offset);
                 return steps.map(function(step, index) {
                     if (index % 2) {
-                        return function() {
+                        var f = function() {
                             if(me.modules.api.debug && me.modules.api.debug.stop) {
                                 debugger; // jshint ignore:line
                             }
@@ -2681,6 +2681,10 @@
                                 }
                             ]);
                         };
+                        if (step.cartFillerCaptureResult) {
+                            f.cartFillerCaptureResult = step.cartFillerCaptureResult;
+                        }
+                        return f;
                     } else {
                         return step;
                     }
