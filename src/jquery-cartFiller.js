@@ -360,7 +360,19 @@
                         'window.opener' + (this.getTypeId() === 2 ? '.opener' : '') + '.postMessage(p.toString(),\'*\');'
                     )
                 ) +
-                'setTimeout(function(){if(!f)alert(\'error\');},5000);' +
+                'setTimeout(function(s){' +
+                    'if(!f){' +
+                        (
+                            this.getTypeId() === 2 ? 
+                                (
+                                    'location.href=u+v;' +
+                                    's=window.screen;' +
+                                    'resizeTo((s&&s.availWidth)||800,(s&&s.availHeight)||600);'
+                                ) :
+                                'alert(\'error\');'
+                        ) +
+                    '}' +
+                '},5000);' +
                 this.trace('timeout set');
             return 'try{' +
                 this.trace('start') +
