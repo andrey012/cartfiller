@@ -780,10 +780,11 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                     }
                     if ($scope.params.backend && false !== data.currentTaskIndex && false !== data.currentTaskStepIndex) {
                         var videoFrame = getVideoFrame();
+                        var taskDetails = $scope.discovery.scripts.contents[index].details[data.currentTaskIndex];
                         var json = {
                             test: $scope.discovery.scripts.urls[index],
                             task: data.currentTaskIndex,
-                            taskName: $scope.discovery.scripts.contents[index].details[data.currentTaskIndex].task,
+                            taskName: taskDetails.task === '^' ? taskDetails[''] : taskDetails.task,
                             step: data.currentTaskStepIndex,
                             result: data.result[data.currentTaskIndex].stepResults[data.currentTaskStepIndex].status,
                             videoFrame: videoFrame + 2,
