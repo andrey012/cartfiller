@@ -231,7 +231,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1512463879663';
+    config.gruntBuildTimeStamp='1512580102376';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -3775,6 +3775,7 @@
      * @access private
      */
     var evaluateWorkers = function() {
+        reinitializeWorker();
         workersToEvaluate = [];
         sharedWorkerFunctions = {};
         for (var i in workerSourceCodes) {

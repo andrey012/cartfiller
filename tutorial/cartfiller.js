@@ -30,6 +30,7 @@ cartfiller = {
         'workers/014.stepGenerators.js',
         'workers/015.frames.js',
         'workers/016.multipleWindows.js',
+        'workers/017.cucumberStyle.js',
         '../testsuite/otherTutorialStuff.js',
     ],
     /**
@@ -52,6 +53,7 @@ cartfiller = {
             '007.includedTest': true,
             '008.anotherIncludedTest': true,
             '009.cdataTest': true,
+            '010.cucumberStyle': true,
         },
         browserActionsAkaWorkersFeatures: {
             workersDemo: true,

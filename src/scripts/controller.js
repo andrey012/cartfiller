@@ -89,8 +89,8 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
         var expressionCache = {};
         var makeExpressionMatcher = function(match) {
             var groups;
-            var i = 1;
-            var re = new RegExp(match.replace(/\(|\$\{([^}]+)\}/g, function(m, g0) {
+            var i = 2;
+            var re = new RegExp('^(Given |When |Then |But |And |)' + match.substr(1).replace(/\(|\$\{([^}]+)\}/g, function(m, g0) {
                 if (m === '(') {
                     i ++;
                     return m;
@@ -105,7 +105,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                     })(groups, i++);
                     return '(.*)';
                 }
-            }));
+            }), 'i');
             return function(expression) {
                 var m = re.exec(expression);
                 if (m) {
@@ -385,6 +385,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 $scope.$apply(function(){
                     $scope.workersLoaded = $scope.workersCounter; // now we push all data from dispatcher at once
                     $scope.jobTaskDescriptions = details.jobTaskDescriptions;
+                    expressionCache = {};
                     compileExpressionDescriptions();
                     refreshExpressions();
                     // remove pause points for those worker steps, that do not exist
@@ -733,8 +734,17 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 cfMessage.send('updateProperty', {index: index, name: name, value: val});
             }
         };
-        $scope.doubleClickTaskName = function(name) {
-            prompt('This is readonly but you can copy task name below. Source of this task is ' + $scope.workerTaskSources[name], name);
+        $scope.doubleClickTaskName = function(name, jobTaskIndex) {
+            if ($scope.expressions[jobTaskIndex]) {
+                var value = prompt('This is Cucumber-style statement, feel free to edit it', $scope.expressions[jobTaskIndex]);
+                if (value) {
+                    $scope.expressions[jobTaskIndex] = value;
+                    $scope.jobDetails[jobTaskIndex] = {task: '^', '': value};
+                    refreshExpressions();
+                }
+            } else {
+                prompt('This is readonly but you can copy task name below. Source of this task is ' + $scope.workerTaskSources[name], name);
+            }
         };
         $scope.clickOnStepNoWatch = function(element, $event){
             $event.stopPropagation();

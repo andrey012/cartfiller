@@ -16,7 +16,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
         var cleanFunctionComment = function(s) {
             return s
                 .replace(/^function\s*\(\s*\)\s*\{\s*\/\*[ \t]*[\r\n]*/, '')
-                .replace(/\*\/\s*\}\s*$/, '');
+                .replace(/\*\/[ \t\r\n;]*\}\s*$/, '');
         };
         var fetchFunctionComments = function(o) {
             if (o instanceof Array) {

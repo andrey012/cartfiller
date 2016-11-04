@@ -907,6 +907,7 @@
      * @access private
      */
     var evaluateWorkers = function() {
+        reinitializeWorker();
         workersToEvaluate = [];
         sharedWorkerFunctions = {};
         for (var i in workerSourceCodes) {

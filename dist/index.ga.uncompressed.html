@@ -7191,7 +7191,7 @@ button.close {
                 <h3 ng-if="! jobTask.task && jobTask.heading && jobTask.level == 2">{{jobTask.heading}}</h3>
                 <h4 ng-if="! jobTask.task && jobTask.heading && jobTask.level == 3">{{jobTask.heading}}</h4>
                 <span class="comment" ng-if="! jobTask.task && jobTask.heading && jobTask.level == 4">{{jobTask.heading}}</span>
-                <span ng-if="jobTask.task" ng-dblclick="doubleClickTaskName(jobTask.task)"><strong>{{jobTaskIndex + 1}}. {{jobTitleMap[jobTask.task] ? jobTitleMap[jobTask.task] : jobTask.task}}</strong></span><span ng-repeat="(propertyName, propertyValue) in jobTask" ng-if="propertyName != 'task' && jobTask.task" ng-dblclick="doubleClickTaskInput(jobTaskIndex, propertyName, propertyValue)">, 
+                <span ng-if="jobTask.task" ng-dblclick="doubleClickTaskName(jobTask.task, jobTaskIndex)"><strong>{{jobTaskIndex + 1}}. {{jobTitleMap[jobTask.task] ? jobTitleMap[jobTask.task] : (expressions[jobTaskIndex] || jobTask.task)}}</strong></span><span ng-repeat="(propertyName, propertyValue) in jobTask" ng-if="propertyName != 'task' && jobTask.task && !(expressions[jobTaskIndex])" ng-dblclick="doubleClickTaskInput(jobTaskIndex, propertyName, propertyValue)">, 
                     <span>{{jobTitleMap[propertyName] ? jobTitleMap[propertyName] : propertyName}}:</span>
                     <span><strong>{{getPropertyValue(propertyValue)}}</strong></span></span>
                 <div>
@@ -47351,8 +47351,8 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
         var expressionCache = {};
         var makeExpressionMatcher = function(match) {
             var groups;
-            var i = 1;
-            var re = new RegExp(match.replace(/\(|\$\{([^}]+)\}/g, function(m, g0) {
+            var i = 2;
+            var re = new RegExp('^(Given |When |Then |But |And |)' + match.substr(1).replace(/\(|\$\{([^}]+)\}/g, function(m, g0) {
                 if (m === '(') {
                     i ++;
                     return m;
@@ -47367,7 +47367,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                     })(groups, i++);
                     return '(.*)';
                 }
-            }));
+            }), 'i');
             return function(expression) {
                 var m = re.exec(expression);
                 if (m) {
@@ -47647,6 +47647,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 $scope.$apply(function(){
                     $scope.workersLoaded = $scope.workersCounter; // now we push all data from dispatcher at once
                     $scope.jobTaskDescriptions = details.jobTaskDescriptions;
+                    expressionCache = {};
                     compileExpressionDescriptions();
                     refreshExpressions();
                     // remove pause points for those worker steps, that do not exist
@@ -47995,8 +47996,17 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 cfMessage.send('updateProperty', {index: index, name: name, value: val});
             }
         };
-        $scope.doubleClickTaskName = function(name) {
-            prompt('This is readonly but you can copy task name below. Source of this task is ' + $scope.workerTaskSources[name], name);
+        $scope.doubleClickTaskName = function(name, jobTaskIndex) {
+            if ($scope.expressions[jobTaskIndex]) {
+                var value = prompt('This is Cucumber-style statement, feel free to edit it', $scope.expressions[jobTaskIndex]);
+                if (value) {
+                    $scope.expressions[jobTaskIndex] = value;
+                    $scope.jobDetails[jobTaskIndex] = {task: '^', '': value};
+                    refreshExpressions();
+                }
+            } else {
+                prompt('This is readonly but you can copy task name below. Source of this task is ' + $scope.workerTaskSources[name], name);
+            }
         };
         $scope.clickOnStepNoWatch = function(element, $event){
             $event.stopPropagation();
@@ -48616,7 +48626,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
             reportError('bootstrap message did not come');
         }
     }, 10000);
-    config.gruntBuildTimeStamp='1512463879663';
+    config.gruntBuildTimeStamp='1512580102376';
     window.addEventListener('message', function(event){
         var prefix = 'cartFillerMessage:';
         var isDist = true;
@@ -48726,7 +48736,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 if (message.tests) {
                     var x = new XMLHttpRequest();
                     x.onload = function(){
-                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1512463879663') {
+                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1512580102376') {
                             console.log('new version of CartFiller was deployed, switching to it');
                             var hash = window.location.href.split('#');
                             var pc = hash[0].split('?');
@@ -48881,7 +48891,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
         var cleanFunctionComment = function(s) {
             return s
                 .replace(/^function\s*\(\s*\)\s*\{\s*\/\*[ \t]*[\r\n]*/, '')
-                .replace(/\*\/\s*\}\s*$/, '');
+                .replace(/\*\/[ \t\r\n;]*\}\s*$/, '');
         };
         var fetchFunctionComments = function(o) {
             if (o instanceof Array) {
