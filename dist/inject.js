@@ -231,7 +231,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1509980529471';
+    config.gruntBuildTimeStamp='1511037068656';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -2825,10 +2825,12 @@
             if (actualWrapper) {
                 for (var i in actualWrapper.lib) {
                     if (actualWrapper.lib[i] instanceof actualWrapper.BuilderPromise) {
-                        var selector = actualWrapper.wrapSelectorBuilderPromise(actualWrapper.lib[i].arr)();
-                        if (selector.length) {
-                            result[i] = selector;
-                        }
+                        try {
+                            var selector = actualWrapper.wrapSelectorBuilderPromise(actualWrapper.lib[i].arr)();
+                            if (selector.length) {
+                                result[i] = selector;
+                            }
+                        } catch (e) {}
                     }
                 }
             }
@@ -7031,10 +7033,6 @@
             var hoveredElement = false;
             var highlightedElement = false;
             var shoot = function() {
-                var ts = new Date().getTime();
-                while (new Date().getTime() < ts + 3000) {
-
-                }
                 done = true;
                 for (var i = 0; i < elements.length; i ++) {
                     elements[i].removeEventListener('mousedown', clickListener, true);

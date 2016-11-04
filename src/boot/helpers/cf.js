@@ -790,10 +790,12 @@
             if (actualWrapper) {
                 for (var i in actualWrapper.lib) {
                     if (actualWrapper.lib[i] instanceof actualWrapper.BuilderPromise) {
-                        var selector = actualWrapper.wrapSelectorBuilderPromise(actualWrapper.lib[i].arr)();
-                        if (selector.length) {
-                            result[i] = selector;
-                        }
+                        try {
+                            var selector = actualWrapper.wrapSelectorBuilderPromise(actualWrapper.lib[i].arr)();
+                            if (selector.length) {
+                                result[i] = selector;
+                            }
+                        } catch (e) {}
                     }
                 }
             }
