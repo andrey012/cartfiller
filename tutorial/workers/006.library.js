@@ -16,16 +16,16 @@
             )
         /**
          * if you want to add something to library and use it right away, do
-         * .get(cf.lib( ... ))
+         * .uselib(cf.lib( ... ))
          */
-            .get(
+            .uselib(
                 cf.lib(
                     'getItemLi', 
                     cf
         /**
-         * .getlib gets something from library.
+         * .uselib gets something from library.
          */
-                        .getlib('todolist')
+                        .uselib('todolist')
                         .find('label:visible')
                         .withText('${name}')
                         .closest('li:visible')

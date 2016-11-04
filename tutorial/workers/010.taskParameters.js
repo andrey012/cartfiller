@@ -11,7 +11,7 @@
             .type('${name}')
         
             .enter()
-            .getlib('getItemLi')
+            .uselib('getItemLi')
             .exists() 
         /**
          * Or, inside your custom steps you can get them from task object: 

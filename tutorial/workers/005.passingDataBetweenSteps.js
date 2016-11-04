@@ -4,7 +4,7 @@
             /**
              * Normally whatever is result of one step becomes a parameter of next step. 
              */
-            .getlib('newTodoItem')
+            .uselib('newTodoItem')
             .then(function(input) {
                 api.result(input[0].nodeName === 'INPUT' ? '' : 'mismatch');
             })

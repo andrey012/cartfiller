@@ -11,7 +11,7 @@
                 .name('find home link').get('a').first()
                 .useIf(noOnload, cf.click())
                 .useIfNot(noOnload, cf.click(api.onload)) // tbd: think how to avoid using api here
-                .getlib('partNumberInput')
+                .uselib('partNumberInput')
                 .exists()
         })
         .use('declarativeOpenHomeGenerator', true)

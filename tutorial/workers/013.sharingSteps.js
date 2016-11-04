@@ -24,7 +24,7 @@
          */
         cf
             .use('openTodomvc')
-            .getlib('newTodoItem')
+            .uselib('newTodoItem')
             .type('test').enter()
             .use('removeAllItems')
             .share('prepareCleanTodoMvc')

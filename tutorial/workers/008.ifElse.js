@@ -32,7 +32,7 @@
          * You can use libraries and nest things as well as use your own steps. 
          */
             .if(
-                cf.getlib('newTodoItem'),
+                cf.uselib('newTodoItem'),
                 cf
                     .say('input exits').set('ifLibDemo', 'input exists')
                     .if(

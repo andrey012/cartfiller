@@ -27,7 +27,7 @@
             .nop() // this is for audio recording not to go crazy about looping
             .while( // repeat while todo list is visible
                 // first argument of .where is condition
-                cf.get( // .get is used to start searching for elements - either by 
+                cf.uselib( // .get is used to start searching for elements - either by 
                         // specifying selector or by using library
                     cf.lib( // cf.lib stores selector into a library. Normally 
                             // this does not mean that selector will be evaluated, but
@@ -42,7 +42,7 @@
 
                 // and here comes the loop body
                 // find all destroy buttons
-                cf.getlib('todolist') // here we are reusing selector that will give us todo list
+                cf.uselib('todolist') // here we are reusing selector that will give us todo list
                 .find('button.destroy') // searching inside list
                 .first() // selecting first
                 .css('display', 'block') // force it to appear (since we can't simulate hover event)
@@ -57,23 +57,23 @@
             .enter()
             // make sure that item exists, use getItemLi
             // from lib for that, we'll define getItemLi later
-            .getlib('getItemLi')
+            .uselib('getItemLi')
             .exists() 
             .say('item \'${name}\' added')
 
 
         cf.task('triggerCheckbox')
             .lib(   // here we are putting selector to lib, and it will not be evaluated until we
-                    // use .getlib() later. For now it will only be stored to library. 
+                    // use .uselib() later. For now it will only be stored to library. 
                 'getItemLi', 
                 cf
-                    .getlib('todolist') // we can reuse other lib items
+                    .uselib('todolist') // we can reuse other lib items
                     .find('label:visible')  // we are searching for label that contains item name
                                             // by doing it in two steps
                     .withText('${name}') // get name from task properties
                     .closest('li:visible') // now we want to return whole li, not just label.
             )
-            .getlib('getItemLi') // here we evaluate lib item, that we earlier defined
+            .uselib('getItemLi') // here we evaluate lib item, that we earlier defined
             .find('input[type="checkbox"]:visible') // inside it we are looking for checkbox input
             .click() 
 
@@ -89,12 +89,12 @@
 
 
         cf.task('makeSureItemIsNotThere')
-            .getlib('getItemLi') // by using this lib item, we add 'name' parameter to 
+            .uselib('getItemLi') // by using this lib item, we add 'name' parameter to 
                                  // this task, which have to be defined in test.js
             .absent()
 
         cf.task('makeSureItemIsThere')
-            .getlib('getItemLi')
+            .uselib('getItemLi')
             .exists()
             
     });

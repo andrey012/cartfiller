@@ -110,7 +110,7 @@
             .closest('table')
             .find('tbody:visible tr:visible')
         )
-        .name('wait for results to appear').getlib('searchResultLines').exists()
+        .name('wait for results to appear').uselib('searchResultLines').exists()
         .since('wait for results to appear').share('waitForResultsToAppear')
         .if(
             lib('searchResultLines')

@@ -121,7 +121,7 @@
             var decodeLibReferences = function(arr) {
                 if (arr[0][0] === 'get' && arr[0][1][0] instanceof LibReferencePromise) {
                     return wrapper.lib[arr[0][1][0].name].arr.concat(arr.slice(1));
-                } else if (arr[0][0] === 'lib' || arr[0][0] === 'getlib') {
+                } else if (arr[0][0] === 'lib' || arr[0][0] === 'uselib') {
                     return wrapper.lib[arr[0][1][0]].arr.concat(arr.slice(1));
                 }
                 return arr;
@@ -210,18 +210,30 @@
                 this.namedResults = {};
             };
             Builder.prototype = Object.create({});
-            Builder.prototype.getlib = function(args) {
-                if (! wrapper.lib[args[0]]) {
-                    throw new Error('lib entry \'' + args[0] + '\' is not defined');
-                }
-                var steps = this.build(wrapper.lib[args[0]].arr).map(function(v, index) {
-                    if (index % 2 === 0) {
-                        return 'getlib(\'' + args[0] + '\')->' + v;
-                    } else {
-                        return v;
+            Builder.prototype.uselib = function(args, offset, flavor) {
+                if (args[0] instanceof BuilderPromise || args[0] instanceof LibReferencePromise) {
+                    if (args[0] instanceof BuilderPromise) {
+                        if (args[0].arr[0][0] === 'lib') {
+                            return this.build(wrapper.lib[args[0].arr[0][1][0]].arr, [], offset, flavor);
+                        } else {
+                            return this.build(args[0].arr, [], offset, flavor);
+                        }
+                    } else { //args[0] instanceof LibReferencePromise
+                        return this.build(wrapper.lib[args[0].name].arr, offset, flavor);
                     }
-                });
-                return steps;
+                } else {
+                    if (! wrapper.lib[args[0]]) {
+                        throw new Error('lib entry \'' + args[0] + '\' is not defined');
+                    }
+                    var steps = this.build(wrapper.lib[args[0]].arr).map(function(v, index) {
+                        if (index % 2 === 0) {
+                            return 'uselib(\'' + args[0] + '\')->' + v;
+                        } else {
+                            return v;
+                        }
+                    });
+                    return steps;
+                }
             };
             Builder.prototype.clear = function(){
                 return ['remove all arrows', function() {

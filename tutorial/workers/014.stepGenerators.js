@@ -10,7 +10,7 @@
          * Some more simple examples: 
          */
         cf.generator('generateAddItem', function(itemName, message) {
-            return cf.getlib('newTodoItem')
+            return cf.uselib('newTodoItem')
                 .type(itemName)
                 .enter()
                 .useIf(message, cf.say(message))

@@ -11,7 +11,7 @@
          * * _rootCartfillerPath -- gives url where the testsuite file cartfiller.js/json is
          */
         cf.task('readGlobalIntoItemName')
-            .getlib('newTodoItem')
+            .uselib('newTodoItem')
             /**
              * First of all .type and .paste will first look into task parameters, and 
              * if referenced parameter is not there - they will look in globals

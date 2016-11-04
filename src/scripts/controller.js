@@ -130,8 +130,8 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
             return a > b ? 1 : a < b ? -1 : 0;
         };
         var updateGlobalsOrdered = function() {
-            var unique = {_random: true};
-            $scope.workerGlobalsOrdered = ['_random'];
+            var unique = {_random: true, _timestamp: true};
+            $scope.workerGlobalsOrdered = ['_random', '_timestamp'];
             for (var i in $scope.workerGlobals) {
                 if (! unique[i]) {
                     $scope.workerGlobalsOrdered.push(i);
@@ -856,6 +856,9 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
             if (name === '_random') {
                 return '(e.g. 1388531842351124)';
             }
+            if (name === '_random') {
+                return String(new Date().getTime());
+            }
             var v = $scope.workerGlobals[name];
             return 'object' === typeof v ? ('json: ' + JSON.stringify(v)) : v;
         };
@@ -971,7 +974,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                                 r += '\').withText(' + generateCompareCleanTextExpression(el.text.trim()) + ').find(\'';
                             }
                             if (el.selectNodeName && el.lib) {
-                                r += '\').getlib(\'' + el.lib + '\').find(\'';
+                                r += '\').uselib(\'' + el.lib + '\').find(\'';
                             }
                             return r.trim();
                         })
@@ -982,7 +985,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                     .replace(/.find\(\'\s*\'\)/g, '')
                     .replace(/\s+\'\)/, '\')')
                     .replace(/\(\'\s+/, '(\'')
-                    .replace(/^\s*\(\'\s*\'\)\.getlib/, 'getlib');
+                    .replace(/^\s*\(\'\s*\'\)\.uselib/, 'uselib');
                 return r;
             };
             scope.toggleSearch = function() {

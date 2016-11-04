@@ -58,7 +58,7 @@
         /**
          * .css changes element.style.? value
          */
-            .getlib('todolist')
+            .uselib('todolist')
             .find('button.destroy')
             .css('display', 'block')
         /**

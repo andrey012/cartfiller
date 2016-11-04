@@ -108,7 +108,14 @@
             ],
             '_closeCartFiller':[
                 'close CartFiller, only for \'clean\' injection mode', function() {
+                    api.internalDebugger();
                     api.closeCartFiller().result();
+                }
+            ],
+            '_stop': [
+                'stop letting user to interact', function() {
+                    api.internalDebugger();
+                    api.stop().result();
                 }
             ]
         };
@@ -629,7 +636,17 @@
     var decodeAlias = function(value, returnRefKey) {
         var result;
         if ('string' === typeof value) {
-            result = returnRefKey ? value : (value === '_random' ? (String(new Date().getTime()) + String(Math.floor(1000 * Math.random()))) : workerGlobals[value]);
+            result = returnRefKey ? 
+                value : 
+                (
+                    value === '_random' ? 
+                    (String(new Date().getTime()) + String(Math.floor(1000 * Math.random()))) :
+                    (
+                        value === '_timestamp' ?
+                        (String(new Date().getTime())) :
+                        workerGlobals[value]
+                    )
+                );
             return result;
         } else {
             if (1 === value.length) {
@@ -1653,7 +1670,7 @@
             var arrow = [];
             var elements;
             try {
-                elements = eval('(function(window, document, api, cf, task){return ' + ('getlib(' === details.selector.substr(0, 7) ? 'cf.' : 'api.find') + details.selector + ';})(me.modules.ui.mainFrameWindow, me.modules.ui.mainFrameWindow.document, me.modules.api, me.modules.cf, ' + JSON.stringify(details.taskDetails) + ');'); // jshint ignore:line
+                elements = eval('(function(window, document, api, cf, task){return ' + ('uselib(' === details.selector.substr(0, 7) ? 'cf.' : 'api.find') + details.selector + ';})(me.modules.ui.mainFrameWindow, me.modules.ui.mainFrameWindow.document, me.modules.api, me.modules.cf, ' + JSON.stringify(details.taskDetails) + ');'); // jshint ignore:line
             } catch (e) {
                 elements = [];
             }
