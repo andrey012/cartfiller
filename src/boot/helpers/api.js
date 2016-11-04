@@ -421,6 +421,13 @@
         me.modules.api.arrow(this, true).result(this.length > 0 ? '' : comment);
         return this;
     };
+    Selector.prototype.exactly = function(number, comment) {
+        if (undefined === comment) {
+            comment = 'element(s) not found: ' + this.description;
+        }
+        me.modules.api.arrow(this, true).result(this.length === parseInt(number) ? '' : comment);
+        return this;
+    };
     Selector.prototype.absent = function(comment) {
         if (undefined === comment) {
             comment = 'element(s) should not exist, but they are: ' + this.description;

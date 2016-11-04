@@ -86,9 +86,92 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 }
             }
         };
-        $scope.jobDetails = [];
+        var expressionCache = {};
+        var makeExpressionMatcher = function(match) {
+            var groups;
+            var i = 1;
+            var re = new RegExp(match.replace(/\(|\$\{([^}]+)\}/g, function(m, g0) {
+                if (m === '(') {
+                    i ++;
+                    return m;
+                } else {
+                    groups = (function(groups, i) {
+                        return function(task, m) {
+                            task[g0] = m[i];
+                            if (groups) {
+                                groups(task, m);
+                            }
+                        };
+                    })(groups, i++);
+                    return '(.*)';
+                }
+            }));
+            return function(expression) {
+                var m = re.exec(expression);
+                if (m) {
+                    var task = {task: match};
+                    if (groups) {
+                        groups(task, m);
+                    }
+                    return task;
+                }
+            };
+        };
+        var compileExpressionDescriptions = function() {
+            for (var i in $scope.jobTaskDescriptions) {
+                if (i.substr(0, 1) === '^') {
+                    expressionCache[i] = makeExpressionMatcher(i);
+                }
+            }
+        };
+        var expressionMatches = function(match, expression) {
+            return expressionCache[match](expression);
+        };
+        var recompileExpression = function(expression, taskIndex, stack) {
+            var n = 0;
+            while (expression.substr(0, 4) === '    ') {
+                expression = expression.substr(4);
+                n++;
+            }
+            if (expression.substr(-3) === '...') {
+                expression = expression.substr(0, expression.length - 3);
+                stack.splice(n, 100, expression);
+                expression = stack.join(' ');
+            } else if (n > 0) {
+                expression = stack.slice(0, n).join(' ') + ' ' + expression;
+            }
+            $scope.expressions[taskIndex] = expression;
+            for (var i in expressionCache) {
+                var task = expressionMatches(i, expression);
+                if (task) {
+                    return task;
+                }
+            }
+        };
+        var refreshExpressions = function() {
+            var stack = [];
+            $scope.expressions.filter(function(expression, taskIndex) {
+                if (expression) {
+                    $scope.jobDetails[taskIndex] = recompileExpression(expression, taskIndex, stack) || $scope.jobDetails[taskIndex];
+                }
+            });
+        };
+        var recompileExpressions = function(jobDetails) {
+            $scope.expressions = [];
+            var stack = [];
+            return jobDetails.map(function(task, taskIndex) {
+                if (task.task === '^') {
+                    return recompileExpression(task[''], taskIndex, stack) || task;
+                } else {
+                    return task;
+                }
+            });
+        };
+        $scope.jobDetails = recompileExpressions([]);
+        $scope.expressions = [];
         $scope.jobTaskProgress = [];
         $scope.jobTaskDescriptions = {};
+        compileExpressionDescriptions();
         $scope.workerLib = {};
         $scope.jobTaskDiscoveredParameters = {};
         $scope.indexTitles = {};
@@ -223,7 +306,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 $scope.$apply(function(){
                     if (undefined !== details.$cartFillerTestUpdate && undefined === details.details) {
                         // this is just test update
-                        $scope.jobDetails = details.$cartFillerTestUpdate.details;
+                        $scope.jobDetails = recompileExpressions(details.$cartFillerTestUpdate.details);
                         (function() {
                             for (var i in $scope.jobDetails[$scope.dispatcherCurrentTask]) {
                                 if ($scope.jobDetails[$scope.dispatcherCurrentTask].hasOwnProperty(i)) {
@@ -235,7 +318,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                         cfMessage.send('makeSmaller');
                         cfScroll();
                         $scope.chooseJobState = false;
-                        $scope.jobDetails = details.details;
+                        $scope.jobDetails = recompileExpressions(details.details);
                         $scope.jobTitleMap = angular.isUndefined(details.titleMap) ? {} : details.titleMap;
                         $scope.jobTaskProgress = [];
                         $scope.jobTaskStepProgress = [];
@@ -302,6 +385,8 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 $scope.$apply(function(){
                     $scope.workersLoaded = $scope.workersCounter; // now we push all data from dispatcher at once
                     $scope.jobTaskDescriptions = details.jobTaskDescriptions;
+                    compileExpressionDescriptions();
+                    refreshExpressions();
                     // remove pause points for those worker steps, that do not exist
                     for (var i in $scope.pausePoints) {
                         if (undefined === $scope.jobDetails[i] || undefined === $scope.jobDetails[i].task || undefined ===  $scope.jobTaskDescriptions[$scope.jobDetails[i].task]) {

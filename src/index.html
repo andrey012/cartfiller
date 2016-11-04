@@ -165,7 +165,7 @@
                                         {{taskIndex + 1}}.
                                     </td>
                                     <td ng-if="task.task" ng-class="(task.task && (discovery.scripts.success[index] == -1) && getTaskErrorsExist(index, taskIndex)) ? 'danger' : ''">
-                                        <a href="{{getTaskUrl(index, taskIndex, 0)}}" ng-click="runTest(index, 'fast', taskIndex, 0, $event)" onclick="return false;">{{task.task}}</a><span ng-repeat="(name, value) in task | orderBy: 'name'" ng-if="name !== 'task'">,
+                                        <a href="{{getTaskUrl(index, taskIndex, 0)}}" ng-click="runTest(index, 'fast', taskIndex, 0, $event)" onclick="return false;">{{task.task === '^' ? task[''] : task.task}}</a><span ng-repeat="(name, value) in task | orderBy: 'name'" ng-if="name !== 'task' && task.task !== '^'">,
                                             <strong>
                                             {{name}}:
                                             </strong>
@@ -421,7 +421,7 @@
                     <span>{{jobTitleMap[propertyName] ? jobTitleMap[propertyName] : propertyName}}:</span>
                     <span><strong>{{getPropertyValue(propertyValue)}}</strong></span></span>
                 <div>
-                    <textarea id="{{'template_' + jobTaskIndex}}" readonly onclick="select(this);" ng-if="jobTask.task && noTaskSteps(jobTask.task)" rows="6" style="width: 100%;">{{'\n        cf.task(\'' + jobTask.task + '\')\n            '}}</textarea>
+                    <textarea id="{{'template_' + jobTaskIndex}}" readonly onclick="select(this);" ng-if="jobTask.task && noTaskSteps(jobTask.task)" rows="6" style="width: 100%;">{{'\n        cf.task(\'' + (expressions[jobTaskIndex] ? ('^' + expressions[jobTaskIndex] + '$') :  jobTask.task) + '\')\n            '}}</textarea>
                     <span
                        ng-repeat="(jobTaskStepIndex, jobTaskStep) in jobTaskDescriptions[jobTask.task] track by $index"
                     >

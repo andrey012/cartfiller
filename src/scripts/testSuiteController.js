@@ -46,11 +46,19 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             if (! s.trim().length) {
                 throw new Error('empty file');
             }
+            var result;
             if (useJsInsteadOfJson) {
-                return fetchFunctionComments(eval('var json = ' + s + '; json')); // jshint ignore:line
+                result = fetchFunctionComments(eval('var json = ' + s + '; json')); // jshint ignore:line
             } else {
-                return JSON.parse(s);
+                result = JSON.parse(s);
             }
+            if ('string' === typeof result) {
+                // this is feature file
+                var lines = result.split(/\n/).map(function(v){ return v.replace(/\r$/, ''); }).filter(function(v) { return v.trim().length; });
+                var title = lines.shift().trim();
+                result = {title: title, details: [{'^': lines.join('\n')}]};
+            }
+            return result;
         };
         var testsToCheck;
         var currentTest;
@@ -183,11 +191,33 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                 return param;
             }
         };
+        var makeFeatureDetailsFromText = function(text) {
+            var firstIndent;
+            return text.split(/\n|\r/).filter(function(v) { return v.trim().length; }).map(function(v) {
+                if (v.trim().substr(0, 1) === '#') {
+                    return v.trim().substr(1).trim();
+                }
+                if (firstIndent === undefined) {
+                    firstIndent = 0;
+                    while (' ' === v.substr(0, 1)) {
+                        firstIndent ++;
+                        v = v.substr(1);
+                    }
+                } else {
+                    v = v.substr(firstIndent);
+                }
+                return {task: '^', '': v};
+            });
+        };
         var convertNewStyleTaskDetailsIntoOldStyleTaskDetails = function(detail) {
             for (var taskName in detail) {
                 if (detail.hasOwnProperty(taskName)) {
-                    detail[taskName].task = taskName;
-                    return detail[taskName];
+                    if (taskName === '^') {
+                        return makeFeatureDetailsFromText(detail[taskName]);
+                    } else {
+                        detail[taskName].task = taskName;
+                        return [detail[taskName]];
+                    }
                 }
             }
             throw new Error('invalid object having no properties found in test details');
@@ -239,11 +269,13 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                             if (undefined !== detail.else) {
                                 detail.else = processIncludesRecursive(detail.else, myIndex, tweaks, map);
                             }
+                            result.push(detail);
                         } else if ('object' === typeof detail) {
-                            detail = convertNewStyleTaskDetailsIntoOldStyleTaskDetails(detail);
+                            result = result.concat(convertNewStyleTaskDetailsIntoOldStyleTaskDetails(detail));
                         }
+                    } else {
+                        result.push(detail);
                     }
-                    result.push(detail);
                 }
             });
             return result;

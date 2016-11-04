@@ -120,7 +120,7 @@
             ]
         };
     };
-    var INTERPOLATE_PATTERN = /(^|[^\\])\$\{([^}]+)}/;
+    var INTERPOLATE_PATTERN = /(^|[^\\])\$\{([^${}}]+)}/g;
     /**
      * Keeps workers URL=>code map, used to initiate relays on the fly
      * @var {Object} CartFiller.Dispatcher~workerSourceCodes
@@ -2644,7 +2644,8 @@
             if ('string' !== typeof text) {
                 text = (undefined === text || null === text) ? '' : String(text);
             }
-            return text.replace(INTERPOLATE_PATTERN, function(m, g1, g2) {
+            var newText = text;
+            var replaceFn = function(m, g1, g2) {
                 if (storeDiscoveredParametersHere) {
                     storeDiscoveredParametersHere[g2] = true;
                 }
@@ -2653,7 +2654,12 @@
                     value = workerGlobals[g2];
                 }
                 return g1 + ((undefined === value || null === value) ? '' : String(value));
-            }).replace(/\\\$/g, '$');
+            };
+            do {
+                text = newText;
+                newText = text.replace(INTERPOLATE_PATTERN, replaceFn);
+            } while (newText !== text);
+            return text.replace(/\\\$/g, '$');
         }
     });
 }).call(this, document, window);

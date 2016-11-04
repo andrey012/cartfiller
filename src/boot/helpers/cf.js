@@ -248,7 +248,20 @@
                 var ref = args[0];
                 var value = args[1];
                 return ['set global variable [' + ref + '] to [' + value + ']', function() {
-                    me.modules.dispatcher.getWorkerGlobals()[ref] = value;
+                    me.modules.dispatcher.getWorkerGlobals()[ref] = me.modules.dispatcher.interpolateText(value);
+                    api('nop');
+                }];
+            };
+            Builder.prototype.asglobal = function(args) {
+                if (args.length !== 1) {
+                    throw new Error('cf.asglobals only makes sense with 1 argument - global variable name');
+                }
+                var ref = args[0];
+                return ['set global variable [' + ref + ']', function(val) {
+                    if (val instanceof me.modules.api.getSelectorClass()) {
+                        throw new Error('.asglobal is only applicable to scalars');
+                    }
+                    me.modules.dispatcher.getWorkerGlobals()[ref] = val;
                     api('nop');
                 }];
             };
@@ -327,7 +340,7 @@
             var buildProxyFunction = function(name, rename, afterWait) {
                 return function(args, coords, flavor) {
                     var builder = this;
-                    if (name === 'exists' || name === 'absent') {
+                    if (name === 'exists' || name === 'absent' || name === 'exactly') {
                         return [
                             (rename || name) + niceArgs(args),
                             wrapIntoImplicitSelectorWaitForWrapperIf(
@@ -335,13 +348,15 @@
                                 function(p) {
                                     if (name === 'exists') {
                                         return p.length;
+                                    } else if (name === 'exactly') {
+                                        return p.length === parseInt(me.modules.dispatcher.interpolateText(args[0]));
                                     } else {
                                         return ! p.length;
                                     }
                                 },
                                 name === 'exists' ? 'element did not appear within timeout' : 'element did not disappear within timeout',
                                 afterWait,
-                                args[0]
+                                name === 'exactly' ? args[1] : args[0]
                             )
                         ];
                     } else if (name === 'add') {
@@ -380,21 +395,26 @@
                             )
                         ];
                     } else {
-                        if (name === 'val' && args.length !== 1) {
-                            throw new Error('cf.val at build stage only makes sense with one argument to set element.value');
+                        if (name === 'val' && args.length > 1) {
+                            throw new Error('cf.val at build stage only makes sense with one argument to set element.value or with no arguments to get element value');
                         }
-                        if (name === 'attr' && args.length !== 2) {
-                            throw new Error('cf.attr at build stage only makes sense with two arguments to set element attribute to');
+                        if (name === 'attr' && (args.length > 2 || args.length < 1)) {
+                            throw new Error('cf.attr at build stage only makes sense with two arguments to set element attribute to or one argument to get attribute value');
                         }
                         return [(rename || name) + niceArgs(args), me.modules.dispatcher.injectTaskParameters(function(p) {
                             if(me.modules.api.debug && me.modules.api.debug.stop) {
                                 debugger; // jshint ignore:line
                             }
                             var s = p[name].apply(p, args);
-                            if (name === 'val') {
+                            if (name === 'val' && args.length > 0) {
+                                // otherwise return value
                                 s = p;
                             }
-                            s.arrow(1).nop();
+                            if (s instanceof me.modules.api.getSelectorClass()) {
+                                s.arrow(1).nop();
+                            } else {
+                                api('return', [s]).nop();
+                            }
                         }, args)];
                     }
                 };
