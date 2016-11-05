@@ -281,6 +281,7 @@
                                 || api.compare("asdf fdsa", api.find('#root div:contains("fdsa")').text(), 13)
                                 || api.compare("checked", api.find('#root input[type="checkbox"]:checked').attr('id'), 14) 
                                 || api.compare("unchecked", api.find('#root input[type="checkbox"]:not(:checked)').attr('id'), 15)
+                                || api.compare("b", api.find('#one').map(function(i, e){ return e.find('div'); }).text())
                             );
                     });
                 },

@@ -231,7 +231,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1517094193911';
+    config.gruntBuildTimeStamp='1518559575781';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -699,6 +699,20 @@
             }
         }
         return this;
+    };
+    Selector.prototype.map = function(fn) {
+        var s = [];
+        this.each(function(i, e) {
+            var result = fn(i, me.modules.api.find(e));
+            if (result instanceof Selector) {
+                result.each(function(i, e) {
+                    s.push(e);
+                });
+            } else if (result) {
+                s.push(result);
+            }
+        });
+        return me.modules.api.find(s);
     };
     Selector.prototype.arrow = function(all) {
         me.modules.api.arrow(this, all);
@@ -2980,8 +2994,10 @@
         var setStack = function(pc) {
             workerGlobals['_foreach stack'] = pc.join('|');
         };
+        var _set = ['set [ref] to [value]', function() { api.internalDebugger(); task.ref = task.value; api.result(); }];
         worker = {
-            '_set': ['set [ref] to [value]', function() { api.internalDebugger(); task.ref = task.value; api.result(); }],
+            '_set': _set,
+            '^global variable ${ref} has value ${value}$': _set,
             '_loop': ['check [ref] against [value]', function() { api.internalDebugger(); if (parseInt(task.ref) < parseInt(task.value)) { api.repeatTask(task.tasks); } api.result();}],
             '_inc': ['inc [ref]', function() { api.internalDebugger(); task.ref = parseInt(task.ref) + 1; api.result(); }],
             '_assertEquals': ['assert that [ref] is equals to [value]', function() { api.internalDebugger().result(api.compare(task.value, task.ref)); }],

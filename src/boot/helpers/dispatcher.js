@@ -28,8 +28,10 @@
         var setStack = function(pc) {
             workerGlobals['_foreach stack'] = pc.join('|');
         };
+        var _set = ['set [ref] to [value]', function() { api.internalDebugger(); task.ref = task.value; api.result(); }];
         worker = {
-            '_set': ['set [ref] to [value]', function() { api.internalDebugger(); task.ref = task.value; api.result(); }],
+            '_set': _set,
+            '^global variable ${ref} has value ${value}$': _set,
             '_loop': ['check [ref] against [value]', function() { api.internalDebugger(); if (parseInt(task.ref) < parseInt(task.value)) { api.repeatTask(task.tasks); } api.result();}],
             '_inc': ['inc [ref]', function() { api.internalDebugger(); task.ref = parseInt(task.ref) + 1; api.result(); }],
             '_assertEquals': ['assert that [ref] is equals to [value]', function() { api.internalDebugger().result(api.compare(task.value, task.ref)); }],

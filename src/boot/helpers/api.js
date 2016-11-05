@@ -410,6 +410,20 @@
         }
         return this;
     };
+    Selector.prototype.map = function(fn) {
+        var s = [];
+        this.each(function(i, e) {
+            var result = fn(i, me.modules.api.find(e));
+            if (result instanceof Selector) {
+                result.each(function(i, e) {
+                    s.push(e);
+                });
+            } else if (result) {
+                s.push(result);
+            }
+        });
+        return me.modules.api.find(s);
+    };
     Selector.prototype.arrow = function(all) {
         me.modules.api.arrow(this, all);
         return this;
