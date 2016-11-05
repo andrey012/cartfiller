@@ -231,7 +231,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1512580102376';
+    config.gruntBuildTimeStamp='1514102239446';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -770,13 +770,20 @@
         });
     };
     Selector.prototype.withText = function(text, ignoreCase) {
-        text = me.modules.dispatcher.interpolateText(text);
-        if (ignoreCase) {
-            text = text.toLowerCase();
+        if (! (text instanceof RegExp)) {
+            text = me.modules.dispatcher.interpolateText(text);
+            if (ignoreCase) {
+                text = text.toLowerCase();
+            }
+            return this.filter(function(i,el){
+                return me.modules.api.compareCleanText(text, ignoreCase ? el.textContent.toLowerCase() : el.textContent);
+            });
+        } else {
+            text = new RegExp(me.modules.dispatcher.interpolateText(text.source), text.flags);
+            return this.filter(function(i,el){
+                return text.test(el.textContent.trim());
+            });
         }
-        return this.filter(function(i,el){
-            return me.modules.api.compareCleanText(text, ignoreCase ? el.textContent.toLowerCase() : el.textContent);
-        });
     };
     Selector.prototype.reevaluate = function() {
         var i;
@@ -911,7 +918,7 @@
         switch (criterion[0]) {
             case 'id': return element.id === criterion[1];
             case 'nodeName': return element.nodeName.toLowerCase() === criterion[1].toLowerCase();
-            case 'class': return (' ' + element.className + ' ').indexOf(criterion[1]) !== -1;
+            case 'class': return (' ' + element.className + ' ').indexOf(' ' + criterion[1] + ' ') !== -1;
             case 'attribute': 
                 var attributeValue = String(element.getAttribute(criterion[1].attribute));
                 switch (criterion[1].equals) {
@@ -2036,7 +2043,65 @@
             }
             return this;
         },
-        resetDrillDepth: function() { currentDrillDepth = 0; }
+        resetDrillDepth: function() { currentDrillDepth = 0; },
+        /**
+         * @param data {Array} array of objects, keys are field names
+         * @param filename {String} name of file to download
+         * @param fields {Array} optional array of strings to enforce field order
+         * @param mimeType {String} optional mime type to use, 'text/csv' by default
+         */
+        exportCsv: function(data, filename, fields, mimeType) {
+            mimeType = mimeType || 'text/csv';
+            fields = fields || [];
+            var knownFields = {};
+            var toString = function(v) {
+                return (v === undefined || v === null) ? '' : String(v);
+            };
+            fields.filter(function(v) { 
+                knownFields[v] = v;
+            });
+            data.filter(function(v) {
+                for (var i in v) {
+                    if (! knownFields[i]) {
+                        knownFields[i] = i;
+                        fields.push(i);
+                    }
+                }
+            });
+            var length = 0;
+            data.unshift(knownFields);
+            
+            data.filter(function(v){ 
+                length += 2;
+                fields.filter(function(f) {
+                    length += toString(v[f]).length + 3;
+                });
+            });
+            var buf = new ArrayBuffer(length*2+2);
+            var bufView = new Uint16Array(buf);
+            bufView[0] = 0xfe * 256 + 0xff;
+            var i = 1;
+            data.filter(function(row) {
+                (fields.map(function(f) {
+                    return '"' + toString(row[f]).replace(/"/g, '""') + '"';
+                }).join('\t') + '\r\n')
+                .split('').filter(function(c) {
+                    bufView[i++] = c.charCodeAt(0);
+                });
+            });
+            var arrayBuffer = bufView.buffer;
+            var blob = new Blob(
+                [arrayBuffer],
+                {type : mimeType}
+            );
+            var a = window.document.createElement('a');
+            a.setAttribute('href', window.URL.createObjectURL(blob));
+            a.setAttribute('download', filename);
+            window.document.getElementsByTagName('body')[0].appendChild(a);
+            a.click();
+            a.parentNode.removeChild(a);
+            return this;
+        }
     });
 }).call(this, document, window);
 
@@ -2055,7 +2120,13 @@
     var Wrapper;
     var Runtime;
     var niceArgs = function(args) {
-        return JSON.stringify(args).replace(/^\[/, '(').replace(/\]$/, ')');
+        return JSON.stringify(args.map(function(arg){
+            if (arg instanceof RegExp) {
+                return String(arg);
+            } else {
+                return arg;
+            }
+        })).replace(/^\[/, '(').replace(/\]$/, ')');
     };
     var copyArguments = function(src) {
         var args = [];
@@ -2346,7 +2417,11 @@
                     if(me.modules.api.debug && me.modules.api.debug.stop) {
                         debugger; // jshint ignore:line
                     }
-                    arguments[argumentOffset].arrow().result(); 
+                    if (arguments[argumentOffset] instanceof me.modules.api.getSelectorClass()) {
+                        arguments[argumentOffset].arrow().nop(); 
+                    } else {
+                        api('return', [arguments[argumentOffset]]).nop();
+                    }
                 }];
             };
             Builder.prototype.with = function(args, index) {
@@ -2644,7 +2719,7 @@
                 var conditionSteps = makeConstantConditionSteps(args[0]) || builder.build(condition.arr, [], makeFlavor(flavor, {condition: true}), offset);
                 var conditionStepsLen = conditionSteps.length / 2;
                 var actionSteps = action ? builder.build(action.arr, [], undefined, offset + conditionStepsLen + 1) : [];
-                var actionStepsLen = actionSteps.length / 2 + (isWhile ? 1 : 0);
+                var actionStepsLen = actionSteps.length / 2;
                 var elseSteps = elseAction ? builder.build(elseAction.arr, [], undefined, offset + conditionStepsLen + 1 + actionStepsLen + 1) : [];
                 var elseStepsLen = elseSteps.length / 2;
                 var hasElse = elseSteps.length ? true : false;
@@ -2654,14 +2729,14 @@
                         if(me.modules.api.debug && me.modules.api.debug.stop) {
                             debugger; // jshint ignore:line
                         }
-                        api('repeatStep', [actionStepsLen + conditionStepsLen]);
+                        api('repeatStep', [actionStepsLen + conditionStepsLen + 1]);
                         api('nop');
                     });
                     // fix break steps
                     actionSteps = actionSteps.map(function(step, index) {
                         if (index % 2) {
                             if (step.cartFillerBreakFactor) {
-                                return makeBreakStep([step.cartFillerBreakFactor - 1], actionStepsLen - 1 - index / 2)[1];
+                                return makeBreakStep([step.cartFillerBreakFactor - 1], actionStepsLen - index / 2)[1];
                             }
                         }
                         return step;
@@ -6022,16 +6097,37 @@
             return true;
         }
     };
+    var deferredDrawArrows = false;
+    var drawArrowsDeferred = function() {
+        drawArrows(true);
+    };
     /**
      * Draws arrow overlay divs
      * @function CartFiller.UI~drawArrows
      * @access private
      */
-    var drawArrows = function(){
+    var drawArrows = function(deferred){
+        var count = 0;
+        if (deferred) {
+            deferredDrawArrows = false;
+        } else if (deferredDrawArrows) {
+            clearTimeout(deferredDrawArrows);
+            deferredDrawArrows = false;
+        }
+        var path;
+        if (! deferred) {
+            for (path in elementsToDrawByPath) {
+                count += elementsToDrawByPath[path].length;
+                if (count > 1) {
+                    deferredDrawArrows = setTimeout(drawArrowsDeferred, 200);
+                    return;
+                }
+            }
+        }
         me.log();
         scrollIfNecessary();
         deleteOverlaysOfType('arrow');
-        for (var path in elementsToDrawByPath) {
+        for (path in elementsToDrawByPath) {
             drawArrowsForPath(elementsToDrawByPath[path]);
         }
     };

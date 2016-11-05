@@ -31,6 +31,8 @@ cartfiller = {
         'workers/015.frames.js',
         'workers/016.multipleWindows.js',
         'workers/017.cucumberStyle.js',
+        // 'workers/018.workerForOneTest.js', // commenting this one out because it will be imported individually by 011.testWithItsOwnWorker.js
+        // 'workers/019.exportTabSeparatedCsvFile.js', // commenting this one out because it will be imported individually by 012.exportCsv.js
         '../testsuite/otherTutorialStuff.js',
     ],
     /**
@@ -54,6 +56,8 @@ cartfiller = {
             '008.anotherIncludedTest': true,
             '009.cdataTest': true,
             '010.cucumberStyle': true,
+            '011.testWithItsOwnWorker': true,
+            '012.exportCsv': true,
         },
         browserActionsAkaWorkersFeatures: {
             workersDemo: true,

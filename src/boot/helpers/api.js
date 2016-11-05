@@ -480,13 +480,20 @@
         });
     };
     Selector.prototype.withText = function(text, ignoreCase) {
-        text = me.modules.dispatcher.interpolateText(text);
-        if (ignoreCase) {
-            text = text.toLowerCase();
+        if (! (text instanceof RegExp)) {
+            text = me.modules.dispatcher.interpolateText(text);
+            if (ignoreCase) {
+                text = text.toLowerCase();
+            }
+            return this.filter(function(i,el){
+                return me.modules.api.compareCleanText(text, ignoreCase ? el.textContent.toLowerCase() : el.textContent);
+            });
+        } else {
+            text = new RegExp(me.modules.dispatcher.interpolateText(text.source), text.flags);
+            return this.filter(function(i,el){
+                return text.test(el.textContent.trim());
+            });
         }
-        return this.filter(function(i,el){
-            return me.modules.api.compareCleanText(text, ignoreCase ? el.textContent.toLowerCase() : el.textContent);
-        });
     };
     Selector.prototype.reevaluate = function() {
         var i;
@@ -621,7 +628,7 @@
         switch (criterion[0]) {
             case 'id': return element.id === criterion[1];
             case 'nodeName': return element.nodeName.toLowerCase() === criterion[1].toLowerCase();
-            case 'class': return (' ' + element.className + ' ').indexOf(criterion[1]) !== -1;
+            case 'class': return (' ' + element.className + ' ').indexOf(' ' + criterion[1] + ' ') !== -1;
             case 'attribute': 
                 var attributeValue = String(element.getAttribute(criterion[1].attribute));
                 switch (criterion[1].equals) {
@@ -1746,6 +1753,64 @@
             }
             return this;
         },
-        resetDrillDepth: function() { currentDrillDepth = 0; }
+        resetDrillDepth: function() { currentDrillDepth = 0; },
+        /**
+         * @param data {Array} array of objects, keys are field names
+         * @param filename {String} name of file to download
+         * @param fields {Array} optional array of strings to enforce field order
+         * @param mimeType {String} optional mime type to use, 'text/csv' by default
+         */
+        exportCsv: function(data, filename, fields, mimeType) {
+            mimeType = mimeType || 'text/csv';
+            fields = fields || [];
+            var knownFields = {};
+            var toString = function(v) {
+                return (v === undefined || v === null) ? '' : String(v);
+            };
+            fields.filter(function(v) { 
+                knownFields[v] = v;
+            });
+            data.filter(function(v) {
+                for (var i in v) {
+                    if (! knownFields[i]) {
+                        knownFields[i] = i;
+                        fields.push(i);
+                    }
+                }
+            });
+            var length = 0;
+            data.unshift(knownFields);
+            
+            data.filter(function(v){ 
+                length += 2;
+                fields.filter(function(f) {
+                    length += toString(v[f]).length + 3;
+                });
+            });
+            var buf = new ArrayBuffer(length*2+2);
+            var bufView = new Uint16Array(buf);
+            bufView[0] = 0xfe * 256 + 0xff;
+            var i = 1;
+            data.filter(function(row) {
+                (fields.map(function(f) {
+                    return '"' + toString(row[f]).replace(/"/g, '""') + '"';
+                }).join('\t') + '\r\n')
+                .split('').filter(function(c) {
+                    bufView[i++] = c.charCodeAt(0);
+                });
+            });
+            var arrayBuffer = bufView.buffer;
+            var blob = new Blob(
+                [arrayBuffer],
+                {type : mimeType}
+            );
+            var a = window.document.createElement('a');
+            a.setAttribute('href', window.URL.createObjectURL(blob));
+            a.setAttribute('download', filename);
+            window.document.getElementsByTagName('body')[0].appendChild(a);
+            a.click();
+            a.parentNode.removeChild(a);
+            return this;
+        }
     });
 }).call(this, document, window);

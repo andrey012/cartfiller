@@ -508,13 +508,20 @@
         });
     };
     Selector.prototype.withText = function(text, ignoreCase) {
-        text = me.modules.dispatcher.interpolateText(text);
-        if (ignoreCase) {
-            text = text.toLowerCase();
+        if (! (text instanceof RegExp)) {
+            text = me.modules.dispatcher.interpolateText(text);
+            if (ignoreCase) {
+                text = text.toLowerCase();
+            }
+            return this.filter(function(i,el){
+                return me.modules.api.compareCleanText(text, ignoreCase ? el.textContent.toLowerCase() : el.textContent);
+            });
+        } else {
+            text = new RegExp(me.modules.dispatcher.interpolateText(text.source), text.flags);
+            return this.filter(function(i,el){
+                return text.test(el.textContent.trim());
+            });
         }
-        return this.filter(function(i,el){
-            return me.modules.api.compareCleanText(text, ignoreCase ? el.textContent.toLowerCase() : el.textContent);
-        });
     };
     Selector.prototype.reevaluate = function() {
         var i;
@@ -649,7 +656,7 @@
         switch (criterion[0]) {
             case 'id': return element.id === criterion[1];
             case 'nodeName': return element.nodeName.toLowerCase() === criterion[1].toLowerCase();
-            case 'class': return (' ' + element.className + ' ').indexOf(criterion[1]) !== -1;
+            case 'class': return (' ' + element.className + ' ').indexOf(' ' + criterion[1] + ' ') !== -1;
             case 'attribute': 
                 var attributeValue = String(element.getAttribute(criterion[1].attribute));
                 switch (criterion[1].equals) {
@@ -1774,7 +1781,65 @@
             }
             return this;
         },
-        resetDrillDepth: function() { currentDrillDepth = 0; }
+        resetDrillDepth: function() { currentDrillDepth = 0; },
+        /**
+         * @param data {Array} array of objects, keys are field names
+         * @param filename {String} name of file to download
+         * @param fields {Array} optional array of strings to enforce field order
+         * @param mimeType {String} optional mime type to use, 'text/csv' by default
+         */
+        exportCsv: function(data, filename, fields, mimeType) {
+            mimeType = mimeType || 'text/csv';
+            fields = fields || [];
+            var knownFields = {};
+            var toString = function(v) {
+                return (v === undefined || v === null) ? '' : String(v);
+            };
+            fields.filter(function(v) { 
+                knownFields[v] = v;
+            });
+            data.filter(function(v) {
+                for (var i in v) {
+                    if (! knownFields[i]) {
+                        knownFields[i] = i;
+                        fields.push(i);
+                    }
+                }
+            });
+            var length = 0;
+            data.unshift(knownFields);
+            
+            data.filter(function(v){ 
+                length += 2;
+                fields.filter(function(f) {
+                    length += toString(v[f]).length + 3;
+                });
+            });
+            var buf = new ArrayBuffer(length*2+2);
+            var bufView = new Uint16Array(buf);
+            bufView[0] = 0xfe * 256 + 0xff;
+            var i = 1;
+            data.filter(function(row) {
+                (fields.map(function(f) {
+                    return '"' + toString(row[f]).replace(/"/g, '""') + '"';
+                }).join('\t') + '\r\n')
+                .split('').filter(function(c) {
+                    bufView[i++] = c.charCodeAt(0);
+                });
+            });
+            var arrayBuffer = bufView.buffer;
+            var blob = new Blob(
+                [arrayBuffer],
+                {type : mimeType}
+            );
+            var a = window.document.createElement('a');
+            a.setAttribute('href', window.URL.createObjectURL(blob));
+            a.setAttribute('download', filename);
+            window.document.getElementsByTagName('body')[0].appendChild(a);
+            a.click();
+            a.parentNode.removeChild(a);
+            return this;
+        }
     });
 }).call(this, document, window);
 </code></pre>
@@ -1787,13 +1852,13 @@
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Externals</h3><ul><li><a href="external%2520jQuery.external__jQuery.fn_.html">jQuery.fn</a></li><li><a href="external-jQuery.html">jQuery</a></li></ul><h3>Classes</h3><ul><li><a href="CartFiller.Api.html">Api</a></li><li><a href="CartFiller.Api.StepEnvironment.html">StepEnvironment</a></li><li><a href="CartFiller.Api.WorkerTask.html">WorkerTask</a></li><li><a href="CartFiller.Api.WorkerTasks.html">WorkerTasks</a></li><li><a href="CartFiller.Configuration.html">Configuration</a></li><li><a href="CartFiller.Dispatcher.html">Dispatcher</a></li><li><a href="CartFiller.Injector.html">Injector</a></li><li><a href="CartFiller.Loader.html">Loader</a></li><li><a href="CartFiller.SampleWorker.html">SampleWorker</a></li><li><a href="CartFiller.SampleWorker.SampleWorkerTasks.html">SampleWorkerTasks</a></li><li><a href="CartFiller.UI.html">UI</a></li><li><a href="CartFiller.UI.ArrowToElement.html">ArrowToElement</a></li><li><a href="CartFillerPlugin-JobDetails.html">JobDetails</a></li><li><a href="CartFillerPlugin-Plugin.html">Plugin</a></li><li><a href="CartFillerPlugin-Settings.html">Settings</a></li></ul><h3>Namespaces</h3><ul><li><a href="CartFiller.html">CartFiller</a></li><li><a href="CartFillerPlugin.html">CartFillerPlugin</a></li></ul><h3>Global</h3><ul><li><a href="global.html#%2522jQuery.cartFillerPlugin.hideChooseJobFrame%2522">"jQuery.cartFillerPlugin.hideChooseJobFrame"</a></li><li><a href="global.html#%2522jQuery.cartFillerPlugin.showChooseJobFrame%2522">"jQuery.cartFillerPlugin.showChooseJobFrame"</a></li><li><a href="global.html#%2522jQuery.cartFillerPlugin%2522">"jQuery.cartFillerPlugin"</a></li><li><a href="global.html#%2522jQuery.fn.cartFillerPlugin%2522">"jQuery.fn.cartFillerPlugin"</a></li><li><a href="global.html#env">env</a></li><li><a href="global.html#getBookmarkletCode">getBookmarkletCode</a></li><li><a href="global.html#onMessage_clearCurrentUrl">onMessage_clearCurrentUrl</a></li><li><a href="global.html#onMessage_postMessage">onMessage_postMessage</a></li><li><a href="global.html#onMessage_suspendAjaxRequestsDone">onMessage_suspendAjaxRequestsDone</a></li><li><a href="global.html#reportingMousePointerClick">reportingMousePointerClick</a></li><li><a href="global.html#testApiMap">testApiMap</a></li><li><a href="global.html#workerEventListeners">workerEventListeners</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Externals</h3><ul><li><a href="external%2520jQuery.external__jQuery.fn_.html">jQuery.fn</a></li><li><a href="external-jQuery.html">jQuery</a></li></ul><h3>Classes</h3><ul><li><a href="CartFiller.Api.html">Api</a></li><li><a href="CartFiller.Api.StepEnvironment.html">StepEnvironment</a></li><li><a href="CartFiller.Api.WorkerTask.html">WorkerTask</a></li><li><a href="CartFiller.Api.WorkerTasks.html">WorkerTasks</a></li><li><a href="CartFiller.Configuration.html">Configuration</a></li><li><a href="CartFiller.Dispatcher.html">Dispatcher</a></li><li><a href="CartFiller.Injector.html">Injector</a></li><li><a href="CartFiller.Loader.html">Loader</a></li><li><a href="CartFiller.SampleWorker.html">SampleWorker</a></li><li><a href="CartFiller.SampleWorker.SampleWorkerTasks.html">SampleWorkerTasks</a></li><li><a href="CartFiller.UI.html">UI</a></li><li><a href="CartFiller.UI.ArrowToElement.html">ArrowToElement</a></li><li><a href="CartFillerPlugin-JobDetails.html">JobDetails</a></li><li><a href="CartFillerPlugin-Plugin.html">Plugin</a></li><li><a href="CartFillerPlugin-Settings.html">Settings</a></li></ul><h3>Namespaces</h3><ul><li><a href="CartFiller.html">CartFiller</a></li><li><a href="CartFillerPlugin.html">CartFillerPlugin</a></li></ul><h3>Global</h3><ul><li><a href="global.html#%2522jQuery.cartFillerPlugin.hideChooseJobFrame%2522">"jQuery.cartFillerPlugin.hideChooseJobFrame"</a></li><li><a href="global.html#%2522jQuery.cartFillerPlugin.showChooseJobFrame%2522">"jQuery.cartFillerPlugin.showChooseJobFrame"</a></li><li><a href="global.html#%2522jQuery.cartFillerPlugin%2522">"jQuery.cartFillerPlugin"</a></li><li><a href="global.html#%2522jQuery.fn.cartFillerPlugin%2522">"jQuery.fn.cartFillerPlugin"</a></li><li><a href="global.html#env">env</a></li><li><a href="global.html#exportCsv">exportCsv</a></li><li><a href="global.html#getBookmarkletCode">getBookmarkletCode</a></li><li><a href="global.html#onMessage_clearCurrentUrl">onMessage_clearCurrentUrl</a></li><li><a href="global.html#onMessage_postMessage">onMessage_postMessage</a></li><li><a href="global.html#onMessage_suspendAjaxRequestsDone">onMessage_suspendAjaxRequestsDone</a></li><li><a href="global.html#reportingMousePointerClick">reportingMousePointerClick</a></li><li><a href="global.html#testApiMap">testApiMap</a></li><li><a href="global.html#workerEventListeners">workerEventListeners</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.3</a> on Tue Dec 05 2017 11:51:40 GMT+0300 (MSK)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.3</a> on Sun Dec 24 2017 10:57:48 GMT+0300 (MSK)
 </footer>
 
 <script> prettyPrint(); </script>

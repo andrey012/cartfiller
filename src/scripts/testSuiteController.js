@@ -54,9 +54,18 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             }
             if ('string' === typeof result) {
                 // this is feature file
-                var lines = result.split(/\n/).map(function(v){ return v.replace(/\r$/, ''); }).filter(function(v) { return v.trim().length; });
+                var worker = [];
+                var lines = result.split(/\n/).map(function(v){ return v.replace(/\r$/, ''); }).filter(function(v) { return v.trim().length; }).filter(function(v) {
+                    var m = /^\s*import (.*)$/i.exec(v);
+                    if (m) {
+                        worker.push(m[1].trim());
+                        return false;
+                    } else {
+                        return true;
+                    }
+                });
                 var title = lines.shift().trim();
-                result = {title: title, details: [{'^': lines.join('\n')}]};
+                result = {title: title, worker: worker, details: [{'^': lines.join('\n')}]};
             }
             return result;
         };
@@ -701,6 +710,19 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                 return '-1';
             }
         };
+        var combineWorkers = function(a,b) {
+            var o = {};
+            var r = [];
+            [a,b].filter(function(a) {
+                a.filter(function(v) {
+                    if (! o[v]) {
+                        r.push(v);
+                        o[v] = true;
+                    }
+                });
+            });
+            return r;
+        };
         $scope.runTest = function(index, how, untilTask, untilStep, $event, isBackendReady) {
             // for case of video record - we need backend to get prepared
             if ($scope.params.backend && ! isBackendReady) {
@@ -729,7 +751,13 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             testsToCheck = getIncludedTests(index, []).map(function(v) { return {test: v, force: false }; });
             currentTest = index;
             var test = $scope.discovery.scripts.contents[index];
-            test.workerSrc = $scope.discovery.workerSrc;
+            test.workerSrc = combineWorkers(
+                normalizeWorkerURLs(
+                    test.worker || [], 
+                    $scope.discovery.currentRootPath + '/' + $scope.discovery.scripts.urls[index].replace(/(^|\/)[^\/]+$/, '')
+                ), 
+                $scope.discovery.workerSrc
+            );
             test.autorun = how === 'load' ? 0 : 1;
             test.autorunSpeed = how === 'slow' ? 'slow' : 'fast';
             test.rootCartfillerPath = $scope.params.cartFillerRootPath ? $scope.params.cartFillerRootPath : $scope.discovery.currentRootPath;

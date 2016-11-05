@@ -13,7 +13,13 @@
     var Wrapper;
     var Runtime;
     var niceArgs = function(args) {
-        return JSON.stringify(args).replace(/^\[/, '(').replace(/\]$/, ')');
+        return JSON.stringify(args.map(function(arg){
+            if (arg instanceof RegExp) {
+                return String(arg);
+            } else {
+                return arg;
+            }
+        })).replace(/^\[/, '(').replace(/\]$/, ')');
     };
     var copyArguments = function(src) {
         var args = [];
@@ -304,7 +310,11 @@
                     if(me.modules.api.debug && me.modules.api.debug.stop) {
                         debugger; // jshint ignore:line
                     }
-                    arguments[argumentOffset].arrow().result(); 
+                    if (arguments[argumentOffset] instanceof me.modules.api.getSelectorClass()) {
+                        arguments[argumentOffset].arrow().nop(); 
+                    } else {
+                        api('return', [arguments[argumentOffset]]).nop();
+                    }
                 }];
             };
             Builder.prototype.with = function(args, index) {
@@ -602,7 +612,7 @@
                 var conditionSteps = makeConstantConditionSteps(args[0]) || builder.build(condition.arr, [], makeFlavor(flavor, {condition: true}), offset);
                 var conditionStepsLen = conditionSteps.length / 2;
                 var actionSteps = action ? builder.build(action.arr, [], undefined, offset + conditionStepsLen + 1) : [];
-                var actionStepsLen = actionSteps.length / 2 + (isWhile ? 1 : 0);
+                var actionStepsLen = actionSteps.length / 2;
                 var elseSteps = elseAction ? builder.build(elseAction.arr, [], undefined, offset + conditionStepsLen + 1 + actionStepsLen + 1) : [];
                 var elseStepsLen = elseSteps.length / 2;
                 var hasElse = elseSteps.length ? true : false;
@@ -612,14 +622,14 @@
                         if(me.modules.api.debug && me.modules.api.debug.stop) {
                             debugger; // jshint ignore:line
                         }
-                        api('repeatStep', [actionStepsLen + conditionStepsLen]);
+                        api('repeatStep', [actionStepsLen + conditionStepsLen + 1]);
                         api('nop');
                     });
                     // fix break steps
                     actionSteps = actionSteps.map(function(step, index) {
                         if (index % 2) {
                             if (step.cartFillerBreakFactor) {
-                                return makeBreakStep([step.cartFillerBreakFactor - 1], actionStepsLen - 1 - index / 2)[1];
+                                return makeBreakStep([step.cartFillerBreakFactor - 1], actionStepsLen - index / 2)[1];
                             }
                         }
                         return step;

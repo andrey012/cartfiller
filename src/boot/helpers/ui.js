@@ -416,16 +416,37 @@
             return true;
         }
     };
+    var deferredDrawArrows = false;
+    var drawArrowsDeferred = function() {
+        drawArrows(true);
+    };
     /**
      * Draws arrow overlay divs
      * @function CartFiller.UI~drawArrows
      * @access private
      */
-    var drawArrows = function(){
+    var drawArrows = function(deferred){
+        var count = 0;
+        if (deferred) {
+            deferredDrawArrows = false;
+        } else if (deferredDrawArrows) {
+            clearTimeout(deferredDrawArrows);
+            deferredDrawArrows = false;
+        }
+        var path;
+        if (! deferred) {
+            for (path in elementsToDrawByPath) {
+                count += elementsToDrawByPath[path].length;
+                if (count > 1) {
+                    deferredDrawArrows = setTimeout(drawArrowsDeferred, 200);
+                    return;
+                }
+            }
+        }
         me.log();
         scrollIfNecessary();
         deleteOverlaysOfType('arrow');
-        for (var path in elementsToDrawByPath) {
+        for (path in elementsToDrawByPath) {
             drawArrowsForPath(elementsToDrawByPath[path]);
         }
     };

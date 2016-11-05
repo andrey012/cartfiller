@@ -2,6 +2,7 @@
     cartFillerAPI().registerWorker(function(window, document, api, task, job, globals, lib, cf){
         
         cf.task('removeAllItems')
+            .while('', cf.say('a')).say('b')
         /**
          * .while has usually two parameters - condition and action. It acts same as if but loops while
          * condition is met
@@ -11,7 +12,7 @@
                 cf.get('.destroy')
                 .css('display', 'block')
                 .click()
-            )
+            ).say('c')
 
         cf.task('removeAllItemsUsingWhileNot')
         /**
