@@ -247,11 +247,11 @@
     var selectorPattern = /^(([^\:\[.# ]+)|(\#[^\:\[.# ]+)|(\.[^\:\[.# ]+)|(\[([^\]"]|("[^"]*"))*\])|(\:([^\:\[.#" \()]|("[^"]*")|\([^)]+\))+))(.*)$/;
     var selectorStepPattern = /^((([^\:\[.# ]+)|(\#[^\:\[.# ]+)|(\.[^\:\[.# ]+)|(\[([^\]"]|("[^"]*"))*\])|(\:([^\:\[.#" \(]|("[^"]*")|\([^)]+\))+))+)(\s(.*))?$/;
     var parseAttributeSelector = function(expression) {
-        var pc = expression.split(/[\^$]?=/, 2);
-        var name = pc[0];
-        var value = pc[1];
-        var equals = expression.substr(name.length, expression.length - name.length - value.length);
-        return {attribute: name, equals: equals, value: value.substr(1, value.length - 2)};
+        var m = /^([^\^\$=]+)(\^=|\$=|=)"([^"]*)"$/.exec(expression);
+        if (! m) {
+            throw new Error('unable to parse attribute selector: [' + expression + ']');
+        }
+        return {attribute: m[1], equals: m[2], value: m[3]};
     };
     var Selector = function(elementList, description, self) {
         if (self === undefined) {
@@ -910,16 +910,20 @@
          * @function CartFiller.Api#onload
          * @param {CartFiller.Api.onloadCallback} cb Callback, if not specified
          *          then just api.result() will be ussued after page loads
+         * @param {boolean} recoverPreviousStepState Normally you should make page navigation
+         *          or reload and then call api.onload in the same step. But if you did not -
+         *          you can still call api.onload in next step, but set this parameter
+         *          to true
          * @return {CartFiller.Api} for chaining
          * @access public
          */
-        onload: function(cb){
+        onload: function(cb, recoverPreviousStepState){
             if (undefined === cb) {
                 cb = function() {
                     me.modules.api.result();
                 };
             }
-            me.modules.dispatcher.registerWorkerOnloadCallback(cb);
+            me.modules.dispatcher.registerWorkerOnloadCallback(cb, recoverPreviousStepState);
             return this;
         },
         /**

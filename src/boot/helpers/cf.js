@@ -579,7 +579,12 @@
             };
             Builder.prototype.onload = function(args) {
                 return ['onload(' +niceArgs(args) + ')', me.modules.dispatcher.injectTaskParameters(function() {
-                    api('onload', args);
+                    api('onload', [args[0], true]);
+                }, args)];
+            };
+            Builder.prototype.tbd = function(args) {
+                return ['tbd(' +niceArgs(args) + ')', me.modules.dispatcher.injectTaskParameters(function() {
+                    api('result', ['tbd']);
                 }, args)];
             };
             Builder.prototype.use = function(args) {

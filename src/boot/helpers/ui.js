@@ -458,6 +458,9 @@
         .filter(function(el) { return el.currentMainFrameWindow === me.modules.dispatcher.getFrameWindowIndex(); })
         .map(addFrameCoordinatesMap)
         .filter(function(el, i) {
+            if (i > 50) {
+                return;
+            }
             var border = 5;
             horizontalLineOverlay('arrow', el.rect.left - border, el.rect.top - border, el.rect.width + border * 2, border);
             horizontalLineOverlay('arrow', el.rect.left - border, el.rect.bottom, el.rect.width + border * 2, border);

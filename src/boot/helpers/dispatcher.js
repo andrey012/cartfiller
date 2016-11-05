@@ -160,6 +160,13 @@
      */
     var onLoadHappened = false;
     /**
+     * used for specific case, when api.onload is called in next step after actual 
+     * page refresh happens. This is used when e.g. cf.onload is used. 
+     * Since invokeWorker resets onLoadHappened at the beginning, this is a way to 
+     * recover its state
+     */
+    var shadowedOnLoadHappened = false;
+    /**
      * @var {integer} CartFiller.Dispatcher~workerTimeout Specifies time to wait 
      * for worker step to call api.result() or api.nop(). 
      * @access private
@@ -1480,6 +1487,7 @@
                 alert(err);
             } else {
                 stepRepeatCounter = message.stepRepeatCounter;
+                shadowedOnLoadHappened = onLoadHappened;
                 onLoadHappened = false;
                 nextTaskFlow = 'normal';
                 if (workerCurrentTaskIndex !== message.index){
@@ -2188,10 +2196,11 @@
          * Registers worker's onLoad callback for main frame
          * @function CartFiller.Dispatcher#registerWorkerOnloadCallback
          * @param {CartFiller.Api.onloadCallback} cb
+         * @param {boolean} registerWorkerOnloadCallback see api.onload()
          * @access public
          */
-        registerWorkerOnloadCallback: function(cb){
-            if (onLoadHappened) {
+        registerWorkerOnloadCallback: function(cb, registerWorkerOnloadCallback){
+            if (onLoadHappened || (registerWorkerOnloadCallback && shadowedOnLoadHappened)) {
                 try {
                     callEventCallbacks('onload');
                     cb(true);

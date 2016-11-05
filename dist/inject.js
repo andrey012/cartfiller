@@ -231,7 +231,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1514102239446';
+    config.gruntBuildTimeStamp='1517074471185';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -537,11 +537,11 @@
     var selectorPattern = /^(([^\:\[.# ]+)|(\#[^\:\[.# ]+)|(\.[^\:\[.# ]+)|(\[([^\]"]|("[^"]*"))*\])|(\:([^\:\[.#" \()]|("[^"]*")|\([^)]+\))+))(.*)$/;
     var selectorStepPattern = /^((([^\:\[.# ]+)|(\#[^\:\[.# ]+)|(\.[^\:\[.# ]+)|(\[([^\]"]|("[^"]*"))*\])|(\:([^\:\[.#" \(]|("[^"]*")|\([^)]+\))+))+)(\s(.*))?$/;
     var parseAttributeSelector = function(expression) {
-        var pc = expression.split(/[\^$]?=/, 2);
-        var name = pc[0];
-        var value = pc[1];
-        var equals = expression.substr(name.length, expression.length - name.length - value.length);
-        return {attribute: name, equals: equals, value: value.substr(1, value.length - 2)};
+        var m = /^([^\^\$=]+)(\^=|\$=|=)"([^"]*)"$/.exec(expression);
+        if (! m) {
+            throw new Error('unable to parse attribute selector: [' + expression + ']');
+        }
+        return {attribute: m[1], equals: m[2], value: m[3]};
     };
     var Selector = function(elementList, description, self) {
         if (self === undefined) {
@@ -1200,16 +1200,20 @@
          * @function CartFiller.Api#onload
          * @param {CartFiller.Api.onloadCallback} cb Callback, if not specified
          *          then just api.result() will be ussued after page loads
+         * @param {boolean} recoverPreviousStepState Normally you should make page navigation
+         *          or reload and then call api.onload in the same step. But if you did not -
+         *          you can still call api.onload in next step, but set this parameter
+         *          to true
          * @return {CartFiller.Api} for chaining
          * @access public
          */
-        onload: function(cb){
+        onload: function(cb, recoverPreviousStepState){
             if (undefined === cb) {
                 cb = function() {
                     me.modules.api.result();
                 };
             }
-            me.modules.dispatcher.registerWorkerOnloadCallback(cb);
+            me.modules.dispatcher.registerWorkerOnloadCallback(cb, recoverPreviousStepState);
             return this;
         },
         /**
@@ -2686,7 +2690,12 @@
             };
             Builder.prototype.onload = function(args) {
                 return ['onload(' +niceArgs(args) + ')', me.modules.dispatcher.injectTaskParameters(function() {
-                    api('onload', args);
+                    api('onload', [args[0], true]);
+                }, args)];
+            };
+            Builder.prototype.tbd = function(args) {
+                return ['tbd(' +niceArgs(args) + ')', me.modules.dispatcher.injectTaskParameters(function() {
+                    api('result', ['tbd']);
                 }, args)];
             };
             Builder.prototype.use = function(args) {
@@ -3102,6 +3111,13 @@
      * @access private
      */
     var onLoadHappened = false;
+    /**
+     * used for specific case, when api.onload is called in next step after actual 
+     * page refresh happens. This is used when e.g. cf.onload is used. 
+     * Since invokeWorker resets onLoadHappened at the beginning, this is a way to 
+     * recover its state
+     */
+    var shadowedOnLoadHappened = false;
     /**
      * @var {integer} CartFiller.Dispatcher~workerTimeout Specifies time to wait 
      * for worker step to call api.result() or api.nop(). 
@@ -4423,6 +4439,7 @@
                 alert(err);
             } else {
                 stepRepeatCounter = message.stepRepeatCounter;
+                shadowedOnLoadHappened = onLoadHappened;
                 onLoadHappened = false;
                 nextTaskFlow = 'normal';
                 if (workerCurrentTaskIndex !== message.index){
@@ -5131,10 +5148,11 @@
          * Registers worker's onLoad callback for main frame
          * @function CartFiller.Dispatcher#registerWorkerOnloadCallback
          * @param {CartFiller.Api.onloadCallback} cb
+         * @param {boolean} registerWorkerOnloadCallback see api.onload()
          * @access public
          */
-        registerWorkerOnloadCallback: function(cb){
-            if (onLoadHappened) {
+        registerWorkerOnloadCallback: function(cb, registerWorkerOnloadCallback){
+            if (onLoadHappened || (registerWorkerOnloadCallback && shadowedOnLoadHappened)) {
                 try {
                     callEventCallbacks('onload');
                     cb(true);
@@ -6139,6 +6157,9 @@
         .filter(function(el) { return el.currentMainFrameWindow === me.modules.dispatcher.getFrameWindowIndex(); })
         .map(addFrameCoordinatesMap)
         .filter(function(el, i) {
+            if (i > 50) {
+                return;
+            }
             var border = 5;
             horizontalLineOverlay('arrow', el.rect.left - border, el.rect.top - border, el.rect.width + border * 2, border);
             horizontalLineOverlay('arrow', el.rect.left - border, el.rect.bottom, el.rect.width + border * 2, border);

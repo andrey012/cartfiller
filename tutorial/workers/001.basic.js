@@ -87,6 +87,12 @@
         cf.task('More human readable task name')
             .say('Tasks can have more human readable names as well')
 
-
+        cf.task('Incomplete task')
+            /*
+            * This step will simply fail. It is useful to have when task is in development, 
+            * since it will prevent from switching to next task when you trial-and-error
+            * this task.
+            */
+            .tbd()
     });
 })(window, document);
