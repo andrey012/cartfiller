@@ -46936,7 +46936,11 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 } else {
                     groups = (function(groups, i) {
                         return function(task, m) {
-                            task[g0] = m[i];
+                            if (m[i].substr(0, 1) === '<' && m[i].substr(-1, 1) === '>') {
+                                task[g0] = [m[i].substr(1, m[i].length - 2)];
+                            } else {
+                                task[g0] = m[i];
+                            }
                             if (groups) {
                                 groups(task, m);
                             }
@@ -48203,7 +48207,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
             reportError('bootstrap message did not come');
         }
     }, 10000);
-    config.gruntBuildTimeStamp='1517074471185';
+    config.gruntBuildTimeStamp='1517094193911';
     window.addEventListener('message', function(event){
         var prefix = 'cartFillerMessage:';
         var isDist = true;
@@ -48313,7 +48317,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 if (message.tests) {
                     var x = new XMLHttpRequest();
                     x.onload = function(){
-                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1517074471185') {
+                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1517094193911') {
                             console.log('new version of CartFiller was deployed, switching to it');
                             var hash = window.location.href.split('#');
                             var pc = hash[0].split('?');
