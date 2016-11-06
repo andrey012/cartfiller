@@ -2073,7 +2073,8 @@
                 job: jobDetailsCache,
                 globals: workerGlobals,
                 lib: -1 === argNames.indexOf('cf') ? workerLibOfThisWorker : currentCf.getLib(),
-                cf: currentCf.getCf()
+                cf: currentCf.getCf(),
+                oldlib: workerLibOfThisWorker
             };
             var args = argNames.map(function(arg){
                 if (knownArgs.hasOwnProperty(arg)) {

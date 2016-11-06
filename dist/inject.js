@@ -231,7 +231,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1518559575781';
+    config.gruntBuildTimeStamp='1518598003317';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -5039,7 +5039,8 @@
                 job: jobDetailsCache,
                 globals: workerGlobals,
                 lib: -1 === argNames.indexOf('cf') ? workerLibOfThisWorker : currentCf.getLib(),
-                cf: currentCf.getCf()
+                cf: currentCf.getCf(),
+                oldlib: workerLibOfThisWorker
             };
             var args = argNames.map(function(arg){
                 if (knownArgs.hasOwnProperty(arg)) {
