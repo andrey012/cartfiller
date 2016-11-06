@@ -231,7 +231,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1520187147037';
+    config.gruntBuildTimeStamp='1520496386045';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -783,19 +783,33 @@
             return c === n;
         });
     };
-    Selector.prototype.withText = function(text, ignoreCase) {
+    var getTextOfElement = function(el, noChildren) {
+        if (! noChildren) {
+            return el.textContent;
+        } else {
+            var pc = [];
+            for (var i = 0; i < el.childNodes.length; i ++) {
+                var node = el.childNodes[i];
+                if (node.nodeType === 3) {
+                    pc.push(node.textContent);
+                }
+            }
+            return pc.join('');
+        }
+    };
+    Selector.prototype.withText = function(text, ignoreCase, noChildren) {
         if (! (text instanceof RegExp)) {
             text = me.modules.dispatcher.interpolateText(text);
             if (ignoreCase) {
                 text = text.toLowerCase();
             }
             return this.filter(function(i,el){
-                return me.modules.api.compareCleanText(text, ignoreCase ? el.textContent.toLowerCase() : el.textContent);
+                return me.modules.api.compareCleanText(text, ignoreCase ? getTextOfElement(el, noChildren).toLowerCase() : getTextOfElement(el, noChildren));
             });
         } else {
             text = new RegExp(me.modules.dispatcher.interpolateText(text.source), text.flags);
             return this.filter(function(i,el){
-                return text.test(el.textContent.trim());
+                return text.test(getTextOfElement(el, noChildren).trim());
             });
         }
     };
@@ -4199,7 +4213,8 @@
                     lib: getLibUrl(),
                     testSuite: true,
                     src: me.localIndexHtml ? '' : me.baseUrl.replace(/\/$/, '') + '/',
-                    hashUrl: me['data-choose-job'].split('#')[1] || window.location.hash
+                    hashUrl: me['data-choose-job'].split('#')[1] || window.location.hash,
+                    urlOnBoot: me.modules.ui.mainFrameWindow.location.href
                 }, 'cartFillerMessage');
             } else if (source === me.modules.ui.mainFrameWindow) {
                 startupWatchDog.mainRegistered = true;

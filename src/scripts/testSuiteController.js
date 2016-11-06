@@ -441,6 +441,22 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                 }
             }
         };
+        var filterByUrlOnBoot = function(rootCartfillerJson) {
+            for (var i in rootCartfillerJson.tests) {
+                var v = rootCartfillerJson.tests[i];
+                var ok = true;
+                if (v instanceof RegExp && ! v.test(cfMessage.urlOnBoot)) {
+                    ok = false;
+                } else if ('string' === typeof v && -1 === cfMessage.urlOnBoot.toLowerCase().indexOf(v.toLowerCase())) {
+                    ok = false;
+                } else if ('function' === typeof v && !v(cfMessage.urlOnBoot)) {
+                    ok = false;
+                }
+                if (! ok) {
+                    delete rootCartfillerJson.tests[i];
+                }
+            }
+        };
         var discoverNextRootURL = function(){
             useJsInsteadOfJson = ! useJsInsteadOfJson;
             $scope.discovery.currentRootFile = $scope.discovery.currentRootPath.replace(/\/$/, '') + '/cartfiller.' + getJsOrJsonFileType() + '?' + (new Date()).getTime();
@@ -453,6 +469,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                         if (xhr.status === 200) {
                             try {
                                 $scope.discovery.rootCartfillerJson = parseJson(xhr.responseText);
+                                filterByUrlOnBoot($scope.discovery.rootCartfillerJson);
                                 if ('object' === typeof $scope.discovery.rootCartfillerJson.globals) {
                                     for (i in $scope.discovery.rootCartfillerJson.globals) {
                                         if ($scope.params.globals && undefined !== $scope.params.globals[i]) {

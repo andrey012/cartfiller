@@ -116,7 +116,8 @@
                                 postMessageListeners.push(cb);
                             },
                             testSuite: message.testSuite,
-                            hashUrl: message.hashUrl
+                            hashUrl: message.hashUrl,
+                            urlOnBoot: message.urlOnBoot
                         };
                     });
                 });
