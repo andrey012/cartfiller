@@ -754,7 +754,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             test.workerSrc = combineWorkers(
                 normalizeWorkerURLs(
                     test.worker || [], 
-                    $scope.discovery.currentRootPath + '/' + $scope.discovery.scripts.urls[index].replace(/(^|\/)[^\/]+$/, '')
+                    $scope.discovery.currentRootPath + '/' + $scope.discovery.scripts.urls[index].split('?')[0].replace(/(^|\/)[^\/]+$/, '')
                 ), 
                 $scope.discovery.workerSrc
             );

@@ -231,7 +231,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1518598003317';
+    config.gruntBuildTimeStamp='1518994292163';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -2998,6 +2998,10 @@
         worker = {
             '_set': _set,
             '^global variable ${ref} has value ${value}$': _set,
+            '^current url is ${url}$': ['open url', function() {
+                me.modules.ui.mainFrameWindow.location.href = task.url;
+                api.onload();
+            }],
             '_loop': ['check [ref] against [value]', function() { api.internalDebugger(); if (parseInt(task.ref) < parseInt(task.value)) { api.repeatTask(task.tasks); } api.result();}],
             '_inc': ['inc [ref]', function() { api.internalDebugger(); task.ref = parseInt(task.ref) + 1; api.result(); }],
             '_assertEquals': ['assert that [ref] is equals to [value]', function() { api.internalDebugger().result(api.compare(task.value, task.ref)); }],

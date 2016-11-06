@@ -48451,7 +48451,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
             reportError('bootstrap message did not come');
         }
     }, 10000);
-    config.gruntBuildTimeStamp='1518598003317';
+    config.gruntBuildTimeStamp='1518994292163';
     window.addEventListener('message', function(event){
         var prefix = 'cartFillerMessage:';
         var isDist = true;
@@ -48561,7 +48561,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 if (message.tests) {
                     var x = new XMLHttpRequest();
                     x.onload = function(){
-                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1518598003317') {
+                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1518994292163') {
                             console.log('new version of CartFiller was deployed, switching to it');
                             var hash = window.location.href.split('#');
                             var pc = hash[0].split('?');
@@ -49454,7 +49454,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             test.workerSrc = combineWorkers(
                 normalizeWorkerURLs(
                     test.worker || [], 
-                    $scope.discovery.currentRootPath + '/' + $scope.discovery.scripts.urls[index].replace(/(^|\/)[^\/]+$/, '')
+                    $scope.discovery.currentRootPath + '/' + $scope.discovery.scripts.urls[index].split('?')[0].replace(/(^|\/)[^\/]+$/, '')
                 ), 
                 $scope.discovery.workerSrc
             );
