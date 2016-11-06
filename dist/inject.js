@@ -231,7 +231,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1518994292163';
+    config.gruntBuildTimeStamp='1520187147037';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -2383,6 +2383,16 @@
                     api('nop');
                 }];
             };
+            Builder.prototype.inc = function(args) {
+                if (args.length !== 1) {
+                    throw new Error('cf.inc only makes sense with 1 argument - global variable name to increment');
+                }
+                var ref = args[0];
+                return ['inc global variable [' + ref + ']', function() {
+                    me.modules.dispatcher.getWorkerGlobals()[ref] ++;
+                    api('nop');
+                }];
+            };
             Builder.prototype.asglobal = function(args) {
                 if (args.length !== 1) {
                     throw new Error('cf.asglobals only makes sense with 1 argument - global variable name');
@@ -2455,8 +2465,24 @@
                 return condition ? 
                     implicitSelectorWaitForWrapper(fn, msg, afterWait, timeout) : 
                     function(p) {
-                        p.reevaluate();
-                        api('result', [fn(p) ? '' : msg]);
+                        if (! timeout) {
+                            // no wait, just check
+                            if(me.modules.api.debug && me.modules.api.debug.stop) {
+                                debugger; // jshint ignore:line
+                            }
+                            p.reevaluate();
+                            api('result', [fn(p) ? '' : msg]);
+                        } else {
+                            api('waitFor', [function() {
+                                if(me.modules.api.debug && me.modules.api.debug.stop) {
+                                    debugger; // jshint ignore:line
+                                }
+                                p.reevaluate();
+                                return fn(p);
+                            }, afterWait || function() {
+                                p.arrow(1).result(fn(p) ? '' : msg, true);
+                            }, timeout || undefined, undefined, [p]]);
+                        }
                     };
             };
             var implicitSelectorWaitForWrapper = function(fn, msg, afterWait, timeout) {
@@ -2476,6 +2502,9 @@
                 return function(args, coords, flavor) {
                     var builder = this;
                     if (name === 'exists' || name === 'absent' || name === 'exactly') {
+                        if (flavor.condition && rename) {
+                            throw new Error('You shouldn\'t use ' + rename + ' within evaluation block of if/ifNot/while/whileNot');
+                        }
                         return [
                             (rename || name) + niceArgs(args),
                             wrapIntoImplicitSelectorWaitForWrapperIf(
@@ -6470,8 +6499,8 @@
                     workerFrameHeight = windowHeight - 15,
                     chooseJobFrameLeft = uiType === 'clean' ? (0.02 * cleanUIRootWindowSize.width) : (0.02 * windowWidth + (uiType === 'framed' ? 0 : 200)),
                     chooseJobFrameWidth = uiType === 'clean' ? (0.76 * cleanUIRootWindowSize.width) : (0.76 * windowWidth - (uiType === 'framed' ? 0 : 200)),
-                    chooseJobFrameTop = 0.02 * (uiType === 'clean' ? cleanUIRootWindowSize.height : windowHeight),
-                    chooseJobFrameHeight = 0.96 * (uiType === 'clean' ? cleanUIRootWindowSize.height : windowHeight);
+                    chooseJobFrameTop = 0.02 * (uiType === 'clean' ? 0 : windowHeight),
+                    chooseJobFrameHeight = 0.96 * (uiType === 'clean' ? (cleanUIRootWindowSize.height - 50) : windowHeight);
 
                     var frameHeights = [];
 
@@ -7207,18 +7236,9 @@
             var shoot = function() {
                 done = true;
                 for (var i = 0; i < elements.length; i ++) {
-                    elements[i].removeEventListener('mousedown', clickListener, true);
                     elements[i].removeEventListener('mousemove', moveListener, true);
                     elements[i].removeEventListener('mouseenter', moveListener, true);
                     elements[i].removeEventListener('mouseleave', leaveListener, true);
-                }
-            };
-            var clickListener = function(event) { 
-                if (! done) {
-                    me.modules.ui.reportingMousePointerClickForElement(event.target);
-                    shoot();
-                    event.stopPropagation();
-                    return false;
                 }
             };
             var moveListener = function(event) { 
@@ -7247,7 +7267,6 @@
                     for (var i = 0; i < discovered.length; i ++) {
                         if (-1 === elements.indexOf(discovered[i])) {
                             elements.push(discovered[i]);
-                            discovered[i].addEventListener('mousedown', clickListener, true);
                             discovered[i].addEventListener('mousemove', moveListener, true);
                             discovered[i].addEventListener('mouseenter', moveListener, true);
                             discovered[i].addEventListener('mouseleave', leaveListener, true);

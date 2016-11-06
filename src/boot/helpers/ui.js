@@ -750,8 +750,8 @@
                     workerFrameHeight = windowHeight - 15,
                     chooseJobFrameLeft = uiType === 'clean' ? (0.02 * cleanUIRootWindowSize.width) : (0.02 * windowWidth + (uiType === 'framed' ? 0 : 200)),
                     chooseJobFrameWidth = uiType === 'clean' ? (0.76 * cleanUIRootWindowSize.width) : (0.76 * windowWidth - (uiType === 'framed' ? 0 : 200)),
-                    chooseJobFrameTop = 0.02 * (uiType === 'clean' ? cleanUIRootWindowSize.height : windowHeight),
-                    chooseJobFrameHeight = 0.96 * (uiType === 'clean' ? cleanUIRootWindowSize.height : windowHeight);
+                    chooseJobFrameTop = 0.02 * (uiType === 'clean' ? 0 : windowHeight),
+                    chooseJobFrameHeight = 0.96 * (uiType === 'clean' ? (cleanUIRootWindowSize.height - 50) : windowHeight);
 
                     var frameHeights = [];
 
@@ -1487,18 +1487,9 @@
             var shoot = function() {
                 done = true;
                 for (var i = 0; i < elements.length; i ++) {
-                    elements[i].removeEventListener('mousedown', clickListener, true);
                     elements[i].removeEventListener('mousemove', moveListener, true);
                     elements[i].removeEventListener('mouseenter', moveListener, true);
                     elements[i].removeEventListener('mouseleave', leaveListener, true);
-                }
-            };
-            var clickListener = function(event) { 
-                if (! done) {
-                    me.modules.ui.reportingMousePointerClickForElement(event.target);
-                    shoot();
-                    event.stopPropagation();
-                    return false;
                 }
             };
             var moveListener = function(event) { 
@@ -1527,7 +1518,6 @@
                     for (var i = 0; i < discovered.length; i ++) {
                         if (-1 === elements.indexOf(discovered[i])) {
                             elements.push(discovered[i]);
-                            discovered[i].addEventListener('mousedown', clickListener, true);
                             discovered[i].addEventListener('mousemove', moveListener, true);
                             discovered[i].addEventListener('mouseenter', moveListener, true);
                             discovered[i].addEventListener('mouseleave', leaveListener, true);

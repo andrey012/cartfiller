@@ -258,6 +258,16 @@
                     api('nop');
                 }];
             };
+            Builder.prototype.inc = function(args) {
+                if (args.length !== 1) {
+                    throw new Error('cf.inc only makes sense with 1 argument - global variable name to increment');
+                }
+                var ref = args[0];
+                return ['inc global variable [' + ref + ']', function() {
+                    me.modules.dispatcher.getWorkerGlobals()[ref] ++;
+                    api('nop');
+                }];
+            };
             Builder.prototype.asglobal = function(args) {
                 if (args.length !== 1) {
                     throw new Error('cf.asglobals only makes sense with 1 argument - global variable name');
@@ -330,8 +340,24 @@
                 return condition ? 
                     implicitSelectorWaitForWrapper(fn, msg, afterWait, timeout) : 
                     function(p) {
-                        p.reevaluate();
-                        api('result', [fn(p) ? '' : msg]);
+                        if (! timeout) {
+                            // no wait, just check
+                            if(me.modules.api.debug && me.modules.api.debug.stop) {
+                                debugger; // jshint ignore:line
+                            }
+                            p.reevaluate();
+                            api('result', [fn(p) ? '' : msg]);
+                        } else {
+                            api('waitFor', [function() {
+                                if(me.modules.api.debug && me.modules.api.debug.stop) {
+                                    debugger; // jshint ignore:line
+                                }
+                                p.reevaluate();
+                                return fn(p);
+                            }, afterWait || function() {
+                                p.arrow(1).result(fn(p) ? '' : msg, true);
+                            }, timeout || undefined, undefined, [p]]);
+                        }
                     };
             };
             var implicitSelectorWaitForWrapper = function(fn, msg, afterWait, timeout) {
@@ -351,6 +377,9 @@
                 return function(args, coords, flavor) {
                     var builder = this;
                     if (name === 'exists' || name === 'absent' || name === 'exactly') {
+                        if (flavor.condition && rename) {
+                            throw new Error('You shouldn\'t use ' + rename + ' within evaluation block of if/ifNot/while/whileNot');
+                        }
                         return [
                             (rename || name) + niceArgs(args),
                             wrapIntoImplicitSelectorWaitForWrapperIf(
