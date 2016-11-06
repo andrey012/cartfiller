@@ -417,11 +417,11 @@
                 <h3 ng-if="! jobTask.task && jobTask.heading && jobTask.level == 2">{{jobTask.heading}}</h3>
                 <h4 ng-if="! jobTask.task && jobTask.heading && jobTask.level == 3">{{jobTask.heading}}</h4>
                 <span class="comment" ng-if="! jobTask.task && jobTask.heading && jobTask.level == 4">{{jobTask.heading}}</span>
-                <span ng-if="jobTask.task" ng-dblclick="doubleClickTaskName(jobTask.task, jobTaskIndex)"><strong>{{jobTaskIndex + 1}}. {{jobTitleMap[jobTask.task] ? jobTitleMap[jobTask.task] : (expressions[jobTaskIndex] || jobTask.task)}}</strong></span><span ng-repeat="(propertyName, propertyValue) in jobTask" ng-if="propertyName != 'task' && jobTask.task && !(expressions[jobTaskIndex])" ng-dblclick="doubleClickTaskInput(jobTaskIndex, propertyName, propertyValue)">, 
+                <span ng-if="jobTask.task" ng-dblclick="doubleClickTaskName(jobTask.task, jobTaskIndex)"><strong>{{jobTaskIndex + 1}}. {{jobTitleMap[jobTask.task] ? jobTitleMap[jobTask.task] : (expressionsUI[jobTaskIndex] || jobTask.task)}}</strong></span><span ng-repeat="(propertyName, propertyValue) in jobTask" ng-if="propertyName != 'task' && jobTask.task && !(expressions[jobTaskIndex])" ng-dblclick="doubleClickTaskInput(jobTaskIndex, propertyName, propertyValue)">, 
                     <span>{{jobTitleMap[propertyName] ? jobTitleMap[propertyName] : propertyName}}:</span>
                     <span><strong>{{getPropertyValue(propertyValue)}}</strong></span></span>
                 <div>
-                    <textarea id="{{'template_' + jobTaskIndex}}" readonly onclick="select(this);" ng-if="jobTask.task && noTaskSteps(jobTask.task)" rows="6" style="width: 100%;">{{'\n        cf.task(\'' + (expressions[jobTaskIndex] ? ('^' + expressions[jobTaskIndex] + '$') :  jobTask.task) + '\')\n            '}}</textarea>
+                    <textarea id="{{'template_' + jobTaskIndex}}" readonly onclick="select(this);" ng-if="jobTask.task && noTaskSteps(jobTask.task)" rows="6" style="width: 100%;">{{'\n        cf.task(\'' + (expressions[jobTaskIndex] ? ('^' + expressionsCode[jobTaskIndex] + '$') :  jobTask.task) + '\')\n            .tbd()'}}</textarea>
                     <span
                        ng-repeat="(jobTaskStepIndex, jobTaskStep) in jobTaskDescriptions[jobTask.task] track by $index"
                     >

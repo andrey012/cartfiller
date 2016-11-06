@@ -320,6 +320,9 @@
         }
         return new Selector([], description, [this, 'closest', selector]);
     };
+    Selector.prototype.parent = function() {
+        return new Selector(this.length ? [this[0].parentNode] : [], 'parent', [this, 'parent']);
+    };
     Selector.prototype.text = function() {
         if (this.length) {
             return String(this[0].textContent);
@@ -345,6 +348,7 @@
         if (this.length) {
             if (arguments.length) {
                 this[0].value = me.modules.dispatcher.interpolateText(arguments[0]);
+                return this;
             } else {
                 return this[0].value;
             }
@@ -492,6 +496,13 @@
             } 
             return c === n;
         });
+    };
+    Selector.prototype.select = function() {
+        if (this.length && this[0].nodeName === 'OPTION') {
+            this.parent().val(this.attr('value')).change();
+        } else {
+            throw new Error('Invalid use of select() - selector should be not empty and OPTION should be first element');
+        }
     };
     var getTextOfElement = function(el, noChildren) {
         if (! noChildren) {

@@ -90,24 +90,26 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
         var makeExpressionMatcher = function(match) {
             var groups;
             var i = 2;
-            var re = new RegExp('^(Given |When |Then |But |And |)' + match.substr(1).replace(/\(|\$\{([^}]+)\}/g, function(m, g0) {
+            var re = new RegExp('^(Given |When |Then |But |And |)' + match.substr(1).replace(/\(|\$\{([^}]*)\}/g, function(m, g0) {
                 if (m === '(') {
                     i ++;
                     return m;
                 } else {
                     groups = (function(groups, i) {
                         return function(task, m) {
-                            if (m[i].substr(0, 1) === '<' && m[i].substr(-1, 1) === '>') {
-                                task[g0] = [m[i].substr(1, m[i].length - 2)];
-                            } else {
-                                task[g0] = m[i];
-                            }
-                            if (groups) {
-                                groups(task, m);
+                            if (g0.length) {
+                                if (m[i].substr(0, 1) === '<' && m[i].substr(-1, 1) === '>') {
+                                    task[g0] = [m[i].substr(1, m[i].length - 2)];
+                                } else {
+                                    task[g0] = m[i];
+                                }
+                                if (groups) {
+                                    groups(task, m);
+                                }
                             }
                         };
                     })(groups, i++);
-                    return '(.*)';
+                    return '([^\x00]*)';
                 }
             }), 'i');
             return function(expression) {
@@ -140,11 +142,13 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
             if (expression.substr(-3) === '...') {
                 expression = expression.substr(0, expression.length - 3);
                 stack.splice(n, 100, expression);
-                expression = stack.join(' ');
+                expression = stack.join('\x00');
             } else if (n > 0) {
-                expression = stack.slice(0, n).join(' ') + ' ' + expression;
+                expression = stack.slice(0, n).join('\x00') + '\x00' + expression;
             }
             $scope.expressions[taskIndex] = expression;
+            $scope.expressionsUI[taskIndex] = expressionToUI(expression);
+            $scope.expressionsCode[taskIndex] = expressionToCode(expression);
             for (var i in expressionCache) {
                 var task = expressionMatches(i, expression);
                 if (task) {
@@ -162,6 +166,8 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
         };
         var recompileExpressions = function(jobDetails) {
             $scope.expressions = [];
+            $scope.expressionsUI = [];
+            $scope.expressionsCode = [];
             var stack = [];
             return jobDetails.map(function(task, taskIndex) {
                 if (task.task === '^') {
@@ -173,6 +179,8 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
         };
         $scope.jobDetails = recompileExpressions([]);
         $scope.expressions = [];
+        $scope.expressionsUI = [];
+        $scope.expressionsCode = [];
         $scope.jobTaskProgress = [];
         $scope.jobTaskDescriptions = {};
         compileExpressionDescriptions();
@@ -591,6 +599,15 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 }
             }
         });
+        var expressionFromUI = function(e) {
+            return e.replace(/ \>\>\> /g, '\x00');
+        };
+        var expressionToUI = function(e) {
+            return e.replace(/\x00/g, ' >>> ');
+        };
+        var expressionToCode = function(e) {
+            return e.replace(/\x00/g, '\\x00');
+        };
         var setStepStatus = function(task, step, status, message, response) {
             $scope.jobTaskProgress[task].stepResults[step] = {
                 status: status, 
@@ -740,9 +757,10 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
         };
         $scope.doubleClickTaskName = function(name, jobTaskIndex) {
             if ($scope.expressions[jobTaskIndex]) {
-                var value = prompt('This is Cucumber-style statement, feel free to edit it', $scope.expressions[jobTaskIndex]);
+                var value = prompt('This is Cucumber-style statement, feel free to edit it', $scope.expressionsUI[jobTaskIndex]);
                 if (value) {
-                    $scope.expressions[jobTaskIndex] = value;
+                    $scope.expressions[jobTaskIndex] = expressionFromUI(value);
+                    $scope.expressionsUI[jobTaskIndex] = value;
                     $scope.jobDetails[jobTaskIndex] = {task: '^', '': value};
                     refreshExpressions();
                 }

@@ -33,7 +33,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                 return o;
             }
         };
-        var parseJson = function(s){
+        var parseJson = function(s, src){
             s = s.replace(/^\s*cartfiller\s*=\s*/, '')
                 .replace(/\,([ \t\n\r]*(\]|\}))/g, function(match, group1) { 
                     return group1;
@@ -47,7 +47,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                 throw new Error('empty file');
             }
             var result;
-            if (useJsInsteadOfJson) {
+            if (useJsInsteadOfJson || /\.js$/.test(src.split('?')[0])) {
                 result = fetchFunctionComments(eval('var json = ' + s + '; json')); // jshint ignore:line
             } else {
                 result = JSON.parse(s);
@@ -257,7 +257,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                     testDependencies[myIndex][includedTestIndex] = true;
                     var saved = $scope.discovery.currentProcessedTestURL;
                     $scope.discovery.currentProcessedTestURL = $scope.discovery.currentProcessedTestURL = $scope.discovery.scripts.hrefs[includedTestIndex];
-                    var tasksToInclude = processIncludes(parseJson($scope.discovery.scripts.rawContents[includedTestIndex]).details, includedTestIndex, tweaks, thisMap);
+                    var tasksToInclude = processIncludes(parseJson($scope.discovery.scripts.rawContents[includedTestIndex], $scope.discovery.scripts.hrefs[includedTestIndex]).details, includedTestIndex, tweaks, thisMap);
                     $scope.discovery.currentProcessedTestURL = saved;
                     
                     tasksToInclude.filter(function(task) {  
@@ -468,7 +468,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                         $scope.errorURL = false;
                         if (xhr.status === 200) {
                             try {
-                                $scope.discovery.rootCartfillerJson = parseJson(xhr.responseText);
+                                $scope.discovery.rootCartfillerJson = parseJson(xhr.responseText, $scope.discovery.currentRootFile);
                                 filterByUrlOnBoot($scope.discovery.rootCartfillerJson);
                                 if ('object' === typeof $scope.discovery.rootCartfillerJson.globals) {
                                     for (i in $scope.discovery.rootCartfillerJson.globals) {
@@ -529,7 +529,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
         var processDownloadedTest = function(index) {
             var saved = $scope.discovery.currentProcessedTestURL;
             $scope.discovery.currentProcessedTestURL = $scope.discovery.scripts.hrefs[index];
-            var contents = parseJson($scope.discovery.scripts.rawContents[index]);
+            var contents = parseJson($scope.discovery.scripts.rawContents[index], $scope.discovery.scripts.hrefs[index]);
             contents.details = processHeadings(processIncludes(contents.details, index, $scope.discovery.scripts.tweaks[index]));
             $scope.discovery.scripts.contents[index] = contents;
             $scope.discovery.currentProcessedTestURL = saved;
@@ -615,10 +615,14 @@ define('testSuiteController', ['app', 'scroll'], function(app){
         var setErrorForScriptUrl = function(url, message) {
             $scope.downloadsInProgress[getIndexInDownloadsInProgress(url)].error = message;
         };
+        var addJsOrJsonIfNecessary = function(file) {
+            return file + (/\.js(on)?$/.test(file) ? '' : ('.' + getJsOrJsonFileType()));
+        };
         var launchScriptDownload = function(index) {
             var suffix; 
             var url;
-            for (suffix = 0; -1 !== getIndexInDownloadsInProgress(url = $scope.discovery.scripts.hrefs[index] =  $scope.discovery.currentRootPath.replace(/\/$/, '') + '/' + $scope.discovery.scripts.flat[index].join('/').replace(/\.js(on)?$/, '') + '.' + getJsOrJsonFileType() + '?' + (new Date()).getTime() + suffix, true) ; suffix ++ ){}
+            for (suffix = 0; -1 !== getIndexInDownloadsInProgress(url = $scope.discovery.scripts.hrefs[index] =  $scope.discovery.currentRootPath.replace(/\/$/, '') + '/' + 
+            addJsOrJsonIfNecessary($scope.discovery.scripts.flat[index].join('/')) + '?' + (new Date()).getTime() + suffix, true) ; suffix ++ ){}
             (function(index, url) {
                 $scope.downloadsInProgress.push({url: url});
                 $.cartFillerPlugin.ajax({
