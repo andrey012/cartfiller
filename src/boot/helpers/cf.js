@@ -345,7 +345,7 @@
                             if(me.modules.api.debug && me.modules.api.debug.stop) {
                                 debugger; // jshint ignore:line
                             }
-                            p.reevaluate();
+                            p.reevaluate().arrow();
                             api('result', [fn(p) ? '' : msg]);
                         } else {
                             api('waitFor', [function() {
