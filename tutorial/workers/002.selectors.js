@@ -51,10 +51,25 @@
             .get('a:visible')
             .withText('Completed').exists()
         /**
-         * .withText can contain references to task properties or globals
+         * .withText can contain references to task properties or globals 
+         * and use second parameter to ignore case
          */
             .get('a:visible')
-            .withText('${taskParam}').exists()
+            .withText('${taskParam}', true).exists()
+        /**
+         * .withText can use regular expressions also with references to task properties or globals which will be replaced
+         */
+            .get('a:visible')
+            .withText(/${taskParam}/).exists()
+        /**
+         * .withText by default uses 'textContent' property of DOM element,
+         * which usually includes text not only of element itself but
+         * also all of its children. If you want to search only
+         * inside own text of element, not its children, set third
+         * parameter to true. This will work similar to Ctrl+F or Cmd+F
+         */
+            .get('a:visible')
+            .withText(/${taskParam}/, true, true).exists()
         /**
          * .css changes element.style.? value
          */

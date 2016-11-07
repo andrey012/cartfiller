@@ -231,7 +231,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1520965941693';
+    config.gruntBuildTimeStamp='1521277979277';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -818,7 +818,11 @@
                 return me.modules.api.compareCleanText(text, ignoreCase ? getTextOfElement(el, noChildren).toLowerCase() : getTextOfElement(el, noChildren));
             });
         } else {
-            text = new RegExp(me.modules.dispatcher.interpolateText(text.source), text.flags);
+            var flags = text.flags;
+            if (ignoreCase && -1 === flags.indexOf('i')) {
+                flags += 'i';
+            }
+            text = new RegExp(me.modules.dispatcher.interpolateText(text.source), flags);
             return this.filter(function(i,el){
                 return text.test(getTextOfElement(el, noChildren).trim());
             });

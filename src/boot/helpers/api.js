@@ -528,7 +528,11 @@
                 return me.modules.api.compareCleanText(text, ignoreCase ? getTextOfElement(el, noChildren).toLowerCase() : getTextOfElement(el, noChildren));
             });
         } else {
-            text = new RegExp(me.modules.dispatcher.interpolateText(text.source), text.flags);
+            var flags = text.flags;
+            if (ignoreCase && -1 === flags.indexOf('i')) {
+                flags += 'i';
+            }
+            text = new RegExp(me.modules.dispatcher.interpolateText(text.source), flags);
             return this.filter(function(i,el){
                 return text.test(getTextOfElement(el, noChildren).trim());
             });
