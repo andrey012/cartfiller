@@ -231,7 +231,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1521279599984';
+    config.gruntBuildTimeStamp='1521311581143';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -607,6 +607,7 @@
                 for (var el = this[i].parentNode; el; el = el.parentNode) {
                     if (parsed.length === parsed.filter(getElementsBySelectorSecondStepFilter(el)).length) {
                         result.push(el);
+                        break;
                     }
                 }
             }

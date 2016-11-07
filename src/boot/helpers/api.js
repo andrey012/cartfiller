@@ -317,6 +317,7 @@
                 for (var el = this[i].parentNode; el; el = el.parentNode) {
                     if (parsed.length === parsed.filter(getElementsBySelectorSecondStepFilter(el)).length) {
                         result.push(el);
+                        break;
                     }
                 }
             }

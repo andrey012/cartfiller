@@ -239,7 +239,9 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             var result = [];
             details.filter(function(detail) {
                 var i;
-                if (detail.include) {
+                if ('string' === typeof detail || details.heading) {
+                    result.push(detail);
+                } else if (detail.include) {
                     var thisMap = angular.copy(map);
                     for (i in detail) {
                         if (i !== 'include') {
@@ -263,7 +265,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                     $scope.discovery.currentProcessedTestURL = $scope.discovery.currentProcessedTestURL = $scope.discovery.scripts.hrefs[includedTestIndex];
                     var tasksToInclude = processIncludes(parseJson($scope.discovery.scripts.rawContents[includedTestIndex], $scope.discovery.scripts.hrefs[includedTestIndex]).details, includedTestIndex, tweaks, thisMap);
                     $scope.discovery.currentProcessedTestURL = saved;
-                    
+                    result.push('// included start: ' + detail.include);
                     tasksToInclude.filter(function(task) {  
                         task = angular.copy(task);
                         for (var i in task) {
@@ -273,6 +275,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                         }
                         result.push(task);
                     });
+                    result.push('// included finish: ' + detail.include);
                 } else {
                     if (undefined === detail.task) {
                         if (undefined !== detail.if) {
@@ -1010,9 +1013,16 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             $('#tasksearch').val('');
             angular.element($('#testslist')[0]).scope().$digest();
         };
+        var taskParamsMatchFilter = function(task, taskFilter) {
+            for (var i in task) {
+                if (String(task[i]).toLowerCase().indexOf(taskFilter) !== -1) {
+                    return true;
+                }
+            }
+        };
         var taskMatchesFilter = function(task, taskFilter) {
             return ((
-                (task.task && -1 !== task.task.toLowerCase().indexOf(taskFilter)) ||
+                (task.task && taskParamsMatchFilter(task, taskFilter)) ||
                 ((! task.task) && task.heading && -1 !== task.heading.toLowerCase().indexOf(taskFilter))
                 ) ? true : false);
         };
