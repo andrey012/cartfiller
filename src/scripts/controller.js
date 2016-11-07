@@ -98,10 +98,25 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                     groups = (function(groups, i) {
                         return function(task, m) {
                             if (g0.length) {
-                                if (m[i].substr(0, 1) === '<' && m[i].substr(-1, 1) === '>') {
-                                    task[g0] = [m[i].substr(1, m[i].length - 2)];
-                                } else {
-                                    task[g0] = m[i];
+                                task[g0] = m[i];
+                                var s = m[i];
+                                var first = true;
+                                var mm;
+                                while (mm = /^([^<]*)<([^>]+)>(.*)$/.exec(s)) {
+                                    if (first && !mm[1].length && !mm[3].length) {
+                                        task[g0] = [mm[2]];
+                                        break;
+                                    } else {
+                                        if (first) {
+                                            task[g0] = [mm[1], [mm[2]], mm[3]];
+                                        } else {
+                                            task[g0].pop();
+                                            task[g0].push(mm[1]);
+                                            task[g0].push([mm[2]]);
+                                            task[g0].push(mm[3]);
+                                        }
+                                        s = mm[3];
+                                    }
                                 }
                                 if (groups) {
                                     groups(task, m);
