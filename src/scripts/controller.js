@@ -755,8 +755,8 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 cfMessage.send('updateProperty', {index: index, name: name, value: val});
             }
         };
-        $scope.doubleClickTaskName = function(name, jobTaskIndex) {
-            if ($scope.expressions[jobTaskIndex]) {
+        $scope.doubleClickTaskName = function(name, jobTaskIndex, $event) {
+            if ($scope.expressions[jobTaskIndex] && ! $event.shiftKey) {
                 var value = prompt('This is Cucumber-style statement, feel free to edit it', $scope.expressionsUI[jobTaskIndex]);
                 if (value) {
                     $scope.expressions[jobTaskIndex] = expressionFromUI(value);
@@ -765,7 +765,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                     refreshExpressions();
                 }
             } else {
-                prompt('This is readonly but you can copy task name below. Source of this task is ' + $scope.workerTaskSources[name], name);
+                prompt('This is readonly but you can copy task name below. Source of this task is ' + $scope.workerTaskSources[name], name.replace(/\x00/g, '\\x00'));
             }
         };
         $scope.clickOnStepNoWatch = function(element, $event){

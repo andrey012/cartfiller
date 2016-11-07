@@ -203,6 +203,10 @@ define('testSuiteController', ['app', 'scroll'], function(app){
         var makeFeatureDetailsFromText = function(text) {
             var firstIndent;
             return text.split(/\n|\r/).filter(function(v) { return v.trim().length; }).map(function(v) {
+                var m = /^\s*include (.*)$/.exec(v);
+                if (m) {
+                    return {include: m[1].trim()};
+                }
                 if (v.trim().substr(0, 1) === '#') {
                     return v.trim().substr(1).trim();
                 }
@@ -280,7 +284,7 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                             }
                             result.push(detail);
                         } else if ('object' === typeof detail) {
-                            result = result.concat(convertNewStyleTaskDetailsIntoOldStyleTaskDetails(detail));
+                            result = result.concat(processIncludesRecursive(convertNewStyleTaskDetailsIntoOldStyleTaskDetails(detail), myIndex, tweaks, map));
                         }
                     } else {
                         result.push(detail);

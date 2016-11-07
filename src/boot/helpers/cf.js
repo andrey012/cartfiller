@@ -268,7 +268,7 @@
                     api('nop');
                 }];
             };
-            Builder.prototype.asglobal = function(args) {
+            Builder.prototype.asglobal = Builder.prototype.asGlobal = function(args) {
                 if (args.length !== 1) {
                     throw new Error('cf.asglobals only makes sense with 1 argument - global variable name');
                 }

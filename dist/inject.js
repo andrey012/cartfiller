@@ -231,7 +231,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1521277979277';
+    config.gruntBuildTimeStamp='1521279599984';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -602,11 +602,15 @@
         var parsed = parseSelector(selector);
         var description = this.description + ' closest(' + selector + ')';
         if (this.length) {
-            for (var el = this[0].parentNode; el; el = el.parentNode) {
-                if (parsed.length === parsed.filter(getElementsBySelectorSecondStepFilter(el)).length) {
-                    return new Selector([el], description, [this, 'closest', selector]);
+            var result = [];
+            for (var i = 0; i < this.length; i ++) {
+                for (var el = this[i].parentNode; el; el = el.parentNode) {
+                    if (parsed.length === parsed.filter(getElementsBySelectorSecondStepFilter(el)).length) {
+                        result.push(el);
+                    }
                 }
             }
+            return new Selector(result, description, [this, 'closest', selector]);
         }
         return new Selector([], description, [this, 'closest', selector]);
     };
@@ -818,7 +822,7 @@
                 return me.modules.api.compareCleanText(text, ignoreCase ? getTextOfElement(el, noChildren).toLowerCase() : getTextOfElement(el, noChildren));
             });
         } else {
-            var flags = text.flags;
+            var flags = text.flags || '';
             if (ignoreCase && -1 === flags.indexOf('i')) {
                 flags += 'i';
             }
@@ -2422,7 +2426,7 @@
                     api('nop');
                 }];
             };
-            Builder.prototype.asglobal = function(args) {
+            Builder.prototype.asglobal = Builder.prototype.asGlobal = function(args) {
                 if (args.length !== 1) {
                     throw new Error('cf.asglobals only makes sense with 1 argument - global variable name');
                 }
