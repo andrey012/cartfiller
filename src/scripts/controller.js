@@ -6,6 +6,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
         var nextStepTimeoutHandle = false;
         var trackMousePointerWithDelay = false;
         var searchInProgress = false;
+        var searchInProgressAppend = false;
         var trackMousePointerDirect = false;
         var triggerWithShiftNoWatchShiftState = false;
         var highlightingSearchedElement = false;
@@ -496,7 +497,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                     if ($scope.running || ($scope.doingOneStep && ($scope.clickedWhileWorkerWasInProgress === 'step' || true === details.nop))){
                         if (proceed && details.nextTaskFlow !== 'stop'){
                             nextStepTimeout = (($scope.running === 'slow' || cfDebug.callPhantom) && (true !== details.nop)) ?
-                                (('undefined' !== typeof details.sleep) ? details.sleep : 1000) : 
+                                (('undefined' !== typeof details.sleep) ? details.sleep : 1000) :
                                 0;
                             if (nextStepTimeoutHandle) {
                                 // looks like we already have something pending from older times - cancel it
@@ -514,7 +515,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                                     function(){
                                         nextStepTimeoutHandle = false;
                                         $scope.doNextStep();
-                                    }, 
+                                    },
                                     nextStepTimeout
                                 );
                             }
@@ -525,11 +526,11 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                     $scope.clickedWhileWorkerWasInProgress = false;
                 }
                 cfMessage.send(
-                    'sendStatus', 
+                    'sendStatus',
                     {
-                        result: $scope.jobTaskProgress, 
+                        result: $scope.jobTaskProgress,
                         tasks: $scope.jobDetails,
-                        currentTaskIndex: details.index, 
+                        currentTaskIndex: details.index,
                         currentTaskStepIndex: details.step,
                         running: wasRunning,
                         completed: ! proceed,
@@ -568,8 +569,8 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
             } else if (cmd === 'mousePointer') {
                 if (details.autoshootReady) {
                     $('#dashboardMessage').show().text(
-                        trackMousePointerDirect ? 
-                        directMousePointerCaptureMessage : 
+                        trackMousePointerDirect ?
+                        directMousePointerCaptureMessage :
                         'now make small movement of your mouse'
                     );
                 } else if (details.autoshootCaptured) {
@@ -590,7 +591,11 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                                 timeouts.refreshPointer = setTimeout(refreshPointer, 100);
                             });
                             scope.searchVisible = true;
-                            scope.stack = details.stack;
+                            if (searchInProgressAppend) {
+                                scope.stacks.push(details.stack);
+                            } else {
+                                scope.stacks = [details.stack];
+                            }
                             scope.window = details.w;
                             scope.delay = trackMousePointerWithDelay;
                             scope.$digest();
@@ -625,9 +630,9 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
         };
         var setStepStatus = function(task, step, status, message, response) {
             $scope.jobTaskProgress[task].stepResults[step] = {
-                status: status, 
-                message: message, 
-                response: response, 
+                status: status,
+                message: message,
+                response: response,
                 title: $scope.jobTaskDescriptions[$scope.jobDetails[task].task] ? $scope.jobTaskDescriptions[$scope.jobDetails[task].task][step] : undefined
             };
         };
@@ -653,7 +658,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
             }
             var oldCurrentTask = $scope.currentTask;
             if (nextTaskFlow === 'repeatJob') {
-                $scope.currentTask = 0; 
+                $scope.currentTask = 0;
                 $scope.currentStep = 0;
                 skipHeadings();
             } else if (nextTaskFlow === 'skipJob') {
@@ -709,11 +714,11 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 $scope.finishReached = true;
                 setTimeout(function(){
                     cfMessage.send(
-                        'sendStatus', 
+                        'sendStatus',
                         {
-                            result: $scope.jobTaskProgress, 
+                            result: $scope.jobTaskProgress,
                             tasks: $scope.jobDetails,
-                            currentTaskIndex: false, 
+                            currentTaskIndex: false,
                             currentTaskStepIndex: false,
                             running: $scope.running,
                             completed: true
@@ -816,11 +821,11 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 repeatStepCounterStep = stepIndex;
             }
             cfMessage.send('invokeWorker', {
-                index: taskIndex, 
-                task: taskName, 
-                step: stepIndex, 
-                details: details, 
-                debug: debug, 
+                index: taskIndex,
+                task: taskName,
+                step: stepIndex,
+                details: details,
+                debug: debug,
                 repeatCounter: $scope.repeatedTaskCounter[taskIndex] || 0,
                 stepRepeatCounter: repeatStepCounter,
                 running: $scope.running
@@ -839,7 +844,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
             if ($scope.jobTaskProgress[index].stepsInProgress[step] === true) {
                 theClass += 'btn-default ';
                 markDependent = false;
-            } 
+            }
             var result = $scope.jobTaskProgress[index].stepResults[step];
             if (!angular.isUndefined(result)) {
                 if ('ok' === result.status || 'skipped' === result.status){
@@ -999,20 +1004,21 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
             $event.stopPropagation();
             return false;
         };
-        $scope.performSearchNoWatch = function($event, clickless) {
+        $scope.performSearchNoWatch = function($event, append) {
             if (! searchInProgress) {
                 searchInProgress = true;
-                trackMousePointerWithDelay = (! clickless) && $event.shiftKey;
+                searchInProgressAppend = append;
+                trackMousePointerWithDelay = $event.shiftKey;
                 trackMousePointerDirect = ! $event.ctrlKey;
-                $('#dashboardMessage').show().text(trackMousePointerDirect ? 
+                $('#dashboardMessage').show().text(trackMousePointerDirect ?
                     (
-                        trackMousePointerWithDelay ? 
+                        trackMousePointerWithDelay ?
                         'Prepare your application for capture, e.g. focus the input, start typing to let auto-suggest list to appear, etc. Capture will start in 5 seconds' :
                         directMousePointerCaptureMessage
                     ) :
                     (
-                        trackMousePointerWithDelay ? 
-                        'Move your mouse to the element you want to analyze, you have 5 seconds for that, then the layover will appear, make a short mouse movement to let layover notice your mouse position' : 
+                        trackMousePointerWithDelay ?
+                        'Move your mouse to the element you want to analyze, you have 5 seconds for that, then the layover will appear, make a short mouse movement to let layover notice your mouse position' :
                         'Click on the element you want to analyze'
                     )
                 );
@@ -1029,12 +1035,13 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
         };
         setTimeout(function initSearchScope() {
             var scope = angular.element(document.getElementById('searchResults')).scope();
+            scope.type = 'cf';
             if (! scope) {
                 setTimeout(initSearchScope,1000);
                 return;
             }
             scope.send = function(initial) {
-                cfMessage.send('evaluateCssSelector', {selector: scope.cssSelector, currentMainFrameWindow: scope.window, taskDetails: $scope.jobDetails[$scope.currentTask], initial: initial});
+                cfMessage.send('evaluateCssSelector', {selector: scope.cssSelector, currentMainFrameWindow: scope.window, taskDetails: $scope.jobDetails[$scope.currentTask], initial: initial, type: scope.type});
             };
             scope.toggle = function(what, where, index){
                 if (undefined === index) {
@@ -1045,7 +1052,16 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                     }
                     where[what][index] = ! where[what][index];
                 }
-                scope.cssSelector = scope.getCssSelector();
+                scope.updateTextarea();
+            };
+            scope.updateTextarea = function() {
+                switch (scope.type) {
+                    case 'xpath':
+                        scope.cssSelector = scope.getXpathSelector();
+                        break;
+                    default:
+                        scope.cssSelector = scope.getCssSelector();
+                }
                 scope.send(true);
                 $('#selectorSearchQueryInput')[0].focus();
                 setTimeout(function() {
@@ -1062,7 +1078,69 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                     triggerWithShiftNoWatchShiftState = false;
                 }
             };
-            scope.getCssSelector = function(){
+            scope.getXpathSelector = function() {
+                var knownStackIndex = 0;
+                var r =
+                    (
+                        '"' +
+                        scope.stacks.map(function(stack, stackIndex) {
+                            return stack.map(function(el){
+                                var r = ((knownStackIndex === stackIndex) ? '//' : '/ancestor::') +
+                                    (el.selectNodeName && el.element ? el.element : '*') +
+                                    (el.selectId ? ('[(@id=\\"' + el.id + '\\")]') : '') +
+                                    (el.classes.filter(function(c,i) {
+                                        return undefined !== el.selectClass && el.selectClass[i];
+                                    }).map(function(v){
+                                        return '[contains(concat(\\" \\", @class, \\" \\"), \\" ' + v + ' \\")]';
+                                    }).join('')) +
+                                    (el.attrs.filter(function(a,i) {
+                                        return undefined !== el.selectAttribute && el.selectAttribute[i];
+                                    }).map(function(a){
+                                        return '[(@' + a.n + '=\\"' + a.v + '\\"' + ')]';
+                                    }).join(''));
+                                if (el.selectText) {
+                                    r += '[(text() = \\"' + el.text.trim() + '\\")]';
+                                }
+                                r = r.replace(/\]\[/g, ' and ');
+                                if (knownStackIndex !== stackIndex) {
+                                    r += '[1]';
+                                } else if (el.selectIndex) {
+                                    r += '[' + el.index + ']';
+                                }
+                                r = r.trim().replace(/^(\/\/\*|\/ancestor\:\:\*\[1\])$/, '');
+                                if (r) {
+                                    knownStackIndex = stackIndex;
+                                }
+                                return r;
+                            })
+                            .filter(function(v) { return v.trim().length; })
+                            .join('');
+                        }).join('') +
+                        '"'
+                    );
+                return r;
+
+            };
+            scope.addClosest = function() {
+                var newStack = scope.stacks[0].map(function(el) {
+                    var newEl = {};
+                    for (var i in el) {
+                        if (0 !== i.indexOf('select')) {
+                            newEl[i] = el[i];
+                        }
+                    }
+                    return newEl;
+                });
+                scope.stacks.push(newStack);
+            };
+            scope.toggleType = function() {
+                switch (scope.type) {
+                    case 'cf': scope.type = 'xpath'; break;
+                    case 'xpath': scope.type = 'cf'; break;
+                }
+                scope.updateTextarea();
+            };
+            scope.getCssSelector = function() {
                 var generateCompareCleanTextExpression = function(s) {
                     s = String(s);
                     for (var i in $scope.jobDetails[$scope.currentTask]) {
@@ -1078,40 +1156,50 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                     }
                     return JSON.stringify(s);
                 };
-                var r = 
+                var knownStackIndex = 0;
+                var r =
                     (
-                        '(\'' + 
-                        scope.stack.map(function(el){
-                            var r = '' +
-                                (el.selectNodeName && el.element ? el.element : '') +
-                                (el.selectId ? ('#' + el.id) : '') +
-                                (el.classes.filter(function(c,i) {
-                                    return undefined !== el.selectClass && el.selectClass[i];
-                                }).map(function(v){
-                                    return '.' + v;
-                                }).join('')) +
-                                (el.attrs.filter(function(a,i) {
-                                    return undefined !== el.selectAttribute && el.selectAttribute[i];
-                                }).map(function(a){
-                                    return '[' + a.n + '="' + a.v + '"' + ']';
-                                }).join(''));
-                            if (r.trim().length && ! /option$/.test(r.trim())) {
-                                r += ':visible';
-                            }
-                            if (el.selectIndex) {
-                                r += '\').nthOfType(' + (el.index - 1) + ').find(\'';
-                                //r += '\').filter(function(i,el,x,c){ c = 0; for (x = el.previousSibling; x; x = x.previousSibling) c += x.nodeName === el.nodeName ? 1 : 0; return c === ' + (el.index - 1) + ';}).find(\'';
-                            }
-                            if (el.selectText) {
-                                r += '\').withText(' + generateCompareCleanTextExpression(el.text.trim()) + ').find(\'';
-                            }
-                            if (el.selectNodeName && el.lib) {
-                                r += '\').uselib(\'' + el.lib + '\').find(\'';
-                            }
-                            return r.trim();
+                        '(\'' +
+                        scope.stacks.map(function(stack, stackIndex) {
+                            return stack.map(function(el){
+                                var r = '' +
+                                    (el.selectNodeName && el.element ? el.element : '') +
+                                    (el.selectId ? ('#' + el.id) : '') +
+                                    (el.classes.filter(function(c,i) {
+                                        return undefined !== el.selectClass && el.selectClass[i];
+                                    }).map(function(v){
+                                        return '.' + v;
+                                    }).join('')) +
+                                    (el.attrs.filter(function(a,i) {
+                                        return undefined !== el.selectAttribute && el.selectAttribute[i];
+                                    }).map(function(a){
+                                        return '[' + a.n + '="' + a.v + '"' + ']';
+                                    }).join(''));
+                                if (r.trim().length && ! /option$/.test(r.trim())) {
+                                    r += ':visible';
+                                }
+                                if (el.selectIndex) {
+                                    r += '\').nthOfType(' + (el.index - 1) + ').find(\'';
+                                }
+                                if (el.selectText) {
+                                    r += '\').withText(' + generateCompareCleanTextExpression(el.text.trim()) + ').find(\'';
+                                }
+                                if (el.selectNodeName && el.lib) {
+                                    r += '\').uselib(\'' + el.lib + '\').find(\'';
+                                }
+                                r = r.trim();
+                                if (knownStackIndex !== stackIndex && r.length) {
+                                    r = '\').closest(\'' + r + '\').find(\'';
+                                }
+                                if (r.length) {
+                                    knownStackIndex = stackIndex;
+                                }
+                                return r;
+                            })
+                            .filter(function(v) { return v.trim().length; })
+                            .join(' ');
                         })
-                        .filter(function(v) { return v.trim().length; })
-                        .join(' ') +
+                        .join('') +
                         '\')'
                     )
                     .replace(/.find\(\'\s*\'\)/g, '')
@@ -1135,20 +1223,17 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
             scope.textareaKeyUp = function($event){
                 if ($event.keyCode === 27) {
                     scope.toggleSearch();
-                } else {
-                    scope.cssSelector = $($event.target).val();
-                    cfMessage.send('evaluateCssSelector', {selector: scope.cssSelector});
                 }
             };
             scope.highlight = function(button) {
                 highlightingSearchedElement = true;
-                if (scope.stack[button.getAttribute('data-index')].lib) {
+                if (scope.stacks[0][button.getAttribute('data-index')].lib) {
                     cfMessage.send('highlightElementForQueryBuilder', {lib: scope.stack[button.getAttribute('data-index')].lib, currentMainFrameWindow: scope.window});
                 } else {
                     var payload = [];
                     for (var i = 0 ; i <= button.getAttribute('data-index'); i ++) {
-                        var node = scope.stack[i];
-                        if (scope.stack[i].element) {
+                        var node = scope.stacks[0][i];
+                        if (scope.stacks[0][i].element) {
                             payload.push([node.element, node.index - 1]);
                         }
                     }

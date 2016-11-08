@@ -279,32 +279,38 @@
                     <div ng-if="searchVisible">
                         <div>
                             <a class="btn btn-xs btn-success" ng-click="toggleSearch()">Close</a>
+                            <a class="btn btn-xs" ng-click="toggleType()">{{type}}</a>
                         </div>
                         <div style="max-height: 60vh; overflow: scroll">
-                            <div ng-repeat="(elementIndex, element) in stack">
-                                <span ng-if="element.lib">lib: </span>
-                                <button data-index="{{elementIndex}}" class="btn btn-xs" ng-class="element.selectNodeName ? 'btn-success' : element.lib ? 'btn-info' : 'btn-warning'" ng-click="toggle('selectNodeName', element)" onmouseenter="angular.element(this).scope().highlight(this);" onmouseleave="angular.element(this).scope().unhighlight(this);">
-                                    {{element.element || element.lib}}
-                                </button>
-                                <button class="btn btn-xs" ng-class="element.selectId ? 'btn-success' : 'btn-danger'" ng-click="toggle('selectId', element)" ng-if="element.id">
-                                    #{{element.id}}
-                                </button>
-                                <button class="btn btn-xs" ng-class="element.selectClass[index] ? 'btn-success' : 'btn-default'" ng-click="toggle('selectClass', element, index)" ng-repeat="(index, class) in element.classes">
-                                    .{{class}}
-                                </button>
-                                <button class="btn btn-xs" ng-class="element.selectAttribute[index] ? 'btn-success' : 'btn-disabled'" ng-click="toggle('selectAttribute', element, index)" ng-repeat="(index, a) in element.attrs">
-                                    .{{a.n + '="' + a.v + '"'}}
-                                </button>
-                                <button class="btn btn-xs" ng-class="element.selectIndex ? 'btn-success' : 'btn-default'" ng-click="toggle('selectIndex', element)" ng-if="element.element">
-                                    nth({{element.index}}) of {{element.indexOf}}
-                                </button>
-                                <button class="btn btn-xs" ng-class="element.selectText ? 'btn-success' : 'btn-default'" ng-click="toggle('selectText', element)" ng-if="element.text">
-                                    text
-                                </button>
+                            <div ng-repeat="(stackIndex, stack) in stacks">
+                                <hr ng-if="stackIndex > 0"/>
+                                <div ng-repeat="(elementIndex, element) in stack">
+                                    <span ng-if="element.lib">lib: </span>
+                                    <button data-index="{{elementIndex}}" class="btn btn-xs" ng-class="element.selectNodeName ? 'btn-success' : element.lib ? 'btn-info' : 'btn-warning'" ng-click="toggle('selectNodeName', element)" onmouseenter="angular.element(this).scope().highlight(this);" onmouseleave="angular.element(this).scope().unhighlight(this);">
+                                        {{element.element || element.lib}}
+                                    </button>
+                                    <button class="btn btn-xs" ng-class="element.selectId ? 'btn-success' : 'btn-danger'" ng-click="toggle('selectId', element)" ng-if="element.id">
+                                        #{{element.id}}
+                                    </button>
+                                    <button class="btn btn-xs" ng-class="element.selectClass[index] ? 'btn-success' : 'btn-default'" ng-click="toggle('selectClass', element, index)" ng-repeat="(index, class) in element.classes">
+                                        .{{class}}
+                                    </button>
+                                    <button class="btn btn-xs" ng-class="element.selectAttribute[index] ? 'btn-success' : 'btn-disabled'" ng-click="toggle('selectAttribute', element, index)" ng-repeat="(index, a) in element.attrs">
+                                        .{{a.n + '="' + a.v + '"'}}
+                                    </button>
+                                    <button class="btn btn-xs" ng-class="element.selectIndex ? 'btn-success' : 'btn-default'" ng-click="toggle('selectIndex', element)" ng-if="element.element">
+                                        nth({{element.index}}) of {{element.indexOf}}
+                                    </button>
+                                    <button class="btn btn-xs" ng-class="element.selectText ? 'btn-success' : 'btn-default'" ng-click="toggle('selectText', element)" ng-if="element.text">
+                                        text
+                                    </button>
+                                </div>
                             </div>
+                            <hr/>
+                            <button class="btn btn-xs btn-default" ng-click="addClosest()">Closet parent: same</button>
+                            <button class="btn btn-xs btn-default" onclick="var event = arguments[0] || window.event; return angular.element(this).scope().performSearchNoWatch(event, true);">Closet parent: search again</button>
                         </div>
                         <textarea readonly id="selectorSearchQueryInput" onclick="this.select()" onfocus="this.select()" style="width: 100%" ng-keyup="textareaKeyUp($event)">{{cssSelector}}</textarea>
-
                     </div>
                 </div>
             </div>

@@ -986,10 +986,14 @@ define('testSuiteController', ['app', 'scroll'], function(app){
             return window.location.href.split(/[#?]/)[0].replace(/\/src(\/(index.html)?)?$/, '/dist/') + 
                 '#' + pc.join('&');
         };
-        $scope.searchForTestNoWatch = function() {
-            $scope.filterTestsByText = $('#testsearch').val();
-            $scope.expandedTest = false;
-            angular.element($('#testslist')[0]).scope().$digest();
+        $scope.searchForTestNoWatch = function(event) {
+            if (event.keyCode === 27) {
+                $.cartFillerPlugin.hideChooseJobFrame();
+            } else {
+                $scope.filterTestsByText = $('#testsearch').val();
+                $scope.expandedTest = false;
+                angular.element($('#testslist')[0]).scope().$digest();
+            }
         };
         $scope.searchForTaskNoWatch = function() {
             var val = $('#tasksearch').val();

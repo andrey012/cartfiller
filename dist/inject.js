@@ -231,7 +231,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1522595449965';
+    config.gruntBuildTimeStamp='1524063230654';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -4728,7 +4728,25 @@
             var arrow = [];
             var elements;
             try {
-                elements = eval('(function(window, document, api, cf, task){return ' + ('uselib(' === details.selector.substr(0, 7) ? 'cf.' : 'api.find') + details.selector + ';})(me.modules.ui.mainFrameWindow, me.modules.ui.mainFrameWindow.document, me.modules.api, me.modules.cf, ' + JSON.stringify(details.taskDetails) + ');'); // jshint ignore:line
+                switch (details.type) {
+                    case 'xpath': 
+                        elements = me.modules.api.find();
+                        if (details.selector) {
+                            var xpathResult = me.modules.ui.mainFrameWindow.document.evaluate(JSON.parse(details.selector), me.modules.ui.mainFrameWindow.document);
+                            while (true) {
+                                var e = xpathResult.iterateNext();
+                                if (e) {
+                                    elements = elements.add(e);
+                                } else {
+                                    break;
+                                }
+                            }
+                        }
+                        break;
+                    default: 
+                        elements = eval('(function(window, document, api, cf, task){return ' + ('uselib(' === details.selector.substr(0, 7) ? 'cf.' : 'api.find') + details.selector + ';})(me.modules.ui.mainFrameWindow, me.modules.ui.mainFrameWindow.document, me.modules.api, me.modules.cf, ' + JSON.stringify(details.taskDetails) + ');'); // jshint ignore:line
+                        break;
+                }
             } catch (e) {
                 elements = [];
             }
