@@ -48255,7 +48255,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
             reportError('bootstrap message did not come');
         }
     }, 10000);
-    config.gruntBuildTimeStamp='1521377276384';
+    config.gruntBuildTimeStamp='1522259965654';
     window.addEventListener('message', function(event){
         var prefix = 'cartFillerMessage:';
         var isDist = true;
@@ -48366,7 +48366,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 if (message.tests) {
                     var x = new XMLHttpRequest();
                     x.onload = function(){
-                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1521377276384') {
+                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1522259965654') {
                             console.log('new version of CartFiller was deployed, switching to it');
                             var hash = window.location.href.split('#');
                             var pc = hash[0].split('?');
@@ -48714,6 +48714,10 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                 }
                 if (v.trim().substr(0, 1) === '#') {
                     return v.trim().substr(1).trim();
+                }
+                if (v.trim().substr(0, 1) === '{') {
+                    // this is old-style JSON
+                    return eval('var json = ' + v.trim().replace(/,$/, '') + '; json'); // jshint ignore:line
                 }
                 if (firstIndent === undefined) {
                     firstIndent = 0;

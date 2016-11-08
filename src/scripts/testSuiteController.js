@@ -210,6 +210,10 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                 if (v.trim().substr(0, 1) === '#') {
                     return v.trim().substr(1).trim();
                 }
+                if (v.trim().substr(0, 1) === '{') {
+                    // this is old-style JSON
+                    return eval('var json = ' + v.trim().replace(/,$/, '') + '; json'); // jshint ignore:line
+                }
                 if (firstIndent === undefined) {
                     firstIndent = 0;
                     while (' ' === v.substr(0, 1)) {

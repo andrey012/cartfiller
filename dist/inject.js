@@ -231,7 +231,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1521377276384';
+    config.gruntBuildTimeStamp='1522259965654';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -3060,6 +3060,7 @@
         var _set = ['set [ref] to [value]', function() { api.internalDebugger(); task.ref = task.value; api.result(); }];
         worker = {
             '_set': _set,
+            '^tbd$': ['tbd', function() { api.result('tbd'); }],
             '^global variable ${ref} has value ${value}$': _set,
             '^current url is ${url}$': ['open url', function() {
                 me.modules.ui.mainFrameWindow.location.href = task.url;
