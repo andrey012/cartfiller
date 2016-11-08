@@ -231,7 +231,7 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1522259965654';
+    config.gruntBuildTimeStamp='1522595449965';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
@@ -727,11 +727,11 @@
         me.modules.api.arrow(this, all);
         return this;
     };
-    Selector.prototype.exists = function(comment) {
+    Selector.prototype.exists = function(comment, recoverable) {
         if (undefined === comment) {
             comment = 'element(s) not found: ' + this.description;
         }
-        me.modules.api.arrow(this, true).result(this.length > 0 ? '' : comment);
+        me.modules.api.arrow(this, true).result(this.length > 0 ? '' : comment, recoverable);
         return this;
     };
     Selector.prototype.exactly = function(number, comment) {
@@ -741,11 +741,11 @@
         me.modules.api.arrow(this, true).result(this.length === parseInt(number) ? '' : comment);
         return this;
     };
-    Selector.prototype.absent = function(comment) {
+    Selector.prototype.absent = function(comment, recoverable) {
         if (undefined === comment) {
             comment = 'element(s) should not exist, but they are: ' + this.description;
         }
-        me.modules.api.arrow(this, true).result(this.length > 0 ? comment : '');
+        me.modules.api.arrow(this, true).result(this.length > 0 ? comment : '', recoverable);
         return this;
     };
     Selector.prototype.say = function(message, pre, nextButton) {
@@ -2153,6 +2153,9 @@
             a.click();
             a.parentNode.removeChild(a);
             return this;
+        },
+        triggerMouseEvent: function(element, type) {
+            return triggerMouseEvent(element, type);
         }
     });
 }).call(this, document, window);
@@ -3854,6 +3857,12 @@
                             }
                         }, 500);
                     }
+                    setTimeout(function convertToSlave() {
+                        if (!relay.nextRelayRegistered) {
+                            postMessage(relay.nextRelay, 'convertToSlave', {});
+                            setTimeout(convertToSlave, 100);
+                        }
+                    });
                 }
             );
         }
@@ -4251,7 +4260,7 @@
                     }
                 }
                 for (i = codeToSend.length - 1; i >= 0 ; i --) {
-                    relay.nextRelayQueue.unshift({cmd: 'loadWorker', jobDetailsCache: jobDetailsCache, src: codeToSend[i], code: workerSourceCodes[codeToSend[i]], isFinal: (i === codeToSend.length - 1)});
+                    relay.nextRelayQueue.unshift({cmd: 'loadWorker', jobDetailsCache: jobDetailsCache, src: codeToSend[i], globals: workerGlobals, code: workerSourceCodes[codeToSend[i]], isFinal: (i === codeToSend.length - 1)});
                 }
                 // now we can send all queued messages to relay
                 var msg;
@@ -4431,6 +4440,9 @@
          */
         onMessage_loadWorker: function(message){
             try {
+                if (message.globals) {
+                    fillWorkerGlobals(message.globals);
+                }
                 if (message.jobDetailsCache) {
                     jobDetailsCache = message.jobDetailsCache;
                 }
@@ -5367,7 +5379,7 @@
          * @function CartFiller.Dispatcher~startSlaveMode
          * @access public
          */
-        startSlaveMode: function(overrideParent) {
+        startSlaveMode: function(overrideParent, converted) {
             // operating in slave mode, show message to user
             var body = document.getElementsByTagName('body')[0];
             while (body.children.length) {
@@ -5416,8 +5428,8 @@
             relay.parent.postMessage('cartFillerMessage:{"cmd":"register","registerFromSlave":1}', '*');
             me.modules.ui.chooseJobFrameWindow = me.modules.ui.workerFrameWindow = relay.parent;
             try { // this can fail when Cartfiller tab is opened from local/index.html
-                if (relay.parent === window.opener) {
-                    for (var opener = window.opener; opener && opener !== opener.opener; opener = opener.opener) {
+                if (relay.parent === window.opener || converted) {
+                    for (var opener = converted ? relay.parent : window.opener; opener && opener !== opener.opener; opener = opener.opener) {
                         try {
                             if (opener.frames['cartFillerMainFrame-0']) {
                                 me.modules.ui.mainFrameWindow = opener.frames['cartFillerMainFrame-0'];
@@ -5446,6 +5458,20 @@
                 return;
             }
             this.startSlaveModeWithWindow();
+        },
+        registerMessageHandlerToGetConvertedToSlave: function(w) {
+            w.addEventListener('message', function(event) {
+                if (event.data === 'cartFillerMessage:{"cmd":"convertToSlave"}') {
+                    me.modules.dispatcher.onMessage_convertToSlave({}, event.source);
+                }
+            });
+        },
+        onMessage_convertToSlave: function(details, src) {
+            if (relay.isSlave) {
+                return;
+            }
+            startupWatchDog.workerRegistered = true;
+            this.startSlaveMode(src, true);
         },
         startSlaveModeWithWindow: function() {
             if (relay.isSlave) {
@@ -5677,7 +5703,10 @@
         },
         openPopup: function(details, callback, tries) {
             tries = tries || 0;
-            var w = details.target ? window.open(details.url, details.target) : window.open(details.url);
+            // in clean mode we will open popup on behave of target
+            // window, not us
+            var parent = me.modules.ui.isClean() ? me.modules.ui.mainFrameWindow : window; 
+            var w = details.target ? parent.open(details.url, details.target) : window.open(details.url);
             if (w) { 
                 return callback(w);
             }
@@ -7102,6 +7131,7 @@
             ];
             setMainFrameWindow();
             this.mainFrameWindow = this.mainFrameWindows[0];
+            me.modules.dispatcher.registerMessageHandlerToGetConvertedToSlave(this.mainFrameWindow);
             this.closePopup = function(){
             };
             this.focusMainFrameWindow = function(){
@@ -7280,6 +7310,10 @@
             var moveListener = function(event) { 
                 if (! done) {
                     if (event.shiftKey) {
+                        if (event.ctrlKey) {
+                            // pause JS to let user inspect DOM manually
+                            debugger; // jshint ignore:line
+                        }
                         me.modules.ui.reportingMousePointerClickForElement(event.target);
                         shoot();
                     } else {
@@ -7668,6 +7702,9 @@
             if (uiType === 'clean') {
                 window.close();
             }
+        },
+        isClean: function() {
+            return uiType === 'clean';
         }
     });
 }).call(this, document, window);

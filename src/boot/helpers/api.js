@@ -437,11 +437,11 @@
         me.modules.api.arrow(this, all);
         return this;
     };
-    Selector.prototype.exists = function(comment) {
+    Selector.prototype.exists = function(comment, recoverable) {
         if (undefined === comment) {
             comment = 'element(s) not found: ' + this.description;
         }
-        me.modules.api.arrow(this, true).result(this.length > 0 ? '' : comment);
+        me.modules.api.arrow(this, true).result(this.length > 0 ? '' : comment, recoverable);
         return this;
     };
     Selector.prototype.exactly = function(number, comment) {
@@ -451,11 +451,11 @@
         me.modules.api.arrow(this, true).result(this.length === parseInt(number) ? '' : comment);
         return this;
     };
-    Selector.prototype.absent = function(comment) {
+    Selector.prototype.absent = function(comment, recoverable) {
         if (undefined === comment) {
             comment = 'element(s) should not exist, but they are: ' + this.description;
         }
-        me.modules.api.arrow(this, true).result(this.length > 0 ? comment : '');
+        me.modules.api.arrow(this, true).result(this.length > 0 ? comment : '', recoverable);
         return this;
     };
     Selector.prototype.say = function(message, pre, nextButton) {
@@ -1863,6 +1863,9 @@
             a.click();
             a.parentNode.removeChild(a);
             return this;
+        },
+        triggerMouseEvent: function(element, type) {
+            return triggerMouseEvent(element, type);
         }
     });
 }).call(this, document, window);

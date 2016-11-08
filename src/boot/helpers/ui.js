@@ -1317,6 +1317,7 @@
             ];
             setMainFrameWindow();
             this.mainFrameWindow = this.mainFrameWindows[0];
+            me.modules.dispatcher.registerMessageHandlerToGetConvertedToSlave(this.mainFrameWindow);
             this.closePopup = function(){
             };
             this.focusMainFrameWindow = function(){
@@ -1495,6 +1496,10 @@
             var moveListener = function(event) { 
                 if (! done) {
                     if (event.shiftKey) {
+                        if (event.ctrlKey) {
+                            // pause JS to let user inspect DOM manually
+                            debugger; // jshint ignore:line
+                        }
                         me.modules.ui.reportingMousePointerClickForElement(event.target);
                         shoot();
                     } else {
@@ -1883,6 +1888,9 @@
             if (uiType === 'clean') {
                 window.close();
             }
+        },
+        isClean: function() {
+            return uiType === 'clean';
         }
     });
 }).call(this, document, window);

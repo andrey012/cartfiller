@@ -825,6 +825,12 @@
                             }
                         }, 500);
                     }
+                    setTimeout(function convertToSlave() {
+                        if (!relay.nextRelayRegistered) {
+                            postMessage(relay.nextRelay, 'convertToSlave', {});
+                            setTimeout(convertToSlave, 100);
+                        }
+                    });
                 }
             );
         }
@@ -1222,7 +1228,7 @@
                     }
                 }
                 for (i = codeToSend.length - 1; i >= 0 ; i --) {
-                    relay.nextRelayQueue.unshift({cmd: 'loadWorker', jobDetailsCache: jobDetailsCache, src: codeToSend[i], code: workerSourceCodes[codeToSend[i]], isFinal: (i === codeToSend.length - 1)});
+                    relay.nextRelayQueue.unshift({cmd: 'loadWorker', jobDetailsCache: jobDetailsCache, src: codeToSend[i], globals: workerGlobals, code: workerSourceCodes[codeToSend[i]], isFinal: (i === codeToSend.length - 1)});
                 }
                 // now we can send all queued messages to relay
                 var msg;
@@ -1402,6 +1408,9 @@
          */
         onMessage_loadWorker: function(message){
             try {
+                if (message.globals) {
+                    fillWorkerGlobals(message.globals);
+                }
                 if (message.jobDetailsCache) {
                     jobDetailsCache = message.jobDetailsCache;
                 }
@@ -2338,7 +2347,7 @@
          * @function CartFiller.Dispatcher~startSlaveMode
          * @access public
          */
-        startSlaveMode: function(overrideParent) {
+        startSlaveMode: function(overrideParent, converted) {
             // operating in slave mode, show message to user
             var body = document.getElementsByTagName('body')[0];
             while (body.children.length) {
@@ -2387,8 +2396,8 @@
             relay.parent.postMessage('cartFillerMessage:{"cmd":"register","registerFromSlave":1}', '*');
             me.modules.ui.chooseJobFrameWindow = me.modules.ui.workerFrameWindow = relay.parent;
             try { // this can fail when Cartfiller tab is opened from local/index.html
-                if (relay.parent === window.opener) {
-                    for (var opener = window.opener; opener && opener !== opener.opener; opener = opener.opener) {
+                if (relay.parent === window.opener || converted) {
+                    for (var opener = converted ? relay.parent : window.opener; opener && opener !== opener.opener; opener = opener.opener) {
                         try {
                             if (opener.frames['cartFillerMainFrame-0']) {
                                 me.modules.ui.mainFrameWindow = opener.frames['cartFillerMainFrame-0'];
@@ -2417,6 +2426,20 @@
                 return;
             }
             this.startSlaveModeWithWindow();
+        },
+        registerMessageHandlerToGetConvertedToSlave: function(w) {
+            w.addEventListener('message', function(event) {
+                if (event.data === 'cartFillerMessage:{"cmd":"convertToSlave"}') {
+                    me.modules.dispatcher.onMessage_convertToSlave({}, event.source);
+                }
+            });
+        },
+        onMessage_convertToSlave: function(details, src) {
+            if (relay.isSlave) {
+                return;
+            }
+            startupWatchDog.workerRegistered = true;
+            this.startSlaveMode(src, true);
         },
         startSlaveModeWithWindow: function() {
             if (relay.isSlave) {
@@ -2648,7 +2671,10 @@
         },
         openPopup: function(details, callback, tries) {
             tries = tries || 0;
-            var w = details.target ? window.open(details.url, details.target) : window.open(details.url);
+            // in clean mode we will open popup on behave of target
+            // window, not us
+            var parent = me.modules.ui.isClean() ? me.modules.ui.mainFrameWindow : window; 
+            var w = details.target ? parent.open(details.url, details.target) : window.open(details.url);
             if (w) { 
                 return callback(w);
             }

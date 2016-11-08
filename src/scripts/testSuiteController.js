@@ -1227,13 +1227,33 @@ define('testSuiteController', ['app', 'scroll'], function(app){
                 }
             })();
             srcUrl = cfDebug.src.replace(/\/+$/, '');
+            var chooseJobUrl = window.location.href + '#' + getLocation().replace(/^#+/, '');
+            if ($scope.params['extension-bootstrap'] !== undefined) {
+                var options = {
+                    baseUrl: srcUrl,
+                    chooseJob: $scope.params.chooseJobUrl || chooseJobUrl,
+                    debug: true,
+                    inject: 'iframe',
+                    minified: false,
+                    type: 'clean',
+                    useSource: cfDebug.useSource
+                };
+                var bookmarkletCode = $.cartFillerPlugin
+                    .getBookmarkletCode(options);
+
+                window.parent.document.getElementsByTagName('body')[0]
+                    .setAttribute(
+                        'cartfiller-extension-bootstrap-bookmark',
+                        bookmarkletCode
+                    );
+            }
             $scope.bookmarklets = [];
             ['framed', 'popup', 'clean'].filter(function(type) {
                 ['script', 'eval', 'iframe'].filter(function(inject) {
                     var options = {
                         name: type + '-' + inject,
                         baseUrl: srcUrl,
-                        chooseJob: window.location.href + '#' + getLocation().replace(/^#+/, ''),
+                        chooseJob: chooseJobUrl,
                         debug: true,
                         inject: inject,
                         minified: false,
