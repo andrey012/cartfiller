@@ -279,7 +279,7 @@
                     <div ng-if="searchVisible">
                         <div>
                             <a class="btn btn-xs btn-success" ng-click="toggleSearch()">Close</a>
-                            <a class="btn btn-xs" ng-click="toggleType()">{{type}}</a>
+                            <a class="btn btn-xs btn-default" ng-click="toggleType()">Format: {{type.toUpperCase()}}</a>
                         </div>
                         <div style="max-height: 60vh; overflow: scroll">
                             <div ng-repeat="(stackIndex, stack) in stacks">
