@@ -1,0 +1,8 @@
+{
+    "title": "< ! [ CDATA [ in JSON>",
+    "details": [
+        "<![CDATA[This let's
+        you have any non-JSON-friendly 
+        text here" with quotas, newlines", etc]]>",
+    ]
+}

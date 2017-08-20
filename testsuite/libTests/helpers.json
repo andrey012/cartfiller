@@ -1,0 +1,20 @@
+cartfiller = {
+    "title": "helpers: lib.getLinkElement = function(name){...}",
+    "details": [
+        "# Shared helper functions",
+        "## Definition and usage example:",
+        "addToCart: [",
+        "   lib.isProgressDialogVisible = function() { ... }, // this will not become a step",
+        "   'find search input', function() { ... },",
+        "   api.type('name'),",
+        "   'find search button', function() {... },",
+        "   api.click(function() {",
+        "       api.waitFor(function() {",
+        "           return ! lib.isProgressDialogVisible();",
+        "       });",
+        "   }),",
+        "   ...",
+        "]",
+        {"task": "testHelpers"},
+    ]
+}

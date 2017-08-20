@@ -193,7 +193,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line68">line 68</a>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line392">line 392</a>
     </li></ul></dd>
     
 
@@ -211,14 +211,10 @@
 
         
             
-<h4 class="name" id="~highlightedElement"><span class="type-signature">(private, inner) </span>highlightedElement<span class="type-signature"> :jQuery|HtmlElement|false</span></h4>
+<h4 class="name" id="~currentStepEnv"><span class="type-signature">(private, inner) </span>currentStepEnv<span class="type-signature"> :<a href="CartFiller.Api.StepEnvironment.html">CartFiller.Api.StepEnvironment</a></span></h4>
 
 
 
-
-<div class="description">
-    See <a href="CartFiller.Api.html#highlight">CartFiller.Api#highlight</a>
-</div>
 
 
 
@@ -226,13 +222,7 @@
     <ul>
         <li>
             
-<span class="param-type">jQuery</span>
-|
-
-<span class="param-type">HtmlElement</span>
-|
-
-<span class="param-type">false</span>
+<span class="param-type"><a href="CartFiller.Api.StepEnvironment.html">CartFiller.Api.StepEnvironment</a></span>
 
 
         </li>
@@ -271,7 +261,147 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line75">line 75</a>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line426">line 426</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="~currentStepWorkerFn"><span class="type-signature">(private, inner) </span>currentStepWorkerFn<span class="type-signature"> :function</span></h4>
+
+
+
+
+
+
+    <h5>Type:</h5>
+    <ul>
+        <li>
+            
+<span class="param-type">function</span>
+
+
+        </li>
+    </ul>
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line431">line 431</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="~jobDetailsCache"><span class="type-signature">(private, inner) </span>jobDetailsCache<span class="type-signature"> :<a href="CartFillerPlugin-JobDetails.html">CartFillerPlugin~JobDetails</a></span></h4>
+
+
+
+
+<div class="description">
+    Cache job details to give it to worker in full. Purpose is to make it possible to deliver configuration/environment variables from chooseJob to worker, and make them accessible by all tasks
+</div>
+
+
+
+    <h5>Type:</h5>
+    <ul>
+        <li>
+            
+<span class="param-type"><a href="CartFillerPlugin-JobDetails.html">CartFillerPlugin~JobDetails</a></span>
+
+
+        </li>
+    </ul>
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line412">line 412</a>
     </li></ul></dd>
     
 
@@ -343,7 +473,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line54">line 54</a>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line371">line 371</a>
     </li></ul></dd>
     
 
@@ -415,7 +545,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line81">line 81</a>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line436">line 436</a>
     </li></ul></dd>
     
 
@@ -433,13 +563,85 @@
 
         
             
-<h4 class="name" id="~resultMessageName"><span class="type-signature">(private, inner) </span>resultMessageName<span class="type-signature"> :String</span></h4>
+<h4 class="name" id="~nextTaskFlow"><span class="type-signature">(private, inner) </span>nextTaskFlow<span class="type-signature"> :string</span></h4>
 
 
 
 
 <div class="description">
-    Keeps message name, used to deliver job results toChoose Job page opened in separate frame, if that is necessary at allIf set to false, empty string or undefined - no results will be delivered
+    Keeps directions on next task flow
+</div>
+
+
+
+    <h5>Type:</h5>
+    <ul>
+        <li>
+            
+<span class="param-type">string</span>
+
+
+        </li>
+    </ul>
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line662">line 662</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="~oldTitle"><span class="type-signature">(private, inner) </span>oldTitle<span class="type-signature"> :String</span></h4>
+
+
+
+
+<div class="description">
+    Keeps last known window title to save some coins on updating title
 </div>
 
 
@@ -487,7 +689,651 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line46">line 46</a>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line442">line 442</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="~onLoadHappened"><span class="type-signature">(private, inner) </span>onLoadHappened<span class="type-signature"> :boolean</span></h4>
+
+
+
+
+<div class="description">
+    flag, that mainWorkerFrame was loaded after worker step was started, but beforeworker installed onload hook. This happens sometimes when network is really fast.
+</div>
+
+
+
+    <h5>Type:</h5>
+    <ul>
+        <li>
+            
+<span class="param-type">boolean</span>
+
+
+        </li>
+    </ul>
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line132">line 132</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="~rel"><span class="type-signature">(inner) </span>rel<span class="type-signature"> :Object</span></h4>
+
+
+
+
+<div class="description">
+    Keeps details about relay subsystem
+</div>
+
+
+
+    <h5>Type:</h5>
+    <ul>
+        <li>
+            
+<span class="param-type">Object</span>
+
+
+        </li>
+    </ul>
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line471">line 471</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="~resultMessageName"><span class="type-signature">(private, inner) </span>resultMessageName<span class="type-signature"> :String</span></h4>
+
+
+
+
+<div class="description">
+    Keeps message result name, used to deliver job results toChoose Job page opened in separate frame, if that is necessary at allIf set to false, empty string or undefined - no results will be delivered
+</div>
+
+
+
+    <h5>Type:</h5>
+    <ul>
+        <li>
+            
+<span class="param-type">String</span>
+
+
+        </li>
+    </ul>
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line355">line 355</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="~resultMessageName"><span class="type-signature">(private, inner) </span>resultMessageName<span class="type-signature"> :String</span></h4>
+
+
+
+
+<div class="description">
+    Keeps message name, used to deliver intermediate job status toChoose Job page opened in separate frame, if that is necessary at allIf set to false, empty string or undefined - no results will be delivered
+</div>
+
+
+
+    <h5>Type:</h5>
+    <ul>
+        <li>
+            
+<span class="param-type">String</span>
+
+
+        </li>
+    </ul>
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line363">line 363</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="~returnedValuesOfSteps"><span class="type-signature">(private, inner) </span>returnedValuesOfSteps<span class="type-signature"> :Array</span></h4>
+
+
+
+
+<div class="description">
+    See <a href="CartFiller.Api.html#highlight">CartFiller.Api#highlight</a>, CartFiller.Api#arrow
+</div>
+
+
+
+    <h5>Type:</h5>
+    <ul>
+        <li>
+            
+<span class="param-type">Array</span>
+
+
+        </li>
+    </ul>
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line399">line 399</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="~returnedValuesOfStepsAreForTask"><span class="type-signature">(private, inner) </span>returnedValuesOfStepsAreForTask<span class="type-signature"> :int</span></h4>
+
+
+
+
+
+
+    <h5>Type:</h5>
+    <ul>
+        <li>
+            
+<span class="param-type">int</span>
+
+
+        </li>
+    </ul>
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line405">line 405</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="~sleepAfterThisStep"><span class="type-signature">(private, inner) </span>sleepAfterThisStep<span class="type-signature"> :integer</span></h4>
+
+
+
+
+<div class="description">
+    Keeps value (ms) to sleep after this step in slow mode
+</div>
+
+
+
+    <h5>Type:</h5>
+    <ul>
+        <li>
+            
+<span class="param-type">integer</span>
+
+
+        </li>
+    </ul>
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line448">line 448</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="~stepRepeatCounter"><span class="type-signature">(private, inner) </span>stepRepeatCounter<span class="type-signature"> :integer</span></h4>
+
+
+
+
+<div class="description">
+    Counts repetitions of steps, declared with repeatXX modifier
+</div>
+
+
+
+    <h5>Type:</h5>
+    <ul>
+        <li>
+            
+<span class="param-type">integer</span>
+
+
+        </li>
+    </ul>
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line420">line 420</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="~useTopWindowForLocalFileOperations"><span class="type-signature">(private, inner) </span>useTopWindowForLocalFileOperations<span class="type-signature"> :boolean</span></h4>
+
+
+
+
+<div class="description">
+    This is passed to ChooseJob frame to prevent it from requesting assets directly.If set to true, then ChooseJob should instead ask dispatcher to give it assets, and dispatcher will itself ask the opener, which should be the local.html
+</div>
+
+
+
+    <h5>Type:</h5>
+    <ul>
+        <li>
+            
+<span class="param-type">boolean</span>
+
+
+        </li>
+    </ul>
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line454">line 454</a>
     </li></ul></dd>
     
 
@@ -631,7 +1477,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line33">line 33</a>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line119">line 119</a>
     </li></ul></dd>
     
 
@@ -703,7 +1549,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line21">line 21</a>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line107">line 107</a>
     </li></ul></dd>
     
 
@@ -775,7 +1621,79 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line27">line 27</a>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line113">line 113</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="~workerCurrentUrl"><span class="type-signature">(private, inner) </span>workerCurrentUrl<span class="type-signature"> :String</span></h4>
+
+
+
+
+<div class="description">
+    Keeps current URL of worker frame
+</div>
+
+
+
+    <h5>Type:</h5>
+    <ul>
+        <li>
+            
+<span class="param-type">String</span>
+
+
+        </li>
+    </ul>
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line385">line 385</a>
     </li></ul></dd>
     
 
@@ -847,7 +1765,79 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line61">line 61</a>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line378">line 378</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="~workerGlobals"><span class="type-signature">(private, inner) </span>workerGlobals<span class="type-signature"> :Object</span></h4>
+
+
+
+
+<div class="description">
+    Keeps global variableswhich can be assigned from within worker and then reused.
+</div>
+
+
+
+    <h5>Type:</h5>
+    <ul>
+        <li>
+            
+<span class="param-type">Object</span>
+
+
+        </li>
+    </ul>
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line166">line 166</a>
     </li></ul></dd>
     
 
@@ -919,7 +1909,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line39">line 39</a>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line125">line 125</a>
     </li></ul></dd>
     
 
@@ -937,13 +1927,13 @@
 
         
             
-<h4 class="name" id="~workerSrcPretendent"><span class="type-signature">(private, inner) </span>workerSrcPretendent<span class="type-signature"> :String</span></h4>
+<h4 class="name" id="~workerSetIntervalIds"><span class="type-signature">(private, inner) </span>workerSetIntervalIds<span class="type-signature"> :Array</span></h4>
 
 
 
 
 <div class="description">
-    Keeps worker URL during load process. If load was successful sends URL back to controller
+    Keeps list of idsof setInterval, which were initiated from within the worker step function. In case Watchdog kills the step - these timers will be cleared
 </div>
 
 
@@ -952,7 +1942,7 @@
     <ul>
         <li>
             
-<span class="param-type">String</span>
+<span class="param-type">Array</span>
 
 
         </li>
@@ -991,7 +1981,295 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line15">line 15</a>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line152">line 152</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="~workerSetTimeoutIds"><span class="type-signature">(private, inner) </span>workerSetTimeoutIds<span class="type-signature"> :Array</span></h4>
+
+
+
+
+<div class="description">
+    Keeps list of idsof setTimeout, which were initiated from within the worker step function. In case Watchdog kills the step - these timers will be cleared
+</div>
+
+
+
+    <h5>Type:</h5>
+    <ul>
+        <li>
+            
+<span class="param-type">Array</span>
+
+
+        </li>
+    </ul>
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line145">line 145</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="~workerSourceCodes"><span class="type-signature">(private, inner) </span>workerSourceCodes<span class="type-signature"> :Object</span></h4>
+
+
+
+
+<div class="description">
+    Keeps workers URL=>code map, used to initiate relays on the fly
+</div>
+
+
+
+    <h5>Type:</h5>
+    <ul>
+        <li>
+            
+<span class="param-type">Object</span>
+
+
+        </li>
+    </ul>
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line101">line 101</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="~workerTimeout"><span class="type-signature">(private, inner) </span>workerTimeout<span class="type-signature"> :integer</span></h4>
+
+
+
+
+<div class="description">
+    Specifies time to wait for worker step to call api.result() or api.nop().
+</div>
+
+
+
+    <h5>Type:</h5>
+    <ul>
+        <li>
+            
+<span class="param-type">integer</span>
+
+
+        </li>
+    </ul>
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line139">line 139</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="~workerWatchdogId"><span class="type-signature">(private, inner) </span>workerWatchdogId<span class="type-signature"> :integer</span></h4>
+
+
+
+
+<div class="description">
+    setTimeoutId of watchdog handler. When step function calls api.result() we should cancelthis watchdog.
+</div>
+
+
+
+    <h5>Type:</h5>
+    <ul>
+        <li>
+            
+<span class="param-type">integer</span>
+
+
+        </li>
+    </ul>
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line159">line 159</a>
     </li></ul></dd>
     
 
@@ -1012,6 +2290,160 @@
 
     
         <h3 class="subsection-title">Methods</h3>
+
+        
+            
+
+    
+
+    <h4 class="name" id="defineSharedWorkerFunction"><span class="type-signature"></span>defineSharedWorkerFunction<span class="signature">(name, fn)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    Defines shared worker function for later use in other workers
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>name</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">String</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>fn</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">function</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line2423">line 2423</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
         
             
@@ -1069,7 +2501,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line141">line 141</a>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line994">line 994</a>
     </li></ul></dd>
     
 
@@ -1104,6 +2536,106 @@
     <dd>
         
 <span class="param-type">String</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="getWorker"><span class="type-signature"></span>getWorker<span class="signature">()</span><span class="type-signature"> &rarr; {CartFiller.WorkerTasks}</span></h4>
+
+    
+
+
+
+<div class="description">
+    Returns worker object
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line2414">line 2414</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">CartFiller.WorkerTasks</span>
 
 
     </dd>
@@ -1169,7 +2701,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line487">line 487</a>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line2136">line 2136</a>
     </li></ul></dd>
     
 
@@ -1204,6 +2736,206 @@
     <dd>
         
 <span class="param-type">integer</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="getWorkerGlobals"><span class="type-signature"></span>getWorkerGlobals<span class="signature">()</span><span class="type-signature"> &rarr; {Object}</span></h4>
+
+    
+
+
+
+<div class="description">
+    Return current worker task properties
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line2405">line 2405</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">Object</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="getWorkerTask"><span class="type-signature"></span>getWorkerTask<span class="signature">()</span><span class="type-signature"> &rarr; {CartFiller.TaskDetails}</span></h4>
+
+    
+
+
+
+<div class="description">
+    Return current worker task properties
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line2396">line 2396</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">CartFiller.TaskDetails</span>
 
 
     </dd>
@@ -1269,7 +3001,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line148">line 148</a>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line1001">line 1001</a>
     </li></ul></dd>
     
 
@@ -1300,7 +3032,138 @@
 
     
 
-    <h4 class="name" id="onMainFrameLoaded"><span class="type-signature"></span>onMainFrameLoaded<span class="signature">(watchdog)</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="manageTaskFlow"><span class="type-signature"></span>manageTaskFlow<span class="signature">(action)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    Remembers directions for task flow to be passed to worker (job progress)frame
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>action</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line2027">line 2027</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="onMainFrameLoaded"><span class="type-signature"></span>onMainFrameLoaded<span class="signature">(watchdog, bubbling)</span><span class="type-signature"></span></h4>
 
     
 
@@ -1363,6 +3226,29 @@
         </tr>
 
     
+
+        <tr>
+            
+                <td class="name"><code>bubbling</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">boolean</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">Means that we received this message fromanother dispatcher and we should not bubble it</td>
+        </tr>
+
+    
     </tbody>
 </table>
 
@@ -1400,7 +3286,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line367">line 367</a>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line1916">line 1916</a>
     </li></ul></dd>
     
 
@@ -1431,14 +3317,14 @@
 
     
 
-    <h4 class="name" id="onMessage_chooseJob"><span class="type-signature"></span>onMessage_chooseJob<span class="signature">()</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="onMessage_bubbleRelayMessage"><span class="type-signature"></span>onMessage_bubbleRelayMessage<span class="signature">(details, source)</span><span class="type-signature"></span></h4>
 
     
 
 
 
 <div class="description">
-    Shows Choose Job frame
+    Processes message exchange between relays
 </div>
 
 
@@ -1447,6 +3333,78 @@
 
 
 
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>details</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>source</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Window</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+    </tbody>
+</table>
 
 
 
@@ -1482,7 +3440,138 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line207">line 207</a>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line1632">line 1632</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="onMessage_chooseJob"><span class="type-signature"></span>onMessage_chooseJob<span class="signature">(details)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    Shows Choose Job frame
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>details</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line1200">line 1200</a>
     </li></ul></dd>
     
 
@@ -1564,7 +3653,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line215">line 215</a>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line1219">line 1219</a>
     </li></ul></dd>
     
 
@@ -1646,7 +3735,138 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line349">line 349</a>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line1561">line 1561</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="onMessage_evaluateCssSelector"><span class="type-signature"></span>onMessage_evaluateCssSelector<span class="signature">(details)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    Tries to find all elements that match specified CSS selector and returns number of elements matched
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>details</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line1607">line 1607</a>
     </li></ul></dd>
     
 
@@ -1728,7 +3948,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line333">line 333</a>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line1542">line 1542</a>
     </li></ul></dd>
     
 
@@ -1810,7 +4030,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_ui.js.html">src/boot/helpers/ui.js</a>, <a href="src_boot_helpers_ui.js.html#line608">line 608</a>
+        <a href="src_boot_helpers_ui.js.html">src/boot/helpers/ui.js</a>, <a href="src_boot_helpers_ui.js.html#line915">line 915</a>
     </li></ul></dd>
     
 
@@ -1941,7 +4161,138 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line357">line 357</a>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line1569">line 1569</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="onMessage_highlightElementForQueryBuilder"><span class="type-signature"></span>onMessage_highlightElementForQueryBuilder<span class="signature">(details)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    When user hovers over element button in selector query builderwe should highlight apropriate element
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>details</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">details.path should contain DOM path to an element to be highlighted</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line1867">line 1867</a>
     </li></ul></dd>
     
 
@@ -2072,7 +4423,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line271">line 271</a>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line1377">line 1377</a>
     </li></ul></dd>
     
 
@@ -2203,7 +4554,89 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line223">line 223</a>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line1235">line 1235</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="onMessage_launchFromSlave"><span class="type-signature"></span>onMessage_launchFromSlave<span class="signature">()</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    Launches cartfiller from slave mode - in specific case, when this tab is a popup tabinvoked by local/index.html
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line1857">line 1857</a>
     </li></ul></dd>
     
 
@@ -2241,7 +4674,7 @@
 
 
 <div class="description">
-    Loads worker coder by evaluating it
+    Loads worker code by evaluating it
 </div>
 
 
@@ -2334,7 +4767,89 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line255">line 255</a>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line1329">line 1329</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="onMessage_locate"><span class="type-signature"></span>onMessage_locate<span class="signature">()</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    Just alerts, used to help user to find this tab after slave tab poped up
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line1778">line 1778</a>
     </li></ul></dd>
     
 
@@ -2416,7 +4931,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line191">line 191</a>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line1176">line 1176</a>
     </li></ul></dd>
     
 
@@ -2498,7 +5013,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line183">line 183</a>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line1168">line 1168</a>
     </li></ul></dd>
     
 
@@ -2529,14 +5044,14 @@
 
     
 
-    <h4 class="name" id="onMessage_register"><span class="type-signature"></span>onMessage_register<span class="signature">()</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="onMessage_refreshPage"><span class="type-signature"></span>onMessage_refreshPage<span class="signature">(message)</span><span class="type-signature"></span></h4>
 
     
 
 
 
 <div class="description">
-    Handles event "worker (job progress) frame loaded". If main frame is loaded too, then bootstraps worker (job progress) frame
+    Refreshes worker page
 </div>
 
 
@@ -2545,6 +5060,55 @@
 
 
 
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>message</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+    </tbody>
+</table>
 
 
 
@@ -2580,7 +5144,418 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line171">line 171</a>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line1579">line 1579</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="onMessage_register"><span class="type-signature"></span>onMessage_register<span class="signature">(message, Window)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    Handles event "worker (job progress) frame loaded". If main frame is loaded too, then bootstraps worker (job progress) frame
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>message</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>Window</code></td>
+            
+
+            <td class="type">
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">source</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line1106">line 1106</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="onMessage_reportingMousePointerClick"><span class="type-signature"></span>onMessage_reportingMousePointerClick<span class="signature">(details)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    Used by progress frame for selector builder
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>details</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line1744">line 1744</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="onMessage_requestWorkers"><span class="type-signature"></span>onMessage_requestWorkers<span class="signature">(details)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    Passes loadWorker message to chooseJobFrame
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>details</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line1848">line 1848</a>
     </li></ul></dd>
     
 
@@ -2662,7 +5637,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line341">line 341</a>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line1550">line 1550</a>
     </li></ul></dd>
     
 
@@ -2793,7 +5768,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line241">line 241</a>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line1295">line 1295</a>
     </li></ul></dd>
     
 
@@ -2824,14 +5799,145 @@
 
     
 
-    <h4 class="name" id="onMessage_toggleSize"><span class="type-signature"></span>onMessage_toggleSize<span class="signature">()</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="onMessage_sendStatus"><span class="type-signature"></span>onMessage_sendStatus<span class="signature">(message)</span><span class="type-signature"></span></h4>
 
     
 
 
 
 <div class="description">
-    Toggles size of worker (job progress) frame
+    Sends intermediate job status from worker (job progress) frame to Choose Job frame
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>message</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">see onMessage_sendResult for description, in addition to that - message.currentTaskIndex, and message.currentTaskStepIndexidentify the task and step, that triggered this status update</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line1309">line 1309</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="onMessage_startReportingMousePointer"><span class="type-signature"></span>onMessage_startReportingMousePointer<span class="signature">()</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    Starts reporting mouse pointer - on each mousemove dispatcher will send worker frame a message with details about elementover which mouse is now
 </div>
 
 
@@ -2875,7 +5981,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line199">line 199</a>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line1591">line 1591</a>
     </li></ul></dd>
     
 
@@ -2906,7 +6012,662 @@
 
     
 
-    <h4 class="name" id="postMessageToChooseJob"><span class="type-signature"></span>postMessageToChooseJob<span class="signature">(cmd, details)</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="onMessage_toggleSize"><span class="type-signature"></span>onMessage_toggleSize<span class="signature">(details)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    Toggles size of worker (job progress) frame
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>details</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line1184">line 1184</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="onMessage_updateGlobal"><span class="type-signature"></span>onMessage_updateGlobal<span class="signature">(details)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    Update global value from progress frame
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>details</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line1880">line 1880</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="onMessage_updateHashUrl"><span class="type-signature"></span>onMessage_updateHashUrl<span class="signature">(details)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    Update hash URL of top window
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>details</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line1786">line 1786</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="onMessage_updateProperty"><span class="type-signature"></span>onMessage_updateProperty<span class="signature">(message)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    Updates task property value when it was edited from worker frame
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>message</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">{index: job task index, name: property name, value: property value}</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line1361">line 1361</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="onMessage_updateTitle"><span class="type-signature"></span>onMessage_updateTitle<span class="signature">(details)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    Updates title
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>details</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line1839">line 1839</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="postMessageToChooseJob"><span class="type-signature"></span>postMessageToChooseJob<span class="signature">(cmd, details, messageName)</span><span class="type-signature"></span></h4>
 
     
 
@@ -2992,6 +6753,29 @@
         </tr>
 
     
+
+        <tr>
+            
+                <td class="name"><code>messageName</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">String</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">Optional, by default == cmd</td>
+        </tr>
+
+    
     </tbody>
 </table>
 
@@ -3029,7 +6813,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line403">line 403</a>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line1964">line 1964</a>
     </li></ul></dd>
     
 
@@ -3183,7 +6967,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line393">line 393</a>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line1954">line 1954</a>
     </li></ul></dd>
     
 
@@ -3214,7 +6998,348 @@
 
     
 
-    <h4 class="name" id="registerWorker"><span class="type-signature"></span>registerWorker<span class="signature">(cb, api)</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="reflectMessage"><span class="type-signature"></span>reflectMessage<span class="signature">(message, frameIndex)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    Pass message to next dispatcher if this one does not have access.If there is no next dispatcher - then open new popup for dispatcher
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>message</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>frameIndex</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">integer</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line2219">line 2219</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    bool
+</div>
+
+
+
+    
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="registerEventCallback"><span class="type-signature"></span>registerEventCallback<span class="signature">(event, alias, callback)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    See <a href="CartFiller.Api.html#registerOnloadCallback">CartFiller.Api#registerOnloadCallback</a>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>event</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">event alias</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>alias</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">callback alias, '' by default</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>callback</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="CartFiller.Api.html#.onloadEventCallback">CartFiller.Api.onloadEventCallback</a></span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">callback</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line2382">line 2382</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="registerWorker"><span class="type-signature"></span>registerWorker<span class="signature">(cb)</span><span class="type-signature"></span></h4>
 
     
 
@@ -3277,29 +7402,6 @@
         </tr>
 
     
-
-        <tr>
-            
-                <td class="name"><code>api</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type"><a href="CartFiller.Api.html">CartFiller.Api</a></span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"></td>
-        </tr>
-
-    
     </tbody>
 </table>
 
@@ -3337,7 +7439,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line423">line 423</a>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line1984">line 1984</a>
     </li></ul></dd>
     
 
@@ -3468,7 +7570,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line478">line 478</a>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line2117">line 2117</a>
     </li></ul></dd>
     
 
@@ -3499,7 +7601,400 @@
 
     
 
-    <h4 class="name" id="setHighlightedElement"><span class="type-signature"></span>setHighlightedElement<span class="signature">(element)</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="registerWorkerSetTimeout"><span class="type-signature"></span>registerWorkerSetTimeout<span class="signature">(id)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    Registers setTimeout id to be called if step will experience timeout
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>id</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">integer</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">setTimeout result</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line2174">line 2174</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="registerWorkerSetTimeout"><span class="type-signature"></span>registerWorkerSetTimeout<span class="signature">(id)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    Registers setTimeout id to be called if step will experience timeout
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>id</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">integer</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">setTimeout result</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line2165">line 2165</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="reportErrorResult:"><span class="type-signature"></span>reportErrorResult:<span class="signature">(err)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    Exception handler for worker code. If exception handles inside workerthen this handler will report error back to progress frame and stopall worker activity
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>err</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Exception</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line1524">line 1524</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="setReturnedValueOfStep"><span class="type-signature"></span>setReturnedValueOfStep<span class="signature">(element)</span><span class="type-signature"></span></h4>
 
     
 
@@ -3602,7 +8097,138 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line496">line 496</a>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line2145">line 2145</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="setSleepAfterThisStep"><span class="type-signature"></span>setSleepAfterThisStep<span class="signature">(time)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    Set sleepAfterThisStep
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>time</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">integer</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">(ms)</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line2433">line 2433</a>
     </li></ul></dd>
     
 
@@ -3684,7 +8310,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line450">line 450</a>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line2037">line 2037</a>
     </li></ul></dd>
     
 
@@ -3724,14 +8350,276 @@
 
     
 
-    <h4 class="name" id="~fillWorkerCurrentTask"><span class="type-signature">(private, inner) </span>fillWorkerCurrentTask<span class="signature">()</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="updateCurrentUrl"><span class="type-signature"></span>updateCurrentUrl<span class="signature">(url)</span><span class="type-signature"></span></h4>
 
     
 
 
 
 <div class="description">
-    Fills workerCurrentTask object with current task parameters.See <a href="CartFiller.Dispatcher.html#~workerCurrentTask">CartFiller.Dispatcher~workerCurrentTask</a>
+    Update current worker URL
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>url</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">String</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line2183">line 2183</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="~callEventCallbacks"><span class="type-signature">(inner) </span>callEventCallbacks<span class="signature">(event)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    Calls registered event callbacks
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>event</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">event alias</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line524">line 524</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="~clearRegisteredTimeoutsAndIntervals"><span class="type-signature">(private, inner) </span>clearRegisteredTimeoutsAndIntervals<span class="signature">()</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    removes setTimeout's and setInterval's registered by worker earlier
 </div>
 
 
@@ -3775,7 +8663,1223 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line121">line 121</a>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line673">line 673</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="~decodeAlias"><span class="type-signature">(private, inner) </span>decodeAlias<span class="signature">(value)</span><span class="type-signature"> &rarr; {String}</span></h4>
+
+    
+
+
+
+<div class="description">
+    Decodes nested alias. To be documented
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>value</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">String</span>
+|
+
+<span class="param-type">Array</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line595">line 595</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">String</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="~discoverStepDependencies"><span class="type-signature">(inner) </span>discoverStepDependencies<span class="signature">(fn)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    Discovers if a step depends on result of previous step.If yes, then user should be prompted, that if he clicks on this step straight away - then most likely it will not succeed
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>fn</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">function</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line907">line 907</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="~discoverTaskParameters"><span class="type-signature">(private, inner) </span>discoverTaskParameters<span class="signature">(fn, allParams)</span><span class="type-signature"> &rarr; {Object}</span></h4>
+
+    
+
+
+
+<div class="description">
+    Discovers task parameters, that are used by this function looking for patters like task.theparameter or task['the parameter']
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>fn</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">function</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>allParams</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">holds all parameters, parameters discoveredhere are added to this map</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line927">line 927</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    discovered parameters
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">Object</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="~evaluateWorkers"><span class="type-signature">(private, inner) </span>evaluateWorkers<span class="signature">()</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    Evaluate worker code sorting out dependencies
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line859">line 859</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="~fillWorkerCurrentTask"><span class="type-signature">(private, inner) </span>fillWorkerCurrentTask<span class="signature">(src)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    Fills workerCurrentTask object with current task parameters.See <a href="CartFiller.Dispatcher.html#~workerCurrentTask">CartFiller.Dispatcher~workerCurrentTask</a>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>src</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line571">line 571</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="~fillWorkerGlobals"><span class="type-signature">(private, inner) </span>fillWorkerGlobals<span class="signature">(src)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    Fills workerGlobals object with new values
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>src</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line634">line 634</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="~getLibUrl"><span class="type-signature">(private, inner) </span>getLibUrl<span class="signature">()</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    Returns URL for lib folder
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line653">line 653</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="~openRelay"><span class="type-signature">(private, inner) </span>openRelay<span class="signature">(url, message, noFocus)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    Passes message to next relay if message is not undefined and next relay exists, otherwisecreate new relay using specified url and puts message if it is not undefined to the queue
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>url</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>message</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>noFocus</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">boolean</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">Experimental, looks like it does not work</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line723">line 723</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="~openRelayOnTheTail"><span class="type-signature">(inner) </span>openRelayOnTheTail<span class="signature">(url, noFocus)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    Opens relay window. If url points to the cartFiller distribution
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>url</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>noFocus</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">boolean</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line2372">line 2372</a>
     </li></ul></dd>
     
 
@@ -3975,7 +10079,253 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line87">line 87</a>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line536">line 536</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="~registerLoadWatcher"><span class="type-signature">(inner) </span>registerLoadWatcher<span class="signature">()</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    Registers watcher that tracks onload events of main frame
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line2344">line 2344</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="~registerWorkerWatchdog"><span class="type-signature">(private, inner) </span>registerWorkerWatchdog<span class="signature">()</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    Register watchdog handler
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line686">line 686</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="~removeWatchdogHandler"><span class="type-signature">(private, inner) </span>removeWatchdogHandler<span class="signature">()</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    Removes watchdog handler if api.result is called earlier then timeout
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line707">line 707</a>
     </li></ul></dd>
     
 
@@ -4057,7 +10407,89 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line112">line 112</a>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line561">line 561</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="~startSlaveMode"><span class="type-signature">(inner) </span>startSlaveMode<span class="signature">()</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    Starts whole piece in slave mode
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_dispatcher.js.html">src/boot/helpers/dispatcher.js</a>, <a href="src_boot_helpers_dispatcher.js.html#line2238">line 2238</a>
     </li></ul></dd>
     
 
@@ -4099,13 +10531,13 @@
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Externals</h3><ul><li><a href="external%2520jQuery.external__jQuery.fn_.html">jQuery.fn</a></li><li><a href="external-jQuery.html">jQuery</a></li></ul><h3>Classes</h3><ul><li><a href="CartFiller.Api.html">Api</a></li><li><a href="CartFiller.Api.StepEnvironment.html">StepEnvironment</a></li><li><a href="CartFiller.Configuration.html">Configuration</a></li><li><a href="CartFiller.Dispatcher.html">Dispatcher</a></li><li><a href="CartFiller.Injector.html">Injector</a></li><li><a href="CartFiller.Loader.html">Loader</a></li><li><a href="CartFiller.SampleWorker.html">SampleWorker</a></li><li><a href="CartFiller.SampleWorker.SampleWorkerTasks.html">SampleWorkerTasks</a></li><li><a href="CartFiller.UI.html">UI</a></li><li><a href="CartFiller.UI.ArrowToElement.html">ArrowToElement</a></li><li><a href="CartFillerPlugin-Plugin.html">Plugin</a></li><li><a href="cartFillerPlugin-Settings.html">Settings</a></li></ul><h3>Namespaces</h3><ul><li><a href="CartFiller.html">CartFiller</a></li><li><a href="CartFillerPlugin.html">CartFillerPlugin</a></li></ul><h3>Global</h3><ul><li><a href="global.html#%2522jQuery.cartFillerPlugin%2522">"jQuery.cartFillerPlugin"</a></li><li><a href="global.html#%2522jQuery.fn.cartFillerPlugin%2522">"jQuery.fn.cartFillerPlugin"</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Externals</h3><ul><li><a href="external%2520jQuery.external__jQuery.fn_.html">jQuery.fn</a></li><li><a href="external-jQuery.html">jQuery</a></li></ul><h3>Classes</h3><ul><li><a href="CartFiller.Api.html">Api</a></li><li><a href="CartFiller.Api.StepEnvironment.html">StepEnvironment</a></li><li><a href="CartFiller.Api.WorkerTask.html">WorkerTask</a></li><li><a href="CartFiller.Api.WorkerTasks.html">WorkerTasks</a></li><li><a href="CartFiller.Configuration.html">Configuration</a></li><li><a href="CartFiller.Dispatcher.html">Dispatcher</a></li><li><a href="CartFiller.Injector.html">Injector</a></li><li><a href="CartFiller.Loader.html">Loader</a></li><li><a href="CartFiller.SampleWorker.html">SampleWorker</a></li><li><a href="CartFiller.SampleWorker.SampleWorkerTasks.html">SampleWorkerTasks</a></li><li><a href="CartFiller.UI.html">UI</a></li><li><a href="CartFiller.UI.ArrowToElement.html">ArrowToElement</a></li><li><a href="CartFillerPlugin-JobDetails.html">JobDetails</a></li><li><a href="CartFillerPlugin-Plugin.html">Plugin</a></li><li><a href="CartFillerPlugin-Settings.html">Settings</a></li></ul><h3>Namespaces</h3><ul><li><a href="CartFiller.html">CartFiller</a></li><li><a href="CartFillerPlugin.html">CartFillerPlugin</a></li></ul><h3>Global</h3><ul><li><a href="global.html#%2522jQuery.cartFillerPlugin.hideChooseJobFrame%2522">"jQuery.cartFillerPlugin.hideChooseJobFrame"</a></li><li><a href="global.html#%2522jQuery.cartFillerPlugin.showChooseJobFrame%2522">"jQuery.cartFillerPlugin.showChooseJobFrame"</a></li><li><a href="global.html#%2522jQuery.cartFillerPlugin%2522">"jQuery.cartFillerPlugin"</a></li><li><a href="global.html#%2522jQuery.fn.cartFillerPlugin%2522">"jQuery.fn.cartFillerPlugin"</a></li><li><a href="global.html#env">env</a></li><li><a href="global.html#getBookmarkletCode">getBookmarkletCode</a></li><li><a href="global.html#onMessage_clearCurrentUrl">onMessage_clearCurrentUrl</a></li><li><a href="global.html#onMessage_postMessage">onMessage_postMessage</a></li><li><a href="global.html#onMessage_suspendAjaxRequestsDone">onMessage_suspendAjaxRequestsDone</a></li><li><a href="global.html#reportingMousePointerClick">reportingMousePointerClick</a></li><li><a href="global.html#testApiMap">testApiMap</a></li><li><a href="global.html#workerEventListeners">workerEventListeners</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0</a> on Wed Jun 24 2015 15:15:21 GMT+0300 (EAT)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.3</a> on Sun Aug 20 2017 14:59:13 GMT+0200 (CEST)
 </footer>
 
 <script> prettyPrint(); </script>

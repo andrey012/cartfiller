@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8"/>
+        <style type="text/css">
+            .templates input, .templates textarea { width: 100%; }
+        </style>
+    </head>
+    <body>
+        <h1>
+            Hello, this is local file operation tab, please do not close it
+        </h1>
+        <a id="openpopup" style="display: none;" href="#">Popups seem to be blocked, click here to open popup</a>
+        <div id="bookmarklets">
+            Bookmarklets for launching from filesystem:
+        </div>
+        <div>
+            <h3>
+                Configure:
+            </h3>
+            <table>
+                <tbody>
+                    <tr>
+                        <td>URL to launch:</td>
+                        <td><input type="text" id="url"/></td>
+                    </tr>
+                    <tr>
+                        <td>ChooseJob URL:</td>
+                        <td><input type="text" id="choosejob"/></td>
+                        <td>Hint: if started with # then testsuite will be started, you only may need to put things like job=...&task=...&step=... here if necessary</td>
+                    </tr>
+                    <tr>
+                        <td>Path to testsuite:</td>
+                        <td><input type="text" id="root"/></td>
+                        <td>Hint: start with file:///./ or file:///../ to say, that testsuite is located relatively to local.html</td>
+                    </tr>
+                    <tr>
+                        <td>Editor mode:</td>
+                        <td><input type="text" id="editor"/></td>
+                    </tr>
+                    <tr>
+                        <td>Full URL to cartFiller location inside target project</td>
+                        <td><input type="text" id="cartFillerInstallationUrl"/></td>
+                    </tr>
+                    <tr>
+                        <td>Generated ChooseJob URL:</td>
+                        <td><span id="generatedChoosejob"></span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <p>
+            Some template files: 
+        </p>
+        <p class="templates">
+            <input type="text" onclick="this.select();" readonly value="cartfiller.js"/><br/>
+            <textarea id="cartfiller.js-template" readonly onclick="this.select();"></textarea><br/><br/>
+            <input type="text" onclick="this.select();" readonly value="test.js"/><br/>
+            <textarea id="test.js-template" readonly onclick="this.select();"></textarea><br/><br/>
+            <input type="text" onclick="this.select();" readonly value="worker.js"/><br/>
+            <textarea id="worker.js-template" readonly onclick="this.select();"></textarea><br/>
+        </p>
+        <p>
+            This file is designed to be opened from local filesystem, e.g. file:///home/user/cartfiller/local/index.html.</p>
+        <p>
+            There are two ways of using this file: it can be opened first, or it can be opened in a popup tab, that CartFiller opens, when it wants to access local file. 
+        </p>
+        <p>
+            When opened first, you should open this file with a hash url, so, that full URL looks like: 
+        </p>
+        <p>
+            file:///home/user/cartfiller/local/index.html#url=https://andrey012.github.io/cartfiller/dist?root=file:///home/user/cartfiller/testsuite
+        </p>
+        <p>
+            Of course you should replace /home/user/cartfiller with where cartfiller is on your local disk, and where the testsuite is.
+        </p>
+        <p>
+            <a id="pack" href="#">Pack</a> : <a id="download">Download</a>
+        </p>
+        <h3>
+            Known data:
+        </h3>
+        <ul id="knownData">
+        </ul>
+        <h3>
+            Log
+        </h3>
+        <pre id="log"></pre>
+        <script>
+            (function() {
+                var parent = window.opener;
+                var bootstrapped = false;
+                var requesting;
+                var knownData = {};
+                var packedData, packedHash;
+                var unpackHash = function(hash, result) {
+                    hash.replace(/^#/, '').split('&').filter(function(v) {
+                        var pc = v.split('=');
+                        var key = pc.shift();
+                        var value = pc.join('=');
+                        result[key] = value;
+                    });
+                };
+                var packHash = function(hash) {
+                    var pc = [];
+                    for (var i in hash) {
+                        if (hash.hasOwnProperty(i)) {
+                            pc.push(i + '=' + hash[i]);
+                        }
+                    }
+                    return pc.join('&');
+                };
+                var combineHash = function(packedHash, windowHash) {
+                    var hash = {};
+                    unpackHash(packedHash, hash);
+                    unpackHash(windowHash, hash);
+                    return packHash(hash);
+                };
+                if (undefined !== packedHash) {
+                    window.location.hash = combineHash(packedHash, window.location.hash);
+                }
+                var log = function(msg) {
+                    var pre = document.getElementById('log');
+                    pre.textContent = pre.textContent.split('\n').slice(-100).join('\n') + msg + '\n';
+                };
+                var init = function() {
+                    log('sending init');
+                    parent.postMessage('cartFillerFilePopupInit', '*');
+                };
+                window.addEventListener('error', function(event) {
+                    alert('Error loading file, see debugger console for details');
+                    parent.postMessage('cartFillerFilePopupData:', '*');
+                });
+                window.addEventListener('message', function(event) {
+                    var p = /^cartFillerFilePopupUrl:(.*)$/;
+                    if (p.test(event.data)) {
+                        var url = p.exec(event.data)[1].replace(/^file:\/\/\/\./, '.');
+                        requesting = url.replace(/\?\d+$/, '');
+                        if (undefined !== packedData) {
+                            if (undefined === packedData[requesting]) {
+                                alert('wrong package - file missing: [' + requesting + ']');
+                                parent.postMessage('cartFillerFilePopupData:', '*');
+                            } else {
+                                parent.postMessage('cartFillerFilePopupData:' + packedData[requesting], '*');
+                            }
+                        } else {
+                            var s = document.createElement('script');
+                            s.setAttribute('src', url);
+                            document.getElementsByTagName('body')[0].appendChild(s);
+                            document.getElementById('log').textContent += 'requesting: ' + url + '\n';
+                        }
+                    } else if (event.data === 'cartFillerFilePopupPing') {
+                        if (! event.source) {
+                            log('ping received, but source is not set');
+                        } else if (parent !== event.source) {
+                            log('ping received from different parent');
+                            parent = event.source;
+                            init();
+                        } else {
+                            log('ping received from same parent');
+                        }
+                   } else if (0 === event.data.indexOf('cartFillerMessage')) {
+                        log('CartFiller tries to register as slave, going to bootstrap it');
+                        if ((! parent) || (parent !== event.source && event.source)) {
+                            log('Adjusting parent');
+                            parent = event.source;
+                        }
+                        parent.postMessage('cartFillerMessage:{"cmd":"launchFromSlave"}', '*');
+                    } else if ('/^\'cartFillerEval\'/' === event.data) {
+                        log('got inject.js request');
+                        if ((! parent) || (parent !== event.source && event.source)) {
+                            log('Adjusting parent');
+                            parent = event.source;
+                        }
+                        if (!injectjs.length) {
+                            alert('You are using source local.html, it does not have payload to launch cartFiller');
+                        }
+                        parent.postMessage('\'cartFillerEval\';this.cartFillerEval[2]=' + JSON.stringify($('#generatedChoosejob').text()) + ';' + injectjs, '*');
+                    }
+                }, false);
+                var addKnownData = function(data) {
+                    if (undefined === knownData[requesting]) {
+                        var li = document.createElement('li');
+                        li.textContent = requesting;
+                        document.getElementById('knownData').appendChild(li);
+                    }
+                    knownData[requesting] = data;
+                };
+                Object.defineProperty(window, 'cartfiller', {set: function(v) {
+                    var json = JSON.stringify(v);
+                    log('received: ' + json.length + ' bytes, parent is ' + (parent ? 'not null' : 'null') + '\n');
+                    addKnownData(json);
+                    parent.postMessage('cartFillerFilePopupData:' + json, '*');
+                }});
+                window.cartFillerAPI = function() {
+                    return {
+                        registerWorker: function(callback) {
+                            var code = '(function(window, document, undefined){cartFillerAPI().registerWorker(' + callback.toString() + ')})(window, document);';
+                            log('received: ' + code.length + ' bytes, parent is ' + (parent ? 'not null' : 'null') + '\n');
+                            addKnownData(code); 
+                            parent.postMessage('cartFillerFilePopupData:' + code, '*');
+                        }
+                    }
+                };
+                if (parent) {
+                    init();
+                } else {
+                    var m = /(^#?|&)url=([^&]+)/.exec(window.location.hash);
+                    if (m) {
+                        var url = decodeURIComponent(m[2]);
+                        try {
+                            parent = window.open(url, '_blank');
+                        } catch (e) {}
+                        if (parent) {
+                            log('looks like we managed to open popup');
+                        } else {
+                            log('could not open popup');
+                            var a = document.getElementById('openpopup');
+                            a.style.display = 'block';
+                            a.onclick = function() {
+                                log('trying to open popup in onclick');
+                                parent = window.open(url, '_blank');
+                                if (parent) {
+                                    log('looks like we managed to open popup in onclick');
+                                    a.style.display = 'none';
+                                } else {
+                                    log('could not open popup in onclick');
+                                }
+                                return false;
+                            };
+                        }
+                    } else {    
+                        log('no window.opener initially set, waiting for ping');
+                    }
+                }
+
+                var injectjs = '';
+                document.getElementById('pack').onclick = function() {
+                    var version = (new Date().getFullYear()) + '-' + ('0' + (new Date().getMonth() + 1)).substr(-2) + '-' + ('0' + (new Date().getDate())).substr(-2) + '-' + ('0' + (new Date().getHours())).substr(-2) + '-' + ('0' + (new Date().getMinutes())).substr(-2) + '-' + ('0' + (new Date().getSeconds())).substr(-2);
+                    var blob = new Blob(
+                        [
+                            '<!DOCTYPE html>' + 
+                            document.documentElement.outerHTML.replace(
+                                'var packedData, packedHash;',
+                                'var packedData = '
+                                + JSON.stringify(knownData)
+                                + '; packedHash = '
+                                + JSON.stringify(window.location.hash)
+                                + ';'
+                            ).replace('</h1>', '<br/>version: ' + version + '</h1>')
+                        ],
+                        {type : 'text/html'}
+                    ); 
+                    var a = new FileReader();
+                    a.onload = function(e) {
+                        document.getElementById('download').setAttribute('href', e.target.result);
+                        document.getElementById('download').setAttribute('download', document.getElementById('url').value.split('/')[2] + '-cartfiller-' + version + '.html');
+                    };
+                    a.readAsDataURL(blob);
+                    return false;
+                }
+                document.getElementById('cartfiller.js-template').value = atob('base64-content-of-cartfiller.js-goes-here');
+                document.getElementById('test.js-template').value = atob('base64-content-of-test.js-goes-here');
+                document.getElementById('worker.js-template').value = atob('base64-content-of-worker.js-goes-here');
+            })();
+        </script>
+        <script src="../../lib/requirejs/require.js"></script>
+        <script>
+            (function() {
+                var paths = {
+                    'jquery': '../../lib/jquery/dist/jquery.min',
+                    'jquery-cartFiller': '../jquery-cartFiller'
+                };
+                var deps = ['jquery', 'jquery-cartFiller'];
+                var shim = {'jquery-cartFiller': 'jquery'};
+                require.config({
+                    paths: paths,
+                    shim: shim,
+                    deps: deps,
+                    waitSeconds: 30
+                });
+                require(['jquery-cartFiller', 'jquery'], function() {
+                    for (var type in {'framed':1,'popup':1}) {
+                        var a = $('<a/>');
+                        $('#bookmarklets').append(a);
+                        $('#bookmarklets').append(', ');
+                        a.text(type);
+                        a.cartFillerPlugin({
+                            baseUrl: '',
+                            chooseJob: '',
+                            debug: 1,
+                            inject: 'iframe',
+                            minified: /local\.uncompressed\.html/.test(window.location.href) ? false: true,
+                            type: type
+                        });
+                    }
+                    var parseHash = function(initInputs) {
+                        var pc = window.location.hash.replace(/^#/, '').split('&');
+                        var fields = {};
+                        for (var i in pc) {
+                            var ppc = pc[i].split('=');
+                            var name = ppc.shift();
+                            var value = ppc.join('=');
+                            fields[name] = decodeURIComponent(value);
+                            if (initInputs) {
+                                 $('#' + name).val(fields[name]);
+                            }
+                        }
+                        var v = '';
+                        if ('string' === typeof fields.choosejob && fields.choosejob.length) {
+                            v += fields.choosejob;
+                        }
+                        var pc = [];
+                        for (var f in {root:1, editor:1, cartFillerInstallationUrl:1}) {
+                            if ('string' === typeof fields[f] && fields[f].length) {
+                                pc.push(f + '=' + encodeURIComponent(fields[f]));
+                            }
+                        }
+                        if (pc.length) {
+                            v += ((0 === v.indexOf('#')) ? '&' : '#') + pc.join('&');
+                        }
+                        $('#generatedChoosejob').text(v);
+
+                    };
+                    var update = function() {
+                        var hash = [];
+                        $('input').each(function(i,el){
+                            var id = $(el).attr('id');
+                            var pc = id + '=' + encodeURIComponent($(el).val());
+                            if (id === 'choosejob') {
+                                hash.push(pc);
+                            } else {
+                                hash.unshift(pc);
+                            }
+                        });
+                        window.location.hash = '#' + hash.join('&');
+                        parseHash();
+                        return;
+                    };
+                    $('input').change(update).keyup(update);
+                    parseHash(true);
+                });
+            })();
+        </script>
+    </body>
+</html>

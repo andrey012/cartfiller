@@ -5,12 +5,23 @@
         <script src="../src/jquery-cartFiller.js"></script>
     </head>
     <body>
-        <a id="sampleSubmitLink" href="#" onclick="submitJob();">submit sample job</a>
+        <a id="sampleSubmitLink" href="#" onclick="submitJob();">submit sample job</a><br/>
+        <a id="sampleSubmitLink" href="#" onclick="submitJob(2000);">submit sample job with autorun in 2 seconds</a><br/>
+        <a id="sampleSubmitLink" href="#" onclick="submitJob(2000, 'slow');">submit sample job with slow autorun in 2 seconds</a>
+        <h1>
+            Result
+        </h1>
         <div id="result">
 
         </div>
+        <h1>
+            Status update
+        </h1>
+        <div id="status">
+
+        </div>
         <script>
-            function submitJob(){
+            function submitJob(autorun, speed){
                 jQuery.cartFillerPlugin(
                     {
                         details: [
@@ -18,7 +29,8 @@
                             {task: 'addToCart', partno: '1111111', quantity: 2, price: 1.22}, 
                             {task: 'addToCart', partno: '2222222', quantity: 3, price: 2}, 
                             {task: 'addToCart', partno: '3333333', quantity: 2, price: 1.5}, 
-                            {task: 'addToCart', partno: '4444444', quantity: 3, price: 2}
+                            {task: 'addToCart', partno: '4444444', quantity: 3, price: 2},
+                            {task: 'testApiMap'}
                         ], 
                         titleMap: {
                             clearCart: 'Clear cart', 
@@ -29,10 +41,16 @@
                         workerSrc: window.location.href.replace(
                             /choose-job.html(\?.*)?(\#.*)?$/, 
                             'worker.js'
-                        )
+                        ),
+                        autorun: autorun,
+                        timeout: 4000,
+                        autorunSpeed: speed
                     },
                     function(data){
                         document.getElementById('result').innerText = 'Job result: ' + JSON.stringify(data);
+                    },
+                    function(data){
+                        document.getElementById('status').innerText = 'Job status update: ' + JSON.stringify(data);
                     }
                 );
             }

@@ -1,0 +1,23 @@
+cartfiller = {
+    "title": "static steps: lib.mySteps=['find link', function() { ... }...]",
+    "details": [
+        "# Shared steps: Static steps",
+        "Definition example:",
+        "addToCart: [",
+        "   lib.openCatalog = [",
+        "       'find navbar', function() { ... },",
+        "       'find link to page', function() { ... pageToOpen ... },",
+        "       api.click(api.onload)",
+        "   ],",
+        "   'find search input', function() { ... },",
+        "   ...",
+        "],",
+        "## Usage example:",
+        "getPromoOffer: [",
+        "   lib('openCatalog'),",
+        "   'find promo offer', function() { ... },",
+        "   ...",
+        "],",
+        {"task": "testStaticSteps"},
+    ]
+}

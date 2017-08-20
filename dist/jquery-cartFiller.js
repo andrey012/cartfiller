@@ -50,7 +50,7 @@
     var knownBookmarkletElements = [];
 
     /**
-     * @class cartFillerPlugin~Settings
+     * @class CartFillerPlugin~Settings
      */
     var defaults = {
         /**
@@ -111,21 +111,40 @@
          * @member {boolean} CartFillerPlugin~Settings#useSource
          * @default false
          */
-        useSource: false
+        useSource: false,
+        /**
+         * Internal parameter - to override worker frame URL
+         * @member {String} CartFillerPlugin~Settings#workerFrameUrl
+         * @default false
+         */
+        workerFrameUrl: '',
+        /**
+         * Normally bookmarklet code adds anti-caching parameter when generating URL, because
+         * bookmarklets will live on users' computers longer then Cartfiller releases.
+         * If useBuildVersion is set to true, then build version hardcoded in released
+         * jquery-cartFiller.js will be used instead
+         * @member {boolean} CartFillerPlugin~Settings#useBuildVersion
+         * @default false
+         */
+        useBuildVersion: false
     };
 
+    var config = {}; 
+    config.gruntBuildTimeStamp = '';
     /**
      * @class CartFillerPlugin~Plugin
      * @access private
      */
     function Plugin ( element, options ) {
-        this.element = element;
         this.settings = $.extend( {}, defaults, options );
         this._defaults = defaults;
         this._name = pluginName;
+        if ('undefined' === typeof element) {
+            return;
+        }
+        this.element = element;
         this.init();
     }
-    
 
     $.extend(Plugin.prototype, {
         /**
@@ -137,21 +156,22 @@
             if (runningInsideCartFiller){
                 $(this.element).hide();
             } else {
-                var href;
-                if (this.settings.inject === 'script'){
-                    href = this.scriptBookmarklet();
-                } else if (this.settings.inject === 'eval'){
-                    href = this.evalBookmarklet();
-                } else if (this.settings.inject === 'iframe'){
-                    href = this.iframeBookmarklet();
-                } else {
-                    alert('invalid inject value, correct values are "script", "eval" and "iframe"');
-                }
                 if (this.settings.logLength) {
                     console.log('generated bookmarklet: ' + href.length);
                 }
-                $(this.element).attr('href', href);
+                $(this.element).attr('href', this.javaScriptUrl() + this.getBookmarkletCode());
                 knownBookmarkletElements.push(this.element);
+            }
+        },
+        getBookmarkletCode: function() {
+            if (this.settings.inject === 'script'){
+                return this.scriptBookmarklet();
+            } else if (this.settings.inject === 'eval'){
+                return this.evalBookmarklet();
+            } else if (this.settings.inject === 'iframe'){
+                return this.iframeBookmarklet();
+            } else {
+                alert('invalid inject value, correct values are "script", "eval" and "iframe"');
             }
         },
         getTypeId: function(){
@@ -183,10 +203,16 @@
                 return '';
             }
         },
+        getVersion: function() {
+            if (this.settings.useBuildVersion && config.gruntBuildTimeStamp) {
+                return config.gruntBuildTimeStamp;
+            }
+            return '(new Date()).getTime()';
+        },
         scriptBookmarklet: function(){
-            return this.javaScriptUrl() + 'try{' +
+            return 'try{' +
                 this.trace('start') + 
-                '(function(d,c,a,t,o,b,e,u,v,j,k,x,y,w,z,s){' + 
+                '(function(d,c,a,t,o,b,e,u,v,j,k,x,y,w,z,m,n,s){' + 
                     this.trace('in function') +
                     's=d.createElement(\'script\');' + 
                     this.trace('script element created') +
@@ -194,7 +220,7 @@
                     this.trace('type set') +
                     's[a](c+b,e);' + 
                     this.trace('base-url set') +
-                    's[a](u,e+v+\'?\'+(new Date()).getTime());' + 
+                    's[a](u,e+v+\'?\'+' + this.getVersion() + ');' + 
                     this.trace('src set') +
                     's[a](c+j,k);' +
                     this.trace('choose-job set') +
@@ -202,6 +228,8 @@
                     this.trace('debug set') +
                     'if(w)s[a](c+w,z);' + 
                     this.trace('worker set') +
+                    'if(m)s[a](c+m,n);' + 
+                    this.trace('worker URL set') +
                     's.onerror=function(){alert(\'error\');};' +
                     this.trace('onerror set') +
                     'd.getElementsByTagName(\'head\')[0].appendChild(s);' +
@@ -215,18 +243,19 @@
                     '\'src\',\'' + this.getInjectUrl() + '\',' +
                     '\'choose-job\',\'' + this.settings.chooseJob + '\',' +
                     '\'debug\',' + (this.settings.debug ? 1: 0) + ',' +
-                    '\'worker\',\'' + (this.settings.worker) + '\'' +
+                    '\'worker\',\'' + (this.settings.worker) + '\',' +
+                    '\'wfu\',\'' + (this.settings.workerFrameUrl) + '\'' +
                 ');' +
             '}catch(e){alert(e);}';
         },
         evalBookmarklet: function(){
-            return this.javaScriptUrl() + 'try{' +
+            return 'try{' +
                 this.trace('start') +
-                '(function(f,x,t,u,v,j,d){' +
+                '(function(f,x,t,u,v,j,d,w,y){' +
                     this.trace('in function') +
                     'x.open(' +
                         '\'GET\',' +
-                        'u+v+\'?\'+(new Date()).getTime(),' +
+                        'u+v+\'?\'+' + this.getVersion() + ',' +
                         'true' +
                     ');' +
                     this.trace('x opened') +
@@ -237,7 +266,7 @@
                             'eval(' +
                                 '\'(function(){\'+' +
                                 'x.response+' +
-                                '\'}).call({cartFillerEval:[u,t,j,d]});\'' +
+                                '\'}).call({cartFillerEval:[u,t,j,d,w,y]});\'' +
                             ');' +
                             this.trace('eval complete') +
                         '}catch(e){alert(e);}' +
@@ -254,27 +283,30 @@
                     '\'' + this.settings.baseUrl + '\',' +
                     '\'' + this.getInjectUrl() + '\',' +
                     '\'' + this.settings.chooseJob + '\',' +
-                    (this.settings.debug ? 1 : 0) +
+                    (this.settings.debug ? 1 : 0) + ',' +
+                    '\'' + this.settings.worker + '\',' +
+                    '\'' + this.settings.workerFrameUrl + '\'' +
                 ');' +
             '}catch(e){alert(e);}';
         },
         iframeBookmarklet: function(){
-            return this.javaScriptUrl() + 'try{' +
+            return 'try{' +
                 this.trace('start') +
-                '(function(f,d,p,t,u,v,m,j,y,x,i){' +
+                '(function(f,d,p,t,u,v,m,j,y,x,i,w){' +
                     this.trace('in') +
                     'window.addEventListener(' +
                         '\'message\',' +
                         'function(e){' +
-                            'f=1;' +
+                            'if(f)return;' +
                             'try{' +
                                 this.trace('event') +
                                 'if(p.test(x=e.data)){' +
                                     this.trace('event+') +
+                                    'f=1;' +
                                     'eval(' +
                                         '\'(function(){\'+' +
                                         'x+' +
-                                        '\'}).call({cartFillerEval:[u,t,j,y]});\'' +
+                                        '\'}).call({cartFillerEval:[u,t,j,y,w,"",x]});\'' +
                                    ');' +
                                     this.trace('eval done') +
                                 '}' +
@@ -282,13 +314,18 @@
                         '}' +
                         ',true' +
                     ');' +
-                    this.trace('lstnr+') +
-                    'i=d.createElement(\'iframe\');' +
-                    this.trace('iframe') +
-                    'd.getElementsByTagName(\'body\')[0].appendChild(i);' +
-                    this.trace('iframe+') +
-                    'i.contentWindow.location.href=u+v+(m?\'?min&\':\'?\')+(new Date()).getTime();' +
-                    this.trace('iframe++') +
+                    'if(!u){' +
+                        this.trace('local') +
+                        'window.opener.postMessage(p.toString(),\'*\');' +
+                    '}else{' +
+                        this.trace('lstnr+') +
+                        'i=d.createElement(\'iframe\');' +
+                        this.trace('iframe') +
+                        'd.getElementsByTagName(\'body\')[0].appendChild(i);' +
+                        this.trace('iframe+') +
+                        'i.contentWindow.location.href=u+v+(m?\'?min&\':\'?\')+' + this.getVersion() + ';' +
+                        this.trace('iframe++') +
+                    '}' +
                     'setTimeout(function(){if(!f)alert(\'error\');},5000);' +
                     this.trace('timeout set') +
                 '})(' +
@@ -300,7 +337,8 @@
                     '\'' + this.getIframeUrl() + '\',' + 
                     (this.settings.minified ? 1:0) + ',' +
                     '\'' + this.settings.chooseJob + '\',' +
-                    (this.settings.debug ? 1 : 0) +
+                    (this.settings.debug ? 1 : 0) + ',' +
+                    '\'' + this.settings.workerFrameUrl + '\'' +
                 ');' +
             '}catch(e){alert(e);}';
         },
@@ -344,11 +382,34 @@
      */
     var resultCallback;
     /**
-     * Holds result callback message name
+     * Host intermediate status update callback registered by user through 
+     * {@link external:"jQuery".cartFillerPlugin}
+     * @var {CartFillerPlugin.statusCallback} CartFillerPlugin~statusCallback
+     * @access private
+     */
+    var statusCallback;
+    /**
+     * Holds result callback message name, can be configured via jobDetails, 
+     * with only reason - not to conflict with other messages. Defaults to 
+     * 'cartFillerResultMessage'
      * @var {String} CartFillerPlugin~resultMessageName
      * @access private
      */
     var resultMessageName;
+    /**
+     * Holds status callback message name, can be configured via jobDetails, 
+     * with only reason - not to conflict with other messages. Defaults to 
+     * 'cartFillerStatusMessage'
+     * @var {String} CartFillerPlugin~statusMessageName
+     * @access private
+     */
+    var statusMessageName;
+    /**
+     * Holds name for message, that will be used to trigger worker load
+     * @var {String} CartFillerPlugin~statusMessageName
+     * @access private
+     */
+    var loadWorkerMessageName = 'cartFillerRequestWorkers';
     /**
      * Message to be used as "hello" message from {@link CartFiller.Dispatcher}
      * to plugin
@@ -356,6 +417,88 @@
      * @access private
      */
     var helloMessageName = 'helloFromCartFiller';
+    var trackWorkerContents = {};
+    var trackWorkerLoaded = {};
+    var trackWorker = false;
+    var trackWorkerId = 0;
+    var suspendTrackingRequested = false;
+    var suspendTrackingDone = false;
+    var pendingAjaxRequests = 0;
+    var reportPendingAjaxRequestsToDispatcher = function() {
+        if (suspendTrackingRequested && (! pendingAjaxRequests)) {
+            suspendTrackingRequested = false;
+            suspendTrackingDone = true;
+            window.parent.postMessage(
+                'cartFillerMessage:' + JSON.stringify({cmd: 'suspendAjaxRequestsDone'}),
+                '*'
+            );
+            ////
+        }
+    };
+    var trackWorkersAllLoaded = function() {
+        var i;
+        for (i in trackWorkerLoaded) {
+            if (trackWorkerLoaded.hasOwnProperty(i) && ! trackWorkerLoaded[i]) {
+                return false;
+            }
+        }
+        return true;
+    };
+    var loadWorkers = function(urls, track) {
+        if (! track) {
+            trackWorkerId ++;
+            trackWorkerContents = {};
+            trackWorkerLoaded = {};
+        } else {
+            if (track !== trackWorkerId) {
+                return;
+            }
+        }
+        var loader = function(url, rememberedTrackWorkerId, track){
+            trackWorkerLoaded[url] = false;
+            var originalUrl = url;
+            if (/\?/.test(url)){
+                url += '&';
+            } else {
+                url += '?';
+            }
+            url += (new Date()).getTime();
+            $.cartFillerPlugin.ajax({
+                url: url,
+                complete: function(xhr) {
+                    if ('undefined' !== typeof track && track !== trackWorkerId) {
+                        return;
+                    }
+                    trackWorkerLoaded[originalUrl] = true;
+                    if ('string' === typeof xhr.responseText && xhr.responseText.length) {
+                        if ((! track) || xhr.responseText !== trackWorkerContents[originalUrl]) {
+                            window.parent.postMessage(
+                                'cartFillerMessage:' + JSON.stringify({
+                                    cmd: 'loadWorker', 
+                                    code: xhr.responseText, 
+                                    src: originalUrl, 
+                                    isFinal: trackWorkersAllLoaded() || track
+                                }), 
+                                '*'
+                            );
+                            trackWorkerContents[originalUrl] = xhr.responseText;
+                        }
+                    }
+                    if (trackWorker) {
+                        if (trackWorkersAllLoaded()) {
+                            setTimeout(function() { loadWorkers(urls, rememberedTrackWorkerId); }, 1000);
+                        }
+                    }
+                },
+                cartFillerTrackSomething: track ? true : false
+            });
+        };
+        for (var i = 0; i < urls.length; i ++) {
+            var url = urls[i];
+            loader(url, trackWorkerId, track);
+        }
+    };
+
     /**
      * Callback, that will receive job result details from cartFiller
      * @callback CartFillerPlugin.resultCallback
@@ -363,8 +506,23 @@
      * message.tasks contains job details as provided by Choose Job frame.
      * See {@link CartFiller.Dispatcher#onMessage_sendResult}
      */
+    /**
+     * Callback, that will receive intermediate job status update from cartFiller
+     * @callback CartFillerPlugin.statusCallback
+     * @param {Object} message message.result contains result, while
+     * message.tasks contains job details as provided by Choose Job frame, 
+     * message.currentTaskIndex and message.currentTaskStepIndex identify
+     * task and step which triggered status update, and message.
+     * See {@link CartFiller.Dispatcher#onMessage_sendResult}
+     */
     var messageEventListener = function(event){
-        if ((new RegExp('^' + helloMessageName + ':{')).test(event.data)){
+        var details;
+        var helloRegexp = new RegExp('^' + helloMessageName + ':(.*)$');
+        if (helloRegexp.test(event.data)){
+            details = JSON.parse(helloRegexp.exec(event.data)[1]);
+            if (details.useTopWindowForLocalFileOperations) {
+                filePopupWindow = event.source || window.parent;
+            }
             $('.cart-filler-submit').show();
             $('.cart-filler-helper').hide();
             $(knownBookmarkletElements).hide();
@@ -376,40 +534,204 @@
                     resultCallback(JSON.parse(data[1]));
                 }
             }
+            data = new RegExp('^' + statusMessageName + ':(.*)$').exec(event.data);
+            if (data) {
+                details = JSON.parse(data[1]);
+                if (details.toggleEditorMode) {
+                    if (suspendTrackingRequested) {
+                        // do nothing
+                    } else if (! details.enable) {
+                        suspendTrackingRequested = true;
+                        reportPendingAjaxRequestsToDispatcher();
+                    } else {
+                        suspendTrackingDone = false;
+                    }
+                } else {
+                    if (statusCallback){
+                        statusCallback(details);
+                    }
+                }
+            }
+            data = new RegExp('^' + loadWorkerMessageName + ':(.*)$').exec(event.data);
+            if (data) {
+                var urls = JSON.parse(data[1]).urls;
+                loadWorkers(urls);
+            }
+            var p = 'cartFillerFilePopupData:';
+            if (0 === event.data.indexOf(p) && filePopupWindow) {
+                var next = fileRequestsQueue.shift();
+                if (fileRequestsQueue.length) {
+                    filePopupSendUrl();
+                }
+                next.complete({status: 200, responseText: event.data.substr(p.length)});
+            } else if (0 === event.data.indexOf('cartFillerFilePopupInit')) {
+                if (event.source) {
+                    filePopupWindow = event.source;
+                }
+                filePopupSendUrl();
+            }
         }
     };
+    /** 
+     * Used to configure job by chooseJob frame, contains set of pre-defined
+     * properties as well as arbitrary properties set by chooseJob which will be 
+     * delivered to worker.
+     * @class CartFillerPlugin~JobDetails
+     */
+    /**
+     * @member {string} CartFillerPlugin~JobDetails#cmd Reserved property used for transport,
+     * should not be used
+     */
+    /** 
+     * @member {Object[]} CartFillerPlugin~JobDetails#details Array of tasks, each task is 
+     * object with mandatory task property which specifies the task alias, and any 
+     * set of other properties which will be transferred to worker. 
+     */
+    /** 
+     * @member {integer} CartFillerPlugin~JobDetails#timeout Time (ms) to wait 
+     * for result of each step. If api.result() or api.nop() is not called 
+     * within specified timeout - then api.result() will be called by 
+     * cartfiller itself, with error message saying that timeout occured. 
+     * 0 or undefined means no timeout will be ever triggered
+     */
+    /**
+     *  @member {Object} CartFillerPlugin~JobDetails#titleMap Map of human readable titles 
+     * of tasks. Property name = task alias, value = title. 
+     */
+    /**
+     * @member {integer} CartFillerPlugin~JobDetails#autorun Time (ms) after which 
+     * worker will run automatically. If set to null, undefined or 0 -- no autorun will
+     * be done
+     */
+    /**
+     * @member {string} CartFillerPlugin~JobDetails#autorunSpeed Autorun speed, can be
+     * 'fast' or 'slow'. Undefined (default) equals to 'fast'
+     */
+    /**
+     * @member {integer} CartFillerPlugin~JobDetails#autorunUntilTask Task index to run until,
+     * used together with autorunUntilStep
+     */
+    /**
+     * @member {integer} CartFillerPlugin~JobDetails#autorunUntilStep Step index to run until,
+     * used together with autorunUntilTask
+     */
+    /**
+     * @member {string} CartFillerPlugin~JobDetails#workerSrc URL of worker to 
+     * be used instead of one given by bookmarklet
+     */
+    /**
+     * @member {Object} CartFillerPlugin~JobDetails#globals optional global values which will be
+     * copied into the worker globals object during task load
+     */
+    /**
+     * @member {Object} CartFillerPlugin~JobDetails#trackWorker optional parameter, when set to true
+     * then cartFiller will ping workers each second and when workers are changed - they will be updated
+     */
+    /**
+     * @member {String} CartFillerPlugin~JobDetails#jobName optional parameter to identify
+     * job, used only for testSuites to form hash part of URL of top window
+     */
+    /**
+     * @member {String} CartFillerPlugin~JobDetails#jobTitle optional parameter to give 
+     * user-friendly job title
+     */
+    /**
+     * @member {String} CartFillerPlugin~JobDetails#jobId optional parameter to 
+     * identify job
+     */
+    /**
+     * @member {String} CartFillerPlugin~JobDetails#cartFillerInstallationUrl gives an idea where
+     * to find everything else if you arelost, this one is URL of cartfiller installation
+     */
+    /**
+     * @member {String} CartFillerPlugin~JobDetails#rootCartfillerPath gives an idea where
+     * to find everything else if you are lost, this one is URL of folder where cartfiller.json is 
+     */
     /**
      * Global plugin function - sends job details to cartFiller and
      * registers optional callback, that will receive results.
      * @function external:"jQuery".cartFillerPlugin
      * @global
      * @name "jQuery.cartFillerPlugin"
-     * @param {Object[]} jobDetails Job details data, array of objects, 
-     * each object should contain .task which has task name and
-     * arbitrary other members for worker
+     * @param {CartFillerPlugin~JobDetails} jobDetails Job details data
      * @param {CartFillerPlugin.resultCallback} resultCallback
      * callback, which will receive results. It can be called several times
+     * @param {CartFillerPlugin.statusCallback} resultCallback
+     * callback, which will receive status updates after each step of each task will
+     * be completed.
      * @access public
      */
-    $.cartFillerPlugin = function( jobDetails, newResultCallback ) {
-        if (newResultCallback && 
-            ((undefined === jobDetails.resultMessage) || (String(jobDetails.resultMessage).length < 1))
-            ){
-            jobDetails.resultMessage = 'cartFillerResultMessage';
+    $.cartFillerPlugin = function( jobDetails, newResultCallback, newStatusCallback) {
+        if (undefined !== jobDetails.details) {
+            if (newResultCallback && 
+                ((undefined === jobDetails.resultMessage) || (String(jobDetails.resultMessage).length < 1))
+                ){
+                jobDetails.resultMessage = 'cartFillerResultMessage';
+            }
+            if (newStatusCallback &&
+                ((undefined === jobDetails.statusMessage) || (String(jobDetails.statusMessage).length < 1)) 
+                ){
+                jobDetails.statusMessage = 'cartFillerStatusMessage';
+            }
+            resultMessageName = jobDetails.resultMessage;
+            statusMessageName = jobDetails.statusMessage;
+            resultCallback = newResultCallback;
+            statusCallback = newStatusCallback;
         }
-        resultMessageName = jobDetails.resultMessage;
 
         jobDetails.cmd = 'jobDetails';
+        trackWorker = jobDetails.trackWorker;
 
         window.parent.postMessage(
             'cartFillerMessage:' + 
             JSON.stringify(jobDetails),
             '*'
         );
-        resultCallback = newResultCallback;
+    };
+    /**
+     * Global plugin function - shows chooseJob frame from within
+     * chooseJob frame
+     * @function external:"jQuery".cartFillerPlugin.showChooseJobFrame
+     * @global
+     * @name "jQuery.cartFillerPlugin.showChooseJobFrame"
+     * @access public
+     */
+    $.cartFillerPlugin.showChooseJobFrame = function() {
+        window.parent.postMessage(
+            'cartFillerMessage:' + JSON.stringify({cmd: 'chooseJob'}),
+            '*'
+        );
+    };
+    /**
+     * Global plugin function - hides chooseJob frame from within
+     * chooseJob frame
+     * @function external:"jQuery".cartFillerPlugin.hideChooseJobFrame
+     * @global
+     * @name "jQuery.cartFillerPlugin.hideChooseJobFrame"
+     * @access public
+     */
+    $.cartFillerPlugin.hideChooseJobFrame = function() {
+        window.parent.postMessage(
+            'cartFillerMessage:' + JSON.stringify({cmd: 'chooseJobCancel'}),
+            '*'
+        );
+    };
+    /**
+     * Global plugin function - get bookmarklet code to eval it - used
+     * only for launching testsuite
+     * @function external:"jQuery".cartFillerPlugin.getBookmarkletCode
+     * @global
+     * @param {CartFillerPlugin~Settings} options
+     * @return {String} code
+     * @access public
+     */
+    $.cartFillerPlugin.getBookmarkletCode = function(options) {
+        var plugin = new Plugin(undefined, options);
+        return plugin.getBookmarkletCode();
     };
 
-    window.addEventListener('message', messageEventListener,false);
+
+    window.addEventListener('message', messageEventListener, false);
     if (window.parent !== window){
         window.parent.postMessage('cartFillerMessage:{"cmd":"helloFromPlugin","message":"' + helloMessageName + '"}', '*');
     }
@@ -424,4 +746,59 @@
         }
     });
 
+    var filePopupWindow = false;
+    var filePopupWindowInitReceived = false;
+    var fileRequestsQueue = [];
+    var filePopupSendUrl = function() {
+        filePopupWindow.postMessage('cartFillerFilePopupUrl:' + fileRequestsQueue[0].url, '*');
+    };
+    $.cartFillerPlugin.ajax = function(options) {
+        if (! runningInsideCartFiller) {
+            // retry later
+            setTimeout(function() { 
+                $.cartFillerPlugin.ajax(options);
+            }, 100);
+            return;
+        }
+        if (options.cartFillerTrackSomething && (suspendTrackingRequested || suspendTrackingDone)) {
+            setTimeout(function() { options.complete({}); }, 0); // skip results
+            return;
+        }
+        var pingFilePopupWindow = function() {
+            if (! filePopupWindowInitReceived) {
+                filePopupWindow.postMessage('cartFillerFilePopupPing', '*');
+                setTimeout(pingFilePopupWindow, 50);
+            }
+        };
+        if (/^file\:\/\/\//.test(options.url)) {
+            fileRequestsQueue.push(options);
+            if (filePopupWindow) {
+                if (1 === fileRequestsQueue.length) {
+                    filePopupSendUrl();
+                }
+            } else {
+                filePopupWindow = window.open('javascript:document.write("<h1>Open cartfiller/dist/local.html file from your disk in this tab</h1>");', '_blank');  // jshint ignore:line
+                pingFilePopupWindow();
+            }
+        } else {
+            pendingAjaxRequests ++;
+            reportPendingAjaxRequestsToDispatcher();
+            var x = new XMLHttpRequest();
+            x.onload = x.onerror = function(){
+                pendingAjaxRequests --;
+                reportPendingAjaxRequestsToDispatcher();
+                options.complete(x);
+            };
+            x.open('GET', options.url, true);
+            x.send();
+        }
+    };
+    $.cartFillerPlugin.postMessageToDispatcher = function(cmd, details) {
+        details = details || {};
+        details.cmd = cmd;
+        window.parent.postMessage(
+            'cartFillerMessage:' + JSON.stringify(details),
+            '*'
+        );
+    };
 })( jQuery, window, document );

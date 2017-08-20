@@ -1,0 +1,12 @@
+cartfiller = {
+    "details": [
+        "# param1 is set, param2 = 12",
+        {"include": "/utils/addToCart", "param1": true, "param2": 12},
+        "# param1 is null, param2 = 12",
+        {"include": "/utils/addToCart", "param1": null, "param2": 12},
+        "# param1 is set, param2 = 10",
+        {"include": "/utils/addToCart", "param1": true, "param2": 10},
+        "# param1 is null, param2 = 10",
+        {"include": "/utils/addToCart", "param1": null, "param2": 10},
+    ]
+}

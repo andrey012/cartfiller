@@ -146,78 +146,6 @@
 
         
             
-<h4 class="name" id="~arrowToElements"><span class="type-signature">(private, inner) </span>arrowToElements<span class="type-signature"> :<a href="CartFiller.UI.ArrowToElement.html">CartFiller.UI.ArrowToElement</a></span></h4>
-
-
-
-
-<div class="description">
-    Keeps list of highlighted elements, which we should draw marking arrows to
-</div>
-
-
-
-    <h5>Type:</h5>
-    <ul>
-        <li>
-            
-<span class="param-type"><a href="CartFiller.UI.ArrowToElement.html">CartFiller.UI.ArrowToElement</a></span>
-
-
-        </li>
-    </ul>
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_ui.js.html">src/boot/helpers/ui.js</a>, <a href="src_boot_helpers_ui.js.html#line73">line 73</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-        
-            
 <h4 class="name" id="~chooseJobFrameLoaded"><span class="type-signature">(private, inner) </span>chooseJobFrameLoaded<span class="type-signature"> :boolean</span></h4>
 
 
@@ -272,7 +200,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_ui.js.html">src/boot/helpers/ui.js</a>, <a href="src_boot_helpers_ui.js.html#line40">line 40</a>
+        <a href="src_boot_helpers_ui.js.html">src/boot/helpers/ui.js</a>, <a href="src_boot_helpers_ui.js.html#line34">line 34</a>
     </li></ul></dd>
     
 
@@ -340,7 +268,79 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_ui.js.html">src/boot/helpers/ui.js</a>, <a href="src_boot_helpers_ui.js.html#line35">line 35</a>
+        <a href="src_boot_helpers_ui.js.html">src/boot/helpers/ui.js</a>, <a href="src_boot_helpers_ui.js.html#line29">line 29</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="~currentMessageDivTopShift"><span class="type-signature">(private, inner) </span>currentMessageDivTopShift<span class="type-signature"> :integer</span></h4>
+
+
+
+
+<div class="description">
+    Keeps current message div top divisor from default value which is adjusted until message will fit in current viewport
+</div>
+
+
+
+    <h5>Type:</h5>
+    <ul>
+        <li>
+            
+<span class="param-type">integer</span>
+
+
+        </li>
+    </ul>
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_ui.js.html">src/boot/helpers/ui.js</a>, <a href="src_boot_helpers_ui.js.html#line107">line 107</a>
     </li></ul></dd>
     
 
@@ -412,7 +412,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_ui.js.html">src/boot/helpers/ui.js</a>, <a href="src_boot_helpers_ui.js.html#line98">line 98</a>
+        <a href="src_boot_helpers_ui.js.html">src/boot/helpers/ui.js</a>, <a href="src_boot_helpers_ui.js.html#line100">line 100</a>
     </li></ul></dd>
     
 
@@ -430,13 +430,13 @@
 
         
             
-<h4 class="name" id="~currentSize"><span class="type-signature">(private, inner) </span>currentSize<span class="type-signature"> :String</span></h4>
+<h4 class="name" id="~currentMessageOnScreen"><span class="type-signature">(private, inner) </span>currentMessageOnScreen<span class="type-signature"> :String</span></h4>
 
 
 
 
 <div class="description">
-    Keeps current size of worker (job progress) frame
+    Keeps current message that is already on the screen to trigger refresh
 </div>
 
 
@@ -484,7 +484,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_ui.js.html">src/boot/helpers/ui.js</a>, <a href="src_boot_helpers_ui.js.html#line14">line 14</a>
+        <a href="src_boot_helpers_ui.js.html">src/boot/helpers/ui.js</a>, <a href="src_boot_helpers_ui.js.html#line87">line 87</a>
     </li></ul></dd>
     
 
@@ -502,13 +502,13 @@
 
         
             
-<h4 class="name" id="~highlightedElementBottom"><span class="type-signature">(private, inner) </span>highlightedElementBottom<span class="type-signature"> :integer</span></h4>
+<h4 class="name" id="~currentWorkerFrameSize"><span class="type-signature">(private, inner) </span>currentWorkerFrameSize<span class="type-signature"> :String</span></h4>
 
 
 
 
 <div class="description">
-    Vertical position of bottom of highlighted element
+    Keeps current size of worker (job progress) frame, can be either 'small' or 'big'
 </div>
 
 
@@ -517,7 +517,7 @@
     <ul>
         <li>
             
-<span class="param-type">integer</span>
+<span class="param-type">String</span>
 
 
         </li>
@@ -556,151 +556,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_ui.js.html">src/boot/helpers/ui.js</a>, <a href="src_boot_helpers_ui.js.html#line550">line 550</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-        
-            
-<h4 class="name" id="~highlightedElements"><span class="type-signature">(private, inner) </span>highlightedElements<span class="type-signature"> :<a href="CartFiller.UI.ArrowToElement.html">CartFiller.UI.ArrowToElement</a></span></h4>
-
-
-
-
-<div class="description">
-    Keeps list of elements, which we should highlight
-</div>
-
-
-
-    <h5>Type:</h5>
-    <ul>
-        <li>
-            
-<span class="param-type"><a href="CartFiller.UI.ArrowToElement.html">CartFiller.UI.ArrowToElement</a></span>
-
-
-        </li>
-    </ul>
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_ui.js.html">src/boot/helpers/ui.js</a>, <a href="src_boot_helpers_ui.js.html#line79">line 79</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-        
-            
-<h4 class="name" id="~highlightedElementTop"><span class="type-signature">(private, inner) </span>highlightedElementTop<span class="type-signature"> :integer</span></h4>
-
-
-
-
-<div class="description">
-    Vertical position of top of highlighted element
-</div>
-
-
-
-    <h5>Type:</h5>
-    <ul>
-        <li>
-            
-<span class="param-type">integer</span>
-
-
-        </li>
-    </ul>
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_ui.js.html">src/boot/helpers/ui.js</a>, <a href="src_boot_helpers_ui.js.html#line544">line 544</a>
+        <a href="src_boot_helpers_ui.js.html">src/boot/helpers/ui.js</a>, <a href="src_boot_helpers_ui.js.html#line121">line 121</a>
     </li></ul></dd>
     
 
@@ -772,7 +628,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_ui.js.html">src/boot/helpers/ui.js</a>, <a href="src_boot_helpers_ui.js.html#line105">line 105</a>
+        <a href="src_boot_helpers_ui.js.html">src/boot/helpers/ui.js</a>, <a href="src_boot_helpers_ui.js.html#line114">line 114</a>
     </li></ul></dd>
     
 
@@ -840,7 +696,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_ui.js.html">src/boot/helpers/ui.js</a>, <a href="src_boot_helpers_ui.js.html#line25">line 25</a>
+        <a href="src_boot_helpers_ui.js.html">src/boot/helpers/ui.js</a>, <a href="src_boot_helpers_ui.js.html#line19">line 19</a>
     </li></ul></dd>
     
 
@@ -984,7 +840,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_ui.js.html">src/boot/helpers/ui.js</a>, <a href="src_boot_helpers_ui.js.html#line91">line 91</a>
+        <a href="src_boot_helpers_ui.js.html">src/boot/helpers/ui.js</a>, <a href="src_boot_helpers_ui.js.html#line93">line 93</a>
     </li></ul></dd>
     
 
@@ -1056,7 +912,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_ui.js.html">src/boot/helpers/ui.js</a>, <a href="src_boot_helpers_ui.js.html#line85">line 85</a>
+        <a href="src_boot_helpers_ui.js.html">src/boot/helpers/ui.js</a>, <a href="src_boot_helpers_ui.js.html#line73">line 73</a>
     </li></ul></dd>
     
 
@@ -1124,7 +980,79 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_ui.js.html">src/boot/helpers/ui.js</a>, <a href="src_boot_helpers_ui.js.html#line20">line 20</a>
+        <a href="src_boot_helpers_ui.js.html">src/boot/helpers/ui.js</a>, <a href="src_boot_helpers_ui.js.html#line14">line 14</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="~reportMousePointer"><span class="type-signature">(private, inner) </span>reportMousePointer<span class="type-signature"> :boolean</span></h4>
+
+
+
+
+<div class="description">
+    If set to true then we'll report elements on which mouse pointer is right now
+</div>
+
+
+
+    <h5>Type:</h5>
+    <ul>
+        <li>
+            
+<span class="param-type">boolean</span>
+
+
+        </li>
+    </ul>
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_ui.js.html">src/boot/helpers/ui.js</a>, <a href="src_boot_helpers_ui.js.html#line127">line 127</a>
     </li></ul></dd>
     
 
@@ -1192,7 +1120,79 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_ui.js.html">src/boot/helpers/ui.js</a>, <a href="src_boot_helpers_ui.js.html#line30">line 30</a>
+        <a href="src_boot_helpers_ui.js.html">src/boot/helpers/ui.js</a>, <a href="src_boot_helpers_ui.js.html#line24">line 24</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="~wrapMessageToSayWithPre"><span class="type-signature">(private, inner) </span>wrapMessageToSayWithPre<span class="type-signature"> :boolean</span></h4>
+
+
+
+
+<div class="description">
+    Whether to wrap messageToSay with &lt;pre&gt;
+</div>
+
+
+
+    <h5>Type:</h5>
+    <ul>
+        <li>
+            
+<span class="param-type">boolean</span>
+
+
+        </li>
+    </ul>
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_ui.js.html">src/boot/helpers/ui.js</a>, <a href="src_boot_helpers_ui.js.html#line81">line 81</a>
     </li></ul></dd>
     
 
@@ -1319,7 +1319,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_ui.js.html">src/boot/helpers/ui.js</a>, <a href="src_boot_helpers_ui.js.html#line692">line 692</a>
+        <a href="src_boot_helpers_ui.js.html">src/boot/helpers/ui.js</a>, <a href="src_boot_helpers_ui.js.html#line1011">line 1011</a>
     </li></ul></dd>
     
 
@@ -1401,7 +1401,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_ui.js.html">src/boot/helpers/ui.js</a>, <a href="src_boot_helpers_ui.js.html#line652">line 652</a>
+        <a href="src_boot_helpers_ui.js.html">src/boot/helpers/ui.js</a>, <a href="src_boot_helpers_ui.js.html#line961">line 961</a>
     </li></ul></dd>
     
 
@@ -1483,7 +1483,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_ui.js.html">src/boot/helpers/ui.js</a>, <a href="src_boot_helpers_ui.js.html#line600">line 600</a>
+        <a href="src_boot_helpers_ui.js.html">src/boot/helpers/ui.js</a>, <a href="src_boot_helpers_ui.js.html#line907">line 907</a>
     </li></ul></dd>
     
 
@@ -1521,7 +1521,7 @@
 
 
 <div class="description">
-    Starts Popup type UI
+    Starts Framed type UI
 </div>
 
 
@@ -1637,7 +1637,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_ui.js.html">src/boot/helpers/ui.js</a>, <a href="src_boot_helpers_ui.js.html#line824">line 824</a>
+        <a href="src_boot_helpers_ui.js.html">src/boot/helpers/ui.js</a>, <a href="src_boot_helpers_ui.js.html#line1126">line 1126</a>
     </li></ul></dd>
     
 
@@ -1660,6 +1660,106 @@
 
 
 
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="getMessageToSay"><span class="type-signature"></span>getMessageToSay<span class="signature">()</span><span class="type-signature"> &rarr; {String}</span></h4>
+
+    
+
+
+
+<div class="description">
+    Getter for messageToSay
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_ui.js.html">src/boot/helpers/ui.js</a>, <a href="src_boot_helpers_ui.js.html#line1362">line 1362</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">String</span>
+
+
+    </dd>
+</dl>
+
+    
 
 
 
@@ -1719,7 +1819,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_ui.js.html">src/boot/helpers/ui.js</a>, <a href="src_boot_helpers_ui.js.html#line615">line 615</a>
+        <a href="src_boot_helpers_ui.js.html">src/boot/helpers/ui.js</a>, <a href="src_boot_helpers_ui.js.html#line922">line 922</a>
     </li></ul></dd>
     
 
@@ -1880,7 +1980,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_ui.js.html">src/boot/helpers/ui.js</a>, <a href="src_boot_helpers_ui.js.html#line734">line 734</a>
+        <a href="src_boot_helpers_ui.js.html">src/boot/helpers/ui.js</a>, <a href="src_boot_helpers_ui.js.html#line1060">line 1060</a>
     </li></ul></dd>
     
 
@@ -1911,7 +2011,171 @@
 
     
 
-    <h4 class="name" id="say"><span class="type-signature"></span>say<span class="signature">(text)</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="preventPageReload"><span class="type-signature"></span>preventPageReload<span class="signature">()</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    Sets and resets time to time handler for onbeforeunload
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_ui.js.html">src/boot/helpers/ui.js</a>, <a href="src_boot_helpers_ui.js.html#line1347">line 1347</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="refreshPage"><span class="type-signature"></span>refreshPage<span class="signature">()</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    Refreshes worker page
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_ui.js.html">src/boot/helpers/ui.js</a>, <a href="src_boot_helpers_ui.js.html#line1197">line 1197</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="say"><span class="type-signature"></span>say<span class="signature">(text, pre, nextButton, html, callback)</span><span class="type-signature"></span></h4>
 
     
 
@@ -1974,6 +2238,101 @@
         </tr>
 
     
+
+        <tr>
+            
+                <td class="name"><code>pre</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">boolean</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>nextButton</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">String</span>
+|
+
+<span class="param-type">undefined</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>html</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">boolean</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">if set to true then text will be put into innerHtml of wrapper div</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>callback</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">function</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">if set then will be called each time div is drawn</td>
+        </tr>
+
+    
     </tbody>
 </table>
 
@@ -2011,7 +2370,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_ui.js.html">src/boot/helpers/ui.js</a>, <a href="src_boot_helpers_ui.js.html#line681">line 681</a>
+        <a href="src_boot_helpers_ui.js.html">src/boot/helpers/ui.js</a>, <a href="src_boot_helpers_ui.js.html#line991">line 991</a>
     </li></ul></dd>
     
 
@@ -2142,7 +2501,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_ui.js.html">src/boot/helpers/ui.js</a>, <a href="src_boot_helpers_ui.js.html#line577">line 577</a>
+        <a href="src_boot_helpers_ui.js.html">src/boot/helpers/ui.js</a>, <a href="src_boot_helpers_ui.js.html#line881">line 881</a>
     </li></ul></dd>
     
 
@@ -2273,7 +2632,171 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_ui.js.html">src/boot/helpers/ui.js</a>, <a href="src_boot_helpers_ui.js.html#line585">line 585</a>
+        <a href="src_boot_helpers_ui.js.html">src/boot/helpers/ui.js</a>, <a href="src_boot_helpers_ui.js.html#line889">line 889</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="startReportingMousePointer"><span class="type-signature"></span>startReportingMousePointer<span class="signature">()</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    Starts reporting mouse pointer - on each mousemove dispatcher will send worker frame a message with details about elementover which mouse is now
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_ui.js.html">src/boot/helpers/ui.js</a>, <a href="src_boot_helpers_ui.js.html#line1299">line 1299</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="~adjustFrameCoordinates"><span class="type-signature">(private, inner) </span>adjustFrameCoordinates<span class="signature">()</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    Function that checks whether dimensions of browser window have changed and adjusts frames coordinates accordingly
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_ui.js.html">src/boot/helpers/ui.js</a>, <a href="src_boot_helpers_ui.js.html#line647">line 647</a>
     </li></ul></dd>
     
 
@@ -2355,7 +2878,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_ui.js.html">src/boot/helpers/ui.js</a>, <a href="src_boot_helpers_ui.js.html#line421">line 421</a>
+        <a href="src_boot_helpers_ui.js.html">src/boot/helpers/ui.js</a>, <a href="src_boot_helpers_ui.js.html#line575">line 575</a>
     </li></ul></dd>
     
 
@@ -2555,7 +3078,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_ui.js.html">src/boot/helpers/ui.js</a>, <a href="src_boot_helpers_ui.js.html#line448">line 448</a>
+        <a href="src_boot_helpers_ui.js.html">src/boot/helpers/ui.js</a>, <a href="src_boot_helpers_ui.js.html#line780">line 780</a>
     </li></ul></dd>
     
 
@@ -2637,7 +3160,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_ui.js.html">src/boot/helpers/ui.js</a>, <a href="src_boot_helpers_ui.js.html#line289">line 289</a>
+        <a href="src_boot_helpers_ui.js.html">src/boot/helpers/ui.js</a>, <a href="src_boot_helpers_ui.js.html#line387">line 387</a>
     </li></ul></dd>
     
 
@@ -2719,7 +3242,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_ui.js.html">src/boot/helpers/ui.js</a>, <a href="src_boot_helpers_ui.js.html#line365">line 365</a>
+        <a href="src_boot_helpers_ui.js.html">src/boot/helpers/ui.js</a>, <a href="src_boot_helpers_ui.js.html#line468">line 468</a>
     </li></ul></dd>
     
 
@@ -2801,7 +3324,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_ui.js.html">src/boot/helpers/ui.js</a>, <a href="src_boot_helpers_ui.js.html#line383">line 383</a>
+        <a href="src_boot_helpers_ui.js.html">src/boot/helpers/ui.js</a>, <a href="src_boot_helpers_ui.js.html#line491">line 491</a>
     </li></ul></dd>
     
 
@@ -2832,7 +3355,7 @@
 
     
 
-    <h4 class="name" id="~findMaxRect"><span class="type-signature">(private, inner) </span>findMaxRect<span class="signature">(elements, moreElements)</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="~findMaxRect"><span class="type-signature">(private, inner) </span>findMaxRect<span class="signature">(what)</span><span class="type-signature"></span></h4>
 
     
 
@@ -2875,36 +3398,13 @@
 
         <tr>
             
-                <td class="name"><code>elements</code></td>
+                <td class="name"><code>what</code></td>
             
 
             <td class="type">
             
                 
-<span class="param-type">Array.&lt;<a href="CartFiller.UI.ArrowToElement.html">CartFiller.UI.ArrowToElement</a>></span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"></td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>moreElements</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">Array.&lt;<a href="CartFiller.UI.ArrowToElement.html">CartFiller.UI.ArrowToElement</a>></span>
+<span class="param-type">Object</span>
 
 
             
@@ -2955,7 +3455,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_ui.js.html">src/boot/helpers/ui.js</a>, <a href="src_boot_helpers_ui.js.html#line329">line 329</a>
+        <a href="src_boot_helpers_ui.js.html">src/boot/helpers/ui.js</a>, <a href="src_boot_helpers_ui.js.html#line433">line 433</a>
     </li></ul></dd>
     
 
@@ -3037,7 +3537,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_ui.js.html">src/boot/helpers/ui.js</a>, <a href="src_boot_helpers_ui.js.html#line439">line 439</a>
+        <a href="src_boot_helpers_ui.js.html">src/boot/helpers/ui.js</a>, <a href="src_boot_helpers_ui.js.html#line771">line 771</a>
     </li></ul></dd>
     
 
@@ -3086,7 +3586,7 @@
 
     
 
-    <h4 class="name" id="~getOverlayDiv2"><span class="type-signature">(private, inner) </span>getOverlayDiv2<span class="signature">()</span><span class="type-signature"> &rarr; {HtmlElement}</span></h4>
+    <h4 class="name" id="~getOverlayDiv2"><span class="type-signature">(private, inner) </span>getOverlayDiv2<span class="signature">(type)</span><span class="type-signature"> &rarr; {HtmlElement}</span></h4>
 
     
 
@@ -3102,6 +3602,55 @@
 
 
 
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>type</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">String</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+    </tbody>
+</table>
 
 
 
@@ -3137,7 +3686,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_ui.js.html">src/boot/helpers/ui.js</a>, <a href="src_boot_helpers_ui.js.html#line129">line 129</a>
+        <a href="src_boot_helpers_ui.js.html">src/boot/helpers/ui.js</a>, <a href="src_boot_helpers_ui.js.html#line151">line 151</a>
     </li></ul></dd>
     
 
@@ -3241,7 +3790,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_ui.js.html">src/boot/helpers/ui.js</a>, <a href="src_boot_helpers_ui.js.html#line120">line 120</a>
+        <a href="src_boot_helpers_ui.js.html">src/boot/helpers/ui.js</a>, <a href="src_boot_helpers_ui.js.html#line142">line 142</a>
     </li></ul></dd>
     
 
@@ -3341,7 +3890,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_ui.js.html">src/boot/helpers/ui.js</a>, <a href="src_boot_helpers_ui.js.html#line535">line 535</a>
+        <a href="src_boot_helpers_ui.js.html">src/boot/helpers/ui.js</a>, <a href="src_boot_helpers_ui.js.html#line808">line 808</a>
     </li></ul></dd>
     
 
@@ -3513,7 +4062,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_ui.js.html">src/boot/helpers/ui.js</a>, <a href="src_boot_helpers_ui.js.html#line175">line 175</a>
+        <a href="src_boot_helpers_ui.js.html">src/boot/helpers/ui.js</a>, <a href="src_boot_helpers_ui.js.html#line211">line 211</a>
     </li></ul></dd>
     
 
@@ -3690,420 +4239,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_ui.js.html">src/boot/helpers/ui.js</a>, <a href="src_boot_helpers_ui.js.html#line160">line 160</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        
-            
-
-    
-
-    <h4 class="name" id="~removeOverlay"><span class="type-signature">(private, inner) </span>removeOverlay<span class="signature">()</span><span class="type-signature"></span></h4>
-
-    
-
-
-
-<div class="description">
-    Removes overlay divs
-</div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_ui.js.html">src/boot/helpers/ui.js</a>, <a href="src_boot_helpers_ui.js.html#line515">line 515</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        
-            
-
-    
-
-    <h4 class="name" id="~scheduleOverlayRedraw"><span class="type-signature">(private, inner) </span>scheduleOverlayRedraw<span class="signature">(elements)</span><span class="type-signature"></span></h4>
-
-    
-
-
-
-<div class="description">
-    Schedules redraw of overlay divs by clearing cached positions
-</div>
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>elements</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">Array.&lt;<a href="CartFiller.UI.ArrowToElement.html">CartFiller.UI.ArrowToElement</a>></span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"></td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_ui.js.html">src/boot/helpers/ui.js</a>, <a href="src_boot_helpers_ui.js.html#line353">line 353</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        
-            
-
-    
-
-    <h4 class="name" id="~scrollTo"><span class="type-signature">(private, inner) </span>scrollTo<span class="signature">(left, top, right, bottom)</span><span class="type-signature"></span></h4>
-
-    
-
-
-
-<div class="description">
-    Scrolls both vertically and horizontally to make center of specifiedrectangle be in the center of window if possible
-</div>
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>left</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">integer</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"></td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>top</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">integer</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"></td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>right</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">integer</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"></td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>bottom</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">integer</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"></td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_ui.js.html">src/boot/helpers/ui.js</a>, <a href="src_boot_helpers_ui.js.html#line475">line 475</a>
+        <a href="src_boot_helpers_ui.js.html">src/boot/helpers/ui.js</a>, <a href="src_boot_helpers_ui.js.html#line196">line 196</a>
     </li></ul></dd>
     
 
@@ -4257,7 +4393,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_ui.js.html">src/boot/helpers/ui.js</a>, <a href="src_boot_helpers_ui.js.html#line191">line 191</a>
+        <a href="src_boot_helpers_ui.js.html">src/boot/helpers/ui.js</a>, <a href="src_boot_helpers_ui.js.html#line227">line 227</a>
     </li></ul></dd>
     
 
@@ -4411,7 +4547,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_ui.js.html">src/boot/helpers/ui.js</a>, <a href="src_boot_helpers_ui.js.html#line245">line 245</a>
+        <a href="src_boot_helpers_ui.js.html">src/boot/helpers/ui.js</a>, <a href="src_boot_helpers_ui.js.html#line243">line 243</a>
     </li></ul></dd>
     
 
@@ -4588,7 +4724,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_ui.js.html">src/boot/helpers/ui.js</a>, <a href="src_boot_helpers_ui.js.html#line145">line 145</a>
+        <a href="src_boot_helpers_ui.js.html">src/boot/helpers/ui.js</a>, <a href="src_boot_helpers_ui.js.html#line181">line 181</a>
     </li></ul></dd>
     
 
@@ -4630,13 +4766,13 @@
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Externals</h3><ul><li><a href="external%2520jQuery.external__jQuery.fn_.html">jQuery.fn</a></li><li><a href="external-jQuery.html">jQuery</a></li></ul><h3>Classes</h3><ul><li><a href="CartFiller.Api.html">Api</a></li><li><a href="CartFiller.Api.StepEnvironment.html">StepEnvironment</a></li><li><a href="CartFiller.Configuration.html">Configuration</a></li><li><a href="CartFiller.Dispatcher.html">Dispatcher</a></li><li><a href="CartFiller.Injector.html">Injector</a></li><li><a href="CartFiller.Loader.html">Loader</a></li><li><a href="CartFiller.SampleWorker.html">SampleWorker</a></li><li><a href="CartFiller.SampleWorker.SampleWorkerTasks.html">SampleWorkerTasks</a></li><li><a href="CartFiller.UI.html">UI</a></li><li><a href="CartFiller.UI.ArrowToElement.html">ArrowToElement</a></li><li><a href="CartFillerPlugin-Plugin.html">Plugin</a></li><li><a href="cartFillerPlugin-Settings.html">Settings</a></li></ul><h3>Namespaces</h3><ul><li><a href="CartFiller.html">CartFiller</a></li><li><a href="CartFillerPlugin.html">CartFillerPlugin</a></li></ul><h3>Global</h3><ul><li><a href="global.html#%2522jQuery.cartFillerPlugin%2522">"jQuery.cartFillerPlugin"</a></li><li><a href="global.html#%2522jQuery.fn.cartFillerPlugin%2522">"jQuery.fn.cartFillerPlugin"</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Externals</h3><ul><li><a href="external%2520jQuery.external__jQuery.fn_.html">jQuery.fn</a></li><li><a href="external-jQuery.html">jQuery</a></li></ul><h3>Classes</h3><ul><li><a href="CartFiller.Api.html">Api</a></li><li><a href="CartFiller.Api.StepEnvironment.html">StepEnvironment</a></li><li><a href="CartFiller.Api.WorkerTask.html">WorkerTask</a></li><li><a href="CartFiller.Api.WorkerTasks.html">WorkerTasks</a></li><li><a href="CartFiller.Configuration.html">Configuration</a></li><li><a href="CartFiller.Dispatcher.html">Dispatcher</a></li><li><a href="CartFiller.Injector.html">Injector</a></li><li><a href="CartFiller.Loader.html">Loader</a></li><li><a href="CartFiller.SampleWorker.html">SampleWorker</a></li><li><a href="CartFiller.SampleWorker.SampleWorkerTasks.html">SampleWorkerTasks</a></li><li><a href="CartFiller.UI.html">UI</a></li><li><a href="CartFiller.UI.ArrowToElement.html">ArrowToElement</a></li><li><a href="CartFillerPlugin-JobDetails.html">JobDetails</a></li><li><a href="CartFillerPlugin-Plugin.html">Plugin</a></li><li><a href="CartFillerPlugin-Settings.html">Settings</a></li></ul><h3>Namespaces</h3><ul><li><a href="CartFiller.html">CartFiller</a></li><li><a href="CartFillerPlugin.html">CartFillerPlugin</a></li></ul><h3>Global</h3><ul><li><a href="global.html#%2522jQuery.cartFillerPlugin.hideChooseJobFrame%2522">"jQuery.cartFillerPlugin.hideChooseJobFrame"</a></li><li><a href="global.html#%2522jQuery.cartFillerPlugin.showChooseJobFrame%2522">"jQuery.cartFillerPlugin.showChooseJobFrame"</a></li><li><a href="global.html#%2522jQuery.cartFillerPlugin%2522">"jQuery.cartFillerPlugin"</a></li><li><a href="global.html#%2522jQuery.fn.cartFillerPlugin%2522">"jQuery.fn.cartFillerPlugin"</a></li><li><a href="global.html#env">env</a></li><li><a href="global.html#getBookmarkletCode">getBookmarkletCode</a></li><li><a href="global.html#onMessage_clearCurrentUrl">onMessage_clearCurrentUrl</a></li><li><a href="global.html#onMessage_postMessage">onMessage_postMessage</a></li><li><a href="global.html#onMessage_suspendAjaxRequestsDone">onMessage_suspendAjaxRequestsDone</a></li><li><a href="global.html#reportingMousePointerClick">reportingMousePointerClick</a></li><li><a href="global.html#testApiMap">testApiMap</a></li><li><a href="global.html#workerEventListeners">workerEventListeners</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0</a> on Wed Jun 24 2015 15:15:22 GMT+0300 (EAT)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.3</a> on Sun Aug 20 2017 14:59:13 GMT+0200 (CEST)
 </footer>
 
 <script> prettyPrint(); </script>

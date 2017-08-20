@@ -1,0 +1,72 @@
+cartfiller = {
+    "worker": [
+        "worker.js",
+        "../samples/worker.js",
+        "declarativeStepBuilder/declarativeWorker.js",
+        "declarativeStepBuilder/anotherDeclarativeWorker.js"
+    ],
+    "globals": {
+        "skipMessages": true
+    },
+    "tests": {
+        "suite1": {
+            "test11": true,
+            "test12": false
+        },
+        "suite2": {
+            "test22?foo=bar": true
+        },
+        "libTests": {
+            "staticSteps": true,
+            "dynamicSteps": true,
+            "helpers": true,
+        },
+        "utils": {
+            "addToCart": false,
+            "addToCart?param1": false,
+            "addToCart?param2=10": false,
+            "addToCart?param2": false,
+            "addToCart?param2=12": false,
+            "addToCart?param2=12&param1": false,
+        },
+        "testIncludes" :{
+            "singleLevelStatic": false,
+            "singleLevelDynamic": false,
+            "singleLevelDynamic?x1": false,
+            "singleLevelDynamic?y1": false,
+            "singleLevelDynamic?x2=10": false,
+            "singleLevelDynamic?y2=10": false,
+            "singleLevelDynamic?x2=12": false,
+            "singleLevelDynamic?y2=12": false,
+            "singleLevelDynamic?x2=12&x1": false,
+            "singleLevelDynamic?y2=12&y1": false,
+            "singleLevelDynamic?y1&x1&x2=10&y2=12": false,
+            "singleLevelDynamic?y1&x1&x2=12&y2=12": false,
+        },
+        "cdataTests": {
+            "cdata": false,
+        },
+        "modals": {
+            "modalTest": true,
+        },
+        "taskFlow": {
+            "repeatTask": true,
+            "skipTask": true,
+        },
+        "magicParams": {
+            "repeat": true,
+        },
+        "referencesToGlobals": {
+            "referencesToGlobals": true,
+        },
+        "selectors": {
+            "selectors": true,
+        },
+        "builtIns": {
+            "builtIns": true,
+        },
+        "declarativeStepBuilder": {
+            "basic": true
+        }
+    }
+}

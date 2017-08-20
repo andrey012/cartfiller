@@ -51,7 +51,7 @@
 
 
 <div class="description">
-    Represents the API interface used by worker.
+    Represents the API interface used by worker. For worker example see <a href="CartFiller.Api.html#registerWorker">CartFiller.Api#registerWorker</a>
 </div>
 
 
@@ -134,6 +134,12 @@
         <dl>
             <dt><a href="CartFiller.Api.StepEnvironment.html">StepEnvironment</a></dt>
             <dd></dd>
+        
+            <dt><a href="CartFiller.Api.WorkerTask.html">WorkerTask</a></dt>
+            <dd></dd>
+        
+            <dt><a href="CartFiller.Api.WorkerTasks.html">WorkerTasks</a></dt>
+            <dd></dd>
         </dl>
     
 
@@ -200,7 +206,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_api.js.html">src/boot/helpers/api.js</a>, <a href="src_boot_helpers_api.js.html#line83">line 83</a>
+        <a href="src_boot_helpers_api.js.html">src/boot/helpers/api.js</a>, <a href="src_boot_helpers_api.js.html#line223">line 223</a>
     </li></ul></dd>
     
 
@@ -227,6 +233,1278 @@
 
     
 
+    <h4 class="name" id="applier"><span class="type-signature"></span>applier<span class="signature">(fn)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    Returns method, that, when called, will call api.apply against supplied fn
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>fn</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">function</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_api.js.html">src/boot/helpers/api.js</a>, <a href="src_boot_helpers_api.js.html#line1504">line 1504</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="apply"><span class="type-signature"></span>apply<span class="signature">(fn, arbitrary)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    Wrapper function for asynchronous things - catches exceptions and fires negative result
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>fn</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">function</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>arbitrary</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">mixed</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">parameters will be passed to fn</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_api.js.html">src/boot/helpers/api.js</a>, <a href="src_boot_helpers_api.js.html#line1485">line 1485</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="click"><span class="type-signature"></span>click<span class="signature">()</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    Will be deprecated, use api.clicker()
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_api.js.html">src/boot/helpers/api.js</a>, <a href="src_boot_helpers_api.js.html#line1165">line 1165</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="clicker"><span class="type-signature"></span>clicker<span class="signature">(what, what)</span><span class="type-signature"> &rarr; {Array}</span></h4>
+
+    
+
+
+
+<div class="description">
+    Helper function to construct workers - return array ['click', function(el){ el[0].click(); api.result; }]
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>what</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">function</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">to do after click, gets same parameters as normal         worker functions////</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>what</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">function</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">to do before click, useful to replace window.prompt and window.confirm</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_api.js.html">src/boot/helpers/api.js</a>, <a href="src_boot_helpers_api.js.html#line1173">line 1173</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    ready for putting into step list
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">Array</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="compare"><span class="type-signature"></span>compare<span class="signature">(expected, value)</span><span class="type-signature"> &rarr; {string}</span></h4>
+
+    
+
+
+
+<div class="description">
+    Compare two strings, if they match return '', if they mismatch return fulldump showing exact position where they mismatch. Usage: api.result(api.compare(task.value, el.text().trim()));
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>expected</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>value</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_api.js.html">src/boot/helpers/api.js</a>, <a href="src_boot_helpers_api.js.html#line1112">line 1112</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    '' if values match, error description otherwise
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">string</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="define"><span class="type-signature"></span>define<span class="signature">(name, fn)</span><span class="type-signature"> &rarr; {<a href="CartFiller.Api.html">CartFiller.Api</a>}</span></h4>
+
+    
+
+
+
+<div class="description">
+    Define shared worker function - which can be used in other workers
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>name</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+|
+
+<span class="param-type">function</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">either name of function or function itself, then name will be deduced from function code (it should be named function)</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>fn</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">function</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_api.js.html">src/boot/helpers/api.js</a>, <a href="src_boot_helpers_api.js.html#line1519">line 1519</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    for chaining
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type"><a href="CartFiller.Api.html">CartFiller.Api</a></span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="drill"><span class="type-signature"></span>drill<span class="signature">(cb)</span><span class="type-signature"> &rarr; {<a href="CartFiller.Api.html">CartFiller.Api</a>}</span></h4>
+
+    
+
+
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>cb</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">function</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">This function should return iframe's contentWindow object if needed to drill further, otherwise do its job and return nothing. This function will getframe's window as first parameter</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_api.js.html">src/boot/helpers/api.js</a>, <a href="src_boot_helpers_api.js.html#line1564">line 1564</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    for chaining
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type"><a href="CartFiller.Api.html">CartFiller.Api</a></span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="each"><span class="type-signature"></span>each<span class="signature">(array, fn, otherwise)</span><span class="type-signature"> &rarr; {<a href="CartFiller.Api.html">CartFiller.Api</a>|<a href="CartFiller.Api.html">CartFiller.Api</a>}</span></h4>
+
+    
+
+
+
+<div class="description">
+    Just another for-each implementation, jQuery style
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>array</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Array</span>
+|
+
+<span class="param-type">Object</span>
+|
+
+<span class="param-type">HtmlCollection</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">Array to iterate through</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>fn</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="CartFiller.Api.html#.eachCallback">CartFiller.Api.eachCallback</a></span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">Called for each item, if result === false         then iteration will be interrupted</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>otherwise</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">CartFillerApi.eachOtherwiseCallback</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">Called if iteration wasnot interrupted</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_api.js.html">src/boot/helpers/api.js</a>, <a href="src_boot_helpers_api.js.html#line1030">line 1030</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+<ul>
+        <li>
+<div class="param-desc">
+    for chaining
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type"><a href="CartFiller.Api.html">CartFiller.Api</a></span>
+
+
+    </dd>
+</dl>
+</li>
+    
+        <li>
+<div class="param-desc">
+    for chaining
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type"><a href="CartFiller.Api.html">CartFiller.Api</a></span>
+
+
+    </dd>
+</dl>
+</li>
+    </ul>
+
+
+
+        
+            
+
+    
+
     <h4 class="name" id="getName"><span class="type-signature"></span>getName<span class="signature">()</span><span class="type-signature"> &rarr; {String}</span></h4>
 
     
@@ -278,7 +1556,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_api.js.html">src/boot/helpers/api.js</a>, <a href="src_boot_helpers_api.js.html#line89">line 89</a>
+        <a href="src_boot_helpers_ui.js.html">src/boot/helpers/ui.js</a>, <a href="src_boot_helpers_ui.js.html#line874">line 874</a>
     </li></ul></dd>
     
 
@@ -378,7 +1656,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_ui.js.html">src/boot/helpers/ui.js</a>, <a href="src_boot_helpers_ui.js.html#line570">line 570</a>
+        <a href="src_boot_helpers_api.js.html">src/boot/helpers/api.js</a>, <a href="src_boot_helpers_api.js.html#line687">line 687</a>
     </li></ul></dd>
     
 
@@ -427,14 +1705,14 @@
 
     
 
-    <h4 class="name" id="highlight"><span class="type-signature"></span>highlight<span class="signature">(element, allElements)</span><span class="type-signature"> &rarr; {<a href="CartFiller.Api.html">CartFiller.Api</a>}</span></h4>
+    <h4 class="name" id="highlight"><span class="type-signature"></span>highlight<span class="signature">(element, allElements, noScroll)</span><span class="type-signature"> &rarr; {<a href="CartFiller.Api.html">CartFiller.Api</a>}</span></h4>
 
     
 
 
 
 <div class="description">
-    Highlights element by adding a gray semi-transparent overlay over the target website page, which has a rectangular hole overthis element + some padding aroundAdditionally API remembers this element and passes it backto <a href="CartFiller.Api.html#.workerStepCallback">next step handler</a>as first parameter
+    Highlights element by adding a gray semi-transparent overlay over the target website page, which has a rectangular hole overthis element + some padding aroundAdditionally API remembers this element and passes it backto <a href="CartFiller.Api.WorkerTask.html#.workerStepFunction">next step handler</a>as first parameter
 </div>
 
 
@@ -519,6 +1797,32 @@
         </tr>
 
     
+
+        <tr>
+            
+                <td class="name"><code>noScroll</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">boolean</span>
+|
+
+<span class="param-type">undefined</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">set to true to avoid scrolling to this element</td>
+        </tr>
+
+    
     </tbody>
 </table>
 
@@ -556,7 +1860,387 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_api.js.html">src/boot/helpers/api.js</a>, <a href="src_boot_helpers_api.js.html#line203">line 203</a>
+        <a href="src_boot_helpers_api.js.html">src/boot/helpers/api.js</a>, <a href="src_boot_helpers_api.js.html#line945">line 945</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    for chaining
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type"><a href="CartFiller.Api.html">CartFiller.Api</a></span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="map"><span class="type-signature"></span>map<span class="signature">()</span><span class="type-signature"> &rarr; {Array}</span></h4>
+
+    
+
+
+
+<div class="description">
+    Unusual combination of map and filter functions, can do both and more of thatcan map one input entry to multiple output entries
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Array</span>
+|
+
+<span class="param-type">Object</span>
+|
+
+<span class="param-type">HtmlCollection</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="CartFiller.Api.html#.mapCallback">CartFiller.Api.mapCallback</a></span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">CartFillerApi.mapOtherwiseCallback</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_api.js.html">src/boot/helpers/api.js</a>, <a href="src_boot_helpers_api.js.html#line1088">line 1088</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+    <dt class="tag-see">See:</dt>
+    <dd class="tag-see">
+        <ul>
+            <li>CartFiller.Api#each for parameter description</li>
+        </ul>
+    </dd>
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    which has same map method as well
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">Array</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="modal"><span class="type-signature"></span>modal<span class="signature">(html, callback)</span><span class="type-signature"> &rarr; {<a href="CartFiller.Api.html">CartFiller.Api</a>}</span></h4>
+
+    
+
+
+
+<div class="description">
+    Simple way to interact with user
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>html</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">String</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>callback</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">function</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">being called when modal is constructed from html, so, thatyou can put some data and set event handlers. Callback will receive wrapper div htmlelement as a parameter</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_api.js.html">src/boot/helpers/api.js</a>, <a href="src_boot_helpers_api.js.html#line1016">line 1016</a>
     </li></ul></dd>
     
 
@@ -660,7 +2344,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_api.js.html">src/boot/helpers/api.js</a>, <a href="src_boot_helpers_api.js.html#line137">line 137</a>
+        <a href="src_boot_helpers_api.js.html">src/boot/helpers/api.js</a>, <a href="src_boot_helpers_api.js.html#line828">line 828</a>
     </li></ul></dd>
     
 
@@ -772,7 +2456,7 @@
 
             
 
-            <td class="description last">Callback</td>
+            <td class="description last">Callback, if not specified         then just api.result() will be ussued after page loads</td>
         </tr>
 
     
@@ -813,7 +2497,590 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_api.js.html">src/boot/helpers/api.js</a>, <a href="src_boot_helpers_api.js.html#line147">line 147</a>
+        <a href="src_boot_helpers_api.js.html">src/boot/helpers/api.js</a>, <a href="src_boot_helpers_api.js.html#line838">line 838</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    for chaining
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type"><a href="CartFiller.Api.html">CartFiller.Api</a></span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="openRelay"><span class="type-signature"></span>openRelay<span class="signature">(url, noFocus)</span><span class="type-signature"> &rarr; {<a href="CartFiller.Api.html">CartFiller.Api</a>}</span></h4>
+
+    
+
+
+
+<div class="description">
+    Opens relay window. If url points to the cartFiller distribution
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>url</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>noFocus</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">boolean</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">if set to true, it will make an alert on main window when slave will be registered to bring focus back to the dashboard</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_api.js.html">src/boot/helpers/api.js</a>, <a href="src_boot_helpers_api.js.html#line1245">line 1245</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    for chaining
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type"><a href="CartFiller.Api.html">CartFiller.Api</a></span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="paster"><span class="type-signature"></span>paster<span class="signature">(value, whatNext, dontClear, failOnErrors)</span><span class="type-signature"> &rarr; {Array}</span></h4>
+
+    
+
+
+
+<div class="description">
+    Sames as typer but pastes in one step
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>value</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+|
+
+<span class="param-type">function</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">see api.typer()</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>whatNext</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">function</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">see api.typer()</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>dontClear</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">boolean</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">see api.typer()</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>failOnErrors</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">boolean</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">see api.typer()</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_api.js.html">src/boot/helpers/api.js</a>, <a href="src_boot_helpers_api.js.html#line1472">line 1472</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    ready for putting into worker array
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">Array</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="registerOnloadCallback"><span class="type-signature"></span>registerOnloadCallback<span class="signature">(aliasOrCallback, callbackIfAliasIsUsed)</span><span class="type-signature"> &rarr; {<a href="CartFiller.Api.html">CartFiller.Api</a>}</span></h4>
+
+    
+
+
+
+<div class="description">
+    Registers onload callback, that is called each time when new pageis loaded. Idea is that this function can verify if new page containscritical application error, exception description, etc
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>aliasOrCallback</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+|
+
+<span class="param-type"><a href="CartFiller.Api.html#.onloadEventCallback">CartFiller.Api.onloadEventCallback</a></span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">alias or method if alias is not used</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>callbackIfAliasIsUsed</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="CartFiller.Api.html#.onloadEventCallback">CartFiller.Api.onloadEventCallback</a></span>
+|
+
+<span class="param-type">undefined</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">method if alias is used</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_api.js.html">src/boot/helpers/api.js</a>, <a href="src_boot_helpers_api.js.html#line1259">line 1259</a>
     </li></ul></dd>
     
 
@@ -873,7 +3140,7 @@
 
 
 <div class="description">
-    Registers worker object. Worker object can be replaced by new oneto make it possible to update code during debugging.
+    Registers worker object. Worker object can be replaced by new oneto make it possible to update code during debugging.<textarea readonly cols="100" rows="7" onclick="this.select();">(function(undefined) {    cartFillerAPI().registerWorker(function(window, document, api, task, job, globals){        return {        };    });})();</textarea>
 </div>
 
 
@@ -925,7 +3192,7 @@
 
             
 
-            <td class="description last">A callback, that willwill return an object, whoes properties are tasks, and each propertyshould be an array of ['step1 name', function(){...}, 'step2 name' ,function(){...}, ...]</td>
+            <td class="description last">A callback, that willwill return an object, whoes properties are tasks, and each propertyshould be an array of ['step1 name', function(){...}, 'step2 name' ,function(){...}, ...]. If this array will contain arrays as elementsthen these will be 'flattened'</td>
         </tr>
 
     
@@ -966,7 +3233,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_api.js.html">src/boot/helpers/api.js</a>, <a href="src_boot_helpers_api.js.html#line97">line 97</a>
+        <a href="src_boot_helpers_api.js.html">src/boot/helpers/api.js</a>, <a href="src_boot_helpers_api.js.html#line695">line 695</a>
     </li></ul></dd>
     
 
@@ -1026,7 +3293,417 @@
 
     
 
-    <h4 class="name" id="result"><span class="type-signature"></span>result<span class="signature">(message, recoverable)</span><span class="type-signature"> &rarr; {<a href="CartFiller.Api.html">CartFiller.Api</a>}</span></h4>
+    <h4 class="name" id="repeatJob"><span class="type-signature"></span>repeatJob<span class="signature">()</span><span class="type-signature"> &rarr; {<a href="CartFiller.Api.html">CartFiller.Api</a>}</span></h4>
+
+    
+
+
+
+<div class="description">
+    Tells to repeat whole job from start
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_api.js.html">src/boot/helpers/api.js</a>, <a href="src_boot_helpers_api.js.html#line802">line 802</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    for chaining
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type"><a href="CartFiller.Api.html">CartFiller.Api</a></span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="repeatStep"><span class="type-signature"></span>repeatStep<span class="signature">(n)</span><span class="type-signature"> &rarr; {<a href="CartFiller.Api.html">CartFiller.Api</a>}</span></h4>
+
+    
+
+
+
+<div class="description">
+    Tells that this step should be repeated. After using this functionyou still have to call api.result, and it is important to callapi.repeatStep first and api.result then
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>n</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">integer</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">default = 1 means repeat current step</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_api.js.html">src/boot/helpers/api.js</a>, <a href="src_boot_helpers_api.js.html#line812">line 812</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    for chaining
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type"><a href="CartFiller.Api.html">CartFiller.Api</a></span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="repeatTask"><span class="type-signature"></span>repeatTask<span class="signature">(number)</span><span class="type-signature"> &rarr; {<a href="CartFiller.Api.html">CartFiller.Api</a>}</span></h4>
+
+    
+
+
+
+<div class="description">
+    Tells that this task should be repeated, so cartFiller willproceed with first step of this task. After using this functionyou still have to call api.result, and it is important to callapi.repeatTask first and api.result then.
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>number</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">integer</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">defaults to 1</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_api.js.html">src/boot/helpers/api.js</a>, <a href="src_boot_helpers_api.js.html#line787">line 787</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    for chaining
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type"><a href="CartFiller.Api.html">CartFiller.Api</a></span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="result"><span class="type-signature"></span>result<span class="signature">(message, recoverable, response)</span><span class="type-signature"> &rarr; {<a href="CartFiller.Api.html">CartFiller.Api</a>}</span></h4>
 
     
 
@@ -1121,6 +3798,35 @@
         </tr>
 
     
+
+        <tr>
+            
+                <td class="name"><code>response</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">String</span>
+|
+
+<span class="param-type">Object</span>
+|
+
+<span class="param-type">undefined</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">If there is anything meaninful,that should be delivered back to ChooseJob frame - then put it here.</td>
+        </tr>
+
+    
     </tbody>
 </table>
 
@@ -1158,7 +3864,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_api.js.html">src/boot/helpers/api.js</a>, <a href="src_boot_helpers_api.js.html#line113">line 113</a>
+        <a href="src_boot_helpers_api.js.html">src/boot/helpers/api.js</a>, <a href="src_boot_helpers_api.js.html#line720">line 720</a>
     </li></ul></dd>
     
 
@@ -1211,7 +3917,7 @@
 
     
 
-    <h4 class="name" id="say"><span class="type-signature"></span>say<span class="signature">(message)</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="say"><span class="type-signature"></span>say<span class="signature">(message, pre, nextButton)</span><span class="type-signature"> &rarr; {<a href="CartFiller.Api.html">CartFiller.Api</a>}</span></h4>
 
     
 
@@ -1274,6 +3980,52 @@
         </tr>
 
     
+
+        <tr>
+            
+                <td class="name"><code>pre</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">boolean</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">Preserve formatting (if set to true then message will be wrappedwith &lt;pre&gt; tag)</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>nextButton</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">String</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">If used, then button with this name will appear below the messageIn this case you should not do api.result() as this will be done when user clicks this button.</td>
+        </tr>
+
+    
     </tbody>
 </table>
 
@@ -1311,7 +4063,1327 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_api.js.html">src/boot/helpers/api.js</a>, <a href="src_boot_helpers_api.js.html#line242">line 242</a>
+        <a href="src_boot_helpers_api.js.html">src/boot/helpers/api.js</a>, <a href="src_boot_helpers_api.js.html#line1001">line 1001</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    for chaining
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type"><a href="CartFiller.Api.html">CartFiller.Api</a></span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="setAdditionalWindows"><span class="type-signature"></span>setAdditionalWindows<span class="signature">(descriptors)</span><span class="type-signature"> &rarr; {<a href="CartFiller.Api.html">CartFiller.Api</a>}</span></h4>
+
+    
+
+
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>descriptors</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Array.&lt;Object></span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">Array of window descriptors, each item is an objecthaving two keys: 'url' and 'slave', where 'slave' points to cartFiller distributionthat will act as slave. This function will call api.result as soon as all windows will be loaded, slavesinitialized, etcThis only works in framed mode</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_api.js.html">src/boot/helpers/api.js</a>, <a href="src_boot_helpers_api.js.html#line1606">line 1606</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    for chaining
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type"><a href="CartFiller.Api.html">CartFiller.Api</a></span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="setTimeout"><span class="type-signature"></span>setTimeout<span class="signature">(fn, timeout)</span><span class="type-signature"> &rarr; {integer}</span></h4>
+
+    
+
+
+
+<div class="description">
+    Safe setInterval, that registers handler in cartFiller, so, if timeout will happen earlier then this handler will be invokedthis handler will be cleared automatically
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>fn</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">function</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">same as normal JavaScript setInterval</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>timeout</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">integer</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">same as normal JavaScript setInterval</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_api.js.html">src/boot/helpers/api.js</a>, <a href="src_boot_helpers_api.js.html#line1152">line 1152</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    same as normal JavaScript setInterval
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">integer</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="setTimeout"><span class="type-signature"></span>setTimeout<span class="signature">(fn, timeout)</span><span class="type-signature"> &rarr; {integer}</span></h4>
+
+    
+
+
+
+<div class="description">
+    Safe setTimeout, that registers handler in cartFiller, so, if timeout will happen earlier then this handler will be invokedthis handler will be cleared automatically
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>fn</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">function</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">same as normal JavaScript setTimeout</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>timeout</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">integer</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">same as normal JavaScript setTimeout</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_api.js.html">src/boot/helpers/api.js</a>, <a href="src_boot_helpers_api.js.html#line1139">line 1139</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    same as normal JavaScript setTimeout
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">integer</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="skipJob"><span class="type-signature"></span>skipJob<span class="signature">()</span><span class="type-signature"> &rarr; {<a href="CartFiller.Api.html">CartFiller.Api</a>}</span></h4>
+
+    
+
+
+
+<div class="description">
+    Tells, that this job should be skipped altogether
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_api.js.html">src/boot/helpers/api.js</a>, <a href="src_boot_helpers_api.js.html#line777">line 777</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    for chaining
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type"><a href="CartFiller.Api.html">CartFiller.Api</a></span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="skipStep"><span class="type-signature"></span>skipStep<span class="signature">(n)</span><span class="type-signature"> &rarr; {<a href="CartFiller.Api.html">CartFiller.Api</a>}</span></h4>
+
+    
+
+
+
+<div class="description">
+    Tells that next n steps should be skipped. After using this function you still have to call api.result, and it is important to call api.skipTask first and api.result then.
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>n</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">integer</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">default = 1</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_api.js.html">src/boot/helpers/api.js</a>, <a href="src_boot_helpers_api.js.html#line761">line 761</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    for chaining
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type"><a href="CartFiller.Api.html">CartFiller.Api</a></span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="skipTask"><span class="type-signature"></span>skipTask<span class="signature">(number)</span><span class="type-signature"> &rarr; {<a href="CartFiller.Api.html">CartFiller.Api</a>}</span></h4>
+
+    
+
+
+
+<div class="description">
+    Tells that this task should be completely skipped, so cartFiller willproceed with next task. After using this function you still have to callapi.result, and it is important to call api.skipTask first and api.result then.
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>number</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">integer</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">defaults to 1</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_api.js.html">src/boot/helpers/api.js</a>, <a href="src_boot_helpers_api.js.html#line746">line 746</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    for chaining
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type"><a href="CartFiller.Api.html">CartFiller.Api</a></span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="sleep"><span class="type-signature"></span>sleep<span class="signature">(time)</span><span class="type-signature"> &rarr; {<a href="CartFiller.Api.html">CartFiller.Api</a>}</span></h4>
+
+    
+
+
+
+<div class="description">
+    Defines time to sleep after this step in slow mode. Default is 1 second. Another way of specifying this time is via magic parameters like sleep250
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>time</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">integer</span>
+|
+
+<span class="param-type">undefined</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">(ms). If undefined, then sleep will be proportionalto length of message said by api.say()</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_api.js.html">src/boot/helpers/api.js</a>, <a href="src_boot_helpers_api.js.html#line1543">line 1543</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    for chaining
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type"><a href="CartFiller.Api.html">CartFiller.Api</a></span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="switchToWindow"><span class="type-signature"></span>switchToWindow<span class="signature">(index)</span><span class="type-signature"> &rarr; {<a href="CartFiller.Api.html">CartFiller.Api</a>}</span></h4>
+
+    
+
+
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>index</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">integer</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">Window to be set as active (0-based, 0 is default window, 1 isfirst additional window)</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_api.js.html">src/boot/helpers/api.js</a>, <a href="src_boot_helpers_api.js.html#line1622">line 1622</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    for chaining
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type"><a href="CartFiller.Api.html">CartFiller.Api</a></span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="type"><span class="type-signature"></span>type<span class="signature">()</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    Will be deprecated, use typer
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_api.js.html">src/boot/helpers/api.js</a>, <a href="src_boot_helpers_api.js.html#line1273">line 1273</a>
     </li></ul></dd>
     
 
@@ -1342,7 +5414,364 @@
 
     
 
-    <h4 class="name" id="waitFor"><span class="type-signature"></span>waitFor<span class="signature">(checkCallback, resultCallback, timeout, period)</span><span class="type-signature"> &rarr; {<a href="CartFiller.Api.html">CartFiller.Api</a>}</span></h4>
+    <h4 class="name" id="typer"><span class="type-signature"></span>typer<span class="signature">(value, whatNext, dontClear, failOnErrors, paste)</span><span class="type-signature"> &rarr; {Array}</span></h4>
+
+    
+
+
+
+<div class="description">
+    Types a string into currently highlighted/arrowed element by issuing multiple keydown/keypress/keyup events. See example below.
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>value</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+|
+
+<span class="param-type">function</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">or callback to get value</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>whatNext</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">function</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">callback after this task is</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>dontClear</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">boolean</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">by default this function will clear input before typing</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>failOnErrors</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">boolean</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">set to true to fail on errors during attempts to set keyCode and charCode values</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>paste</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">boolean</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">set to true not to simulate each separate key press, butsimulate Paste action</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_api.js.html">src/boot/helpers/api.js</a>, <a href="src_boot_helpers_api.js.html#line1281">line 1281</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    ready for putting into worker array
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">Array</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+    <h5>Example</h5>
+    
+    <pre class="prettyprint"><code>'some steps of your worker', function() {    ....     api.arrow(something) // something is the element we're going to       .result();        // type into  },  api.type('name', function(input) { // this means - look for                                      // task.name or globals.name                                      // and put its value to                                      // "something" variable. After                                     // type will be done our                                     // callback will be called and                                      // "input" parameter will                                      // contain "something" element     api.result(                 // for example verify, that         api.compare(            // various onkeypress handlers              task.name,          // did not change input value             input.val().trim()         )     );</code></pre>
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="waiter"><span class="type-signature"></span>waiter<span class="signature">()</span><span class="type-signature"> &rarr; {<a href="CartFiller.Api.html">CartFiller.Api</a>}</span></h4>
+
+    
+
+
+
+<div class="description">
+    Factory for api.waitFor
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_api.js.html">src/boot/helpers/api.js</a>, <a href="src_boot_helpers_api.js.html#line934">line 934</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    for chaining
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type"><a href="CartFiller.Api.html">CartFiller.Api</a></span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="waitFor"><span class="type-signature"></span>waitFor<span class="signature">(checkCallback, resultCallback, timeout, period, args)</span><span class="type-signature"> &rarr; {<a href="CartFiller.Api.html">CartFiller.Api</a>}</span></h4>
 
     
 
@@ -1415,6 +5844,12 @@
             
                 
 <span class="param-type"><a href="CartFiller.Api.html#.waitForResultCallback">CartFiller.Api.waitForResultCallback</a></span>
+|
+
+<span class="param-type">String</span>
+|
+
+<span class="param-type">undefined</span>
 
 
             
@@ -1424,7 +5859,7 @@
 
             
 
-            <td class="description last"></td>
+            <td class="description last">can be a callback or string or nothing.If string is specified, then generic result callback will be there, submittingstring as error result. If nothing is specified, then just "timeout" will be submittedin case of failure</td>
         </tr>
 
     
@@ -1470,7 +5905,30 @@
 
             
 
-            <td class="description last">Poll period, measured in milliseconds, default value (if undefined) is 200 ms</td>
+            <td class="description last">Poll period, measured in milliseconds,</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>args</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Array</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">Arguments to be passed to checkCallback and resultCalbackdefault value (if undefined) is 200 ms</td>
         </tr>
 
     
@@ -1511,7 +5969,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_api.js.html">src/boot/helpers/api.js</a>, <a href="src_boot_helpers_api.js.html#line162">line 162</a>
+        <a href="src_boot_helpers_api.js.html">src/boot/helpers/api.js</a>, <a href="src_boot_helpers_api.js.html#line859">line 859</a>
     </li></ul></dd>
     
 
@@ -1566,6 +6024,791 @@
         <h3 class="subsection-title">Type Definitions</h3>
 
         
+                
+
+    
+
+    <h4 class="name" id=".eachCallback"><span class="type-signature"></span>eachCallback<span class="signature">(index, value)</span><span class="type-signature"> &rarr; {boolean}</span></h4>
+
+    
+
+
+
+<div class="description">
+    Used by <a href="CartFiller.Api.html#each">CartFiller.Api#each</a> when iterating through arrays
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>index</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">integer</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>value</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_api.js.html">src/boot/helpers/api.js</a>, <a href="src_boot_helpers_api.js.html#line180">line 180</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    false means stop iteration
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">boolean</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+            
+                
+
+    
+
+    <h4 class="name" id=".eachOtherwiseCallback"><span class="type-signature"></span>eachOtherwiseCallback<span class="signature">()</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    Another callback used by <a href="CartFiller.Api.html#each">CartFiller.Api#each</a> -- called when iterating througharray items was not interrupted
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_api.js.html">src/boot/helpers/api.js</a>, <a href="src_boot_helpers_api.js.html#line200">line 200</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+            
+                
+
+    
+
+    <h4 class="name" id=".LibFactory"><span class="type-signature"></span>LibFactory<span class="signature">()</span><span class="type-signature"> &rarr; {function|Array}</span></h4>
+
+    
+
+
+
+<div class="description">
+    This function has three completely different ways of usage and scenarios of usage. <p>If you just want to share steps, you can do lib.foo = whatever, and then use it. Itwill be shared across workers. But mind execution time - you never know order of workers to load. To feel safe use lib.foo = ['find foo', function() {...}...] to declare and thenlib('foo') to use when building steps.<p>If you want to parametrize your factory - do lib('foo', 1, 2)(function(p1, p2) { p1 === 1 and p2 === 2 in the task whereyou declare it}) to declare, and then lib('foo', 3, 4) in another task. </p><p>And finally you may need to share small snippets, that are called from within steps. These are declared using lib(function foo() {}) again right inside your task. Then use it justas lib.foo().</p><p>See /samples/worker.js for examples, just search for 'lib' there.</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">function</span>
+|
+
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_api.js.html">src/boot/helpers/api.js</a>, <a href="src_boot_helpers_api.js.html#line38">line 38</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">function</span>
+|
+
+<span class="param-type">Array</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+            
+                
+
+    
+
+    <h4 class="name" id=".mapCallback"><span class="type-signature"></span>mapCallback<span class="signature">(index, value, push, unshift)</span><span class="type-signature"> &rarr; {boolean}</span></h4>
+
+    
+
+
+
+<div class="description">
+    Used by <a href="CartFiller.Api.html#each">CartFiller.Api#each</a> when iterating through arrays
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>index</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">integer</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>value</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>push</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">function</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">Call this function to output value. Function has one parameter-- the value for output, and can be called multiple times</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>unshift</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">function</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">Call this function to put value to the beginning of output.Function has one parameter -- the value for output, and can be called multiple times</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_api.js.html">src/boot/helpers/api.js</a>, <a href="src_boot_helpers_api.js.html#line188">line 188</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    false means stop iteration
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">boolean</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+            
+                
+
+    
+
+    <h4 class="name" id=".mapOtherwiseCallback"><span class="type-signature"></span>mapOtherwiseCallback<span class="signature">(push, unshift)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    Another callback used by <a href="CartFiller.Api.html#each">CartFiller.Api#each</a> -- called when iterating througharray items was not interrupted
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>push</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">function</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">Call this function to output value. Function has one parameter-- the value for output, and can be called multiple times</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>unshift</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">function</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">Call this function to put value to the beginning of output.Function has one parameter -- the value for output, and can be called multiple times</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_api.js.html">src/boot/helpers/api.js</a>, <a href="src_boot_helpers_api.js.html#line206">line 206</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+            
                 
 
     
@@ -1673,7 +6916,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_api.js.html">src/boot/helpers/api.js</a>, <a href="src_boot_helpers_api.js.html#line47">line 47</a>
+        <a href="src_boot_helpers_api.js.html">src/boot/helpers/api.js</a>, <a href="src_boot_helpers_api.js.html#line144">line 144</a>
     </li></ul></dd>
     
 
@@ -1704,7 +6947,89 @@
 
     
 
-    <h4 class="name" id=".registerCallback"><span class="type-signature"></span>registerCallback<span class="signature">(window, document,, api, task)</span><span class="type-signature"> &rarr; {Array}</span></h4>
+    <h4 class="name" id=".onloadEventCallback"><span class="type-signature"></span>onloadEventCallback<span class="signature">()</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    Callback, that can be registered using api.registerOnloadCallback, and will be called after each page reload is detected. Result is ignored, but this functionmay throw exception which is same as error result.
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_boot_helpers_api.js.html">src/boot/helpers/api.js</a>, <a href="src_boot_helpers_api.js.html#line216">line 216</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+            
+                
+
+    
+
+    <h4 class="name" id=".registerCallback"><span class="type-signature"></span>registerCallback<span class="signature">(window, document, api, task, job, globals, lib)</span><span class="type-signature"> &rarr; {<a href="CartFiller.Api.WorkerTasks.html">CartFiller.Api.WorkerTasks</a>}</span></h4>
 
     
 
@@ -1770,7 +7095,7 @@
 
         <tr>
             
-                <td class="name"><code>document,</code></td>
+                <td class="name"><code>document</code></td>
             
 
             <td class="type">
@@ -1836,6 +7161,75 @@
         </tr>
 
     
+
+        <tr>
+            
+                <td class="name"><code>job</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="CartFillerPlugin-JobDetails.html">CartFillerPlugin~JobDetails</a></span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">contains full copy of job detailsas passed by chooseJob frame</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>globals</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">An object, whoes properties can be set at one stepand then reused in the other step</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>lib</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="CartFiller.Api.html#.LibFactory">CartFiller.Api.LibFactory</a></span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">A way to share snippets within worker or across several workers. You can assign values to lib straightaway lib.foo = ['find input', function() {}] and use them in another worker placesby calling lib('foo')</td>
+        </tr>
+
+    
     </tbody>
 </table>
 
@@ -1873,7 +7267,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_api.js.html">src/boot/helpers/api.js</a>, <a href="src_boot_helpers_api.js.html#line9">line 9</a>
+        <a href="src_boot_helpers_api.js.html">src/boot/helpers/api.js</a>, <a href="src_boot_helpers_api.js.html#line10">line 10</a>
     </li></ul></dd>
     
 
@@ -1906,10 +7300,6 @@
 <h5>Returns:</h5>
 
         
-<div class="param-desc">
-    where even members are names of steps, and odd membersare either step functions or arrays of function + parameters object, e.g.[ 'step 1', function(task,env){ ... }, 'step 2', [function(task,env){.. env.params.theParam ...}, {theParam: 2}],]
-</div>
-
 
 
 <dl>
@@ -1918,7 +7308,7 @@
     </dt>
     <dd>
         
-<span class="param-type">Array</span>
+<span class="param-type"><a href="CartFiller.Api.WorkerTasks.html">CartFiller.Api.WorkerTasks</a></span>
 
 
     </dd>
@@ -1984,7 +7374,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_api.js.html">src/boot/helpers/api.js</a>, <a href="src_boot_helpers_api.js.html#line57">line 57</a>
+        <a href="src_boot_helpers_api.js.html">src/boot/helpers/api.js</a>, <a href="src_boot_helpers_api.js.html#line154">line 154</a>
     </li></ul></dd>
     
 
@@ -2140,167 +7530,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_api.js.html">src/boot/helpers/api.js</a>, <a href="src_boot_helpers_api.js.html#line71">line 71</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-            
-                
-
-    
-
-    <h4 class="name" id=".workerStepCallback"><span class="type-signature"></span>workerStepCallback<span class="signature">(highlightedElement, env)</span><span class="type-signature"></span></h4>
-
-    
-
-
-
-<div class="description">
-    Performs particular step of the task. Each callback must finally, immediately or asynchronously call either <a href="CartFiller.Api.html#result">CartFiller.Api#result</a>or <a href="CartFiller.Api.html#nop">CartFiller.Api#nop</a> function.
-</div>
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>highlightedElement</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">jQuery</span>
-|
-
-<span class="param-type">HtmlElement</span>
-|
-
-<span class="param-type">undefined</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">Most recently highlighted element is passed back to this callback</td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>env</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type"><a href="CartFiller.Api.StepEnvironment.html">CartFiller.Api.StepEnvironment</a></span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">Environment utility object</td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_boot_helpers_api.js.html">src/boot/helpers/api.js</a>, <a href="src_boot_helpers_api.js.html#line36">line 36</a>
+        <a href="src_boot_helpers_api.js.html">src/boot/helpers/api.js</a>, <a href="src_boot_helpers_api.js.html#line168">line 168</a>
     </li></ul></dd>
     
 
@@ -2340,13 +7570,13 @@
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Externals</h3><ul><li><a href="external%2520jQuery.external__jQuery.fn_.html">jQuery.fn</a></li><li><a href="external-jQuery.html">jQuery</a></li></ul><h3>Classes</h3><ul><li><a href="CartFiller.Api.html">Api</a></li><li><a href="CartFiller.Api.StepEnvironment.html">StepEnvironment</a></li><li><a href="CartFiller.Configuration.html">Configuration</a></li><li><a href="CartFiller.Dispatcher.html">Dispatcher</a></li><li><a href="CartFiller.Injector.html">Injector</a></li><li><a href="CartFiller.Loader.html">Loader</a></li><li><a href="CartFiller.SampleWorker.html">SampleWorker</a></li><li><a href="CartFiller.SampleWorker.SampleWorkerTasks.html">SampleWorkerTasks</a></li><li><a href="CartFiller.UI.html">UI</a></li><li><a href="CartFiller.UI.ArrowToElement.html">ArrowToElement</a></li><li><a href="CartFillerPlugin-Plugin.html">Plugin</a></li><li><a href="cartFillerPlugin-Settings.html">Settings</a></li></ul><h3>Namespaces</h3><ul><li><a href="CartFiller.html">CartFiller</a></li><li><a href="CartFillerPlugin.html">CartFillerPlugin</a></li></ul><h3>Global</h3><ul><li><a href="global.html#%2522jQuery.cartFillerPlugin%2522">"jQuery.cartFillerPlugin"</a></li><li><a href="global.html#%2522jQuery.fn.cartFillerPlugin%2522">"jQuery.fn.cartFillerPlugin"</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Externals</h3><ul><li><a href="external%2520jQuery.external__jQuery.fn_.html">jQuery.fn</a></li><li><a href="external-jQuery.html">jQuery</a></li></ul><h3>Classes</h3><ul><li><a href="CartFiller.Api.html">Api</a></li><li><a href="CartFiller.Api.StepEnvironment.html">StepEnvironment</a></li><li><a href="CartFiller.Api.WorkerTask.html">WorkerTask</a></li><li><a href="CartFiller.Api.WorkerTasks.html">WorkerTasks</a></li><li><a href="CartFiller.Configuration.html">Configuration</a></li><li><a href="CartFiller.Dispatcher.html">Dispatcher</a></li><li><a href="CartFiller.Injector.html">Injector</a></li><li><a href="CartFiller.Loader.html">Loader</a></li><li><a href="CartFiller.SampleWorker.html">SampleWorker</a></li><li><a href="CartFiller.SampleWorker.SampleWorkerTasks.html">SampleWorkerTasks</a></li><li><a href="CartFiller.UI.html">UI</a></li><li><a href="CartFiller.UI.ArrowToElement.html">ArrowToElement</a></li><li><a href="CartFillerPlugin-JobDetails.html">JobDetails</a></li><li><a href="CartFillerPlugin-Plugin.html">Plugin</a></li><li><a href="CartFillerPlugin-Settings.html">Settings</a></li></ul><h3>Namespaces</h3><ul><li><a href="CartFiller.html">CartFiller</a></li><li><a href="CartFillerPlugin.html">CartFillerPlugin</a></li></ul><h3>Global</h3><ul><li><a href="global.html#%2522jQuery.cartFillerPlugin.hideChooseJobFrame%2522">"jQuery.cartFillerPlugin.hideChooseJobFrame"</a></li><li><a href="global.html#%2522jQuery.cartFillerPlugin.showChooseJobFrame%2522">"jQuery.cartFillerPlugin.showChooseJobFrame"</a></li><li><a href="global.html#%2522jQuery.cartFillerPlugin%2522">"jQuery.cartFillerPlugin"</a></li><li><a href="global.html#%2522jQuery.fn.cartFillerPlugin%2522">"jQuery.fn.cartFillerPlugin"</a></li><li><a href="global.html#env">env</a></li><li><a href="global.html#getBookmarkletCode">getBookmarkletCode</a></li><li><a href="global.html#onMessage_clearCurrentUrl">onMessage_clearCurrentUrl</a></li><li><a href="global.html#onMessage_postMessage">onMessage_postMessage</a></li><li><a href="global.html#onMessage_suspendAjaxRequestsDone">onMessage_suspendAjaxRequestsDone</a></li><li><a href="global.html#reportingMousePointerClick">reportingMousePointerClick</a></li><li><a href="global.html#testApiMap">testApiMap</a></li><li><a href="global.html#workerEventListeners">workerEventListeners</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0</a> on Wed Jun 24 2015 15:15:21 GMT+0300 (EAT)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.3</a> on Sun Aug 20 2017 14:59:13 GMT+0200 (CEST)
 </footer>
 
 <script> prettyPrint(); </script>

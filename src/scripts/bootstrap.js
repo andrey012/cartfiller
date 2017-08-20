@@ -1,3 +1,3 @@
-define('bootstrap', ['app', 'controller', 'cfMessageService'], function(){
+define('bootstrap', ['app', 'controller', 'cfMessageService', 'testSuiteController'], function(){
     return angular.bootstrap(document, ['cartFillerApp']);
 });

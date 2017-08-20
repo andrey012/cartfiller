@@ -1,0 +1,8 @@
+cartfiller = {
+    "details": [
+        "# param1 is mapped to x1, param2 is mapped to x2",
+        {"include": "/utils/addToCart", "param1": ["x1"], "param2": ["x2"]},
+        "# param1 is mapped to y1, param2 is mapped to y2",
+        {"include": "/utils/addToCart", "param1": ["y1"], "param2": ["y2"]},
+    ]
+}

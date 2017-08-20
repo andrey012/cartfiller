@@ -1,0 +1,25 @@
+cartfiller = {
+    "title": "dynamic steps: lib('mySteps', 'foo')(function(name){ return ['find link', function() { ... }...]})",
+    "details": [
+        "# Shared steps: Dynamic steps (Step builders)",
+        "## Definition example:",
+        "addToCart: [",
+        "   lib('openPage', 'catalog')(function(pageToOpen) {",
+        "       return [",
+        "           'find navbar', function() { ... },",
+        "           'find link to page', function() { ... pageToOpen ... },",
+        "           api.click(api.onload)",
+        "       ];",
+        "   }),",
+        "   'find search in catalog input', function() { ... },",
+        "   ...",
+        "],",
+        "## Usage example:",
+        "submitOrder: [",
+        "   lib('openPage', 'cart'),",
+        "   'find submit button', function() { ... },",
+        "   ...",
+        "],",
+        {"task": "testDynamicSteps"},
+    ]
+}

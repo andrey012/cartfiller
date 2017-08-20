@@ -1,4 +1,63 @@
 module.exports = function(grunt) {
+    var base64Pattern = /base64-content-of-([a-zA-Z.]+)-goes-here/g;
+    var base64Callback = function(match, p1) {
+        return (new Buffer(grunt.file.read('src/templates/' + p1))).toString('base64');
+    };
+    var processWorkerFrameHtml = function(content, uncompressed) {
+        return content
+            .replace(
+                /bootstrap\.css\"/, 
+                'bootstrap' + (uncompressed ? '' : '.min') + '.css?__inline=true"')
+            .replace(
+                /\<script\s+data-main=\"scripts\/main\" src="\.\.\/lib\/requirejs\/require\.js\"\>/,
+                '<script src="worker-app-scripts' + (uncompressed ? '' : '.min') + '.js?__inline=true">')
+            .replace(
+                /\<html\>/,
+                '<html manifest="self.appcache">')
+            .replace(base64Pattern, base64Callback);
+    };
+    var processLocal = function(content, uncompressed) {
+        var chunk = function(content, uncompressed) {
+            var result = [];
+            var block;
+            for (var i = 0; i < content.length; i += block) {
+                block = 90;
+                while (content.substr(i, block).indexOf('</script') !== -1) block --;
+                result.push(JSON.stringify(new Buffer(content.substr(i, block)).toString('base64')));
+            }
+            return '[' + result.join(uncompressed ? ',\n' : ',') + '].map(atob).join(\'\')';
+        };
+        return content
+            .replace(
+                /\<script\s+src="\.\.\/\.\.\/lib\/requirejs\/require\.js\"\>/,
+                '<script src="scripts-for-local' + (uncompressed ? '' : '.min') + '.js?__inline=true">')
+            .replace(base64Pattern, base64Callback)
+            .replace(
+                'href="data:application/json;base64,test.js"',
+                'href="data:application/json;base64,' + (new Buffer(grunt.file.read('src/templates/test.js'))).toString('base64') + '"')
+            .replace(
+                'href="data:application/javascript;base64,worker.js"',
+                'href="data:application/javascript;base64,' + (new Buffer(grunt.file.read('src/templates/worker.js'))).toString('base64') + '"')
+            .replace(
+                "var injectjs = ''", 
+                function() {
+                    return "var injectjs = " + 
+                        chunk(
+                            grunt.file.read('dist/inject' + (uncompressed ? '' : '.min') + '.js')
+                                .replace(
+                                    /\.localIndexHtml\s*=\s*(''|"")/, 
+                                    function() { 
+                                        return '.localIndexHtml=' + chunk(
+                                            grunt.file.read('dist/index' + (uncompressed ? '.uncompressed' : '') + '.html'),
+                                            uncompressed
+                                        );
+                                    }
+                                ),
+                            true
+                        );
+                }
+        );
+    };
 	grunt.initConfig({
 
 		// Import package manifest
@@ -21,7 +80,20 @@ module.exports = function(grunt) {
             options: {
                 banner: "<%= meta.banner %>",
                 process: function(content, path){
-                    return content.replace(/config.gruntBuildTimeStamp=\'\'\;/, 'config.gruntBuildTimeStamp=\'' + (new Date()).getTime() + '\';');
+                    var time = global.gruntBuildTimeStamp ? global.gruntBuildTimeStamp : (global.gruntBuildTimeStamp = (new Date()).getTime());
+                    return content
+                        .replace(
+                            /config.gruntBuildTimeStamp=\'\'\;/g,
+                            'config.gruntBuildTimeStamp=\'' + time + '\';')
+                        .replace(
+                            /var isDist = false\;/g,
+                            'var isDist = true;')
+                        .replace(
+                            /\?0000000000/g,
+                            '?' + time)
+                        .replace(
+                            base64Pattern, 
+                            base64Callback);
                 }
             },
             inject: {
@@ -38,8 +110,35 @@ module.exports = function(grunt) {
                 dest: "dist/jquery-cartFiller.js"
             },
             workerAngularApp: {
-                src: ["src/scripts/*.js"],
-                dest: "dist/worker-app-scripts.js"
+                src: [
+                    "src/scripts/*.js",
+                    "src/jquery-cartFiller-require-prepend.js",
+                    "src/jquery-cartFiller.js",
+                    "src/jquery-cartFiller-require-append.js"
+                ],
+                dest: "build/worker-app-scripts-without-libs.js"
+            },
+            scriptsForLocal: {
+                src: [
+                    "src/jquery-cartFiller-require-prepend.js",
+                    "src/jquery-cartFiller.js",
+                    "src/jquery-cartFiller-require-append.js"
+                ],
+                dest: "build/scripts-for-local-without-libs.js"
+            },
+            appCache: {
+                options: {
+                    banner: ''
+                },
+                src: ["src/self.appcache"],
+                dest: "dist/self.appcache"
+            },
+            version: {
+                options: {
+                    banner: ''
+                },
+                src: ["src/version.json"],
+                dest: "dist/version.json"
             }
 		},
         copy: {
@@ -47,23 +146,72 @@ module.exports = function(grunt) {
                 src: "src/boot/i.htm",
                 dest: "dist/i.htm"
             },
+            local: {
+                options: {
+                    process: function(content, srcpath) {
+                        return processLocal(content);
+                    }
+                },
+                src: "src/local/local.html",
+                dest: "build/local.html"
+            },
+            localUncompressed: {
+                options: {
+                    process: function(content, srcpath) {
+                        return processLocal(content, true);
+                    }
+                },
+                src: "src/local/local.html",
+                dest: "build/local.uncompressed.html"
+            },
             workerFrame: {
                 options: {
                     process: function(content, srcpath){
-                        return content
-                        .replace(
-                            /bootstrap\.min\.css\"/, 
-                            'bootstrap.min.css?__inline=true"')
-                        .replace(
-                            /\<script\s+data-main=\"scripts\/main\" src="\.\.\/lib\/requirejs\/require\.js\"\>/,
-                            '<script src="worker-app-scripts.min.js?__inline=true">')
-                        .replace(
-                            /\<html\>/,
-                            '<html manifest="self.appcache">');
+                        return processWorkerFrameHtml(content);
                     }
                 },
                 files : [
-                    {expand: true, cwd: "src/", src: ["index.html", "self.appcache"], dest: "dist/"},
+                    {expand: true, cwd: "src/", src: ["index.html"], dest: "build/", rename: function() { return "build/index.html"; }},
+                ]
+            },
+            workerFrameUncompressed: {
+                options: {
+                    process: function(content, srcpath){
+                        return processWorkerFrameHtml(content, true);
+                    }
+                },
+                files : [
+                    {expand: true, cwd: "src/", src: ["index.html"], dest: "build/", rename: function() { return "build/index.uncompressed.html"; }},
+                ]
+            },
+            workerFrameWithGA: {
+                options: {
+                    process: function(content, srcpath){
+                        var gaSnippetFile = 'ga-snippet.html';
+                        var gaSnippet = grunt.file.exists(gaSnippetFile) ? grunt.file.read(gaSnippetFile) : '';
+                        return processWorkerFrameHtml(content)
+                            .replace(
+                                /\<\/head\>/,
+                                gaSnippet + '</head>');
+                    }
+                },
+                files : [
+                    {expand: true, cwd: "src/", src: ["index.html"], dest: "dist/", rename: function() { return "build/index.ga.html"; }},
+                ]
+            },
+            workerFrameWithGAUncompressed: {
+                options: {
+                    process: function(content, srcpath){
+                        var gaSnippetFile = 'ga-snippet.html';
+                        var gaSnippet = grunt.file.exists(gaSnippetFile) ? grunt.file.read(gaSnippetFile) : '';
+                        return processWorkerFrameHtml(content, true)
+                            .replace(
+                                /\<\/head\>/,
+                                gaSnippet + '</head>');
+                    }
+                },
+                files : [
+                    {expand: true, cwd: "src/", src: ["index.html"], dest: "dist/", rename: function() { return "build/index.ga.uncompressed.html"; }},
                 ]
             }
 
@@ -72,6 +220,7 @@ module.exports = function(grunt) {
 		jshint: {
 			files: ["src/**/*.js"],
 			options: {
+				ignores: ["src/templates/*.js"],
 				jshintrc: ".jshintrc"
 			}
 		},
@@ -79,7 +228,10 @@ module.exports = function(grunt) {
 		// Minify definitions
 		uglify: {
 			options: {
-				banner: "<%= meta.banner %>"
+				banner: "<%= meta.banner %>",
+                compress: {
+                    drop_debugger: false
+                }
 			},
 			inject: {
 				src: ["dist/inject.js"],
@@ -96,7 +248,7 @@ module.exports = function(grunt) {
                 options : {
                     waitSeconds : 0,
                     baseUrl : '.',
-                    out : 'dist/worker-app-scripts.min.js',
+                    out : 'build/worker-app-scripts.min.js',
                     optimize : 'uglify2',
                     generateSourceMaps : false,
                     preserveLicenseComments : false,
@@ -107,7 +259,7 @@ module.exports = function(grunt) {
                       angular: 'lib/angular/angular',
                       'angular-route': 'lib/angular-route/angular-route',
                       jquery: 'lib/jquery/dist/jquery',
-                      app: 'dist/worker-app-scripts'
+                      app: 'build/worker-app-scripts-without-libs'
                     },
                     include : [
                       'requireLib',
@@ -117,15 +269,123 @@ module.exports = function(grunt) {
                       'jquery'
                     ],
                     exclude : [
-                    ]
+                    ],
+                    onBuildRead: function(moduleName, path, contents) {
+                        return contents.replace(/<\/script>/g, '');
+                    }
                 }
-            }
+            },
+            uncompressed : {
+                options : {
+                    waitSeconds : 0,
+                    baseUrl : '.',
+                    out : 'build/worker-app-scripts.js',
+                    optimize : 'none',
+                    generateSourceMaps : false,
+                    preserveLicenseComments : false,
+                    inlineText : true,
+                    findNestedDependencies : true,
+                    paths : {
+                      requireLib : 'lib/requirejs/require',
+                      angular: 'lib/angular/angular',
+                      'angular-route': 'lib/angular-route/angular-route',
+                      jquery: 'lib/jquery/dist/jquery',
+                      app: 'build/worker-app-scripts-without-libs'
+                    },
+                    include : [
+                      'requireLib',
+                      'app',
+                      'angular',
+                      'angular-route',
+                      'jquery'
+                    ],
+                    exclude : [
+                    ],
+                    onBuildRead: function(moduleName, path, contents) {
+                        return contents.replace(/<\/script>/g, '');
+                    }
+                }
+            },
+            local : {
+                options : {
+                    waitSeconds : 0,
+                    baseUrl : '.',
+                    out : 'build/scripts-for-local.min.js',
+                    optimize : 'uglify2',
+                    generateSourceMaps : false,
+                    preserveLicenseComments : false,
+                    inlineText : true,
+                    findNestedDependencies : true,
+                    paths : {
+                        requireLib : 'lib/requirejs/require',
+                        jquery: 'lib/jquery/dist/jquery',
+                        app: 'build/scripts-for-local-without-libs'
+                    },
+                    include : [
+                        'requireLib',
+                        'jquery',
+                        'app'
+                    ],
+                    exclude : [
+                    ],
+                    onBuildRead: function(moduleName, path, contents) {
+                        return contents.replace(/<\/script>/g, '');
+                    }
+                }
+            },
+            localUncompressed : {
+                options : {
+                    waitSeconds : 0,
+                    baseUrl : '.',
+                    out : 'build/scripts-for-local.js',
+                    optimize : 'none',
+                    generateSourceMaps : false,
+                    preserveLicenseComments : false,
+                    inlineText : true,
+                    findNestedDependencies : true,
+                    paths : {
+                        requireLib : 'lib/requirejs/require',
+                        jquery: 'lib/jquery/dist/jquery',
+                        app: 'build/scripts-for-local-without-libs'
+                    },
+                    include : [
+                        'requireLib',
+                        'jquery',
+                        'app',
+                    ],
+                    exclude : [
+                    ],
+                    onBuildRead: function(moduleName, path, contents) {
+                        return contents.replace(/<\/script>/g, '');
+                    }
+                }
+            },
         },
         // Build one single-file application
         inline: {
+            distUncompressed: {
+                src: 'build/index.uncompressed.html',
+                dest: 'dist/index.uncompressed.html'
+            },
             dist: {
-                src: 'dist/index.html',
-                dest: 'dist/index.min.html'
+                src: 'build/index.html',
+                dest: 'dist/index.html'
+            },
+            distWithGAUncompressed: {
+                src: 'build/index.ga.uncompressed.html',
+                dest: 'dist/index.ga.uncompressed.html',
+            },
+            distWithGA: {
+                src: 'build/index.ga.html',
+                dest: 'dist/index.ga.html'
+            },
+            local: {
+                src: 'build/local.html',
+                dest: 'dist/local.html'
+            },
+            localUncompressed: {
+                src: 'build/local.uncompressed.html',
+                dest: 'dist/local.uncompressed.html'
             }
         },
         // Generate JSDoc documentation
@@ -155,7 +415,7 @@ module.exports = function(grunt) {
     grunt.loadNpmTasks('grunt-contrib-requirejs');
     grunt.loadNpmTasks('grunt-inline');
 
-	grunt.registerTask("build", ["concat", "uglify", "shell", "copy", "requirejs", "inline"]);
+	grunt.registerTask("build", ["concat", "uglify", "shell", "copy:injectFrame", "copy:workerFrame", "copy:workerFrameUncompressed", "copy:workerFrameWithGA", "copy:workerFrameWithGAUncompressed", "requirejs", "inline:distUncompressed", "inline:dist", "inline:distWithGAUncompressed", "inline:distWithGA", "copy:local", "copy:localUncompressed", "inline:local", "inline:localUncompressed"]);
 	grunt.registerTask("default", ["jshint", "build"]);
 	grunt.registerTask("travis", ["default"]);
 

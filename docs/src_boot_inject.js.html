@@ -32,7 +32,7 @@
 /**
  * @class CartFiller.Injector
  */
-(function(document, window, undefined){
+(function injectFunction(document, window, undefined){
     'use strict';
     /** 
      * Is set to true if all injector scripts are concatenated and probably
@@ -70,6 +70,15 @@
      * @access public
      */
     var config;
+
+    if (window.cartFillerAPI) {
+        window.postMessage(
+            'cartFillerMessage:' + 
+            JSON.stringify({cmd: 'reinitialize'}),
+            '*'
+        );
+        throw new Error('preventing duplicate launch on [' + window.location.href + ']');
+    }
     
     /**
      * @class CartFiller.Configuration
@@ -91,6 +100,18 @@
      * @access public
      */
     config.concatenated = concatenated;
+    /** 
+     * Used for launching from filesystem
+     * @member {String} CartFiller.Configuration#localIndexHtml
+     * @access public
+     */
+    config.localIndexHtml = '';
+    /**
+     * Used to launch slaves from filesystem
+     * @member {String} CartFiller.Configuration#localInjectJs
+     * @access public
+     */
+    config.localInjectJs = '';
     /**
      * Array of scripts (modules) of cartFiller, that were loaded
      * See {@link CartFiller.Loader}
@@ -99,18 +120,37 @@
      */
     config.scripts = [];
     /**
+     * Prevents multiple UI launches
+     * @member CartFiller.Configuration#uiLaunched
+     * @access public
+     */
+    config.uiLaunched = false;
+
+    /**
      * Launches the {@link CartFiller.UI}
      * 
      * @function CartFiller.Configuration#launch
+     * @param {boolean} ignoreOpener
      * @access public
      */
-    config.launch = function(){
-        if (String(config['data-type']) === '0') {
-            this.modules.ui.framed(document, window);
-        } else if (String(config['data-type']) === '1'){
-            this.modules.ui.popup(document, window);
+    config.launch = function(ignoreOpener){
+        console.log('');
+        if (document.getElementsByTagName('body')[0].getAttribute('data-old-cartfiller-version-detected')) {
+            return; // no launch
+        }
+        if (((! ignoreOpener) &amp;&amp; window.opener &amp;&amp; window.opener !== window) || (window.parent &amp;&amp; /\#?\/?launchSlaveInFrame$/.test(window.location.hash))) {
+            this.modules.dispatcher.startSlaveMode();
         } else {
-            alert('Type not specified, should be 0 for framed, 1 for popup');
+            if (! config.uiLaunched) {
+                config.uiLaunched = true;
+                if (String(config['data-type']) === '0') {
+                    this.modules.ui.framed(document, window);
+                } else if (String(config['data-type']) === '1'){
+                    this.modules.ui.popup(document, window);
+                } else {
+                    alert('Type not specified, should be 0 for framed, 1 for popup');
+                }
+            }
         }
     };
 
@@ -174,15 +214,24 @@
     // parameters from data-* attributes of &lt;script> tag
     if (!evaled){
         var scripts = document.getElementsByTagName('head')[0].getElementsByTagName('script');
-        var me = scripts[scripts.length - 1];
-        var attrs = me.attributes;
-        for (var j = attrs.length - 1 ; j >= 0; j --){
-            if (/^data-/.test(attrs[j].name)){
-                if (attrs[j].name === 'data-base-url'){
-                    config.baseUrl = attrs[j].value;
-                } else {
-                    config[attrs[j].name] = attrs[j].value;
+        var i;
+        for (i = 0 ; i &lt; scripts.length; i ++) {
+            var me = scripts[i];
+            // let's identify our script by set of attributes for &lt;script> element
+            if (me.getAttribute('data-type') !== null &amp;&amp;
+               me.getAttribute('data-base-url') !== null &amp;&amp;
+               me.getAttribute('data-choose-job') !== null) {
+                var attrs = me.attributes;
+                for (var j = attrs.length - 1 ; j >= 0; j --){
+                    if (/^data-/.test(attrs[j].name)){
+                        if (attrs[j].name === 'data-base-url'){
+                            config.baseUrl = attrs[j].value;
+                        } else {
+                            config[attrs[j].name] = attrs[j].value;
+                        }
+                    }
                 }
+                break;
             }
         }
     } else {
@@ -191,6 +240,21 @@
         config['data-choose-job'] = this.cartFillerEval[2];
         config['data-debug'] = this.cartFillerEval[3];
         config['data-worker'] = this.cartFillerEval[4];
+        config['data-wfu'] = this.cartFillerEval[5];
+        config.localInjectJs = this.cartFillerEval[6];
+    }
+    var cartFillerEvalForInjectFunction = [
+        config.baseUrl,
+        config['data-type'],
+        config['data-choose-job'],
+        config['data-debug'],
+        config['data-worker'],
+        config['data-wfu']
+    ];
+    if (concatenated) {
+        config.injectFunction = '(' + concatenatedInjectFunction.toString() + ').call(' + JSON.stringify(this) + ');';
+    } else {
+        config.injectFunction = '(' + injectFunction.toString() + ').call({cartFillerEval: ' + JSON.stringify(cartFillerEvalForInjectFunction) + '}, document, window);';
     }
     // if not concatenated - then load loader.js, which, itself, will load other
     // files
@@ -210,13 +274,13 @@
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Externals</h3><ul><li><a href="external%2520jQuery.external__jQuery.fn_.html">jQuery.fn</a></li><li><a href="external-jQuery.html">jQuery</a></li></ul><h3>Classes</h3><ul><li><a href="CartFiller.Api.html">Api</a></li><li><a href="CartFiller.Api.StepEnvironment.html">StepEnvironment</a></li><li><a href="CartFiller.Configuration.html">Configuration</a></li><li><a href="CartFiller.Dispatcher.html">Dispatcher</a></li><li><a href="CartFiller.Injector.html">Injector</a></li><li><a href="CartFiller.Loader.html">Loader</a></li><li><a href="CartFiller.SampleWorker.html">SampleWorker</a></li><li><a href="CartFiller.SampleWorker.SampleWorkerTasks.html">SampleWorkerTasks</a></li><li><a href="CartFiller.UI.html">UI</a></li><li><a href="CartFiller.UI.ArrowToElement.html">ArrowToElement</a></li><li><a href="CartFillerPlugin-Plugin.html">Plugin</a></li><li><a href="cartFillerPlugin-Settings.html">Settings</a></li></ul><h3>Namespaces</h3><ul><li><a href="CartFiller.html">CartFiller</a></li><li><a href="CartFillerPlugin.html">CartFillerPlugin</a></li></ul><h3>Global</h3><ul><li><a href="global.html#%2522jQuery.cartFillerPlugin%2522">"jQuery.cartFillerPlugin"</a></li><li><a href="global.html#%2522jQuery.fn.cartFillerPlugin%2522">"jQuery.fn.cartFillerPlugin"</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Externals</h3><ul><li><a href="external%2520jQuery.external__jQuery.fn_.html">jQuery.fn</a></li><li><a href="external-jQuery.html">jQuery</a></li></ul><h3>Classes</h3><ul><li><a href="CartFiller.Api.html">Api</a></li><li><a href="CartFiller.Api.StepEnvironment.html">StepEnvironment</a></li><li><a href="CartFiller.Api.WorkerTask.html">WorkerTask</a></li><li><a href="CartFiller.Api.WorkerTasks.html">WorkerTasks</a></li><li><a href="CartFiller.Configuration.html">Configuration</a></li><li><a href="CartFiller.Dispatcher.html">Dispatcher</a></li><li><a href="CartFiller.Injector.html">Injector</a></li><li><a href="CartFiller.Loader.html">Loader</a></li><li><a href="CartFiller.SampleWorker.html">SampleWorker</a></li><li><a href="CartFiller.SampleWorker.SampleWorkerTasks.html">SampleWorkerTasks</a></li><li><a href="CartFiller.UI.html">UI</a></li><li><a href="CartFiller.UI.ArrowToElement.html">ArrowToElement</a></li><li><a href="CartFillerPlugin-JobDetails.html">JobDetails</a></li><li><a href="CartFillerPlugin-Plugin.html">Plugin</a></li><li><a href="CartFillerPlugin-Settings.html">Settings</a></li></ul><h3>Namespaces</h3><ul><li><a href="CartFiller.html">CartFiller</a></li><li><a href="CartFillerPlugin.html">CartFillerPlugin</a></li></ul><h3>Global</h3><ul><li><a href="global.html#%2522jQuery.cartFillerPlugin.hideChooseJobFrame%2522">"jQuery.cartFillerPlugin.hideChooseJobFrame"</a></li><li><a href="global.html#%2522jQuery.cartFillerPlugin.showChooseJobFrame%2522">"jQuery.cartFillerPlugin.showChooseJobFrame"</a></li><li><a href="global.html#%2522jQuery.cartFillerPlugin%2522">"jQuery.cartFillerPlugin"</a></li><li><a href="global.html#%2522jQuery.fn.cartFillerPlugin%2522">"jQuery.fn.cartFillerPlugin"</a></li><li><a href="global.html#env">env</a></li><li><a href="global.html#getBookmarkletCode">getBookmarkletCode</a></li><li><a href="global.html#onMessage_clearCurrentUrl">onMessage_clearCurrentUrl</a></li><li><a href="global.html#onMessage_postMessage">onMessage_postMessage</a></li><li><a href="global.html#onMessage_suspendAjaxRequestsDone">onMessage_suspendAjaxRequestsDone</a></li><li><a href="global.html#reportingMousePointerClick">reportingMousePointerClick</a></li><li><a href="global.html#testApiMap">testApiMap</a></li><li><a href="global.html#workerEventListeners">workerEventListeners</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0</a> on Wed Jun 24 2015 15:15:21 GMT+0300 (EAT)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.3</a> on Sun Aug 20 2017 14:59:13 GMT+0200 (CEST)
 </footer>
 
 <script> prettyPrint(); </script>

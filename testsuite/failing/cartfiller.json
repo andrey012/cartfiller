@@ -1,0 +1,16 @@
+cartfiller = {
+    "worker": [
+        "../worker.js",
+        "../../samples/worker.js"
+    ],
+    "globals": {
+        "skipMessages": true
+    },
+    "tests": {
+        "..": {
+            "suite1": {
+                "test12": true
+            },
+        }
+    }
+}

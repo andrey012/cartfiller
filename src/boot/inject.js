@@ -4,7 +4,7 @@
 /**
  * @class CartFiller.Injector
  */
-(function(document, window, undefined){
+(function injectFunction(document, window, undefined){
     'use strict';
     /** 
      * Is set to true if all injector scripts are concatenated and probably
@@ -42,6 +42,15 @@
      * @access public
      */
     var config;
+
+    if (window.cartFillerAPI) {
+        window.postMessage(
+            'cartFillerMessage:' + 
+            JSON.stringify({cmd: 'reinitialize'}),
+            '*'
+        );
+        throw new Error('preventing duplicate launch on [' + window.location.href + ']');
+    }
     
     /**
      * @class CartFiller.Configuration
@@ -63,6 +72,18 @@
      * @access public
      */
     config.concatenated = concatenated;
+    /** 
+     * Used for launching from filesystem
+     * @member {String} CartFiller.Configuration#localIndexHtml
+     * @access public
+     */
+    config.localIndexHtml = '';
+    /**
+     * Used to launch slaves from filesystem
+     * @member {String} CartFiller.Configuration#localInjectJs
+     * @access public
+     */
+    config.localInjectJs = '';
     /**
      * Array of scripts (modules) of cartFiller, that were loaded
      * See {@link CartFiller.Loader}
@@ -71,18 +92,37 @@
      */
     config.scripts = [];
     /**
+     * Prevents multiple UI launches
+     * @member CartFiller.Configuration#uiLaunched
+     * @access public
+     */
+    config.uiLaunched = false;
+
+    /**
      * Launches the {@link CartFiller.UI}
      * 
      * @function CartFiller.Configuration#launch
+     * @param {boolean} ignoreOpener
      * @access public
      */
-    config.launch = function(){
-        if (String(config['data-type']) === '0') {
-            this.modules.ui.framed(document, window);
-        } else if (String(config['data-type']) === '1'){
-            this.modules.ui.popup(document, window);
+    config.launch = function(ignoreOpener){
+        console.log('');
+        if (document.getElementsByTagName('body')[0].getAttribute('data-old-cartfiller-version-detected')) {
+            return; // no launch
+        }
+        if (((! ignoreOpener) && window.opener && window.opener !== window) || (window.parent && /\#?\/?launchSlaveInFrame$/.test(window.location.hash))) {
+            this.modules.dispatcher.startSlaveMode();
         } else {
-            alert('Type not specified, should be 0 for framed, 1 for popup');
+            if (! config.uiLaunched) {
+                config.uiLaunched = true;
+                if (String(config['data-type']) === '0') {
+                    this.modules.ui.framed(document, window);
+                } else if (String(config['data-type']) === '1'){
+                    this.modules.ui.popup(document, window);
+                } else {
+                    alert('Type not specified, should be 0 for framed, 1 for popup');
+                }
+            }
         }
     };
 
@@ -146,15 +186,24 @@
     // parameters from data-* attributes of <script> tag
     if (!evaled){
         var scripts = document.getElementsByTagName('head')[0].getElementsByTagName('script');
-        var me = scripts[scripts.length - 1];
-        var attrs = me.attributes;
-        for (var j = attrs.length - 1 ; j >= 0; j --){
-            if (/^data-/.test(attrs[j].name)){
-                if (attrs[j].name === 'data-base-url'){
-                    config.baseUrl = attrs[j].value;
-                } else {
-                    config[attrs[j].name] = attrs[j].value;
+        var i;
+        for (i = 0 ; i < scripts.length; i ++) {
+            var me = scripts[i];
+            // let's identify our script by set of attributes for <script> element
+            if (me.getAttribute('data-type') !== null &&
+               me.getAttribute('data-base-url') !== null &&
+               me.getAttribute('data-choose-job') !== null) {
+                var attrs = me.attributes;
+                for (var j = attrs.length - 1 ; j >= 0; j --){
+                    if (/^data-/.test(attrs[j].name)){
+                        if (attrs[j].name === 'data-base-url'){
+                            config.baseUrl = attrs[j].value;
+                        } else {
+                            config[attrs[j].name] = attrs[j].value;
+                        }
+                    }
                 }
+                break;
             }
         }
     } else {
@@ -163,6 +212,21 @@
         config['data-choose-job'] = this.cartFillerEval[2];
         config['data-debug'] = this.cartFillerEval[3];
         config['data-worker'] = this.cartFillerEval[4];
+        config['data-wfu'] = this.cartFillerEval[5];
+        config.localInjectJs = this.cartFillerEval[6];
+    }
+    var cartFillerEvalForInjectFunction = [
+        config.baseUrl,
+        config['data-type'],
+        config['data-choose-job'],
+        config['data-debug'],
+        config['data-worker'],
+        config['data-wfu']
+    ];
+    if (concatenated) {
+        config.injectFunction = '(' + concatenatedInjectFunction.toString() + ').call(' + JSON.stringify(this) + ');';
+    } else {
+        config.injectFunction = '(' + injectFunction.toString() + ').call({cartFillerEval: ' + JSON.stringify(cartFillerEvalForInjectFunction) + '}, document, window);';
     }
     // if not concatenated - then load loader.js, which, itself, will load other
     // files

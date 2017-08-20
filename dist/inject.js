@@ -8,7 +8,7 @@
  */
 // this file is used as as header when concatenating inject scripts. It is not valid as standalone.
 /* jshint ignore:start */
-(function(){
+(function concatenatedInjectFunction(){(function(){
 /* jshint ignore:end */
 
 /**
@@ -17,7 +17,7 @@
 /**
  * @class CartFiller.Injector
  */
-(function(document, window, undefined){
+(function injectFunction(document, window, undefined){
     'use strict';
     /** 
      * Is set to true if all injector scripts are concatenated and probably
@@ -55,6 +55,15 @@
      * @access public
      */
     var config;
+
+    if (window.cartFillerAPI) {
+        window.postMessage(
+            'cartFillerMessage:' + 
+            JSON.stringify({cmd: 'reinitialize'}),
+            '*'
+        );
+        throw new Error('preventing duplicate launch on [' + window.location.href + ']');
+    }
     
     /**
      * @class CartFiller.Configuration
@@ -76,6 +85,18 @@
      * @access public
      */
     config.concatenated = concatenated;
+    /** 
+     * Used for launching from filesystem
+     * @member {String} CartFiller.Configuration#localIndexHtml
+     * @access public
+     */
+    config.localIndexHtml = '';
+    /**
+     * Used to launch slaves from filesystem
+     * @member {String} CartFiller.Configuration#localInjectJs
+     * @access public
+     */
+    config.localInjectJs = '';
     /**
      * Array of scripts (modules) of cartFiller, that were loaded
      * See {@link CartFiller.Loader}
@@ -84,18 +105,37 @@
      */
     config.scripts = [];
     /**
+     * Prevents multiple UI launches
+     * @member CartFiller.Configuration#uiLaunched
+     * @access public
+     */
+    config.uiLaunched = false;
+
+    /**
      * Launches the {@link CartFiller.UI}
      * 
      * @function CartFiller.Configuration#launch
+     * @param {boolean} ignoreOpener
      * @access public
      */
-    config.launch = function(){
-        if (String(config['data-type']) === '0') {
-            this.modules.ui.framed(document, window);
-        } else if (String(config['data-type']) === '1'){
-            this.modules.ui.popup(document, window);
+    config.launch = function(ignoreOpener){
+        console.log('');
+        if (document.getElementsByTagName('body')[0].getAttribute('data-old-cartfiller-version-detected')) {
+            return; // no launch
+        }
+        if (((! ignoreOpener) && window.opener && window.opener !== window) || (window.parent && /\#?\/?launchSlaveInFrame$/.test(window.location.hash))) {
+            this.modules.dispatcher.startSlaveMode();
         } else {
-            alert('Type not specified, should be 0 for framed, 1 for popup');
+            if (! config.uiLaunched) {
+                config.uiLaunched = true;
+                if (String(config['data-type']) === '0') {
+                    this.modules.ui.framed(document, window);
+                } else if (String(config['data-type']) === '1'){
+                    this.modules.ui.popup(document, window);
+                } else {
+                    alert('Type not specified, should be 0 for framed, 1 for popup');
+                }
+            }
         }
     };
 
@@ -153,21 +193,30 @@
      * @member {String} CartFiller.Configuration#gruntBuildTimeStamp
      * @access public
      */
-    config.gruntBuildTimeStamp='1435148118643';
+    config.gruntBuildTimeStamp='1503233950779';
 
     // if we are not launched through eval(), then we should fetch
     // parameters from data-* attributes of <script> tag
     if (!evaled){
         var scripts = document.getElementsByTagName('head')[0].getElementsByTagName('script');
-        var me = scripts[scripts.length - 1];
-        var attrs = me.attributes;
-        for (var j = attrs.length - 1 ; j >= 0; j --){
-            if (/^data-/.test(attrs[j].name)){
-                if (attrs[j].name === 'data-base-url'){
-                    config.baseUrl = attrs[j].value;
-                } else {
-                    config[attrs[j].name] = attrs[j].value;
+        var i;
+        for (i = 0 ; i < scripts.length; i ++) {
+            var me = scripts[i];
+            // let's identify our script by set of attributes for <script> element
+            if (me.getAttribute('data-type') !== null &&
+               me.getAttribute('data-base-url') !== null &&
+               me.getAttribute('data-choose-job') !== null) {
+                var attrs = me.attributes;
+                for (var j = attrs.length - 1 ; j >= 0; j --){
+                    if (/^data-/.test(attrs[j].name)){
+                        if (attrs[j].name === 'data-base-url'){
+                            config.baseUrl = attrs[j].value;
+                        } else {
+                            config[attrs[j].name] = attrs[j].value;
+                        }
+                    }
                 }
+                break;
             }
         }
     } else {
@@ -176,6 +225,21 @@
         config['data-choose-job'] = this.cartFillerEval[2];
         config['data-debug'] = this.cartFillerEval[3];
         config['data-worker'] = this.cartFillerEval[4];
+        config['data-wfu'] = this.cartFillerEval[5];
+        config.localInjectJs = this.cartFillerEval[6];
+    }
+    var cartFillerEvalForInjectFunction = [
+        config.baseUrl,
+        config['data-type'],
+        config['data-choose-job'],
+        config['data-debug'],
+        config['data-worker'],
+        config['data-wfu']
+    ];
+    if (concatenated) {
+        config.injectFunction = '(' + concatenatedInjectFunction.toString() + ').call(' + JSON.stringify(this) + ');';
+    } else {
+        config.injectFunction = '(' + injectFunction.toString() + ').call({cartFillerEval: ' + JSON.stringify(cartFillerEvalForInjectFunction) + '}, document, window);';
     }
     // if not concatenated - then load loader.js, which, itself, will load other
     // files
@@ -188,6 +252,7 @@
 
 /**
  * Represents the API interface used by worker. 
+ * For worker example see {@link CartFiller.Api#registerWorker}
  * @class CartFiller.Api
  */
 (function(document, window, undefined){
@@ -200,7 +265,7 @@
      * 
      * @callback CartFiller.Api.registerCallback
      * @param {Window} window
-     * @param {Document} document, undefined will be passed here, to prevent
+     * @param {Document} document undefined will be passed here, to prevent
      * worker from accessing document. Instead worker should access
      * window.document. This is because worker is instantiated in the top frame
      * but operates with main frame where target site is opened, and document
@@ -210,28 +275,124 @@
      * When particular step callbacks, this object will each time be
      * reinitialized with next task as provided by 
      * {@link CartFiller.submitJobDetails}
-     * @return {Array} where even members are names of steps, and odd members
-     * are either step functions or arrays of function + parameters object, e.g.
-     * [
-     *  'step 1',
-     *  function(task,env){ ... },
-     *  'step 2',
-     *  [function(task,env){.. env.params.theParam ...}, {theParam: 2}],
-     * ]
+     * @param {CartFillerPlugin~JobDetails} job contains full copy of job details
+     * as passed by chooseJob frame
+     * @param {Object} globals An object, whoes properties can be set at one step
+     * and then reused in the other step
+     * @param {CartFiller.Api.LibFactory} lib A way to share snippets within worker or across several workers. 
+     * You can assign values to lib straightaway lib.foo = ['find input', function() {}] and use them in another worker places
+     * by calling lib('foo')
+     * @return {CartFiller.Api.WorkerTasks} 
      * @see CartFiller.SampleWorker~registerCallback
      */
-    
+
+
+    /**
+     * This function has three completely different ways of usage and scenarios of usage. 
+     * <p>If you just want to share steps, you can do lib.foo = whatever, and then use it. It
+     * will be shared across workers. But mind execution time - you never know order of workers to 
+     * load. To feel safe use lib.foo = ['find foo', function() {...}...] to declare and then
+     * lib('foo') to use when building steps.
+     * <p>If you want to parametrize your factory - do 
+     * lib('foo', 1, 2)(function(p1, p2) { p1 === 1 and p2 === 2 in the task where
+     * you declare it}) to declare, and then lib('foo', 3, 4) in another task. </p>
+     * <p>And finally you may need to share small snippets, that are called from within steps. 
+     * These are declared using lib(function foo() {}) again right inside your task. Then use it just
+     * as lib.foo().</p>
+     * <p>See /samples/worker.js for examples, just search for 'lib' there.</p>
+     * @callback CartFiller.Api.LibFactory
+     * @param {Function|string}
+     * @return {Function|Array}
+     */
+
+    /**
+     * Contains worker code, each property is a task, property name is task name, 
+     * and property value is Array of type CartFiller.Api.WorkerTask
+     * @class CartFiller.Api.WorkerTasks
+     * @see CartFiller.Api.WorkerTask
+     * @example
+     *  {
+     *      openHomepage: [
+     *          'open homepage', function() { 
+     *              window.location.href = '...'; api.onload() 
+     *          }
+     *      ],
+     *      navigateToLogin: [
+     *          'find navbar', function() { 
+     *              var navbar = ... ;
+     *              api.arrow(navbar).result(navbar.length?'':'no navbar');
+     *          },
+     *          'find login link', function(navbar) {
+     *              var link = ...';
+     *              api.arrow(link).result(link.length?'':'no login link');
+     *          },
+     *          api.click(),
+     *      ]
+     *  }
+     */
+    /**
+     * @member {CartFiller.Api.WorkerTask} CartFiller.Api.WorkerTasks#openHomepage
+     * This is just an example
+     * @access public
+     */
+    /**
+     * @member {CartFiller.Api.WorkerTask} CartFiller.Api.WorkerTasks#navigateToLogin
+     * This is just an example
+     * @access public
+     */
+    /** 
+     * Contains worker code for particular worker task, as array of steps or
+     * subarrays (nested steps). All subarrays are just flattened. Each step
+     * is 2 array items - a string (name or comment) and a function. Optionally
+     * function can be replaced with an array of [function(){}, parameters]
+     * Each function must be of {CartFiller.Api.WorkerTask.workerStepFunction} type
+     * As you can see on the example - results of all previous steps are passed as parameters
+     * in a reverse order. Usually you need to use only result of previous step, but
+     * sometimes you need to find multiple elements on page and then do something 
+     * with all of them. 
+     * 
+     * To return result of a step use api.return(...) function. Two UI methods: 
+     * api.highlight(...) and api.arrow(...) imply api.return(). Note, that only one
+     * returned result is kept in memory, so, if you do api.return(1).return(2), then 2
+     * will be the result. 
+     * 
+     * @class CartFiller.Api.WorkerTask
+     * @see {CartFiller.Api.WorkerTask.workerStepFunction}
+     * @example
+     *  [
+     *      'step 1', function(){ ... },
+     *      'step 2', [function(resultOfStep1){.. api.env.params.theParam ...}, {theParam: 2}],
+     *      [   
+     *          'step 3', function(resultOfStep2, resultOfStep1) { ... },
+     *          'step 4', function(resultOfStep3, resultOfStep2, resultOfStep1) { ... }
+     *      ]
+     *  ]
+     */
     /**
      * Performs particular step of the task. Each callback must finally, 
      * immediately or asynchronously call either {@link CartFiller.Api#result}
-     * or {@link CartFiller.Api#nop} function.
+     * or {@link CartFiller.Api#nop} function. You may skip parameters if you don't 
+     * need them. 
+     * Funny thing about these functions is that their parameter names are sometimes
+     * meaningful and result in some magic. For example having any parameter named 
+     * repeatN where N is integer (e.g. function(repeat10) {... or 
+     * function(el, repeat15) { ... ) will result in repeating this step N times 
+     * if it fails, until it succeeds, with interval of 1 second.
      * 
-     * @callback CartFiller.Api.workerStepCallback
-     * @param {jQuery|HtmlElement|undefined} highlightedElement Most recently 
-     * highlighted element is passed back to this callback
-     * @param {CartFiller.Api.StepEnvironment} env Environment utility object
+     * @callback CartFiller.Api.WorkerTask.workerStepFunction
+     * @param {mixed} result of previous step
+     * @param {undefined} magic repeatN Specifies to repeat call N times if it fails, so
+     * parameter name should be e.g. repeat5 or repeat 10. sleepN means sleep N ms
+     * which only happens in slow mode.
+     * @example
+     * [
+     *      'step name', function(el) { ... },
+     *      'step name', function(el, repeat10) { ... },
+     *      'step name', function(repeat5) { ... },
+     *      'step name', function() { ... },
+     *      'step name', function(el, repeat10) { ... }
+     * ]
      */
-
     /** 
      * Called by Api when target site window issues onload event
      * Has no parameters and result of this callback is ignored
@@ -269,11 +430,512 @@
      */
 
     /**
+     * Used by {@link CartFiller.Api#each} when iterating through arrays
+     * @callback CartFiller.Api.eachCallback
+     * @param {integer} index
+     * @param {Object} value
+     * @return {boolean} false means stop iteration
+     */
+
+    /**
+     * Used by {@link CartFiller.Api#each} when iterating through arrays
+     * @callback CartFiller.Api.mapCallback
+     * @param {integer} index
+     * @param {Object} value
+     * @param {Function} push Call this function to output value. Function has one parameter
+     * -- the value for output, and can be called multiple times
+     * @param {Function} unshift Call this function to put value to the beginning of output.
+     * Function has one parameter -- the value for output, and can be called multiple times
+     * @return {boolean} false means stop iteration
+     */
+
+    /**
+     * Another callback used by {@link CartFiller.Api#each} -- called when iterating through
+     * array items was not interrupted
+     * @callback CartFiller.Api.eachOtherwiseCallback
+     */
+
+    /**
+     * Another callback used by {@link CartFiller.Api#each} -- called when iterating through
+     * array items was not interrupted
+     * @callback CartFiller.Api.mapOtherwiseCallback
+     * @param {Function} push Call this function to output value. Function has one parameter
+     * -- the value for output, and can be called multiple times
+     * @param {Function} unshift Call this function to put value to the beginning of output.
+     * Function has one parameter -- the value for output, and can be called multiple times
+     */
+
+    /**
+     * Callback, that can be registered using api.registerOnloadCallback, and will be 
+     * called after each page reload is detected. Result is ignored, but this function
+     * may throw exception which is same as error result.
+     * @callback CartFiller.Api.onloadEventCallback
+     */
+
+    /**
      * @var {CartFiller.Configuration} CartFiller.Api~me Shortcut to cartFiller configuration
      * @access private
      */
     var me = this.cartFillerConfiguration;
+    var cleanText = function(value) {
+        return String(value).replace(/\s+/g, ' ').trim().toLowerCase();
+    };
+    var copyArguments = function(args) {
+        var result = [];
+        for (var i = 0; i < args.length ; i ++) {
+            result.push(args[i]);
+        }
+        return result;
+    };
+
+    var getDocument = function() {
+        var doc;
+        try {
+            doc = me.modules.ui.mainFrameWindow.document;
+        } catch (e) {}
+        return doc;
+    };
+
+    var selectorPattern = /^(([^\:\[.# ]+)|(\#[^\:\[.# ]+)|(\.[^\:\[.# ]+)|(\[([^\]"]|("[^"]*"))*\])|(\:([^\:\[.#" \()]|("[^"]*")|\([^)]+\))+))(.*)$/;
+    var selectorStepPattern = /^((([^\:\[.# ]+)|(\#[^\:\[.# ]+)|(\.[^\:\[.# ]+)|(\[([^\]"]|("[^"]*"))*\])|(\:([^\:\[.#" \(]|("[^"]*")|\([^)]+\))+))+)(\s(.*))?$/;
+    var parseAttributeSelector = function(expression) {
+        var pc = expression.split(/[\^$]?=/, 2);
+        var name = pc[0];
+        var value = pc[1];
+        var equals = expression.substr(name.length, expression.length - name.length - value.length);
+        return {attribute: name, equals: equals, value: value.substr(1, value.length - 2)};
+    };
+    var Selector = function(elementList, description, self) {
+        this.self = self;
+        if (elementList) {
+            this.length = elementList.length;
+            this.description = description || ('[' + elementList.length + ']');
+            for (var i = 0; i < elementList.length; i ++) {
+                this[i] = elementList[i];
+            }
+        } else {
+            this.length = 0;
+            this.description = '';
+        }
+    };
+    Selector.prototype = Object.create({});
+    Selector.prototype.find = function(selector) {
+        if ('object' === typeof selector) {
+            if (selector.nodeName) {
+                return new Selector([selector], this.description + ' [' + selector.nodeName + ']', [this, 'find', selector]);
+            } 
+            if (selector.hasOwnProperty('length')) {
+                return new Selector(selector, undefined, [this, 'find', selector]);
+            }
+        }
+        var match = selectorStepPattern.exec(selector.trim());
+        if (! match) { 
+            throw new Error('invalid selector: [' + selector + ']');
+        }
+        var firstSelector = match[1];
+        var remainder = match[13];
+        var firstResult = new Selector([], this.description + ' ' + firstSelector);
+        this.each(function(i,e) {
+            firstResult = firstResult.add(getElementsBySelector(e, firstSelector));
+        });
+        var finalResult;
+        if (remainder) {
+            finalResult = firstResult.find(remainder);
+        } else {
+            finalResult = firstResult;
+        }
+        return new Selector(finalResult, this.description + ' ' + selector, [this, 'find', selector]);
+    };
+    var getElementsBySelectorSecondStepFilter = function(el) {
+        return function(criterion) {
+            return getElementsBySelectorSecondStepMatch(el, criterion);
+        };
+    };
+    Selector.prototype.css = function(property, value) {
+        for (var i = 0; i < this.length; i ++) {
+            this[i].style[property] = value;
+        }
+        return this;
+    };
+    Selector.prototype.closest = function(selector) {
+        var parsed = parseSelector(selector);
+        var description = this.description + ' closest(' + selector + ')';
+        if (this.length) {
+            for (var el = this[0].parentNode; el; el = el.parentNode) {
+                if (parsed.length === parsed.filter(getElementsBySelectorSecondStepFilter(el)).length) {
+                    return new Selector([el], description, [this, 'closest', selector]);
+                }
+            }
+        }
+        return new Selector([], description);
+    };
+    Selector.prototype.text = function() {
+        if (this.length) {
+            return String(this[0].textContent);
+        }
+        return '';
+    };
+    Selector.prototype.is = function(selector) {
+        if (this.length) {
+            var parsed = parseSelector(selector);
+            return parsed.length === parsed.filter(getElementsBySelectorSecondStepFilter(this[0])).length;
+        }
+    };
+    Selector.prototype.index = function() {
+        if (this.length) {
+            var el = this[0].previousSibling;
+            for (var i = 0; el; el = el.previousSibling) {
+                i += el.nodeName === this[0].nodeName ? 1 : 0;
+            }
+            return i;
+        }
+    };
+    Selector.prototype.val = function() {
+        if (this.length) {
+            if (arguments.length) {
+                this[0].value = arguments[0];
+            } else {
+                return this[0].value;
+            }
+        }
+    };
+    Selector.prototype.attr = function(name) {
+        if (this.length) {
+            return this[0].getAttribute(name);
+        }
+    };
+    Selector.prototype.add = function(anotherSelectorOrElement) {
+        var i;
+        if ((anotherSelectorOrElement instanceof Selector) || (anotherSelectorOrElement instanceof Array)) {
+            var newElements = [];
+            for (i = 0; i < this.length; i ++ ) {
+                newElements.push(this[i]);
+            }
+            var description = this.description + ' + ' + ((anotherSelectorOrElement instanceof Selector) ? anotherSelectorOrElement.description : ('[' + anotherSelectorOrElement.length + ']'));
+            for (i = 0; i < anotherSelectorOrElement.length; i ++) {
+                if (-1 === newElements.indexOf(anotherSelectorOrElement[i])) {
+                    newElements.push(anotherSelectorOrElement[i]);
+                }
+            }
+            return new Selector(newElements, description, [this, 'add', anotherSelectorOrElement]);
+        } else {
+            for (i = this.length; i >= 0 ; i --) {
+                if (this[i] === anotherSelectorOrElement) {
+                    return this;
+                }
+            }
+            this[this.length] = anotherSelectorOrElement;
+            this.length ++;
+        }
+        return this;
+    };
+    Selector.prototype.filter = function(fn) {
+        var result = [];
+        for (var i = 0; i < this.length; i ++) {
+            if (fn.apply(getDocument(), [i, this[i]])) {
+                result.push(this[i]);
+            }
+        }
+        return new Selector(result, this.description + ' filter(' + fn.toString() + ')', [this, 'filter', fn]);
+    };
+    Selector.prototype.each = function(fn) {
+        for (var i = 0; i < this.length; i ++) {
+            var result = fn(i, this[i]);
+            if (result === false || result === me.modules.api) {
+                break;
+            }
+        }
+        return this;
+    };
+    Selector.prototype.arrow = function(all) {
+        me.modules.api.arrow(this, all);
+        return this;
+    };
+    Selector.prototype.exists = function(comment) {
+        if (undefined === comment) {
+            comment = 'element(s) not found: ' + this.description;
+        }
+        me.modules.api.arrow(this, true).result(this.length > 0 ? '' : comment);
+        return this;
+    };
+    Selector.prototype.absent = function(comment) {
+        if (undefined === comment) {
+            comment = 'element(s) should not exist, but they are: ' + this.description;
+        }
+        me.modules.api.arrow(this, true).result(this.length > 0 ? comment : '');
+        return this;
+    };
+    Selector.prototype.say = function(message, pre, nextButton) {
+        me.modules.api.say(message, pre, nextButton);
+        return this;
+    };
+    Selector.prototype.change = function() {
+        if (this.length) {
+            var event = document.createEvent('HTMLEvents');
+            event.initEvent('change', false, true);
+            this[0].dispatchEvent(event);
+        }
+    };
+    Selector.prototype.next = function(selector) {
+        if (selector !== undefined) {
+            throw new Error('not implemented');
+        }
+        var description = this.description + ' next(' + selector + ')';
+        if (this.length) {
+            var next = this[0].nextElementSibling;
+            if (! next) {
+                return new Selector([], description, [this, 'next', selector]);
+            }
+            return new Selector([next], description, [this, 'next', selector]);
+        } else {
+            return new Selector([], description, [this, 'next', selector]);
+        }
+    };
+    Selector.prototype.first = function() {
+        return new Selector(this.length ? [this[0]] : [], this.description + ' first()', [this, 'first']);
+    };
+    Selector.prototype.last = function() {
+        return new Selector(this.length ? [this[this.length - 1]] : [], this.description + ' last()', [this, 'last']);
+    };
+    Selector.prototype.nthOfType = function(n) {
+        return this.filter(function(i,el){ 
+            var c = 0; 
+            for (var x = el.previousSibling; x; x = x.previousSibling) {
+                c += x.nodeName === el.nodeName ? 1 : 0;
+            } 
+            return c === n;
+        });
+    };
+    Selector.prototype.withText = function(text, ignoreCase) {
+        text = me.modules.dispatcher.interpolateText(text);
+        if (ignoreCase) {
+            text = text.toLowerCase();
+        }
+        return this.filter(function(i,el){
+            return me.modules.api.compareCleanText(text, ignoreCase ? el.textContent.toLowerCase : el.textContent);
+        });
+    };
+    Selector.prototype.reevaluate = function() {
+        var i;
+        if (this.self) {
+            var reevaluated;
+            if ('function' === typeof this.self) {
+                reevaluated = this.self();
+            } else {
+                if (this.self[0]) {
+                    this.self[0].reevaluate();
+                }
+                if (this.self[1] === 'add') {
+                    if (this.self[2] instanceof Selector) {
+                        this.self[2].reevaluate();
+                    }
+                }
+                reevaluated = this.self[0][this.self[1]].apply(this.self[0], this.self.slice(2));
+            }
+            for (i = 0; i < reevaluated.length; i ++) {
+                this[i] = reevaluated[i];
+            }
+            for (i = reevaluated.length ; i < this.length ; i ++ ) {
+                delete this[i];
+            }
+            this.length = reevaluated.length;
+        }
+        return this;
+    };
+    ['result', 'nop', 'skipStep', 'skipTask', 'repeatStep', 'repeatTask', 'repeatJob', 'skipJob'].filter(function(name) {
+        Selector.prototype[name] = function(){
+            me.modules.api[name].apply(me.modules.api, arguments);
+            return this;
+        };
+    });
+    var parseSelector = function(selector) {
+        var result = [];
+        while (selector.length) {
+            var match = selectorPattern.exec(selector);
+            if (! match) {
+                throw new Error('invalid selector: [' + selector + ']');
+            }
+            if (match[2]) {
+                result.push(['nodeName', match[2]]);
+            } else if (match[3]) {
+                result.push(['id', match[3].substr(1)]);
+            } else if (match[4]) {
+                result.push(['class', match[4].substr(1)]);
+            } else if (match[5]) {
+                result.push(['attribute', parseAttributeSelector(match[5].substr(1, match[5].length - 2))]);
+            } else if (match[8]) {
+                var notMatch = /^:not\((.*)\)$/.exec(match[8]);
+                if (notMatch) {
+                    result.push(['not', parseSelector(notMatch[1])]);
+                } else {
+                    result.push(['modifier', match[8].substr(1)]);
+                }
+            } else {
+                throw new Error('bad selector: [' + selector + ']');
+            }
+            selector = match[11];
+        }
+        return result;
+    };
+    var getElementsBySelectorFirstStep = function(root, criterion) {
+        switch (criterion[0]) {
+            case 'nodeName': 
+                return new Selector(root.getElementsByTagName(criterion[1]));
+            case 'id': 
+                var e = root.getElementById(criterion[1]);
+                return new Selector(e ? [e] : []);
+            case 'class': 
+                return new Selector(root.getElementsByClassName(criterion[1]));
+            case 'attribute': 
+            case 'modifier': 
+            case 'not':
+                return getElementsBySelectorSecondStep(new Selector(root.getElementsByTagName('*')), criterion);
+            default: 
+                throw new Error('unknown or invalid criterion type for first step: [' + criterion[0] + ']');
+        }
+    };
+    var isVisible = function(element, recursive) {
+        if (! element) {
+            return true;
+        }
+        if (! recursive && 'function' === typeof element.getBoundingClientRect) {
+            var rect = element.getBoundingClientRect();
+            if (! (rect.width > 0 && rect.height > 0)) {
+                return false;
+            }
+        }
+        return (! element.style) || (element.style.display !== 'none' && element.style.visibility !== 'hidden' && (element.style.opacity === '' || parseFloat(element.style.opacity) > 0) && isVisible(element.parentNode, true));
+    };
+    var coundLeftSiblingElements = function(element) {
+        for (var i = 0; i < element.parentNode.childElementCount; i ++) {
+            if (element === element.parentNode.children[i]) {
+                return i + 1;
+            }
+        }
+        throw new Error('something went wrong, element is not a child of its parent???');
+    };
+    var isChecked = function(element) {
+        switch (element.nodeName) {
+            case 'OPTION': return element.selected;
+            case 'INPUT': 
+                switch (element.getAttribute('type').toLowerCase()) {
+                    case 'checkbox':
+                    case 'radio':
+                        return element.checked;
+                }
+                break;
+        }
+    };
+
+    var matchModifier = function(modifier, element) {
+        var match;
+        if (modifier === 'visible') {
+            return isVisible(element);
+        } else if (modifier === 'checked') {
+            return isChecked(element);
+        } else if (match = /^contains\(\"(.*)"\)$/.exec(modifier)) {
+            return -1 !== element.textContent.toLowerCase().indexOf(match[1].toLowerCase());
+        } else if (match = /^nth-child\((\d+)\)$/.exec(modifier)) {
+            return parseInt(match[1]) === coundLeftSiblingElements(element);
+        } else {
+            throw new Error('unknown modifier: [' + modifier + ']');
+        }
+    };
+    var getElementsBySelectorSecondStepMatch = function(element, criterion) {
+        switch (criterion[0]) {
+            case 'id': return element.id === criterion[1];
+            case 'nodeName': return element.nodeName.toLowerCase() === criterion[1].toLowerCase();
+            case 'class': return (' ' + element.className + ' ').indexOf(criterion[1]) !== -1;
+            case 'attribute': 
+                var attributeValue = String(element.getAttribute(criterion[1].attribute));
+                switch (criterion[1].equals) {
+                    case '=': return attributeValue === criterion[1].value;
+                    case '^=': return 0 === attributeValue.indexOf(criterion[1].value);
+                    case '$=': return attributeValue.substr(attributeValue.length - criterion[1].value.length) === criterion[1].value;
+                    default: throw new Error('unknown equality expression: [' + criterion[1].equals + ']');
+                }
+                break;
+            case 'modifier': return matchModifier(criterion[1], element);
+            case 'not': 
+                return 0 === criterion[1].filter(function(notCriterion) { 
+                    return getElementsBySelectorSecondStepMatch(element, notCriterion);
+                }).length;
+            default: throw new Error('unknown criterion type: [' + criterion[0] + ']');
+        }
+    };
+    var getElementsBySelectorSecondStep = function(selector, criterion) {
+        return selector.filter(function(index, element) {
+            return getElementsBySelectorSecondStepMatch(element, criterion);
+        });
+    };
+    var getElementsBySelector = function(root, selector) {
+        var parsed = parseSelector(selector);
+        if (parsed.length === 0) {
+            throw new Error('wrong selector: [' + selector + ']');
+        }
+        var result = getElementsBySelectorFirstStep(root, parsed.shift());
+        parsed.filter(function(criterion) {
+            result = getElementsBySelectorSecondStep(result, criterion);
+        });
+        return result;
+    };
+
+    var getAbsolutePosition = function(el, recursive) {
+        var rect = el.getBoundingClientRect();
+        var pos = {x: rect.left + recursive ? 0 : Math.floor(rect.width / 2), y: rect.top + recursive ? 0 : Math.floor(rect.height / 2)};
+        // it is likely possible to do this, because in PhantomJS we normally have
+        // cross origin security turned off
+        if (el.ownerDocument.defaultView !== el.ownerDocument.defaultView.parent) {
+            var frames = el.ownerDocument.defaultView.parent.document.getElementsByTagName('iframe');
+            for (var i = 0; i < frames.length ; i ++) {
+                if (frames[i].contentWindow === el.ownerDocument.defaultView) {
+                    var shift = getAbsolutePosition(frames[i], true);
+                    pos.x += shift.x;
+                    pos.y += shift.y;
+                }
+            }
+        }
+        return pos;
+    };
+
+    var triggerMouseEvent = function(el, eventType) {
+        if (0 /* not yet, seems not reliable enough */ && window.callPhantom) {
+            var pos = getAbsolutePosition(el);
+            window.callPhantom({mouseEvent: eventType, pos: pos});
+        } else {
+            var event = el.ownerDocument.createEvent('MouseEvents');
+            if (event.initMouseEvent) {
+                event.initMouseEvent(eventType, true, true);
+            } else if (event.initEvent) {
+                event.initEvent(eventType, true, true);
+            } else {
+                throw new Error('cant init MouseEvent');
+            }
+            el.dispatchEvent(event);
+        }
+    };
+
+    var simulateClick = function(el) {
+        try {
+            triggerMouseEvent (el, 'mouseover');
+        } catch (e) {}
+        try {
+            triggerMouseEvent (el, 'mousedown');
+        } catch (e) {}
+        try {
+            triggerMouseEvent (el, 'mouseup');
+        } catch (e) {}
+        try {
+            triggerMouseEvent (el, 'click');
+        } catch (e) {}
+    };
+
     me.scripts.push({
+        /**
+         * @property {CartFiller.Api.StepEnvironment} CartFiller.Api#env
+         */
+        env: {},
+        debug: false,
         /**
          * Returns name used by loader to organize modules
          * @function CartFiller.Api#getName 
@@ -285,17 +947,26 @@
         /**
          * Registers worker object. Worker object can be replaced by new one
          * to make it possible to update code during debugging.
+         * <textarea readonly cols="100" rows="7" onclick="this.select();">
+         * (function(undefined) {
+         *     cartFillerAPI().registerWorker(function(window, document, api, task, job, globals){
+         *         return {
+         *         };
+         *     });
+         * })();
+         * </textarea>
          * @function CartFiller.Api#registerWorker
          * @param {CartFiller.Api.registerCallback} cb A callback, that will
          * will return an object, whoes properties are tasks, and each property
          * should be an array of ['step1 name', function(){...}, 'step2 name' ,
-         * function(){...}, ...]
+         * function(){...}, ...]. If this array will contain arrays as elements
+         * then these will be 'flattened'
          * @see CartFiller.SampleWorker~registerCallback
          * @access public
          * @return {CartFiller.Api} for chaining
          */
         registerWorker: function(cb){
-            me.modules.dispatcher.registerWorker(cb, this);
+            me.modules.dispatcher.registerWorker(cb);
             return this;
         },
         /**
@@ -315,11 +986,95 @@
          * that error is severe and we should stop, while true means, that
          * we can skip all next steps of same task and continue to next task
          * To report 'nop' it is easier to use {CartFiller.Api#nop} method.
+         * @param {String|Object|undefined} response If there is anything meaninful,
+         * that should be delivered back to ChooseJob frame - then put it here.
          * @access public
          * @return {CartFiller.Api} for chaining
          */
-        result: function(message, recoverable){
-            me.modules.dispatcher.submitWorkerResult(message, recoverable);
+        result: function(message, recoverable, response){
+            me.modules.dispatcher.submitWorkerResult(message, recoverable, response);
+            return this;
+        },
+        /**
+         * Tells that this task should be completely skipped, so cartFiller will
+         * proceed with next task. After using this function you still have to call
+         * api.result, and it is important to call api.skipTask first and 
+         * api.result then. 
+         * @function CartFiller.Api#skipTask
+         * @param {integer} number defaults to 1
+         * @return {CartFiller.Api} for chaining
+         * @access public
+         */
+        skipTask: function(number) {
+            number = number || 1;
+            me.modules.dispatcher.manageTaskFlow('skipTask,' + number);
+            return this;
+        },
+        /**
+         * Tells that next n steps should be skipped. After using this function you 
+         * still have to call api.result, and it is important to call api.skipTask first 
+         * and api.result then. 
+         * @function CartFiller.Api#skipStep
+         * @param {integer} n default = 1
+         * @return {CartFiller.Api} for chaining
+         * @access public
+         */
+        skipStep: function(n) {
+            if ('undefined' === typeof n) {
+                n = 1;
+            }
+            me.modules.dispatcher.manageTaskFlow('skipStep,' + n);
+            return this;
+        },
+        /**
+         * Tells, that this job should be skipped altogether
+         * @function CartFiller.Api#skipJob
+         * @return {CartFiller.Api} for chaining
+         * @access public
+         */
+        skipJob: function() {
+            me.modules.dispatcher.manageTaskFlow('skipJob');
+            return this;
+        },
+        /**
+         * Tells that this task should be repeated, so cartFiller will
+         * proceed with first step of this task. After using this function
+         * you still have to call api.result, and it is important to call
+         * api.repeatTask first and api.result then.
+         * @function CartFiller.Api#repeatTask
+         * @param {integer} number defaults to 1
+         * @return {CartFiller.Api} for chaining
+         * @access public
+         */
+        repeatTask: function(number) {
+            number = number || 1;
+            me.modules.dispatcher.manageTaskFlow('repeatTask,' + number);
+            return this;
+        },
+        /**
+         * Tells to repeat whole job from start
+         * @function CartFiller.Api#repeatJob
+         * @return {CartFiller.Api} for chaining
+         * @access public
+         */
+        repeatJob: function() {
+            me.modules.dispatcher.manageTaskFlow('repeatJob');
+            return this;
+        },
+        /**
+         * Tells that this step should be repeated. After using this function
+         * you still have to call api.result, and it is important to call
+         * api.repeatStep first and api.result then
+         * @function CartFiller.Api#repeatStep
+         * @param {integer} n default = 1 means repeat current step
+         * @return {CartFiller.Api} for chaining
+         * @access public
+         */
+        repeatStep: function(n) {
+            if (undefined === n) {
+                n = 1;
+            }
+            me.modules.dispatcher.manageTaskFlow('repeatStep,' + String(n));
             return this;
         },
         /**
@@ -339,11 +1094,17 @@
          * worker will register it by calling onload() another time
          *
          * @function CartFiller.Api#onload
-         * @param {CartFiller.Api.onloadCallback} cb Callback
+         * @param {CartFiller.Api.onloadCallback} cb Callback, if not specified
+         *          then just api.result() will be ussued after page loads
          * @return {CartFiller.Api} for chaining
          * @access public
          */
         onload: function(cb){
+            if (undefined === cb) {
+                cb = function() {
+                    me.modules.api.result();
+                };
+            }
             me.modules.dispatcher.registerWorkerOnloadCallback(cb);
             return this;
         },
@@ -353,15 +1114,21 @@
          * once after event or timeout has happened
          * @function CartFiller.Api#waitFor
          * @param {CartFiller.Api.waitForCheckCallback} checkCallback
-         * @param {CartFiller.Api.waitForResultCallback} resultCallback
+         * @param {CartFiller.Api.waitForResultCallback|String|undefined} resultCallback can be a callback or 
+         * string or nothing.
+         * If string is specified, then generic result callback will be there, submitting
+         * string as error result. If nothing is specified, then just "timeout" will be submitted
+         * in case of failure
          * @param {integer} timeout Measured in milliseconds. Default value
          * (if timeout is undefined) 20000 ms
          * @param {integer} period Poll period, measured in milliseconds, 
+         * @param {Array} args Arguments to be passed to checkCallback and resultCalback
          * default value (if undefined) is 200 ms
          * @return {CartFiller.Api} for chaining
          * @access public
          */
-        waitFor: function(checkCallback, resultCallback, timeout, period){
+        waitFor: function(checkCallback, resultCallback, timeout, period, args){
+            args = args || [];
             if (undefined === timeout){
                 timeout = 20000;
             }
@@ -369,31 +1136,70 @@
                 period = 200;
             }
             var counter = Math.round(timeout / period);
+            if (!resultCallback) {
+                resultCallback = '';
+            }
+            if ('string' === typeof resultCallback) {
+                resultCallback = (function(s){ 
+                    return function(r) {
+                        me.modules.api.result(r?'':(s.length ? s : 'timeout'));
+                    };
+                })(resultCallback);
+            }
             var fn = function(){
-                var result = checkCallback();
+                var result;
+                try {
+                    result = checkCallback.apply(getDocument(), args);
+                } catch (e) {
+                    me.modules.dispatcher.reportErrorResult(e);
+                    return;
+                }
                 if (false === me.modules.dispatcher.getWorkerCurrentStepIndex()){
                     return;
                 } 
                 if (result) {
-                    resultCallback(result);
+                    try {
+                        args.unshift(result);
+                        resultCallback.apply(getDocument(), args);
+                    } catch (e) {
+                        me.modules.dispatcher.reportErrorResult(e);
+                        return;
+                    }
                 } else {
                     counter --;
                     if (counter > 0){
-                        setTimeout(fn, period);
+                        me.modules.api.setTimeout(fn, period);
                     } else {
-                        resultCallback(false);
+                        try {
+                            args.unshift(false);
+                            resultCallback.apply(getDocument(), args);
+                        } catch (e) {
+                            me.modules.dispatcher.reportErrorResult(e);
+                            return;
+                        }
                     }
                 }
             };
-            setTimeout(fn, period);
+            me.modules.api.setTimeout(fn, 0);
             return this;
+        },
+        /**
+         * Factory for api.waitFor
+         * @function CartFiller.Api#waiter
+         * @return {CartFiller.Api} for chaining
+         * @access public
+         */
+        waiter: function(checkCallback, resultCallback, timeout, period){
+            return function() {
+                me.modules.api.waitFor(checkCallback, resultCallback, timeout, period, copyArguments(arguments));
+            };
         },
         /**
          * Highlights element by adding a gray semi-transparent overlay over 
          * the target website page, which has a rectangular hole over
          * this element + some padding around
          * Additionally API remembers this element and passes it back
-         * to [next step handler]{@link CartFiller.Api.workerStepCallback}
+         * to [next step handler]{@link CartFiller.Api.WorkerTask.workerStepFunction}
          * as first parameter
          * 
          * @function CartFiller.Api#highlight
@@ -403,12 +1209,15 @@
          * object, then whole page will be covered by gray overlay.
          * @param {boolean|undefined} allElements If set to true, then a rectangle
          * which fit all the elements will be drawn
+         * @param {boolean|undefined} noScroll set to true to avoid scrolling to this element
          * @return {CartFiller.Api} for chaining
          * @access public
          */
-        highlight: function(element, allElements){
-            me.modules.ui.highlight(element, allElements);
-            me.modules.dispatcher.setHighlightedElement(element);
+        highlight: function(element, allElements, noScroll){
+            try {
+                me.modules.ui.highlight(element, allElements, noScroll);
+                me.modules.dispatcher.setReturnedValueOfStep(element);
+            } catch (e) {}
             return this;
         },
         /**
@@ -420,26 +1229,1430 @@
          * 
          * @function CartFiller.API#arrow
          * @see CartFiller.API#highlight
+         * @return {CartFiller.Api} for chaining
          * @access public
          */
-        arrow: function(element, allElements){
-            me.modules.ui.arrowTo(element, allElements);
-            me.modules.dispatcher.setHighlightedElement(element);
+        arrow: function(element, allElements, noScroll){
+            try {
+                me.modules.ui.arrowTo(element, allElements, noScroll);
+                me.modules.dispatcher.setReturnedValueOfStep(element);
+            } catch (e){}
+            return this;
+        },
+        /**
+         * remember result. 
+         * @function CartFiller.API#return
+         * @param {mixed} value
+         * @return {CartFiller.Api} for chaining
+         * @access public
+         */
+        return: function(value) {
+            me.modules.dispatcher.setReturnedValueOfStep(value);
             return this;
         },
         /**
          * Displays comment message over the overlay in the main frame
          * @function CartFiller.Api#say
          * @param {String} message
+         * @param {boolean} pre Preserve formatting (if set to true then message will be wrapped
+         * with &lt;pre&gt; tag)
+         * @param {String} nextButton If used, then button with this name will appear below the message
+         * In this case you should not do api.result() as this will be done when user clicks this button.
+         * @return {CartFiller.Api} for chaining
          * @access public
          */
-        say: function(message){
-            me.modules.ui.say(message);
+        say: function(message, pre, nextButton){
+            me.modules.ui.say((message === undefined || message === null) ? message : String(message), pre, nextButton);
+            return this;
+        },
+        /**
+         * Simple way to interact with user
+         * @function CartFiller.Api#modal
+         * @param {String} html
+         * @param {Function} callback being called when modal is constructed from html, so, that
+         * you can put some data and set event handlers. Callback will receive wrapper div html
+         * element as a parameter
+         * @return {CartFiller.Api} for chaining
+         * @access public
+         */
+        modal: function(html, callback) {
+            me.modules.ui.say(html, undefined, undefined, true, callback);
+            return this;
+        },
+        /**
+         * Just another for-each implementation, jQuery style
+         * @function CartFiller.Api#each
+         * @param {Array|Object|HtmlCollection} array Array to iterate through
+         * @param {CartFiller.Api.eachCallback} fn Called for each item, if result === false
+         *          then iteration will be interrupted
+         * @param {CartFillerApi.eachOtherwiseCallback} otherwise Called if iteration was
+         * not interrupted
+         * @return {CartFiller.Api} for chaining
+         * @return {CartFiller.Api} for chaining
+         * @access public
+         */
+        each: function(array, fn, otherwise){
+            var i;
+            var breaked = false;
+            var resultMeansWeShouldStop = function(r) {
+                return r === false || r === 0 || r === me.modules.api;
+            };
+            if (
+                array instanceof Array || 
+                (
+                    array.constructor && 
+                    (
+                        array.constructor.name === 'HTMLCollection' ||
+                        String(array.constructor) === '[object HTMLCollection]' ||
+                        array.constructor.name === 'NodeListConstructor' ||
+                        String(array.constructor) === '[object NodeListConstructor]'
+                    )
+                ) ||
+                String(array) === '[object NodeList]'
+            ) {
+                for (i = 0 ; i < array.length; i++ ) {
+                    if (resultMeansWeShouldStop(fn.call(getDocument(), i, array[i]))) {
+                        breaked = true;
+                        break;
+                    }
+                }
+            } else if (null !== array && 'object' === typeof array && 'string' === typeof array.jquery && undefined !== array.length && 'function' === typeof array.each) {
+                array.each(function(i,el){
+                    if (resultMeansWeShouldStop(fn.call(getDocument(), i,el))) {
+                        breaked = true;
+                        return false;
+                    }
+                });
+            } else {
+                for (i in array) {
+                    if (array.hasOwnProperty(i)) {
+                        if (resultMeansWeShouldStop(fn.call(getDocument(), i, array[i]))) {
+                            breaked = true;
+                            break;
+                        }
+                    }
+                }
+            }
+            if (! breaked && otherwise instanceof Function) {
+                otherwise.call(getDocument());
+            }
+        },
+        /**
+         * Unusual combination of map and filter functions, can do both and more of that
+         * can map one input entry to multiple output entries
+         * @function CartFiller.Api#map
+         * @param {Array|Object|HtmlCollection} 
+         * @param {CartFiller.Api.mapCallback} 
+         * @param {CartFillerApi.mapOtherwiseCallback} 
+         * @return {Array} which has same map method as well
+         * @see CartFiller.Api#each for parameter description
+         */
+        map: function(array, fn, otherwise) {
+            var r = [];
+            r.map = function(fn, otherwise) {
+                return me.modules.api.map(r, fn, otherwise);
+            };
+            var p = function(v) { r.push(v); };
+            var u = function(v) { r.unshift(v); };
+            me.modules.api.each(array, function(i,v) {
+                return fn.apply(r, [i, v, p, u]);
+            }, otherwise ? function() {
+                return otherwise.apply(r, [p, u]);
+            } : undefined);
+            return r;
+        }, 
+        /**
+         * Compare two strings, if they match return '', if they mismatch return full
+         * dump showing exact position where they mismatch. Usage: 
+         * api.result(api.compare(task.value, el.text().trim()));
+         * @function CartFiller.Api#compare
+         * @param {string} expected
+         * @param {string} value
+         * @return {string} '' if values match, error description otherwise
+         * @access public
+         */
+        compare: function(expected, value, comment) {
+            expected = String(expected);
+            value = String(value);
+            if (expected === value) {
+                return '';
+            }
+            var r = (comment ? (comment + ': ') : '') + '[';
+            for (var i = 0; i < Math.max(expected.length, value.length); i++) {
+                if (expected.substr(i, 1) === value.substr(i, 1)) {
+                    r += expected.substr(i, 1);
+                } else {
+                    r += '] <<< expected: [' + expected.substr(i) + '], have: [' + value.substr(i) + ']';
+                    break;
+                }
+            }
+            return r;
+        },
+        /**
+         * Safe setTimeout, that registers handler in cartFiller, so, if 
+         * timeout will happen earlier then this handler will be invoked
+         * this handler will be cleared automatically
+         * @function CartFiller.Api#setTimeout
+         * @param {Function} fn same as normal JavaScript setTimeout
+         * @param {integer} timeout  same as normal JavaScript setTimeout
+         * @return {integer} same as normal JavaScript setTimeout
+         * @access public
+         */
+        setTimeout: function(fn, timeout) {
+            me.modules.dispatcher.registerWorkerSetTimeout(setTimeout(me.modules.api.applier(fn), timeout));
+        },
+        /**
+         * Safe setInterval, that registers handler in cartFiller, so, if 
+         * timeout will happen earlier then this handler will be invoked
+         * this handler will be cleared automatically
+         * @function CartFiller.Api#setTimeout
+         * @param {Function} fn same as normal JavaScript setInterval
+         * @param {integer} timeout  same as normal JavaScript setInterval
+         * @return {integer} same as normal JavaScript setInterval
+         * @access public
+         */
+        setInterval: function(fn, timeout) {
+            me.modules.dispatcher.registerWorkerSetInterval(setInterval(me.modules.api.applier(fn), timeout));
+        },
+        /**
+         * Will be deprecated, use api.clicker()
+         * 
+         * @function CartFiller.Api#click
+         */
+        click: function(whatNext) {
+            return me.modules.api.clicker(whatNext);
+        },
+        /**
+         * Helper function to construct workers - return array ['click', function(el){ el[0].click(); api.result; }]
+         * @function CartFiller.Api#clicker
+         * @param {Function} what to do after click, gets same parameters as normal
+         *          worker functions////
+         * @param {Function} what to do before click, useful to replace window.prompt and window.confirm
+         * @return {Array} ready for putting into step list
+         * @access public
+         */
+        clicker: function(whatNext, whatBefore) {
+            return [
+                'click', function(el){
+                    if(me.modules.api.debug && me.modules.api.debug.stop) {
+                        debugger; // jshint ignore:line
+                    }
+                    if (whatBefore) {
+                        whatBefore.apply(getDocument(), arguments);
+                    }
+                    if (! el) {
+                        // do nothing
+                        return me.modules.api.result();
+                    } else if ('object' === typeof el && 'string' === typeof el.jquery && undefined !== el.length) {
+                        simulateClick(el[0]);
+                    } else if ((el instanceof Array) || (el instanceof Selector)) {
+                        simulateClick(el[0]);
+                    } else {
+                        simulateClick(el);
+                    }
+                    // if result was already submitted (as a handler of click) - then do not call whatNext
+                    if (me.modules.dispatcher.getWorkerCurrentStepIndex() !== false) {
+                        if (undefined === whatNext || whatNext === me.modules.api.result) {
+                            me.modules.api.result();
+                        } else if (whatNext === me.modules.api.onload) {
+                            me.modules.api.onload();
+                        } else {
+                            whatNext.apply(getDocument(), arguments);
+                        }
+                    }
+                }
+            ];
+        },
+        confirmer: function(cb, shouldAgree, expectedMessageOrRegExp) {
+            return ['confirm', function() {
+                me.modules.api.confirm('function' === typeof cb ? cb : cb[1], shouldAgree, expectedMessageOrRegExp, arguments);
+            }];
+        },
+        confirm: function(cb, shouldAgree, expectedMessageOrRegExp, args) {
+            // to be done properly
+            if(me.modules.api.debug && me.modules.api.debug.stop) {
+                debugger; // jshint ignore:line
+            }
+            var oldConfirm = me.modules.ui.mainFrameWindow.confirm;
+            var confirmCalled = false;
+            var match = false;
+            var confirmMessage; 
+            me.modules.ui.mainFrameWindow.confirm = function(msg) {
+                confirmCalled = true;
+                confirmMessage = msg;
+                if ('undefined' !== typeof expectedMessageOrRegExp) {
+                    if ('object' === typeof expectedMessageOrRegExp) {
+                        match = expectedMessageOrRegExp.test(msg);
+                    } else {
+                        match = String(expectedMessageOrRegExp) === String(msg);
+                    }
+                } else {
+                    match = true;
+                }
+                me.modules.ui.mainFrameWindow.confirm = oldConfirm;
+                return (shouldAgree || ('undefined' === typeof shouldAgree));
+            };
+            cb.apply(getDocument(), args);
+        },
+        /**
+         * Opens relay window. If url points to the cartFiller distribution
+         * @function CartFiller.Api#openRelay
+         * @param {string} url
+         * @param {boolean} noFocus if set to true, it will make an 
+         * alert on main window when slave will be registered to 
+         * bring focus back to the dashboard
+         * @return {CartFiller.Api} for chaining
+         * @access public
+         */
+        openRelay: function(url, noFocus) {
+            me.modules.dispatcher.openRelayOnTheTail(url, noFocus);
+            return this;
+        },
+        /**
+         * Registers onload callback, that is called each time when new page
+         * is loaded. Idea is that this function can verify if new page contains
+         * critical application error, exception description, etc
+         * @function CartFiller.Api#registerOnloadCallback
+         * @param {string|CartFiller.Api.onloadEventCallback} aliasOrCallback alias or method if alias is not used
+         * @param {CartFiller.Api.onloadEventCallback|undefined} callbackIfAliasIsUsed method if alias is used
+         * @return {CartFiller.Api} for chaining
+         * @access public
+         */
+        registerOnloadCallback: function(aliasOrCallback, callbackIfAliasIsUsed){
+            me.modules.dispatcher.registerEventCallback('onload', callbackIfAliasIsUsed ? aliasOrCallback : '', callbackIfAliasIsUsed ? callbackIfAliasIsUsed : aliasOrCallback);
+            return this;
+        },
+        /**
+         * Will be deprecated, use typer
+         * 
+         * @function CartFiller.Api#type
+         */
+        type: function(value, whatNext, dontClear, failOnErrors) {
+            return me.modules.api.typer(value, whatNext, dontClear, failOnErrors);
+        },
+        /**
+         * Types a string into currently highlighted/arrowed element by issuing multiple keydown/keypress/keyup events. See example below.
+         * @example
+         *   'some steps of your worker', function() {
+         *     .... 
+         *     api.arrow(something) // something is the element we're going to
+         *        .result();        // type into
+         *   },
+         *   api.type('name', function(input) { // this means - look for 
+         *                                      // task.name or globals.name 
+         *                                      // and put its value to 
+         *                                      // "something" variable. After
+         *                                      // type will be done our
+         *                                      // callback will be called and 
+         *                                      // "input" parameter will 
+         *                                      // contain "something" element
+         *
+         *      api.result(                 // for example verify, that
+         *          api.compare(            // various onkeypress handlers 
+         *              task.name,          // did not change input value
+         *              input.val().trim()
+         *          )
+         *      );
+         * @function CartFiller.Api#typer
+         * @param {string|Function} value or callback to get value
+         * @param {Function} whatNext callback after this task is 
+         * @param {boolean} dontClear by default this function will clear input before typing
+         * @param {boolean} failOnErrors set to true to fail on errors during attempts to set keyCode and charCode values
+         * @param {boolean} paste set to true not to simulate each separate key press, but
+         * simulate Paste action
+         * @return {Array} ready for putting into worker array
+         * @access public
+         */
+        typer: function(value, whatNext, dontClear, failOnErrors, paste) {
+            var r = [
+                paste ? 'paste value' : 'type key sequence',
+                function(el) {
+                    var args = arguments;
+                    if (me.modules.api.debug && me.modules.api.debug.stop) {
+                        debugger; // jshint ignore:line
+                    }
+                    var finish = function() {
+                        if (undefined === whatNext || whatNext === me.modules.api.result) {
+                            me.modules.api.result();
+                        } else if (whatNext === me.modules.api.onload) {
+                            me.modules.api.onload();
+                        } else {
+                            whatNext.apply(getDocument(), args);
+                        }
+                    };
+                    var elementNode;
+                    if (! el) {
+                        // do nothing
+                        return me.modules.api.result();
+                    } else if ('object' === typeof el && 'string' === typeof el.jquery && undefined !== el.length) {
+                        elementNode = el[0];
+                    } else if ((el instanceof Array) || (el instanceof Selector)) {
+                        elementNode = el[0];
+                    } else {
+                        elementNode = el;
+                    }
+                    elementNode.focus();
+                    var text;
+                    if (value instanceof Function) {
+                        text = value.apply(getDocument(), args);
+                    } else if (undefined !== me.modules.dispatcher.getWorkerTask()[value]) {
+                        text = me.modules.dispatcher.getWorkerTask()[value];
+                    } else if (undefined !== me.modules.dispatcher.getWorkerGlobals()[value]) {
+                        text = me.modules.dispatcher.getWorkerGlobals()[value];
+                    } else {
+                        me.modules.api.result('Value to type [' + value + '] not found neither in the task properties nor in globals');
+                        return;
+                    }
+                    text = String(text);
+                    if (! dontClear) {
+                        try {
+                            elementNode.value = '';
+                        } catch (e) {}
+                    }
+                    var document = elementNode.ownerDocument;
+                    var fn = function(text, elementNode, whatNext) {
+                        var char = paste ? 'v' : text.substr(0, 1);
+                        var charCode = char.charCodeAt(0);
+                        if (charCode === 13) {
+                            charCode = 0;
+                        }
+                        var keyCode = char.charCodeAt(0);
+                        var nextText = paste ? '' : text.substr(1);
+                        var charCodeGetter = {get : function() { return charCode; }};
+                        var keyCodeGetter = {get : function() { return keyCode; }};
+                        var metaKeyGetter = {get : function() { return false; }};
+                        var doKeyPress = true;
+                        var dispatchEventResult;
+                        for (var eventName in {keydown: 0, keypress: 0, input: 0, keyup: 0}) {
+                            if ('keypress' === eventName && ! doKeyPress) {
+                                continue;
+                            }
+                            if (! char.length && 'keypress' === eventName) {
+                                continue;
+                            }
+                            var e = false;
+                            var invalidEvent = false;
+                            if (eventName === 'input') {
+                                try {
+                                    e = new elementNode.ownerDocument.defaultView.Event('input');
+                                } catch (e) {}
+                                if (! e) {
+                                    try {
+                                        e = elementNode.createEvent('UIEvent');
+                                        e.initUIEvent('input');
+                                    } catch (e) {}
+                                }
+                                if (! e) {
+                                    continue;
+                                }
+                            } else {
+                                if (window.callPhantom) {
+                                    window.callPhantom({
+                                        keyboardEvent: eventName,
+                                        char: char
+                                    });
+                                    continue;
+                                }
+                                e = elementNode.ownerDocument.createEvent('KeyboardEvent');
+                                try { Object.defineProperty(e, 'keyCode', keyCodeGetter); } catch (e) { invalidEvent = true; }
+                                try { Object.defineProperty(e, 'charCode', charCodeGetter); } catch (e) { invalidEvent = true; }
+                                try { Object.defineProperty(e, 'metaKey', metaKeyGetter); } catch (e) { invalidEvent = true; }
+                                try { Object.defineProperty(e, 'which', charCodeGetter); } catch (e) { invalidEvent = true; }
+                                if (e.initKeyboardEvent) {
+                                    e.initKeyboardEvent(eventName, true, true, document.defaultView, false, false, false, false, charCode, keyCode);
+                                } else {
+                                    e.initKeyEvent(eventName, true, true, document.defaultView, false, false, false, false, keyCode, charCode);
+                                }
+                                if ((failOnErrors) && (e.keyCode !== keyCode || e.charCode !== charCode)) {
+                                    me.modules.api.result('could not set correct keyCode or charCode for ' + eventName + ': keyCode returns [' + e.keyCode + '] instead of [' + keyCode + '], charCode returns [' + e.charCode + '] instead of [' + charCode + ']');
+                                    return false;
+                                }
+                                if ((failOnErrors) && e.metaKey) {
+                                    me.modules.api.result('could not set metaKey to false');
+                                    return false;
+                                }
+                            }
+                            dispatchEventResult = true;
+                            try {
+                                dispatchEventResult = elementNode.dispatchEvent(e);
+                            } catch (e) {}
+                            if (! dispatchEventResult && 'keydown' === eventName) {
+                                // do not send keypress event if keydown event returned false
+                                doKeyPress = false;
+                            }
+                            if ((invalidEvent || dispatchEventResult) && 'keypress' === eventName) {
+                                elementNode.value = elementNode.value + (paste ? text : char);
+                            }
+                        }
+                        if (0 === nextText.length) {
+                            try {
+                                var event = new elementNode.ownerDocument.defaultView.Event('change', {bubbles: true});
+                                elementNode.dispatchEvent(event);
+                            } catch (e) {}
+                            try {
+                                var inputEvent = new elementNode.ownerDocument.defaultView.Event('input', {bubbles: true});
+                                elementNode.dispatchEvent(inputEvent);
+                            } catch (e) {}
+                            try {
+                                if ('function' === typeof elementNode.ownerDocument.defaultView.jQuery) {
+                                    elementNode.ownerDocument.defaultView.jQuery(elementNode).change();
+                                }
+                            } catch (e) {}
+                            me.modules.api.arrow(el);
+                            finish();
+                        } else {
+                            me.modules.api.setTimeout(function() { fn(nextText, elementNode, whatNext); }, 0);
+                        }
+                    };
+                    fn(text, elementNode, whatNext);
+                }
+            ];
+            var params = {};
+            [value, whatNext].filter(function(v) {
+                if ('function' === typeof v) {
+                    me.modules.dispatcher.discoverTaskParameters(v, params);
+                } else if (undefined !== v) {
+                    params[v] = true;
+                }
+            });
+            r[1].cartFillerParameterList = [];
+            for (var i in params) {
+                r[1].cartFillerParameterList.push(i);
+            }
+            return r;
+        },
+        /**
+         * Sames as typer but pastes in one step
+         * @function CartFiller.Api#paster
+         * @param {string|Function} value see api.typer()
+         * @param {Function} whatNext see api.typer()
+         * @param {boolean} dontClear see api.typer()
+         * @param {boolean} failOnErrors see api.typer()
+         * @return {Array} ready for putting into worker array
+         * @access public
+         */
+        paster: function(value, whatNext, dontClear, failOnErrors) {
+            return this.typer(value, whatNext, dontClear, failOnErrors, true);
+        },
+        /**
+         * Wrapper function for asynchronous things - catches exceptions and fires negative result
+         * @function CartFiller.Api#apply
+         * @param {Function} fn
+         * @param {mixed} arbitrary parameters will be passed to fn
+         * @access public
+         */
+        apply: function(fn) {
+            try {
+                var args = [];
+                for (var i = 1; i < arguments.length; i ++) {
+                    args.push(arguments[i]);
+                }
+                fn.apply(me.modules.dispatcher.getWorker(), args);
+            } catch (err) {
+                me.modules.dispatcher.reportErrorResult(err);
+                throw err;
+            }
+        },
+        /**
+         * Returns method, that, when called, will call api.apply against supplied fn
+         * @function CartFiller.Api#applier
+         * @param {Function} fn
+         * @access public
+         */
+        applier: function(fn) {
+            return function() {
+                var args = [fn];
+                for (var i = 0; i < arguments.length; i ++) {
+                    args.push(arguments[i]);
+                }
+                me.modules.api.apply.apply(me.modules.api, args);
+            };
+        },
+        /**
+         * Define shared worker function - which can be used in other workers
+         * @function CartFiller.Api#define
+         * @param {string|Function} name either name of function or function itself, 
+         * then name will be deduced from function code (it should be named function)
+         * @param {Function} fn
+         * @return {CartFiller.Api} for chaining
+         * @access public
+         */
+        define: function(name, fn){
+            if (name instanceof Function) {
+                var p = /^\s*function\s+([^(]+)\(/;
+                if (! p.test(name.toString())) {
+                    var err = 'invalid shared function definition, if name is not specified as first parameter of api.define() call, then function should be named';
+                    alert(err);
+                    throw new Error(err);
+                }
+                var m = p.exec(name.toString());
+                fn = name;
+                name = m[1];
+            }
+            me.modules.dispatcher.defineSharedWorkerFunction(name, fn);
+            return this;
+        },
+        /** 
+         * Defines time to sleep after this step in slow mode. Default is 1 second. 
+         * Another way of specifying this time is via magic parameters like sleep250
+         * @function CartFiller.Api#sleep
+         * @param {integer|undefined} time (ms). If undefined, then sleep will be proportional
+         * to length of message said by api.say()
+         * @return {CartFiller.Api} for chaining
+         * @access public
+         */
+        sleep: function(time) {
+            if ('undefined' === typeof time) {
+                var messageToSay = me.modules.ui.getMessageToSay();
+                if ('undefined' === messageToSay) {
+                    time = 0;
+                } else {
+                    time = 1000 + Math.floor(String(messageToSay).length * 20); // 50 chars per second
+                }
+            }
+            me.modules.dispatcher.setSleepAfterThisStep(time);
+            return this;
+        },
+        /**
+         * @function CartFiller.Api#drill
+         * @param {Function} cb This function should return iframe's contentWindow object if needed to 
+         * drill further, otherwise do its job and return nothing. This function will get
+         * frame's window as first parameter
+         * @return {CartFiller.Api} for chaining
+         * @access public
+         */
+        drill: function() {
+            var originalPath = me.modules.dispatcher.getFrameToDrill();
+            var path = originalPath.filter(function(){return 1;});
+            var frame = me.modules.ui.mainFrameWindow;
+            var level = path.length;
+            while (path.length) {
+                frame = frame.frames[path.shift()];
+            }
+            var result = arguments[level](frame);
+            if (result) {
+                // drill further
+                for (var i = 0; i < frame.frames.length; i ++) {
+                    if (result === frame.frames[i]){
+                        var elements = frame.document.getElementsByTagName('iframe');
+                        for (var j = 0 ; j < elements.length; j++){
+                            if (elements[j].contentWindow === result) {
+                                me.modules.ui.addElementToTrack('iframe', elements[j], true, [j]);
+                            }
+                        }
+                        return me.modules.dispatcher.drill(i);
+                    }
+                }
+            }
+            return this;
+        },
+        compareCleanText: function(a, b) {
+            return cleanText(a) === cleanText(b);
+        },
+        containsCleanText: function(a, b) {
+            return -1 !== cleanText(a).indexOf(cleanText(b));
+        },
+        suspendRequests: function(cb) {
+            me.modules.dispatcher.onMessage_toggleEditorMode({enable: false, cb: cb});
+        },
+        /**
+         * @function CartFiller.Api#setAdditionalWindows
+         * @param {Object[]} descriptors Array of window descriptors, each item is an object
+         * having two keys: 'url' and 'slave', where 'slave' points to cartFiller distribution
+         * that will act as slave. 
+         * This function will call api.result as soon as all windows will be loaded, slaves
+         * initialized, etc
+         * This only works in framed mode
+         * @return {CartFiller.Api} for chaining
+         * @access public
+         */
+        setAdditionalWindows: function(descriptors) {
+            descriptors = descriptors || [];
+            me.modules.dispatcher.setAdditionalWindows(descriptors);
+            return this;
+        },
+        /**
+         * @function CartFiller.Api#switchToWindow
+         * @param {integer} index Window to be set as active (0-based, 0 is default window, 1 is
+         * first additional window)
+         * @return {CartFiller.Api} for chaining
+         * @access public
+         */
+        switchToWindow: function(index) {
+            me.modules.dispatcher.switchToWindow(index);
+            return this;
+        },
+        find: function(selector) {
+            return new Selector([getDocument()], undefined, function(){ return [getDocument()]; }).find(selector);
+        },
+        getSelectorClass: function() {
+            return Selector;
+        },
+        openUrl: function(url) {
+            if (! url) {
+                throw new Error('empty url specified for api.openUrl');
+            }
+            var existingUrl = me.modules.ui.mainFrameWindow.location.href.split('#')[0];
+            me.modules.ui.mainFrameWindow.location.href = url;
+            if (url.split('#')[0] === existingUrl) {
+                me.modules.ui.mainFrameWindow.location.reload();
+            }
+            return this;
+        },
+        isRelayRegistered: function(url) {
+            return me.modules.dispatcher.isRelayRegistered(url);
+        },
+        getDocument: function() { return getDocument(); },
+        internalDebugger: function() { 
+            if(this.debug && this.debug.stop) {
+                debugger;  // jshint ignore:line
+            }
             return this;
         }
-
     });
 }).call(this, document, window);
+
+/**
+ * Represents the cf.* task Wrapper
+ * 
+ * cases: 
+ * * linear
+ * cf
+ *  .find(...)
+ *  .click()
+ *  .then(function(){
+ *    ...
+ *    cf.result(...);
+ *  })
+ *  .export('task - click the button')
+ * 
+ * * static step list -
+ * cf
+ *  .find(...)
+ *  .click()
+ *  .share('myTwoSteps')
+ *  .export('task - find and click')
+ * 
+ * cf
+ *  .use('myTwoSteps')
+ *  
+ * * parametrized generator
+ * cf
+ *  .generator('buildSomeSteps', function (opts) {
+ *   return cf
+ *     .find(... opts.b ... opts.c ... )
+ *     .click()
+ *     .use(opts.a && cf
+ *        .find(...)
+ *        .click()
+ *     )
+ *     // no save here
+ *   })
+ *  .use('buildSomeSteps', {a: 'a0', b: 'b0', c: 'c0'})
+ *  .export('task - generated with a0, b0 and c0)
+ * 
+ * cf
+ *  .use('buildSomeSteps', {a: 'a', b: 'b', c: 'c'})
+ *  .export('task - generated with a, b and c)
+ *
+ * cf
+ *  .use('buildSomeSteps', {a: 'a1', b: 'b1', c: 'c1'})
+ *  .export('task - gnerated with a1, b1 and c1)
+ * 
+ * * step slice reuse
+ * cf
+ *  .find(...)
+ *  .click()
+ *  .name('find theButton').find(...)
+ *  .click()
+ *  .since('find theButton').share('helperToFindAndClickTheButton')
+ *  .find(...)
+ *  .click()
+ * 
+ * cf
+ *  .use('helperToFindAndClickTheButton')
+ *  ...
+ * 
+ * * referencing results of earlier steps
+ * cf
+ *  .find(...).as('thelink')
+ *  .find(...).as('theheading')
+ *  .with('thelink').click()
+ *  .with('thelink', 'theheading').then(function(a, th) {
+ *    ... 
+ *    cf.result();
+ *  })
+ *  .then(function(repeat10) {
+ *    cf.result(cf.get('a').length || cf.get('th').length ? '' : 'not found');
+ *  })
+ * 
+ * * repeat/skip/nop and conditional flow (skip/repeat)
+ * cf
+ *  .find(...).click()
+ *  .repeatTask()
+ * 
+ * cf
+ *  .name('a').find(...).click()
+ *  .name('b').find(...).click()
+ *  .then(function(){
+ *    if (cf.find(...).length) cf.skipTask().result();
+ *  })
+ *  .repeatStep('b')
+ * 
+ * cf
+ *  .ifNot(cf('isLoggedIn'), cf
+ *    .find(cf('loginLink')).click().waitFor(cf('findLoginDialog'))
+ *    .find('#username').type('login')
+ *    .find('#password').type('password')
+ *    .find('#rememberMe').ifNot(cf.is(':checked'), cf.click())
+ *    .find('#loginButton').click().waitFor(cf('isLoggedIn'))
+ *  )
+ *  .share('loginIfNecessary')
+ * * 
+ * * declarative waitfors
+ * cf
+ *  .waitFor(function(){ return cf.find().length; }, <then>, <timeout>, <checkPeriod>)
+ * 
+ * * declaring and referencing lib element finders (page objects) and other lib helpers
+ * 
+ * cf
+ *  .find('#navBar ul li.welcome span:nth-child(1)')
+ *  ...
+ * => 
+ * cf
+ *  .lib('welcomeSpan', cf.find('#navBar ul li.welcome span:nth-child(1)'))
+ *  .find('welcomeSpan')
+ *  .lib('isAdmin', cf.find('welcomeSpan').is('.admin'))
+ *  ...
+ * 
+ * 
+ * cf
+ *  .lib('welcomeSpan', function() { return cf.find(...); })
+ *  .lib('welcomeSpan', cf.find(...))
+ *  .lib('isLoggedIn', function() { 
+ *    return lib('welcomeSpan').length;
+ *  })
+ *  .lib('isLoggedIn', function(opts) {
+ *    if (opts.isAdmin) return lib('welcomeSpan').length && lib('welcomeSpan').is('.admin');
+ *    return lib('welcomeSpan').length;
+ *  })
+ *  .find(...).click().waitFor(lib('isLoggedIn', {isAdmin: true}))
+ * 
+ * cf
+ *  .lib('findCellInTheTable', function(opts) { ... })
+ *  .find(lib('findCellInTheTable', {header: 'Name', value: cf.task('name')}))
+ *  .find(function(){
+ *    return lib('findCellInTheTable', {header: 'Name', value: task.name});
+ *  })
+ *  .find(function(){
+ *    return lib('findCellInTheTable', {header: 'Name', value: cf.task('name')});
+ *  })
+ * 
+ * 
+ * * make sure, that...
+ * cf
+ *  .find(...)
+ *  .click()
+ *  .name('is logged in').assertTrue(lib('isLoggedIn'))
+ *  .name('is logged in as Michael').assertEquals(lib('welcomeSpan').text().trim(), 'Hello Michael!')
+ *  .assertTrue(function(){
+ *    return lib('welcomeSpan').text().trim() === 'Hello Michael!';
+ *  })
+ *  .then(function(){ 
+ *    cf.result(cf.compare(lib('welcomeSpan').text().trim(), 'Hello Michael!'));
+ *  })
+ *  .name('is logged in as username specified in task').assertEquals(lib('welcomeSpan').text().trim(), cf.task('name'))
+ */
+(function(document, window, undefined){
+    'use strict';
+    
+    var me = this.cartFillerConfiguration;
+    var i;
+    var api = function(method, args) { 
+        return me.modules.api[method].apply(me.modules.api, args);
+    };
+    // during build - things are more specific
+    var Wrapper;
+    var Runtime;
+    var niceArgs = function(args) {
+        return JSON.stringify(args).replace(/^\[/, '(').replace(/\]$/, ')');
+    };
+    var copyArguments = function(src) {
+        var args = [];
+        for (var argIndex = 0; argIndex < src.length; argIndex ++ ) {
+            args.push(src[argIndex]);
+        }
+        return args;
+    };
+    var cutSince = function(arr, name) {
+        for (var i = 0; i < arr.length; i ++) {
+            if (arr[i][0] === 'name' && arr[i][1][0] === name) {
+                return arr.slice(i);
+            }
+        }
+        throw new Error('when trying to do .since("' + name + '") the preceding .name("' + name + '") was not found');
+    };
+    var flattenAndReplaceName = function(arr, name) {
+        var flatten = me.modules.dispatcher.recursivelyCollectSteps(arr);
+        if (name && (flatten instanceof Array) && (flatten.length > 0) && ('string' === typeof flatten[0])) {
+            flatten[0] = name;
+        }
+        return flatten;
+    };
+    var findStepIndexByName = function(name, steps) {
+        for (var i = steps.length - 2; i >= 0; i -= 2) {
+            if (steps[i] === name) {
+                return i / 2;
+            }
+        }
+        throw new Error('step not found: [' + name + ']');
+    };
+    var actualWrapper = false;
+    var onLoaded = function() {
+        Runtime = function() {
+
+        };
+        Runtime.prototype = Object.create({});
+        // during runtime most methods are just proxying to api
+        ['find', 'result', 'say', 'onload', 'nop'].filter(function(method) {
+            Runtime.prototype[method] = function() { return api(method, arguments); };
+        });
+
+        Wrapper = function(){
+            this.mode = 0;
+            this.tasks = {};
+            this.shares = {};
+            this.lib = {};
+            this.unexportedTasks = {};
+            var wrapper = this;
+            actualWrapper = this;
+            this.runtime = new Runtime();
+            var LibReferencePromise = this.LibReferencePromise = function(name) {
+                this.name = name;
+            };
+            var BuilderPromise = this.BuilderPromise = function(method, args, prev) {
+                this.arr = ((prev.length === 1 && prev[0][0] === '') ? [] : prev.slice()).concat(method ? [[method, args]] : []);
+                var taskNames = prev.filter(function(v) { return v[0] === 'task'; });
+                if (taskNames.length) {
+                    wrapper.unexportedTasks[taskNames[taskNames.length - 1][1][0]] = this.arr;
+                }
+            };
+            var decodeLibReferences = function(arr) {
+                if (arr[0][0] === 'get' && arr[0][1][0] instanceof LibReferencePromise) {
+                    return wrapper.lib[arr[0][1][0].name].arr.concat(arr.slice(1));
+                } else if (arr[0][0] === 'lib' || arr[0][0] === 'getlib') {
+                    return wrapper.lib[arr[0][1][0]].arr.concat(arr.slice(1));
+                }
+                return arr;
+            };
+            var wrapSelectorBuilderPromise = this.wrapSelectorBuilderPromise = function(arr) {
+                arr = decodeLibReferences(arr);
+                if (arr.length === 1) {
+                    if (arr[0][0] !== 'get') {
+                        throw new Error('only get is allowed as first step of selector promise, we have [' + arr[0][0] + '] instead');
+                    }
+                    if (arr[0][1][0] instanceof BuilderPromise) {
+                        return wrapSelectorBuilderPromise(arr[0][1][0].arr);
+                    } else {
+                        return me.modules.dispatcher.injectTaskParameters(function(){ return api('find', arr[0][1]); }, [arr[0][1]]);
+                    }
+                } else {
+                    var prev = arr.slice();
+                    var step = prev.pop();
+                    var prevBuilderPromise = wrapSelectorBuilderPromise(prev);
+                    return me.modules.dispatcher.injectTaskParameters(function(){
+                        var prevResult = prevBuilderPromise();
+                        return prevResult[step[0]].apply(prevResult, step[1]);
+                    }, [prevBuilderPromise].concat(step[1]));
+                }
+            };
+            BuilderPromise.prototype = Object.create({});
+            BuilderPromise.prototype.export = function(name) {
+                if (! name) {
+                    if (this.arr[0][0] === 'task') {
+                        name = this.arr[0][1][0];
+                    }
+                    if (! name) {
+                        throw new Error('When using export without parameters, you should name task at the very beginning using cf.task(\'thename\')');
+                    }
+                }
+                if (wrapper.tasks[name] || wrapper.shares[name]) {
+                    throw new Error('task or share or generator [' + name + '] already exists, looks like you try to overwrite it by cf.export() another time');
+                }
+                wrapper.tasks[name] = this.$since ? cutSince(this.arr, this.$since[0]) : this.arr;
+                return this;
+            };
+            BuilderPromise.prototype.lib = function(name, body) {
+                if (wrapper.lib[name]) {
+                    throw new Error('lib [' + name + '] is already defined, you are trying to redefined it');
+                }
+                if (('function' === typeof body) || (body instanceof BuilderPromise)) {
+                    wrapper.lib[name] = body;
+                }
+                return new BuilderPromise('lib', [name], this.arr);
+            };
+            BuilderPromise.prototype.const = function(value) {
+                return function() { return value; };
+            };
+            BuilderPromise.prototype.share = function(name) {
+                if (wrapper.tasks[name] || wrapper.shares[name]) {
+                    throw new Error('task or share or generator [' + name + '] already exists, looks like you try to overwrite it by cf.share() another time');
+                }
+                wrapper.shares[name] = this.$since ? cutSince(this.arr, this.$since[0]) : this.arr;
+                return this;
+            };
+            BuilderPromise.prototype.generator = function(name, fn) {
+                if (wrapper.tasks[name] || wrapper.shares[name]) {
+                    throw new Error('task or share or generator [' + name + '] already exists, looks like you try to overwrite it by cf.generator() another time');
+                }
+                wrapper.shares[name] = fn;
+                return this;
+            };
+            ['since'].filter(function(f) {
+                BuilderPromise.prototype[f] = function() {
+                    var p = new BuilderPromise(undefined, undefined, this.arr);
+                    p['$' + f] = copyArguments(arguments);
+                    return p;
+                };
+            });
+            this.cf = new BuilderPromise('', [], []); // the root
+            if (! this.cf) {
+                console.log('no this.cf, checking BuilderPromise');
+                console.log(BuilderPromise);
+                console.log(typeof BuilderPromise);
+                console.log(BuilderPromise.prototype);
+                console.log(typeof BuilderPromise.prototype);
+                throw new Error('unable to use declarative mode - probably browser incompatibility');
+            }
+
+            var makeBooleanBuilderPromise = function(condition) {
+                if (condition instanceof Function) {
+                    return condition;
+                } else if ('string' === typeof condition) {
+                    return function() {
+                        return me.modules.dispatcher.interpolateText(condition).length;
+                    };
+                } else if (condition instanceof BuilderPromise) {
+                    var arr = condition.arr.slice();
+                    var check = arr.pop();
+                    var promise;
+                    switch (check[0]) {
+                        case 'exists': 
+                            promise = wrapSelectorBuilderPromise(arr);
+                            return function() {
+                                var e = promise();
+                                if (e.length) {
+                                    e.arrow();
+                                }
+                                return e.length;
+                            };
+                        case 'absent': 
+                            promise = wrapSelectorBuilderPromise(arr);
+                            return function() {
+                                var e = promise();
+                                if (e.length) {
+                                    e.arrow();
+                                }
+                                return ! e.length;
+                            };
+                        case 'find':
+                        case 'closest':
+                        case 'first':
+                        case 'get':
+                            promise = wrapSelectorBuilderPromise(condition.arr);
+                            return function() {
+                                var e = promise();
+                                if (e.length) {
+                                    e.arrow();
+                                }
+                                return e.length;
+                            };
+                        default: 
+                            throw new Error('unknown selector tail for boolean expression: [' + check[0] + ']');
+                    }
+                } else {
+                    throw new Error('unknown condition for boolean evaluation: [' + JSON.stringify(condition) + ']');
+                }
+            };
+            var Builder = this.Builder = function() {
+                this.namedResults = {};
+            };
+            Builder.prototype = Object.create({});
+            Builder.prototype.getlib = function(args) {
+                var promise = wrapSelectorBuilderPromise(wrapper.lib[args[0]].arr);
+                return ['get' + niceArgs(args), me.modules.dispatcher.injectTaskParameters(function() {
+                    if(me.modules.api.debug && me.modules.api.debug.stop) {
+                        debugger; // jshint ignore:line
+                    }
+                    promise().arrow(1).result(); 
+                }, [promise])];
+            };
+            Builder.prototype.get = function(args) {
+                if (args[0] instanceof BuilderPromise || args[0] instanceof LibReferencePromise) {
+                    var promise;
+                    if (args[0] instanceof BuilderPromise) {
+                        if (args[0].arr[0][0] === 'lib') {
+                            promise = wrapSelectorBuilderPromise(wrapper.lib[args[0].arr[0][1][0]].arr);
+                        } else {
+                            promise = wrapSelectorBuilderPromise(args[0].arr);
+                        }
+                    } else { //args[0] instanceof LibReferencePromise
+                        promise = wrapSelectorBuilderPromise(wrapper.lib[args[0].name].arr);
+                    }
+                    return ['get' + niceArgs(args), me.modules.dispatcher.injectTaskParameters(function() {
+                        if(me.modules.api.debug && me.modules.api.debug.stop) {
+                            debugger; // jshint ignore:line
+                        }
+                        promise().arrow(1).nop(); 
+                    }, [promise])];
+                } else {
+                    return ['get' + niceArgs(args), function() { 
+                        if(me.modules.api.debug && me.modules.api.debug.stop) {
+                            debugger; // jshint ignore:line
+                        }
+                        api('find', args).arrow(1).nop(); 
+                    }];
+                }
+            };
+            Builder.prototype.as = function(args, index) {
+                this.namedResults[args[0]] = index;
+                return [];                
+            };
+            var withFactory = function(name, argumentOffset) { 
+                return ['with("' + name + '")', function() { arguments[argumentOffset].arrow().result(); }];
+            };
+            Builder.prototype.with = function(args, index) {
+                var result = [];
+                var extraOffset = 0;
+                for (var i = args.length - 1; i >= 0 ; i -- ){
+                    result.push.apply(result, withFactory(args[i], extraOffset + index - this.namedResults[args[i]]));
+                    extraOffset ++;
+                }
+                return result;
+            };
+            var buildProxyFunction = function(name) {
+                return function(args) {
+                    if (name === 'exists') {
+                        return [name + niceArgs(args), function(p) {
+                            api('waitFor', [function() {
+                                if(me.modules.api.debug && me.modules.api.debug.stop) {
+                                    debugger; // jshint ignore:line
+                                }
+                                p.reevaluate(); 
+                                return p.length;
+                            }, function(r) {
+                                p.arrow(1).result(r ? '' : 'element did not appear within timeout');
+                            }, args[0] || undefined]);
+                        }];
+                    } else if (name === 'absent') {
+                        return [name + niceArgs(args), function(p) {
+                            api('waitFor', [function() { 
+                                if(me.modules.api.debug && me.modules.api.debug.stop) {
+                                    debugger; // jshint ignore:line
+                                }
+                                p.reevaluate();
+                                return ! p.length;
+                            }, function(r) {
+                                p.arrow(1).result(r ? '' : 'element did not disappear within timeout');
+                            }, args[0] || undefined]);
+                        }];
+                    } else {
+                        return [name + niceArgs(args), me.modules.dispatcher.injectTaskParameters(function(p) {
+                            if(me.modules.api.debug && me.modules.api.debug.stop) {
+                                debugger; // jshint ignore:line
+                            }
+                            var s = p[name].apply(p, args);
+                            s.arrow(1).nop();
+                        }, args)];
+                    }
+                };
+            };
+            for (i in me.modules.api.getSelectorClass().prototype) {
+                if (i !== 'arrow' && i !== 'highlight' && i !== 'result' && i !== 'nop') {
+                    Builder.prototype[i] = buildProxyFunction(i);
+                }
+            }
+            ['say', 'repeatTask', 'repeatStep', 'skipTask', 'skipStep', 'repeatJob', 'skipJob', 'openUrl', 'sleep'].filter(function(fn) {
+                wrapper.Builder.prototype[fn] = function(args, index) {
+                    return [fn + niceArgs(args), function(p) {
+                        var tweakedArgs;
+                        if (fn === 'repeatStep' || fn === 'skipStep') {
+                            var target = findStepIndexByName(args[0], me.modules.api.env.taskSteps);
+                            tweakedArgs = [fn === 'repeatStep' ? (index - target + 1) : (target - index + 1)].concat(args.slice(1));
+                        } else {
+                            tweakedArgs = args.slice();
+                        }
+                        var submitResult = true;
+                        if (fn === 'say') {
+                            tweakedArgs[0] = me.modules.dispatcher.interpolateText(tweakedArgs[0]);
+                            if (tweakedArgs[2]) {
+                                submitResult = false;
+                            }
+                        }
+                        var apiOrElement;
+                        if (fn === 'say' && p instanceof me.modules.api.getSelectorClass()) {
+                            apiOrElement = p[fn].apply(p, tweakedArgs);
+                        } else {
+                            apiOrElement = api(fn, tweakedArgs);
+                        }
+                        if (fn === 'say' && ! tweakedArgs[2]) {
+                            api('sleep');
+                        }
+                        if (submitResult) {
+                            apiOrElement.result();
+                        }
+                    }];
+                };
+            });
+            Builder.prototype.pause = function(args) {
+                var ms = args[0];
+                return ['pause for [' + ms + '] ms', function(){
+                    api('setTimeout', [function(){
+                        api('result');
+                    }, ms]);
+                }];
+            };
+            Builder.prototype.nop = function() {
+                return ['nop', function(){ api('nop'); }];
+            };
+            Builder.prototype.click = function(args) {
+                return buildProxyFunction('exists')([]).concat(api('clicker', args));
+            };
+            Builder.prototype.ready = function() {
+                return ['wait for readyState become complete', function() {
+                    api('waitFor', [function() {
+                        return api('getDocument').readyState === 'complete';
+                    }]);
+                }];
+            };
+            /**
+             * string text to type
+             * boolean dont clear text before typing
+             */
+            Builder.prototype.type = function(args) {
+                return buildProxyFunction('exists')([]).concat(api('typer', [
+                    function() {
+                        return me.modules.dispatcher.interpolateText(args[0]);
+                    },
+                    undefined,
+                    args[1]
+                ]));
+            };
+            Builder.prototype.enter = function() {
+                return buildProxyFunction('exists')([]).concat(api('typer', [
+                    function() { 
+                        return '\r'; 
+                    }, 
+                    undefined, 
+                    true
+                ]));
+            };
+            Builder.prototype.then = function(args) {
+                return ['then(' +niceArgs(args) + ')', me.modules.dispatcher.injectTaskParameters(function() {
+                    args[0].apply(this, arguments);
+                }, args)];
+            };
+            Builder.prototype.onload = function(args) {
+                return ['onload(' +niceArgs(args) + ')', me.modules.dispatcher.injectTaskParameters(function() {
+                    api('onload', args);
+                }, args)];
+            };
+            Builder.prototype.waitFor = function(args) {
+                var name = 'waitFor(' + niceArgs(args) + ')';
+                if (args[0] instanceof Function) {
+                    return [name, function() { 
+                        api('waitFor', args);
+                    }];
+                } else if (args[0] instanceof BuilderPromise) {
+                    // ok, this is the case where we should get promise of selector
+                    var promise = makeBooleanBuilderPromise(args[0]);
+                    return ['waitFor' + niceArgs(args), function() {
+                        api('waitFor', [promise].concat(args.slice(1)));
+                    }];
+                }
+            };
+            Builder.prototype.use = function(args) {
+                if ('string' === typeof args[0]) {
+                    var name = args[0];
+                    var steps = wrapper.tasks[name] || wrapper.shares[name];
+                    if (! steps) { 
+                        throw new Error('share or task or generator [' + name + '] is not defined');
+                    }
+                    if (steps instanceof Function) {
+                        // generator
+                        steps = steps.apply(null, args.slice(1)).arr;
+                    }
+                    return this.build(steps);
+                } else if (args[0] instanceof BuilderPromise) {
+                    return this.build(args[0].arr);
+                }
+            };
+            Builder.prototype.useIf = function(args) {
+                return args[0] ? this.use(args.slice(1)) : [];
+            };
+            Builder.prototype.useIfNot = function(args) {
+                return args[0] ? [] : this.use(args.slice(1));
+            };
+            Builder.prototype.name = function() { return []; };
+            var generateIfOrIfNotSteps = function(args, builder, ifNot, isWhile) {
+                var condition = args[0];
+                var action = args[1];
+                var actionSteps = builder.build(action.arr);
+                var actionStepsLen = actionSteps.length / 2;
+                if (isWhile) {
+                    actionStepsLen ++;
+                    actionSteps.push('repeat', function() {
+                        api('repeatStep', [actionStepsLen + 1]);
+                        api('result');
+                    });
+                }
+                var booleanBuilderPromise = makeBooleanBuilderPromise(condition);
+                return ['if' + (ifNot ? 'Not' : '') + niceArgs([condition]), function() {
+                    var result = booleanBuilderPromise();
+                    if ((! ifNot && ! result) || (ifNot && result)) {
+                        api('skipStep', [actionStepsLen]);
+                    }
+                    api('result');
+                }].concat(actionSteps);
+            };
+            Builder.prototype.if = function(args) { 
+                return generateIfOrIfNotSteps(args, this);
+            };
+            Builder.prototype.ifNot = function(args) { 
+                return generateIfOrIfNotSteps(args, this, true);
+            };
+            Builder.prototype.while = function(args) { 
+                return generateIfOrIfNotSteps(args, this, false, true);
+            };
+            Builder.prototype.whileNot = function(args) { 
+                return generateIfOrIfNotSteps(args, this, true, true);
+            };
+            Builder.prototype.task = function() {
+                // just declare task name
+                return [];
+            };
+            var promiseProxyFactory = function(name){
+                return function() { 
+                    if (wrapper.mode) {
+                        return this.runtime[name].apply(this.runtime, arguments);
+                    } else {
+                        return new BuilderPromise(name, copyArguments(arguments), this.arr); 
+                    }
+                };
+            };
+            for (i in Builder.prototype) {
+                if (Builder.prototype.hasOwnProperty(i)) {
+                    BuilderPromise.prototype[i] = promiseProxyFactory(i);
+                }
+            }
+            Builder.prototype.build = function(steps, prev) {
+                var result = (prev || []).slice();
+                var builder = this;
+                var rememberedName;
+                steps.filter(function(step) {
+                    if (step[0] === 'lib') {
+                        return;
+                    }
+                    if (! builder[step[0]]) {
+                        throw new Error('step [' + step[0] + '] is not known to builder');
+                    }
+                    result.push.apply(result, flattenAndReplaceName(builder[step[0]](step[1], result.length / 2), rememberedName));
+                    rememberedName = step[0] === 'name' ? (rememberedName ? rememberedName : step[1][0]) : undefined;
+                });
+                return result;
+            };
+        };
+        Wrapper.prototype = Object.create({});
+        Wrapper.prototype.switchMode = function() {
+            this.mode = 1;
+        };
+        Wrapper.prototype.getCf = function() {
+            return this.cf;
+        };
+        Wrapper.prototype.libFunction = function(){
+            var name = arguments[0];
+            var args = copyArguments(arguments).slice(1);
+            if (this.mode === 0) {
+                if (name instanceof this.BuilderPromise) {
+                    var libElement = name.arr.filter(function(v) { return v[0] === 'lib'; });
+                    if (libElement.length) {
+                        name = libElement[0][1][0];
+                    }
+                }
+                // tbd this is wrong, we should return promise that
+                // will anyway be resolved later at runtime
+                if ('function' === typeof this.lib[name]) {
+                    throw new Error('this is not implemented');
+                } else if (this.lib[name] instanceof this.BuilderPromise) {
+                    return this.lib[name];
+                } else {
+                    return new this.LibReferencePromise(name);
+                }
+            } else {
+                // proxy
+                if ('function' === typeof this.lib[name]) {
+                    return this.lib[name].apply(null, args);
+                } else if (this.lib[name] instanceof this.BuilderPromise) {
+                    return wrapSelectorBuilderPromise(this.lib[name].arr)();
+                } else {
+                    throw new Error('not sure how to handle lib item: ' + JSON.stringify(this.lib[name]));
+                }
+            }
+        };
+        Wrapper.prototype.getLib = function() {
+            var wrapper = this;
+            return function(){ 
+                return wrapper.libFunction.apply(wrapper, arguments);
+            };
+        };
+        Wrapper.prototype.buildTasks = function(existingTasks) {
+            var i;
+            for (i in this.unexportedTasks) {
+                if (! this.tasks[i]) {
+                    this.tasks[i] = this.unexportedTasks[i];
+                }
+            }
+            var result = existingTasks || {};
+            // build shared steps and generators
+            for (i in this.tasks) {
+                result[i] = this.buildTask(this.tasks[i]);
+            }
+            return result;
+        };
+        Wrapper.prototype.buildTask = function(steps) {
+            var builder = new this.Builder();
+            return builder.build(steps, []);
+        };
+    };
+
+    me.scripts.push({
+        getName: function(){ return 'cf'; },
+        onLoaded: function() {
+            onLoaded();
+        },
+        create: function() {
+          return new Wrapper();
+        },
+        getlib: function(name) {
+            return actualWrapper ? actualWrapper.wrapSelectorBuilderPromise(actualWrapper.lib[name].arr)() : me.modules.api.find();
+        },
+        getLibSelectors: function() {
+            var result = {};
+            if (actualWrapper) {
+                for (var i in actualWrapper.lib) {
+                    if (actualWrapper.lib[i] instanceof actualWrapper.BuilderPromise) {
+                        var selector = actualWrapper.wrapSelectorBuilderPromise(actualWrapper.lib[i].arr)();
+                        if (selector.length) {
+                            result[i] = selector;
+                        }
+                    }
+                }
+            }
+            return result;
+        }
+    });
+}).call(this, document, window);
+
 /**
  * Coordinates activity of worker (via API), UI, and progress frame
  * 
@@ -454,12 +2667,98 @@
      * @access private
      */
     var worker = false;
+    var postMessageFromWindowToWindow = function(cmd, details, from, to) {
+        from.tmpReference1892049810jf10jfa = to;
+        details.cmd = cmd;
+        var payload = 'cartFillerMessage:' + JSON.stringify(details);
+        from.eval('tmpReference1892049810jf10jfa.postMessage(' + JSON.stringify(payload) + ', "*");');
+    };
+    var reinitializeWorker = function() {
+        var task = workerCurrentTask;
+        var api = me.modules.api;
+        var getStack = function() {
+            return (workerGlobals['_foreach stack'] || '').split('|');
+        };
+        var setStack = function(pc) {
+            workerGlobals['_foreach stack'] = pc.join('|');
+        };
+        worker = {
+            '_set': ['set [ref] to [value]', function() { api.internalDebugger(); task.ref = task.value; api.result(); }],
+            '_loop': ['check [ref] against [value]', function() { api.internalDebugger(); if (parseInt(task.ref) < parseInt(task.value)) { api.repeatTask(task.tasks); } api.result();}],
+            '_inc': ['inc [ref]', function() { api.internalDebugger(); task.ref = parseInt(task.ref) + 1; api.result(); }],
+            '_assertEquals': ['assert that [ref] is equals to [value]', function() { api.internalDebugger().result(api.compare(task.value, task.ref)); }],
+            '_wait': ['wait for tasks to be added', function() { api.internalDebugger().repeatTask().setTimeout(api.result, 1000);}],
+            '_say': ['say some static message', function() { api.internalDebugger().say(task.message).result(); }],
+            '_foreach': [
+                'check whether we are looping', function() {
+                    api.internalDebugger();
+                    var pc = getStack(), myIndex = -1, myStack = '', index = 0;
+                    pc.filter(function(v, k) {
+                        if (parseInt(v.split(':')[0]) === api.env.taskIndex) {
+                            myIndex = k;
+                            myStack = v;
+                        }
+                    });
+                    if (myIndex !== -1) {
+                        var ppc = myStack.split(':');
+                        pc = pc.slice(0, myIndex);
+                        if (ppc[2] === '*') {
+                            // ok, we are looping 
+                            index = parseInt(ppc[1]);
+                        }
+                    }
+                    myStack = String(api.env.taskIndex) + ':' + index;
+                    pc.push(myStack);
+                    setStack(pc);
+                    api.nop();
+                }, 'initialize values', function() {
+                    api.internalDebugger();
+                    var pc = getStack();
+                    var recent = pc.pop();
+                    var ppc = recent.split(':');
+                    var index = parseInt(ppc[1]);
+                    var values = task.values.split(task.separator);
+                    task.index = index;
+                    task.value = values[index];
+                    if (task.fields) {
+                        var valuePc = task.value.split(',').map(function(v){ return v.trim(); });
+                        task.fields.split(',').filter(function(field) {
+                            workerGlobals[field] = valuePc.shift();
+                        });
+                    }
+                    if (index === values.length - 1) {
+                        recent = ppc[0] + ':-';
+                        pc.push(recent);
+                        setStack(pc);
+                    }
+                    api.nop();
+                }
+            ],
+            '_endforeach':[
+                'loop', function() {
+                    api.internalDebugger();
+                    var pc = getStack();
+                    var recent = pc.pop();
+                    var ppc = recent.split(':');
+                    if (ppc[1] === '-') {
+                        setStack(pc);
+                        return api.nop();
+                    }
+                    recent = String(ppc[0]) + ':' + String(parseInt(ppc[1]) + 1) + ':*';
+                    pc.push(recent);
+                    setStack(pc);
+                    api.repeatTask(1 + api.env.taskIndex - parseInt(ppc[0])).nop();
+                }
+            ]
+        };
+    };
+    var INTERPOLATE_PATTERN = /(^|[^\\])\$\{([^}]+)}/;
     /**
-     * Keeps worker URL during load process. If load was successful sends URL back to controller
-     * @var {String} CartFiller.Dispatcher~workerSrcPretendent
+     * Keeps workers URL=>code map, used to initiate relays on the fly
+     * @var {Object} CartFiller.Dispatcher~workerSourceCodes
      * @access private
      */
-    var workerSrcPretendent = '';
+    var workerSourceCodes = {};
     /**
      * Object, that keeps current task details
      * @var {CartFiller.TaskDetails} CartFiller.Dispatcher~workerCurrentTask
@@ -486,13 +2785,244 @@
      */
     var workerOnLoadHandler = false;
     /**
-     * Keeps message name, used to deliver job results to
+     * flag, that mainWorkerFrame was loaded after worker step was started, but before
+     * worker installed onload hook. This happens sometimes when network is really fast.
+     * @var {boolean} CartFiller.Dispatcher~onLoadHappened
+     * @access private
+     */
+    var onLoadHappened = false;
+    /**
+     * @var {integer} CartFiller.Dispatcher~workerTimeout Specifies time to wait 
+     * for worker step to call api.result() or api.nop(). 
+     * @access private
+     */
+    var workerTimeout = 0;
+    /**
+     * @var {Array} CartFiller.Dispatcher~workerSetTimeoutIds Keeps list of ids
+     * of setTimeout, which were initiated from within the worker step function. 
+     * In case Watchdog kills the step - these timers will be cleared 
+     * @access private
+     */
+    var workerSetTimeoutIds = [];
+    /**
+     * @var {Array} CartFiller.Dispatcher~workerSetIntervalIds Keeps list of ids
+     * of setInterval, which were initiated from within the worker step function. 
+     * In case Watchdog kills the step - these timers will be cleared 
+     * @access private
+     */
+    var workerSetIntervalIds = [];
+    /**
+     * @var {integer} CartFiller.Dispatcher~workerWatchdogId setTimeoutId of 
+     * watchdog handler. When step function calls api.result() we should cancel
+     * this watchdog. 
+     * @access private
+     */
+    var workerWatchdogId = false;
+    /**
+     * @var {Object} CartFiller.Dispatcher~workerGlobals Keeps global variables
+     * which can be assigned from within worker and then reused.
+     * @access private
+     */
+    var workerGlobals = {};
+    var currentCf;
+    var workerLibResolve = function(arg, promise, path) {
+        var name, type;
+
+        if ('function' === typeof arg || arg instanceof Array) {
+            var evaluateArg = false;
+            if (undefined === promise.promiseArgs[0] && 'function' === typeof arg && 'string' === typeof arg.name && arg.name.length) {
+                // this is case: lib()(function findSomeButton() {...})
+                type = 'helper';
+                name = arg.name;
+            } else if ('string' === typeof promise.promiseArgs[0] && promise.promiseArgs[0].length && ('function' !== typeof arg || 'string' !== typeof arg.name || ! arg.name.length)) {
+                // this is case: lib('getSomeSteps')(function() { ... })
+                // or lib('getSomeSteps')([ 'step1', ... ])
+                type = 'step builder';
+                name = promise.promiseArgs[0];
+                evaluateArg = true;
+            } else {
+                throw new Error('invalid lib usage, name of function should either be specified as a parameter or named function should be used');
+            }
+            var args = promise.promiseArgs.slice(1);
+            if ('function' === typeof arg) {
+                // this is case: lib('getSomeSteps')(function() { ... })
+                workerLibByWorkerPath[path][name] = arg;
+                workerLibByWorkerPath[path][name].cartFillerWorkerLibType = type;
+                return evaluateArg ? arg.apply({}, args) : [];
+            } else {
+                workerLibByWorkerPath[path][name] = function() {
+                    return arg;
+                };
+                workerLibByWorkerPath[path][name].cartFillerWorkerLibType = type;
+                return arg;
+            }
+        } else {
+            name = promise.promiseArgs[0];
+            if ('function' === typeof name) {
+                // this is case: lib(function findSomeButton() {...})
+                if ('string' !== typeof name.name || ! name.name.length) {
+                    throw new Error('incorrect usage of lib, only named functions should be defined like that');
+                }
+                workerLibByWorkerPath[path][name.name] = name;
+                workerLibByWorkerPath[path][name.name].cartFillerWorkerLibType = 'helper';
+                return [];
+            } else {
+                var pc = name.split('.');
+                name = pc.pop();
+                var lib = workerLibByWorkerPath[path];
+                pc.filter(function(item, index) {
+                    if ((! lib[item]) || (! lib[item].cartFillerWorkerLibFn)) {
+                        throw new Error('lib [' + path + ']->[' + pc.slice(0, index).join('.') + '] does not have [' + item + '] sublib');
+                    }
+                    lib = lib[item];
+                });
+                if (! lib.hasOwnProperty(name)) {
+                    throw new Error('lib [' + path + ']->[' + pc.join('.') + '] does not have [' + name + '] entry');
+                }
+                if ('function' === typeof lib[name]) {
+                    return lib[name].apply({}, promise.promiseArgs.slice(1));
+                } else {
+                    return lib[name];
+                }
+            }
+        }
+    };
+    var workerLibByWorkerPath;
+    var workerLib;
+    var workerLibFactory = function(path) {
+        var workerLibFn = function() {
+            var result = function(arg) {
+                return workerLibResolve(arg, result, path.join('.'));
+            };
+            result.cartFillerLibPromiseFunction = true;
+            result.promiseArgs = [];
+            for (var i = 0; i < arguments.length ; i ++) {
+                result.promiseArgs.push(arguments[i]);
+            }
+            result.none = [];
+            return result;
+        };
+        workerLibFn.cartFillerWorkerLibFn = true;
+        workerLibFn.cartFillerWorkerLibPath = path.join('.');
+        return workerLibFn;
+    };
+    var makeProxyForWorkerLib = function(fn) {
+        var result = function() {
+            var mainFrameWindowDocument;
+            try { mainFrameWindowDocument = me.modules.ui.mainFrameWindow.document; } catch (e) {}
+            return fn.apply(mainFrameWindowDocument, arguments);
+        };
+        result.cartFillerWorkerLibType = fn.cartFillerWorkerLibType;
+        if (result.cartFillerWorkerLibType !== 'step builder') {
+            result.cartFillerWorkerLibType = 'helper';
+        }
+        fn.cartFillerWorkerLibType = result.cartFillerWorkerLibType;
+        return result;
+    };
+    var workerLibBrief = {};
+    var workerUrlsCommonPart;
+    var resetWorkerLib = function () {
+        workerLib = workerLibFactory([]);
+        workerLibByWorkerPath = {};
+        workerLibBrief = {};
+        workerUrlsCommonPart = false;
+        for (var i in workerSourceCodes) {
+            if (false === workerUrlsCommonPart) {
+                workerUrlsCommonPart = i; 
+                continue;
+            }
+            for (var j = workerUrlsCommonPart.length ; j >= 0 ; j --) {
+                if (workerUrlsCommonPart.substr(0,j) === i.substr(0,j)) {
+                    break;
+                }
+            }
+            workerUrlsCommonPart = workerUrlsCommonPart.substr(0,j);
+        }
+    };
+    var ambiguousWorkerLibProxyFunctionFactory = function(name) {
+        return function(){
+            throw new Error('[' + name + '] is ambiguous inside lib, use fully qualified name');
+        };
+    };
+
+    var processWorkerLibByPath = function(lib, path) {
+        for (var i in lib) {
+            if (lib.hasOwnProperty(i)) {
+                if ('function' === typeof lib[i]) {
+                    lib[i] = makeProxyForWorkerLib(lib[i]);
+                } else if ('object' === typeof lib[i]) {
+                    lib[i].cartFillerWorkerLibType = 'steps';
+                }
+                if (workerLib.hasOwnProperty(i)) {
+                    workerLib[i] = ambiguousWorkerLibProxyFunctionFactory(i);
+                } else {
+                    workerLib[i] = lib[i];
+                }
+                if (lib[i].cartFillerWorkerLibType) {
+                    workerLibBrief[(path.join('.') + '.' + i).replace(/^\./, '')] = lib[i].cartFillerWorkerLibType;
+                }
+            }
+        }
+        var $this = workerLib;
+        var thisPath = [];
+        path.filter(function(item, i) {
+            thisPath.push(item);
+            if (undefined === $this[item]) {
+                $this[item] = (i === path.length - 1) ? lib : workerLibFactory(thisPath);
+            } else if ($this[item].cartFillerWorkerLibFn) {
+                // that's ok except for last piece
+                if (i === path.length - 1) {
+                    throw new Error('can\'t replace workerLib on this path: [' + thisPath.join('.') + ']');
+                }
+            } else {
+                throw new Error('naming conflict, can\'t put workerLib on this path: [' + thisPath.join('.') + ']');
+            }
+            $this = $this[item];
+        });
+    };
+    var processWorkerTasks = function(tasks) {
+        for (var taskName in tasks){
+            if (tasks.hasOwnProperty(taskName)){
+                worker[taskName] = recursivelyCollectSteps(tasks[taskName]);
+                workerTaskSources[taskName] = currentEvaluatedWorker;
+            }
+        }
+    };
+    var postProcessWorkerLibs = function() {
+        for (var i in workerLibByWorkerPath) {
+            for (var j in workerLib) {
+                if (workerLib.hasOwnProperty(j) && ! workerLibByWorkerPath[i].hasOwnProperty(j)) {
+                    workerLibByWorkerPath[i][j] = workerLib[j];
+                }
+            }
+        }
+    };
+    var makeLibPathFromWorkerPath = function(workerUrl) {
+        return workerUrl.substr(workerUrlsCommonPart.length).replace(/(^|\/)workers\//g, function(m,a){return a;}).replace(/\.js$/, '').split('/');
+    };
+    /**
+     * @var {Object} workerEventListeners Registered event listeners, see
+     * {@link CartFiller.Dispatcher#registerEventCallback}
+     * @access private
+     */
+
+    var workerEventListeners = {};
+    /**
+     * Keeps message result name, used to deliver job results to
      * Choose Job page opened in separate frame, if that is necessary at all
      * If set to false, empty string or undefined - no results will be delivered
-     * @var {String} CartFiller.Dispatcher~resultMessageName 
+     * @var {String} CartFiller.Dispatcher~resultMessageName
      * @access private
      */
     var resultMessageName = false;
+    /**
+     * Keeps message name, used to deliver intermediate job status to
+     * Choose Job page opened in separate frame, if that is necessary at all
+     * If set to false, empty string or undefined - no results will be delivered
+     * @var {String} CartFiller.Dispatcher~resultMessageName
+     * @access private
+     */
+    var statusMessageName = false;
     /**
      * Flag, that is set to true when main frame (with target
      * website) is loaded first time
@@ -508,6 +3038,13 @@
      */
     var workerFrameLoaded = false;
     /**
+     * Keeps current URL of worker frame
+     * @var {String} CartFiller.Dispatcher~workerCurrentUrl
+     * @access private
+     */
+    var workerCurrentUrl = false;
+    var knownCurrentUrls = {};
+    /**
      * Flag, that is set to true after worker (job progress) frame
      * is bootstrapped to avoid sending extra bootstrap message
      * @var {boolean} CartFiller.Dispatcher~bootstrapped
@@ -515,17 +3052,142 @@
      */
     var bootstrapped = false;
     /**
-     * See {@link CartFiller.Api#highlight}
-     * @var {jQuery|HtmlElement|false} CartFiller.Dispatcher~highlightedElement 
+     * See {@link CartFiller.Api#highlight}, {@link CartFiller.Api#arrow}
+     * @var {Array} CartFiller.Dispatcher~returnedValuesOfSteps
      * @access private
      */
-    var highlightedElement = false;
+    var returnedValuesOfSteps = [];
+    /**
+     * @var {int} CartFiller.Dispatcher~returnedValuesOfStepsAreForTask
+     * @access private
+     */
+    var returnedValuesOfStepsAreForTask;
+    var mostRecentReturnedValueOfStep;
+
+    /**
+     * Cache job details to give it to worker in full. Purpose is to make it 
+     * possible to deliver configuration/environment variables from 
+     * chooseJob to worker, and make them accessible by all tasks
+     * @var {CartFillerPlugin~JobDetails} CartFiller.Dispatcher~jobDetailsCache
+     * @access private
+     */
+    var jobDetailsCache = {};
+    /**
+     * Counts repetitions of steps, declared with repeatXX modifier
+     * @var {integer} CartFiller.Dispatcher~stepRepeatCounter
+     * @access private
+     */
+    var stepRepeatCounter = 0;
+    /**
+     * @var {CartFiller.Api.StepEnvironment} CartFiller.Dispatcher~currentStepEnv
+     * @access private
+     */
+    var currentStepEnv = {};
+    /**
+     * @var {Function} CartFiller.Dispatcher~currentStepWorkerFn
+     * @access private
+     */
+    var currentStepWorkerFn;
     /**
      * Just to make code shorter
      * @var {CartFiller.Configuration} CartFiller.Dispatcher~me
      * @access private
      */
     var me = this.cartFillerConfiguration;
+    /**
+     * Keeps last known window title to save some coins on updating title
+     * @var {String} CartFiller.Dispatcher~oldTitle
+     * @access private
+     */
+    var oldTitle;
+    /**
+     * Keeps value (ms) to sleep after this step in slow mode
+     * @var {integer} CartFiller.Dispatcher~sleepAfterThisStep
+     * @access private
+     */
+    var sleepAfterThisStep;
+    /**
+     * This is passed to ChooseJob frame to prevent it from requesting assets directly.
+     * If set to true, then ChooseJob should instead ask dispatcher to give it assets, 
+     * and dispatcher will itself ask the opener, which should be the local.html
+     * @var {boolean} CartFiller.Dispatcher~useTopWindowForLocalFileOperations
+     * @access private
+     */
+    var useTopWindowForLocalFileOperations;
+    var currentInvokeWorkerMessage;
+    var suspendAjaxRequestsCallback;
+    var magicParamPatterns = {
+        repeat: /repeat(\d+)/,
+        sleep: /sleep(\d+)/
+    };
+    var rememberedHashParams = {};
+    var hideHashParam = {};
+    var mainWindowOwnedByTestSuite = window.document.getElementsByTagName('body')[0].getAttribute('data-cartfiller-is-here') ? true : false;
+    /**
+     * Keeps details about relay subsystem
+     * @var {Object} CartFiller.Dispatcher~rel
+     */
+    var relay = {
+        isSlave: false,
+        slaveCounter: 0,
+        parent: false,
+        currentMainFrameWindow: 0,
+        nextRelay: false,
+        nextRelayDomain: false,
+        nextRelayRegistered: false,
+        nextRelayQueue: [],
+        knownDomains: {},
+        registeredDomains: {},
+        noFocusForDomain: {},
+        igniteFromLocal: false,
+        recoveryPoints: {},
+        bubbleMessage: function(message) {
+            if (this.isSlave) {
+                postMessage(this.parent, 'bubbleRelayMessage', message);
+            }
+            if (this.nextRelay) {
+                if (this.nextRelayRegistered) {
+                    postMessage(this.nextRelay, 'bubbleRelayMessage', message);
+                } else {
+                    message.cmd = 'bubbleRelayMessage';
+                    this.nextRelayQueue.push(message);
+                }
+            }
+        }
+    };
+    var getWorkerFnParams = function() {
+        if (returnedValuesOfStepsAreForTask !== workerCurrentTaskIndex) {
+            // this is the case when we switch to next task - we keep 
+            // result of previous task as the only parameter
+            returnedValuesOfSteps = [returnedValuesOfSteps.pop()];
+            returnedValuesOfStepsAreForTask = workerCurrentTaskIndex;
+        }
+        var result = [];
+        var repeat = 1;
+        for (var i = workerCurrentStepIndex; i >= 0; i --) {
+            if (i in returnedValuesOfSteps) {
+                while (repeat --) {
+                    result.push(returnedValuesOfSteps[i]);
+                }
+                repeat = 1;
+            } else {
+                repeat ++;
+            }
+        }
+        return result;
+    };
+    /**
+     * Calls registered event callbacks
+     * @function CartFiller.Dispatcher~callEventCallbacks
+     * @param {string} event event alias
+     */
+    var callEventCallbacks = function(event) {
+        if (undefined !== workerEventListeners[event]) {
+            for (var i in workerEventListeners[event]) {
+                workerEventListeners[event][i]();
+            }
+        }
+    };
     /**
      * Sends message to another frame/window. Puts all data to message text
      * (does not use transferables).
@@ -558,12 +3220,14 @@
      * @access private
      */
     var resetWorker = function(){
-        workerCurrentTaskIndex = workerCurrentStepIndex = workerOnLoadHandler = false;
+        clearRegisteredTimeoutsAndIntervals();
+        workerCurrentTaskIndex = workerCurrentStepIndex = workerOnLoadHandler = suspendAjaxRequestsCallback = false;
     };
     /**
      * Fills workerCurrentTask object with current task parameters.
      * See {@link CartFiller.Dispatcher~workerCurrentTask}
      * @function CartFiller.Dispatcher~fillWorkerCurrentTask
+     * @param {Object} src
      * @access private
      */
     var fillWorkerCurrentTask = function(src){
@@ -572,14 +3236,416 @@
                 delete workerCurrentTask[oldKey];
             }
         }
+        var value;
         for (var newKey in src){
             if (src.hasOwnProperty(newKey)){
-                workerCurrentTask[newKey] = src[newKey];
+                value = src[newKey];
+                if (value instanceof Array) {
+                    value = decodeAlias(value);
+                }
+                workerCurrentTask[newKey] = value;
+            }
+        }
+    };
+    /** 
+     * Decodes nested alias. To be documented
+     * @function CartFiller.Dispatcher~decodeAlias
+     * @param {String|Array} value
+     * @access private
+     * @return {String}
+     */
+    var decodeAlias = function(value, returnRefKey) {
+        var result;
+        if ('string' === typeof value) {
+            result = returnRefKey ? value : (value === '_random' ? (String(new Date().getTime()) + String(Math.floor(1000 * Math.random()))) : workerGlobals[value]);
+            return result;
+        } else {
+            if (1 === value.length) {
+                // ["globalVar"] or [["email of ", ["userNameForThisActor"]]]
+                value = value[0];
+                if ('string' === typeof value) {
+                    result = returnRefKey ? value : decodeAlias(value);
+                    return result;
+                } else if (value instanceof Array) {
+                    result = returnRefKey ? decodeAlias(value) : workerGlobals[decodeAlias(value)];
+                    return result;
+                } else {
+                    throw new Error('incorrect value: [' + (typeof value) + '] [ ' + JSON.stringify(value) + ']');
+                }
+            } else if (0 === value.length) {
+                // [] - just prompt user for value
+                result = returnRefKey ? undefined : prompt('enter value for ' + newKey, '');
+                return result;
+            } else {
+                // ['entity for ts = ', ["timeStamp"]]
+                result = returnRefKey ? undefined : value.map(function(part) {
+                    return part instanceof Array ? String(decodeAlias(part)) : part;
+                }).join('');
+                return result;
+            }
+        }
+        throw new Error('unable to decode: ' + JSON.stringify(value));
+    };
+    /**
+     * Fills workerGlobals object with new values
+     * @function CartFiller.Dispatcher~fillWorkerGlobals
+     * @param {Object} src
+     * @access private
+     */
+    var fillWorkerGlobals = function(src) {
+        for (var oldKey in workerGlobals){
+            if (workerGlobals.hasOwnProperty(oldKey)){
+                delete workerGlobals[oldKey];
+            }
+        }
+        for (var newKey in src){
+            if (src.hasOwnProperty(newKey)){
+                workerGlobals[newKey] = src[newKey];
             }
         }
     };
 
+    /**
+     * Returns URL for lib folder
+     * @function CartFiller.Dispatcher~getLibUrl
+     * @access private
+     */
+    var getLibUrl = function() {
+        //// TBD sort out paths
+        return me.localIndexHtml ? '' : me.baseUrl.replace(/(src|dist)\/?$/, 'lib/');
+    };
+    /**
+     * Keeps directions on next task flow
+     * @var {string} CartFiller.Dispatcher~nextTaskFlow
+     * @access private
+     */
+    var nextTaskFlow;
+    /**
+     * Prevent double initialization when launched from slave mode
+     * @var {boolean} CartFiller.Dispathcer~initialized
+     */
+    var initialized;
+    /**
+     * removes setTimeout's and setInterval's registered by worker earlier
+     * @function CartFiller.Dispatcher~clearRegisteredTimeoutsAndIntervals
+     * @access private 
+     */
+    var clearRegisteredTimeoutsAndIntervals = function() {
+        while (workerSetTimeoutIds.length) {
+            clearTimeout(workerSetTimeoutIds.pop());
+        }
+        while (workerSetIntervalIds.length) {
+            clearInterval(workerSetIntervalIds.pop());
+        }
+    };
+    /**
+     * Register watchdog handler
+     * @function CartFiller.Dispatcher~registerWorkerWatchdog
+     * @access private
+     */
+    var registerWorkerWatchdog = function() {
+        if (workerWatchdogId && workerWatchdogId !== true) {
+            removeWatchdogHandler();
+        } else {
+            workerWatchdogId = false;
+        }
+        if (workerTimeout) {
+            workerWatchdogId = setTimeout(function(){
+                workerWatchdogId = false;
+                workerOnLoadHandler = suspendAjaxRequestsCallback = false;
+                me.modules.api.result('Timeout happened, worker step cancelled');
+            }, workerTimeout);
+        } else {
+            workerWatchdogId = true;
+        }
+    };
+    /**
+     * Removes watchdog handler if api.result is called earlier then timeout
+     * @function CartFiller.Dispatcher~removeWatchdogHandler
+     * @access private
+     */
+    var removeWatchdogHandler = function(){
+        if (workerWatchdogId) {
+            if (workerWatchdogId !== true) {
+                clearTimeout(workerWatchdogId);
+            }
+            workerWatchdogId = false;
+        }
+    };
+    var getDomain = function(url) {
+        return url.split('/').slice(0,3).join('/');
+    };
+    /**
+     * Passes message to next relay if message is not undefined and next relay exists, otherwise
+     * create new relay using specified url and puts message if it is not undefined to the queue
+     * @function CartFiller.Dispatcher~openRelay
+     * @param {string} url
+     * @param {Object} message
+     * @param {boolean} noFocus Experimental, looks like it does not work
+     * @access private
+     */
+    var openRelay = function(url, message, noFocus) {
+        if (url !== '') {
+            relay.knownDomains[getDomain(url)] = true;
+        }
+        if (relay.nextRelay && message) {
+            if (relay.nextRelayRegistered) {
+                postMessage(relay.nextRelay, message.cmd, message);
+            } else {
+                relay.nextRelayQueue.push(message);
+            }
+        } else if (url !== '') {
+            relay.nextRelayDomain = getDomain(url);
+            me.modules.dispatcher.openPopup(
+                {
+                    url: url,
+                    target: '_blank'
+                }, 
+                function(w) {
+                    relay.nextRelay = w;
+                    if (noFocus) {
+                        setTimeout(function(){
+                            relay.nextRelay.blur();
+                            window.focus();
+                        },0);
+                    }
+                    if (message) {
+                        relay.nextRelayQueue.push(message);
+                    }
+                    if (me.localInjectJs) {
+                        relay.igniteFromLocal = true;
+                        setTimeout(function igniteFromLocal() {
+                            if (relay.igniteFromLocal) {
+                                relay.nextRelay.postMessage(me.localInjectJs, '*');
+                                setTimeout(igniteFromLocal, 500);
+                            }
+                        }, 500);
+                    }
+                }
+            );
+        }
+    };
+    var workersToEvaluate = [];
+    var sharedWorkerFunctions = {};
+    var currentEvaluatedWorker;
+    var workerTaskSources = {};
+    var evaluateNextWorker = function() {
+        if (! workersToEvaluate.length) {
+            me.modules.dispatcher.postMessageToWorker(
+                'globalsUpdate', 
+                {
+                    globals: workerGlobals
+                }
+            );
+            return;
+        }
+        currentEvaluatedWorker = workersToEvaluate.shift();
+        var apiIsThere = false;
+        var injectDebuggerFn = function(match, fn) {
+            if ((! apiIsThere) && /\,\s*api\s*\,/.test(match)) {
+                apiIsThere = true;
+            }
+            if (apiIsThere) {
+                // it was return fn + ' if(api.debug && (1 || api.debug.stop)) debugger; ';
+                // but I don't like this behaviour
+                return fn + ' if(api.debug && api.debug.stop) debugger; ';
+            } else {
+                return match;
+            }
+        };
+        eval(workerSourceCodes[currentEvaluatedWorker].replace(/(function\s*\([^)]*\)\s*{[ \t]*)/g, injectDebuggerFn)); // jshint ignore:line
+        evaluateNextWorker();
+    };
+    
+
+    var recursivelyCollectSteps = function(source, taskSteps) {
+        if ('undefined' === typeof taskSteps) {
+            taskSteps = [];
+        }
+        for (var i = 0 ; i < source.length ; i ++) {
+            if (source[i] === me.modules.api) {
+                // do nothing
+            } else if (
+                source[i] instanceof Array && 
+                (
+                    (source[i].length === 0) || 
+                    (
+                        source[i].length > 0 && 
+                        (
+                            ('string' === typeof source[i][0]) || 
+                            (source[i][0] instanceof Array) ||
+                            (
+                                'function' === typeof source[i][0] &&
+                                source[i][0].cartFillerLibPromiseFunction
+                            )
+                        )
+                    )
+                )
+            ) {
+                recursivelyCollectSteps(source[i], taskSteps);
+            } else {
+                taskSteps.push(source[i]);
+            }
+        }
+        return taskSteps;
+    };
+    var resolveLibPromisesInWorker = function() {
+        var found = false;
+        for (var taskName in worker) {
+            for (var i = worker[taskName].length - 1 ; i >= 0 ; i --) {
+                if ('function' === typeof worker[taskName][i]) {
+                    if (worker[taskName][i].cartFillerLibPromiseFunction === true) {
+                        found = true;
+                        var params = recursivelyCollectSteps(worker[taskName][i]());
+                        params.unshift(1);
+                        params.unshift(i);
+                        worker[taskName].splice.apply(worker[taskName], params);
+                    } else if (worker[taskName][i].cartFillerWorkerLibType === 'helper') {
+                        // ignore it
+                        worker[taskName].splice(i, 1);
+                    }
+                }
+            }
+        }
+        if (found) {
+            resolveLibPromisesInWorker();
+        }
+    };
+    /**
+     * Evaluate worker code sorting out dependencies
+     * @function CartFiller.Dispatcher~evaluateWorkers
+     * @access private
+     */
+    var evaluateWorkers = function() {
+        workersToEvaluate = [];
+        sharedWorkerFunctions = {};
+        for (var i in workerSourceCodes) {
+            workersToEvaluate.push(i);
+        }
+        resetWorkerLib();
+        currentCf = me.modules.cf.create();
+        evaluateNextWorker();
+        processWorkerTasks(currentCf.buildTasks());
+        currentCf.switchMode();
+        postProcessWorkerLibs();
+        resolveLibPromisesInWorker();
+        var list = {};
+        var discoveredParameters = {};
+        var stepDependencies = {};
+        for (var taskName in worker) {
+            stepDependencies[taskName] = {};
+            var taskSteps = [];
+            var params = {};
+            var allParams = {};
+            for (i = 0 ; i < worker[taskName].length; i++){
+                // this is step name/comment
+                if ('string' === typeof worker[taskName][i]){
+                    taskSteps.push(worker[taskName][i]);
+                    if (worker[taskName][i+1] instanceof Function) {
+                        params[taskSteps.length - 1] = discoverTaskParameters(worker[taskName][i+1], allParams);
+                        stepDependencies[taskName][taskSteps.length - 1] = discoverStepDependencies(worker[taskName][i+1]);
+                    }
+                }
+            }
+            params.all = allParams;
+            list[taskName] = taskSteps;
+            discoveredParameters[taskName] = params;
+        }
+        me.modules.dispatcher.postMessageToWorker('workerRegistered', {
+            jobTaskDescriptions: list, 
+            discoveredParameters: discoveredParameters, 
+            workerTaskSources: workerTaskSources,
+            stepDependencies: stepDependencies,
+            workerLib: workerLibBrief
+        });
+    };
+    /**
+     * Discovers if a step depends on result of previous step.
+     * If yes, then user should be prompted, that if he clicks on 
+     * this step straight away - then most likely it will not succeed
+     * @function CartFiller.Dispatcher~discoverStepDependencies
+     * @param {Function} fn
+     */
+    var discoverStepDependencies = function(fn) {
+        var firstParam = fn.toString().split('(')[1].split(')')[0].split(',')[0].trim();
+        if (firstParam.length) {
+            for (var i in magicParamPatterns) {
+                if (magicParamPatterns[i].test(firstParam)) {
+                    // it is magic param
+                    return false;
+                }
+            }
+            return true;
+        }
+        return false;
+    };
+    /**
+     * Discovers task parameters, that are used by this function 
+     * looking for patters like task.theparameter or task['the parameter']
+     * @function CartFiller.Dispatcher~discoverTaskParameters
+     * @param {Function} fn
+     * @param {Object} allParams holds all parameters, parameters discovered
+     * here are added to this map
+     * @return {Object} discovered parameters
+     * @access private
+     */
+    var discoverTaskParameters = function(fn, allParams) {
+        var params = {};
+        [
+            /[^a-zA-Z0-9_$]task\.([a-zA-Z0-9_$]+)[^a-zA-Z0-9_$]/g, 
+            /[^a-zA-Z0-9_$]task\[['"]([^'"]+)['"]\]/g
+        ]
+            .filter(function(pattern) {
+
+                var localPattern = new RegExp(pattern.source);
+                var s = fn.toString();
+                var m = s.match(pattern);
+                if (m) {
+                    m.filter(function(v){
+                        var paramMatch = localPattern.exec(v);
+                        if (paramMatch) {
+                            params[paramMatch[1]] = allParams[paramMatch[1]] = true;
+                        }
+                    });
+                }
+
+                var declaredParameterList = fn.cartFillerParameterList;
+                if ('undefined' !== typeof declaredParameterList) {
+                    if (declaredParameterList instanceof Array) {
+                        declaredParameterList.filter(function(v) {
+                            params[v] = allParams[v] = true;
+                        });
+                    } else {
+                        for (var i in declaredParameterList) {
+                            params[i] = allParams[i] = true;
+                        }
+                    }
+                }
+            });
+        return params;
+    };
+    
+    var startupWatchDog = {
+        fn: function() {
+            var pc = [];
+            if (! this.workerRegistered) {
+                pc.push('worker');
+            }
+            if (pc.length) {
+                var message = 'one or more frames were not registered: ' + pc.join(', ');
+                if (window.cartFillerEventHandler) {
+                    window.cartFillerEventHandler({message: message, filename: 'dispatcher.js', lineno: 0});
+                }
+                alert(message);
+            }
+        },
+        workerRegistered: false,
+        chooseJobRegistered: false,
+        mainRegistered: false
+    };
+
     this.cartFillerConfiguration.scripts.push({
+        running: false,
         /** 
          * Returns name of this module, used by loader
          * @function CartFiller.Dispatcher#getName
@@ -592,34 +3658,166 @@
          * for messages from worker (job progress) frame and from 
          * Choose Job frame
          * @function CartFiller.Dispatcher#init
+         * @parameter {boolean} isSlaveMode
          * @access public
          */
-        init: function(){
+        init: function(isSlaveMode){
+            if (! isSlaveMode) {
+                setTimeout(function() {startupWatchDog.fn();}, 10000);
+            }
             var dispatcher = this;
+            if (initialized) {
+                return;
+            }
+            initialized = true;
             window.addEventListener('message', function(event) {
-                var pattern = /^cartFillerMessage:(.*)$/;
-                if (pattern.test(event.data)){
-                    var match = pattern.exec(event.data);
-                    var message = JSON.parse(match[1]);
-                    var fn = 'onMessage_' + message.cmd;
-                    if (undefined !== dispatcher[fn] && dispatcher[fn] instanceof Function){
-                        dispatcher[fn](message);
-                    } else {
-                        console.log('unknown message: ' + fn + ':' + event.data);
+                var prefix = 'cartFillerMessage:';
+                if (prefix === event.data.substr(0, prefix.length)) {
+                    var message = JSON.parse(event.data.substr(prefix.length));
+                    if (message.cmd === 'actAsSlaveHelper') {
+                        // ok, we are just a helper tab, our purpose is simply to discover those
+                        // frames of our opener, that are available to us and 
+                        // inject ingnition code there
+                        var frame;
+                        try {
+                            frame = event.source.frames['cartFillerMainFrame-s' + message.slaveIndex];
+                            if (frame.location.hasOwnProperty('href')) {
+                                frame.eval(me.injectFunction.toString());
+                            }
+                        } catch (e) {}
+                        return;
                     }
+                    if (event.source === relay.nextRelay && message.cmd !== 'register' && message.cmd !== 'bubbleRelayMessage' && message.cmd !== 'locate') {
+                        if (message.cmd === 'workerStepResult') {
+                            fillWorkerGlobals(message.globals);
+                        }
+                        if (message.cmd === 'currentUrl') {
+                            knownCurrentUrls[message.currentMainFrameWindow] = message.url;
+                        }
+                        postMessage(relay.isSlave ? relay.parent : me.modules.ui.workerFrameWindow, message.cmd, message);
+                    } else {
+                        var fn = 'onMessage_' + message.cmd;
+                        if (undefined !== dispatcher[fn] && dispatcher[fn] instanceof Function){
+                            dispatcher[fn](message, event.source);
+                        } else {
+                            console.log('unknown message: ' + fn + ':' + event.data);
+                        }
+                    }
+                } else if (0 === event.data.indexOf('cartFillerFilePopupUrl') || 0 === event.data.indexOf('cartFillerFilePopupPing')) {
+                    // just relay
+                    window.opener.postMessage(event.data, '*');
+                } else if ('/^\'cartFillerEval\'/' === event.data) {
+                    // launch slave frame
+                    event.source.postMessage(me.localInjectJs, '*');
+                } else if (0 === event.data.indexOf('\'cartFillerEval\';')) {
+                    // ignition from local message, ignore it, we are already launched
+                } else {
+                    // this message was received by an accident and we need to resend it to mainFrame where
+                    // real recipient is.
+                    var deepCopy = function(x, k, d) {
+                        if (d > 20) {
+                            // too deep
+                            return {};
+                        }
+                        if ('undefined' === typeof d) {
+                            d = 0;
+                        }
+                        if ('undefined' === typeof k) {
+                            k = [];
+                        }
+                        var e;
+                        var known = function(v) { return v === e ; };
+                        var r = {};
+                        for (var i in x) {
+                            e = x[i];
+                            try {
+                                if (! (e instanceof Window) && ! (e instanceof Function) && '[object Window]' !== e.toString()) {
+                                    var c = null;
+                                    try {
+                                        if ('object' === typeof e && e.constructor) {
+                                            c = e.constructor.name;
+                                        }
+                                    } catch (e) {}
+                                    if (c !== 'Window') {
+                                        if (! k.filter(known).length) {
+                                            k.push(e);
+                                            if ('object' === typeof x[i]) {
+                                                r[i] = deepCopy(e, k, d + 1);
+                                            } else {
+                                                r[i] = x[i];
+                                            }
+                                        }
+                                    }
+                                }
+                            } catch (e) {}
+                        }
+                        return r;
+                    };
+                    me.modules.dispatcher.onMessage_postMessage({cmd: 'postMessage', event: deepCopy(event), originalEvent: event});
                 }
+                return false;
             }, false);
         },
         /**
          * Handles event "worker (job progress) frame loaded". If 
          * main frame is loaded too, then bootstraps worker (job progress) frame
          * @function CartFiller.Dispatcher#onMessage_register
+         * @param {Object} message
+         * @param Window source
          * @access public
          */
-        onMessage_register: function(){
-            workerFrameLoaded = true;
-            if (mainFrameLoaded && !bootstrapped){
-                this.bootstrapCartFiller();
+        onMessage_register: function(message, source){
+            var i;
+            if (message.registerFromSlave) {
+                if (! relay.isSlave && me.modules.ui.slaveFramesHelperWindows) {
+                    for (i in me.modules.ui.slaveFramesHelperWindows) {
+                        if (me.modules.ui.slaveFramesHelperWindows[i].w === source) {
+                            source.postMessage('cartFillerMessage:{"cmd":"actAsSlaveHelper","slaveIndex":' + me.modules.ui.slaveFramesHelperWindows[i].i + '}', '*');
+                            return;
+                        }
+                    }
+                }
+                relay.nextRelay = source;
+                relay.registeredDomains[relay.nextRelayDomain] = true;
+                this.onMessage_bubbleRelayMessage({message: 'updateKnownAndRegisteredSlaves', knownDomains: relay.knownDomains, registeredDomains: relay.registeredDomains, newRelayDomain: relay.nextRelayDomain });
+            }
+            if (source === me.modules.ui.workerFrameWindow) {
+                // skip other requests
+                workerFrameLoaded = true;
+                startupWatchDog.workerRegistered = true;
+                if (mainFrameLoaded && !bootstrapped){
+                    this.bootstrapCartFiller();
+                }
+            } else if (source === me.modules.ui.chooseJobFrameWindow) {
+                startupWatchDog.chooseJobRegistered = true;
+                this.postMessageToChooseJob('bootstrap', {
+                    lib: getLibUrl(),
+                    testSuite: true,
+                    src: me.localIndexHtml ? '' : me.baseUrl.replace(/\/$/, '') + '/',
+                    hashUrl: window.location.hash
+                }, 'cartFillerMessage');
+            } else if (source === me.modules.ui.mainFrameWindow) {
+                startupWatchDog.mainRegistered = true;
+                postMessage(source, 'bootstrap', {dummy: true});
+            } else if (source === relay.nextRelay) {
+                relay.igniteFromLocal = false;
+                relay.nextRelayRegistered = true;
+                var url;
+                var codeToSend = [];
+                for (url in workerSourceCodes) {
+                    if (workerSourceCodes.hasOwnProperty(url)) {
+                        codeToSend.push(url);
+                    }
+                }
+                for (i = codeToSend.length - 1; i >= 0 ; i --) {
+                    relay.nextRelayQueue.unshift({cmd: 'loadWorker', jobDetailsCache: jobDetailsCache, src: codeToSend[i], code: workerSourceCodes[codeToSend[i]], isFinal: (i === codeToSend.length - 1)});
+                }
+                // now we can send all queued messages to relay
+                var msg;
+                while (relay.nextRelayQueue.length) {
+                    msg = relay.nextRelayQueue.shift();
+                    postMessage(relay.nextRelay, msg.cmd, msg);
+                }
             }
         },
         /**
@@ -641,18 +3839,37 @@
         /**
          * Toggles size of worker (job progress) frame
          * @function CartFiller.Dispatcher#onMessage_toggleSize
+         * @param {Object} details
          * @access public
          */
-        onMessage_toggleSize: function(){
-            me.modules.ui.setSize();
+        onMessage_toggleSize: function(details){
+                me.modules.ui.setSize(details.size);
+        },
+        onMessage_reinitialize: function() {
+            if (! relay.isSlave) {
+                this.onMessage_chooseJob({hideHashDetails: 1});
+            } else {
+                alert('This slave is already initialized');
+            }
         },
         /**
          * Shows Choose Job frame
          * @function CartFiller.Dispatcher#onMessage_chooseJob
+         * @param {Object} details
          * @access public
          */
-        onMessage_chooseJob: function(){
-            me.modules.ui.showHideChooseJobFrame(true);
+        onMessage_chooseJob: function(details){
+            if (! relay.isSlave) {
+                me.modules.ui.showHideChooseJobFrame(true);
+                this.postMessageToWorker('chooseJobShown');
+                if (details.hideHashDetails) {
+                    hideHashParam = {job: 1, task: 1, step: 1};
+                }
+                this.onMessage_updateHashUrl({params: {}});
+            } else {
+                details.notToChildren = true;
+                this.onMessage_bubbleRelayMessage(details);
+            }
         },
         /**
          * Hides Choose Job frame
@@ -660,7 +3877,15 @@
          * @access public
          */
         onMessage_chooseJobCancel: function(){
-            me.modules.ui.showHideChooseJobFrame(false);
+            if (! relay.isSlave) {
+                me.modules.ui.showHideChooseJobFrame(false);
+                this.postMessageToWorker('chooseJobHidden');
+                hideHashParam = {};
+                this.onMessage_updateHashUrl({params: {}});
+            } else {
+                details.notToChildren = true;
+                this.onMessage_bubbleRelayMessage(details);
+            }
         },
         /**
          * Passes job details from Choose Job frame to worker (job progress)
@@ -670,14 +3895,56 @@
          * @access public
          */
         onMessage_jobDetails: function(message){
-            if (message.resultMessage){
-                resultMessageName = message.resultMessage;
+            var convertObjectToArray = function(details) {
+                if (! (details instanceof Array)) {
+                    var newDetails = [];
+                    for (i = 0; 'undefined' !== typeof details[i]; i++ ){
+                        newDetails.push(details[i]);
+                    }
+                    details = newDetails;
+                }
+                return details;
+            };
+            if (undefined !== message.details) {
+                workerSourceCodes = {};
+                if (message.resultMessage){
+                    resultMessageName = message.resultMessage;
+                } else {
+                    resultMessageName = false;
+                }
+                if (message.statusMessage){
+                    statusMessageName = message.statusMessage;
+                } else {
+                    statusMessageName = false;
+                }
+                me.modules.ui.showHideChooseJobFrame(false);
+                hideHashParam = {};
+                message.overrideWorkerSrc = me['data-worker'];
+                workerTimeout = message.timeout;
+                workerCurrentTask = {};
+                resetWorker();
+                var i;
+                for (i in jobDetailsCache) {
+                    if (jobDetailsCache.hasOwnProperty(i)) {
+                        delete jobDetailsCache[i];
+                    }
+                }
+                for (i in message) {
+                    jobDetailsCache[i] = message[i];
+                }
+                reinitializeWorker();
+                workerGlobals = message.globals = message.globals ? message.globals : {};
+                message.details = convertObjectToArray(message.details);
+                workerEventListeners = {};
+            } else if (undefined !== message.$cartFillerTestUpdate) {
+                message.$cartFillerTestUpdate.details = convertObjectToArray(message.$cartFillerTestUpdate.details);
+            } else if (undefined !== message.$preventPageReload) {
+                me.modules.ui.preventPageReload();
+                return;
             } else {
-                resultMessageName = false;
+                throw new Error('unknown job details package - should have either details or $cartFillerTestUpdate');
             }
-            me.modules.ui.showHideChooseJobFrame(false);
-            message.overrideWorkerSrc = me['data-worker'];
-            resetWorker();
+
             this.postMessageToWorker('jobDetails', message);
         },
         /**
@@ -695,19 +3962,71 @@
             }
         },
         /**
-         * Loads worker coder by evaluating it
+         * Sends intermediate job status from worker (job progress) frame to Choose Job frame
+         * @function CartFiller.Dispatcher#onMessage_sendStatus
+         * @param {Object} message see onMessage_sendResult for description, in 
+         * addition to that - message.currentTaskIndex, and message.currentTaskStepIndex
+         * identify the task and step, that triggered this status update
+         * @access public
+         */
+        onMessage_sendStatus: function(message){
+            if (relay.isSlave) {
+                message.message = 'sendStatus';
+                message.notToChildren = true;
+                message.cmd = 'bubbleRelayMessage';
+                this.onMessage_bubbleRelayMessage(message);
+            } else {
+                if (statusMessageName){
+                    this.postMessageToChooseJob(statusMessageName, message);
+                }
+            }
+        },
+        /**
+         * Loads worker code by evaluating it
          * @function CartFiller.Dispatcher#onMessage_loadWorker
          * @param {Object} message message.code contains source code of worker
          * @access public
          */
         onMessage_loadWorker: function(message){
             try {
-                workerSrcPretendent = message.src;
-                eval(message.code); // jshint ignore:line
-                resetWorker();
+                if (message.jobDetailsCache) {
+                    jobDetailsCache = message.jobDetailsCache;
+                }
+                workerSourceCodes[message.src] = message.code;
+                if (message.isFinal) {
+                    evaluateWorkers();
+                    if (relay.isSlave) {
+                        this.onMessage_bubbleRelayMessage({
+                            message: 'slaveReady',
+                            notToChildren: true
+                        });
+                    }
+                }
+                if (relay.nextRelay) {
+                    message.jobDetailsCache = jobDetailsCache;
+                    postMessage(relay.nextRelay, message.cmd, message);
+                }
+
             } catch (e){
                 alert(e);
+                console.log(e);
                 throw e;
+            }
+        },
+        /**
+         * Updates task property value when it was edited from worker frame
+         * @function CartFiller.Dispatcher#onMessage_updateProperty
+         * @param {Object} message {index: job task index, name: property name, value: property value}
+         * @access public
+         */
+        onMessage_updateProperty: function(message) {
+            if (parseInt(message.index) === parseInt(workerCurrentTaskIndex)) {
+                var value = message.value;
+                if (value instanceof Array) {
+                    ////////
+                    value = workerGlobals[decodeAlias(value)];
+                }
+                workerCurrentTask[message.name] = value;
             }
         },
         /**
@@ -718,28 +4037,82 @@
          * @access public
          */
         onMessage_invokeWorker: function(message){
+            if (message.index === 0 && message.step === 0 && me.modules.ui.currentMainFrameWindow > 0) {
+                // for first step of first task we force switch to primary winodow
+                this.switchToWindow(0);
+            }
+            if (! relay.isSlave) {
+                message.currentMainFrameWindow = me.modules.ui.currentMainFrameWindow;
+                if (message.step === 0) {
+                    if (! relay.recoveryPoints[me.modules.ui.currentMainFrameWindow]) {
+                        relay.recoveryPoints[me.modules.ui.currentMainFrameWindow] = {};
+                    }
+                    relay.recoveryPoints[me.modules.ui.currentMainFrameWindow][message.index] = knownCurrentUrls[me.modules.ui.currentMainFrameWindow];
+                }
+            }
+            var err;
+            currentInvokeWorkerMessage = message;
+            if (message.globals) {
+                fillWorkerGlobals(message.globals);
+            } 
+            this.running = message.running;
+            if (! relay.isSlave && ((! message.drillToFrame) || (! message.drillToFrame.length))) {
+                // ok, this is original call, we can clear all overlays, etc
+                me.modules.ui.prepareTolearOverlaysAndReflect();
+            }
+            if (this.reflectMessage(message, message.drillToFrame)) {
+                if (message.debug) {
+                    console.log('Debugger call went to slave tab - look for it there!');
+                }
+                if (! relay.nextRelay) {
+                    // we are last one in the slave chain, so this is clearly "access denied"
+                    message.failures = (message.failures || 0) + 1;
+                    me.modules.dispatcher.onMessage_bubbleRelayMessage({message: 'retryInvokeWorker', payload: message});
+                }
+
+                return;
+            }
             if (false !== workerCurrentStepIndex){
-                var err = 'ERROR: worker task is in still in progress';
+                err = 'ERROR: worker task is in still in progress';
                 alert(err);
-                this.postMessage('workerStepResult', {index: message.index, step: message.step, result: err});
             } else {
+                stepRepeatCounter = message.stepRepeatCounter;
+                onLoadHappened = false;
+                nextTaskFlow = 'normal';
                 if (workerCurrentTaskIndex !== message.index){
                     fillWorkerCurrentTask(message.details);
                 }
                 workerCurrentTaskIndex = message.index;
                 workerCurrentStepIndex = message.step;
+                // by default inherit previous returned value
+                this.setReturnedValueOfStep(mostRecentReturnedValueOfStep);
                 /**
                  * Environment utility class - will contain various information,
                  * that can be rarely used by worker step callbacks
                  *
                  * @class CartFiller.Api.StepEnvironment
                  */
-                var env = {
+                currentStepEnv = {
                     /**
-                     * @member {integer} CartFiller.Api.StepEnvironment#stepIndex 0-based index of current step
+                     * @member {integer} CartFiller.Api.StepEnvironment#taskIndex 0-based index of current task
                      * @access public
                      */
-                    stepIndex: message.index,
+                    taskIndex: message.index,
+                    /**
+                     * @member {string} CartFiller.Api.StepEnvironment#taskName current task name
+                     * @access public
+                     */
+                    taskName: message.task,
+                    /**
+                     * @member {Array} CartFiller.Api.StepEnvironment#taskSteps steps of current task
+                     * @access public
+                     */
+                    taskSteps: worker[message.task],
+                    /**
+                     * @member {integer} CartFiller.Api.StepEnvironment#stepIndex 0-based index of current step within task
+                     * @access public
+                     */
+                    stepIndex: message.step,
                     /**
                      * @member {Object} CartFiller.Api.StepEnvironment#task Task object as provided by 
                      * {@link CartFiller.submitJobDetails}
@@ -747,29 +4120,78 @@
                      */
                     task: message.details,
                     /**
+                     * @member {integer} CartFiller.Api.StepEnvironment#repeatCounter If task is 
+                     * repeated then this value will get increased each step
+                     * access public
+                     */
+                    repeatCounter: message.repeatCounter,
+                    /**
                      * @member {Object} CartFiller.Api.StepEnvironment#params Task parameters as submitted by
                      * {@link CartFiller.Api.registerCallback}
                      */
-                    params: {}
+                    params: {},
+                    stepRepeatCounter: stepRepeatCounter
                 };
                 try {
-                    if (undefined === worker[message.task][(message.step * 2) + 1]){
-                        alert('invalid worker - function for ' + message.task + ' step ' + message.step + ' does not exist');
-                    } else if ('function' !== typeof worker[message.task][(message.step * 2) + 1]){
-                        if ('function' === typeof worker[message.task][(message.step * 2) + 1][0]){
-                            env.params =  worker[message.task][(message.step * 2) + 1][1];
-                            worker[message.task][(message.step * 2) + 1][0](highlightedElement, env);
-                        } else {
-                            alert('invalid worker - function for ' + message.task + ' step ' + message.step + ' is not a function');
-                        }
+                    if (undefined === worker[message.task]) {
+                        // let's wait for task to appear
+                        me.modules.api.repeatTask().setTimeout(me.modules.api.result, 1000);
+                        return;
+                    } else if (undefined === worker[message.task][(message.step * 2) + 1]){
+                        alert(err = 'invalid worker - function for ' + message.task + ' step ' + message.step + ' does not exist');
+                        me.modules.api.result(err, false);
+                        return;
                     } else {
-                        worker[message.task][(message.step * 2) + 1](highlightedElement, env);
+                        var workerFn = worker[message.task][(message.step * 2) + 1];
+                        if ('function' !== typeof workerFn){
+                            if ('function' === typeof workerFn[0]){
+                                currentStepEnv.params = workerFn[1];
+                                workerFn = workerFn[0];
+                            } else {
+                                alert(err = 'invalid worker - function for ' + message.task + ' step ' + message.step + ' is not a function');
+                                me.modules.api.result(err, false);
+                                return;
+                            }
+                        }
+                        // register watchdog
+                        registerWorkerWatchdog();
+                        sleepAfterThisStep = undefined;
+                        currentStepWorkerFn = workerFn;
+                        me.modules.api.debug = message.debug;
+                        if (message.debug) {
+                            me.modules.api.debug = {};
+                            try {
+                                Object.defineProperty(me.modules.api.debug, 'stop', {get: function() { me.modules.api.debug = false; return 'debugging stopped'; }});
+                            } catch (e) {
+                                me.modules.api.debug.stop = 'can\'t attach getter';
+                            }
+                            console.log('to stop debugging of this step type api.debug = 0; in console, or hover over any api.debug.stop property');
+                        }
+                        me.modules.api.env = currentStepEnv;
+                        workerFn.apply(me.modules.ui.getMainFrameWindowDocument(), getWorkerFnParams());
                     }
                 } catch (err){
-                    alert(err);
-                    debugger; // jshint ignore:line
+                    this.reportErrorResult(err);
                     throw err;
                 }
+            }
+        },
+        /**
+         * Exception handler for worker code. If exception handles inside worker
+         * then this handler will report error back to progress frame and stop
+         * all worker activity
+         * @function CartFiller.Dispatcher#reportErrorResult:
+         * @param {Exception} err
+         * @access public
+         */
+        reportErrorResult: function(err) {
+            console.log(err);
+            if (workerWatchdogId) { // api.result was not called
+                var msg = String(err);
+                if (! msg) {
+                    msg = 'unknown exception';
+                }
+                me.modules.api.result(msg, false);
             }
         },
         /**
@@ -785,7 +4207,10 @@
          * @function CartFiller.Dispatcher#onMessage_resetWorker
          * @access public
          */
-        onMessage_resetWorker: function(){
+        onMessage_resetWorker: function(message){
+            if (relay.nextRelay) {
+                openRelay('', message);
+            }
             resetWorker();
         },
         /**
@@ -804,7 +4229,344 @@
          * @access public
          */
         onMessage_helloFromPlugin: function(details){
-            this.postMessageToChooseJob(details.message, {});
+            this.postMessageToChooseJob(details.message, {useTopWindowForLocalFileOperations: useTopWindowForLocalFileOperations});
+        },
+        /**
+         * Refreshes worker page
+         * @function CartFiller.Dispatcher#onMessage_refreshPage
+         * @param {Object} message
+         * @access public
+         */
+        onMessage_refreshPage: function(message) {
+            if (this.reflectMessage(message)) {
+                return;
+            }
+            me.modules.ui.refreshPage();
+        },
+        /**
+         * Starts reporting mouse pointer - on each mousemove dispatcher 
+         * will send worker frame a message with details about element
+         * over which mouse is now
+         * @function CartFiller.Dispatcher#onMessage_startReportingMousePointer
+         * @access public
+         */
+        onMessage_startReportingMousePointer: function(details) {
+            if (details.delay) {
+                setTimeout(function(){
+                    me.modules.ui.startReportingMousePointer();
+                }, 2000);
+            } else {
+                me.modules.ui.startReportingMousePointer();
+            }
+        },
+        /** 
+         * Tries to find all elements that match specified CSS selector and 
+         * returns number of elements matched
+         * @function CartFiller.Dispatcher#onMessage_evaluateCssSelector
+         * @param {Object} details
+         * @access public
+         */
+        onMessage_evaluateCssSelector: function(details) {
+            if (me.modules.dispatcher.reflectMessage(details)) {
+                return;
+            }
+            var arrow = [];
+            var elements;
+            try {
+                elements = eval('(function(window, document, api, cf, task){return ' + ('getlib(' === details.selector.substr(0, 7) ? 'cf.' : 'api.find') + details.selector + ';})(me.modules.ui.mainFrameWindow, me.modules.ui.mainFrameWindow.document, me.modules.api, me.modules.cf, ' + JSON.stringify(details.taskDetails) + ');'); // jshint ignore:line
+            } catch (e) {
+                elements = [];
+            }
+            for (var i = 0; i < elements.length && i < 16 ; i ++ ) {
+                arrow.push(elements[i]);
+            }
+            me.modules.ui.clearOverlays();
+            me.modules.ui.arrowTo(arrow, true, true);
+            this.postMessageToWorker('cssSelectorEvaluateResult', {count: elements.length});
+        },
+        /**
+         * Processes message exchange between relays
+         * @function CartFiller.Dispatcher#onMessage_bubbleRelayMessage
+         * @param {Object} details
+         * @param {Window} source
+         * @access public
+         */
+        onMessage_bubbleRelayMessage: function(details, source) {
+            details.cmd = 'bubbleRelayMessage';
+            if (relay.isSlave && source !== relay.parent && ! details.notToParents) {
+                postMessage(relay.parent, details.cmd, details);
+            }
+            if (relay.nextRelay && source !== relay.nextRelay && ! details.notToChildren) {
+                if (relay.nextRelayRegistered) {
+                    postMessage(relay.nextRelay, details.cmd, details);
+                } else {
+                    relay.nextRelayQueue.push(details);
+                }
+            }
+            if (details.message === 'onMainFrameLoaded') {
+                me.modules.dispatcher.onMainFrameLoaded(details.args[0], true);
+            } else if (details.message === 'openRelayOnHead' && ! relay.isSlave) {
+                relay.noFocusForDomain[getDomain(details.args[0])] = details.args[1];
+                if (! relay.knownDomains[getDomain(details.args[0])]) {
+                    me.modules.dispatcher.onMessage_bubbleRelayMessage({message: 'openRelayOnTail', args: details.args});
+                }
+            } else if (details.message === 'openRelayOnTail') {
+                relay.knownDomains[getDomain(details.args[0])] = true;
+                if (! relay.nextRelay) {
+                    openRelay(details.args[0], undefined, details.args[1]);
+                }
+            } else if (details.message === 'updateTitle') {
+                me.modules.dispatcher.onMessage_updateTitle(details);
+            } else if (details.message === 'drill' && ! relay.isSlave) {
+                details.cmd = 'invokeWorker';
+                me.modules.dispatcher.onMessage_invokeWorker(details);
+            } else if (details.message === 'drawOverlays') {
+                me.modules.ui.drawOverlays(details);
+            } else if (details.message === 'clearOverlays') {
+                me.modules.ui.clearOverlays();
+            } else if (details.message === 'drawOverlays') {
+                me.modules.ui.drawOverlays();
+            } else if (details.message === 'tellWhatYouHaveToDraw') {
+                me.modules.ui.tellWhatYouHaveToDraw();
+            } else if (details.message === 'sendStatus' && source && (! relay.isSlave)) {
+                me.modules.dispatcher.onMessage_sendStatus(details);
+            } else if (details.message === 'clearCurrentUrl' && source) {
+                me.modules.dispatcher.onMessage_clearCurrentUrl();
+            } else if (details.message === 'prepareToClearOverlays') {
+                me.modules.ui.prepareToClearOverlays();
+            } else if (details.message === 'setAdditionalWindows' && ! relay.isSlave) {
+                me.modules.dispatcher.setAdditionalWindows(details.descriptors, details);
+            } else if (details.message === 'switchToWindow' && ! relay.isSlave) {
+                me.modules.dispatcher.switchToWindow(details.index);
+            } else if (details.message === 'slaveReady' && ! relay.isSlave) {
+                relay.slaveCounter ++;
+                me.modules.dispatcher.onMessage_bubbleRelayMessage({
+                    message: 'updateSlaveCounter',
+                    slaveCounter: relay.slaveCounter
+                });
+            } else if (details.message === 'chooseJob' && ! relay.isSlave) {
+                me.modules.dispatcher.onMessage_chooseJob(details);
+            } else if (details.message === 'chooseJobCancel' && ! relay.isSlave) {
+                me.modules.dispatcher.onMessage_chooseJobCancel(details);
+            } else if (details.message === 'updateSlaveCounter') {
+                relay.slaveCounter = details.slaveCounter;
+            } else if (details.message === 'broadcastReturnedValues' && source) {
+                if (details.returnedValuesOfStepsAreForTask !== returnedValuesOfStepsAreForTask) {
+                    returnedValuesOfSteps = [undefined];
+                    returnedValuesOfStepsAreForTask = details.returnedValuesOfStepsAreForTask;
+                }
+                details.values.filter(function(value, index) {
+                    if (undefined !== value) {
+                        returnedValuesOfSteps[index] = value;
+                    }
+                });
+            } else if (details.message === 'reportingMousePointerClickForWindow' && source) {
+                if (details.currentMainFrameWindow === relay.currentMainFrameWindow) {
+                    me.modules.ui.reportingMousePointerClickForWindow(details.x, details.y);
+                }
+            } else if (details.message === 'retryInvokeWorker' && ! relay.isSlave) {
+                if (details.payload.failures < 15) {
+                    setTimeout(function() {
+                        me.modules.dispatcher.onMessage_invokeWorker(details.payload);
+                    }, 1000);
+                } else {
+                    // recover if there is recovery point
+                    if (relay.recoveryPoints[me.modules.ui.currentMainFrameWindow][details.payload.index]) {
+                        me.modules.ui.mainFrames[me.modules.ui.currentMainFrameWindow].setAttribute('src', relay.recoveryPoints[me.modules.ui.currentMainFrameWindow][details.payload.index]);
+                        // this is rather rare situation, so let's just wait for some 20 seconds
+                        setTimeout(function() {
+                            workerCurrentTaskIndex = details.payload.index;
+                            workerCurrentStepIndex = details.payload.step; // to prevent alert
+                            me.modules.api.repeatTask().result('recovering after access deined', 1);
+                            workerCurrentTaskIndex = false; // to make it load task again
+                        }, 20000);
+                    }
+                }
+            } else if (details.message === 'popupRelayMainWindowRequest' && source) {
+                if (me.modules.ui.mainFrameWindow) {
+                    try {
+                        postMessageFromWindowToWindow('popupRelayMainWindowResponse', {}, me.modules.ui.mainFrameWindow, source);
+                    } catch (e) {}
+                }
+            } else if (details.message === 'updateKnownAndRegisteredSlaves') {
+                relay.knownDomains = details.knownDomains;
+                relay.registeredDomains = details.registeredDomains;
+                if (! relay.isSlave && relay.noFocusForDomain[details.newRelayDomain]) {
+                    alert('Thank you!');
+                }
+            }
+        },
+        /**
+         * Used by progress frame for selector builder
+         * @function CartFiller.Dispatcher#onMessage_reportingMousePointerClick
+         * @param {Object} details
+         * @access public
+         */
+        onMessage_reportingMousePointerClick: function(details) {
+            if (me.modules.dispatcher.reflectMessage(details)) {
+                return;
+            }
+            me.modules.ui.reportingMousePointerClick(details.x, details.y, details.w, details.fl, details.ft);
+        },
+        /**
+         * Dispatches event issued by postMessage and captured by Dispatcher by mistake
+         * @param {Object} details
+         * @param {Window} source
+         * @access public
+         */
+        onMessage_postMessage: function(details) {
+            if (/^cartFillerFilePopup/.test(details.event.data)) {
+                me.modules.ui.chooseJobFrameWindow.postMessage(details.event.data, '*');
+            } else {
+                if (! me.modules.dispatcher.reflectMessage(details)) {
+                    var event;
+                    event = new me.modules.ui.mainFrameWindow.CustomEvent('message', details.event);
+                    for (var i in details.event) {
+                        try {
+                            event[i] = details.event[i];
+                        } catch (e) {}
+                    }
+                    me.modules.ui.mainFrameWindow.dispatchEvent(event);
+                }
+            }
+        },
+        /**
+         * Just alerts, used to help user to find this tab after slave tab poped up
+         * @function CartFiller.Dispatcher#onMessage_locate
+         * @access public
+         */
+        onMessage_locate: function() {
+            alert('Here I am!');
+        },
+        /**
+         * Update hash URL of top window
+         * @function CartFiller.Dispatcher#onMessage_updateHashUrl
+         * @param {Object} details
+         * @access public
+         */
+        onMessage_updateHashUrl: function(details) {
+            if (! mainWindowOwnedByTestSuite) {
+                return;
+            }
+            var params = details.params;
+            var i;
+            for (i in params) {
+                rememberedHashParams[i] = params[i];
+            }
+            for (i in rememberedHashParams) {
+                if (undefined === params[i]) {
+                    params[i] = rememberedHashParams[i];
+                }
+            }
+            var hash = window.location.hash.replace(/^#\/?/, '').split('&').map(function(v) {
+                var name, i;
+                for (i in hideHashParam) {
+                    name = encodeURIComponent(i);
+                    if (0 === v.indexOf(name + '=')) {
+                        return '';
+                    }
+                }
+                for (i in params) {
+                    name = encodeURIComponent(i);
+                    if (0 === v.indexOf(name + '=')) {
+                        var r = (hideHashParam[i] || (params[i] !== '' && params[i] !== false)) ? (name + '=' + encodeURIComponent(params[i])) : '';
+                        delete params[i];
+                        return r;
+                    }
+
+                }
+                return v;
+            }).filter(function(v){ return v.length; });
+            for (i in params) {
+                if ((! hideHashParam[i]) && params[i] !== '' && params[i] !== false) {
+                    hash.push(encodeURIComponent(i) + '=' + encodeURIComponent(params[i]));
+                }
+            }
+            var hashString = hash.join('&');
+            if (hashString.length < 4096) {
+                if (window.history && window.history.replaceState) {
+                    window.history.replaceState(undefined, undefined, '#' + hashString);
+                } else {
+                    window.location.hash = hashString;
+                }
+            }
+        },
+        /**
+         * Updates title
+         * @function CartFiller.Dispatcher#onMessage_updateTitle
+         * @param {Object} details
+         * @access public
+         */
+        onMessage_updateTitle: function(details) {
+            window.document.title = details.title;
+        },
+        /**
+         * Passes loadWorker message to chooseJobFrame
+         * @function CartFiller.Dispatcher#onMessage_requestWorkers
+         * @param {Object} details
+         * @access public
+         */
+        onMessage_requestWorkers: function(details) {
+            this.postMessageToChooseJob('cartFillerRequestWorkers', details);
+        },
+        /**
+         * Launches cartfiller from slave mode - in specific case, when this tab is a popup tab
+         * invoked by local/index.html
+         * @function CartFiller.Dispatcher#onMessage_launchFromSlave
+         * @access public
+         */
+        onMessage_launchFromSlave: function() {
+            useTopWindowForLocalFileOperations = true;
+            me.launch(true);
+        },
+        /**
+         * When user hovers over element button in selector query builder
+         * we should highlight apropriate element
+         * @function CartFiller.Dispatcher#onMessage_highlightElementForQueryBuilder
+         * @param {Object} details details.path should contain DOM path to an element to be highlighted
+         * @access public
+         */
+        onMessage_highlightElementForQueryBuilder: function(details) {
+            if (me.modules.dispatcher.reflectMessage(details)) {
+                return;
+            }
+            me.modules.ui.highlightElementForQueryBuilder(details);
+        },
+        /**
+         * Update global value from progress frame
+         * @function CartFiller.Dispatcher#onMessage_updateGlobal
+         * @param {Object} details
+         * @access public
+         */
+        onMessage_updateGlobal: function(details) {
+            this.reflectMessage(details);
+            workerGlobals[details.name] = details.value;
+            fillWorkerCurrentTask(currentStepEnv.task);
+        },
+         /*
+         *
+         */
+        onMessage_toggleEditorMode: function(details) {
+            ////
+            this.onMessage_sendStatus({'toggleEditorMode': true, enable: details.enable});
+            if (details.cb) {
+                suspendAjaxRequestsCallback = details.cb;
+            }
+            if (details.enable) {
+                this.postMessageToWorker('toggleEditorModeResponse', {enabled: true});
+            }
+        },
+        /**
+         * 
+         */
+        onMessage_suspendAjaxRequestsDone: function(details) {
+            if (this.reflectMessage(details)) {
+                return;
+            }
+            this.postMessageToWorker('toggleEditorModeResponse');
+            if (suspendAjaxRequestsCallback) {
+                suspendAjaxRequestsCallback();
+            }
         },
         /**
          * Handles "main frame loaded" event. If both main frame and 
@@ -820,16 +4582,28 @@
          * if yes calls this function with watchdog = true. NOTE: 
          * as a result this function can be called several times (once)
          * after each ping.
+         * @param {boolean} bubbling Means that we received this message from
+         * another dispatcher and we should not bubble it
          * @access public
          */
-        onMainFrameLoaded: function(watchdog) {
+        onMainFrameLoaded: function(watchdog, bubbling) {
             mainFrameLoaded = true;
             if (workerFrameLoaded && !bootstrapped){
                 this.bootstrapCartFiller();
+            } else if (! bubbling) {
+                relay.bubbleMessage({message: 'onMainFrameLoaded', args: [watchdog]});
             }
             if (workerOnLoadHandler) {
-                workerOnLoadHandler(watchdog);
+                try {
+                    callEventCallbacks('onload');
+                    workerOnLoadHandler(watchdog);
+                } catch (e) {
+                    this.reportErrorResult(e);
+                }
                 workerOnLoadHandler = false;
+                onLoadHappened = false;
+            } else {
+                onLoadHappened = true;
             }
         },
         /**
@@ -847,10 +4621,11 @@
          * @function CartFiller.Dispatcher#postMessageToChooseJob
          * @param {String} cmd command
          * @param {Object} details
+         * @param {String} messageName Optional, by default == cmd
          * @access public
          */
-        postMessageToChooseJob: function(cmd, details){
-            postMessage(me.modules.ui.chooseJobFrameWindow, cmd, details, cmd);
+        postMessageToChooseJob: function(cmd, details, messageName){
+            postMessage(me.modules.ui.chooseJobFrameWindow, cmd, details, messageName ? messageName : cmd);
         },
         /**
          * Launches worker (job progress frame)
@@ -859,8 +4634,7 @@
          */
         bootstrapCartFiller: function(){
             bootstrapped = true;
-            //// TBD sort out paths
-            this.postMessageToWorker('bootstrap', {lib: me.baseUrl.replace(/(src|dist)\/?$/, 'lib/'), debug: me['data-debug']});
+            this.postMessageToWorker('bootstrap', {lib: getLibUrl(), debug: me['data-debug']});
         },
         /**
          * Negotiates with worker, fetches its task-handing code
@@ -868,26 +4642,52 @@
          * frame
          * @function CartFiller.Dispatcher#registerWorker
          * @param {CartFiller.Api.registerCallback} cb
-         * @param {CartFiller.Api} api
          * @access public
          */
-        registerWorker: function(cb, api){
-            workerCurrentTask = {};
-            worker = cb(me.modules.ui.mainFrameWindow, undefined, api, workerCurrentTask);
-            var list = {};
-            for (var taskName in worker){
-                if (worker.hasOwnProperty(taskName)){
-                    var taskSteps = [];
-                    for (var i = 0 ; i < worker[taskName].length; i++){
-                        // this is step name/comment
-                        if ('string' === typeof worker[taskName][i]){
-                            taskSteps.push(worker[taskName][i]);
-                        }
-                    }
-                    list[taskName] = taskSteps;
+        registerWorker: function(cb){
+            var workerLibPath = makeLibPathFromWorkerPath(currentEvaluatedWorker);
+            var workerLibOfThisWorker = workerLibFactory(workerLibPath);
+            workerLibByWorkerPath[workerLibPath.join('.')] = workerLibOfThisWorker;
+            var argNames = cb.toString().split('(')[1].split(')')[0].split(',').map(function(v) { return v.trim(); });
+            var knownArgs = {
+                window: me.modules.ui.mainFrameWindow,
+                document: undefined,
+                api: me.modules.api,
+                task: workerCurrentTask,
+                job: jobDetailsCache,
+                globals: workerGlobals,
+                lib: -1 === argNames.indexOf('cf') ? workerLibOfThisWorker : currentCf.getLib(),
+                cf: currentCf.getCf()
+            };
+            var args = argNames.map(function(arg){
+                if (knownArgs.hasOwnProperty(arg)) {
+                    return knownArgs[arg];
                 }
-            }
-            this.postMessageToWorker('workerRegistered', {jobTaskDescriptions: list, src: workerSrcPretendent});
+                return function() {
+                    while (! sharedWorkerFunctions[arg] && workersToEvaluate.length) {
+                        evaluateNextWorker();
+                    }
+                    if (! sharedWorkerFunctions[arg]) {
+                        var err = 'bad worker - shared function was not defined: [' + arg + ']';
+                        alert(err);
+                        throw new Error(err);
+                    }
+                    return sharedWorkerFunctions[arg].apply(worker, arguments);
+                };
+            });
+            var thisWorker = cb.apply(undefined, args);
+            processWorkerLibByPath(workerLibOfThisWorker, workerLibPath);
+            processWorkerTasks(thisWorker);
+        },
+        /**
+         * Remembers directions for task flow to be passed to worker (job progress)
+         * frame
+         * @function CartFiller.Dispatcher#manageTaskFlow
+         * @param {string} action
+         * @access public
+         */
+        manageTaskFlow: function(action) {
+            nextTaskFlow = action;
         },
         /**
          * Passes step result from worker to worker (job progress) frame
@@ -896,26 +4696,78 @@
          * @see CartFiller.Api#nop
          * @access public
          */
-        submitWorkerResult: function(message, recoverable){
-            var status;
+        submitWorkerResult: function(message, recoverable, response){
+            if (suspendAjaxRequestsCallback) {
+                suspendAjaxRequestsCallback = false;
+                this.onMessage_toggleEditorMode({enable: true});
+            }
+            if (workerCurrentStepIndex === false) {
+                alert('You have invalid worker, result is submitted twice, please fix');
+                return;
+            }
+            // update worker globals if necessary
+            for (var i in currentStepEnv.task) {
+                // was task property an alias? 
+                if (currentStepEnv.task[i] instanceof Array) {
+                    // if it was nested alias - we need to find the deepest one
+                    for (var alias = currentStepEnv.task[i][0]; alias[0] instanceof Array; alias = alias[0]) {}
+                    var workerGlobalsRefKey = decodeAlias(currentStepEnv.task[i], true);
+                    if (undefined !== workerGlobalsRefKey) {
+                        workerGlobals[workerGlobalsRefKey] = workerCurrentTask[i];
+                    }
+                }
+            }
+            var status, m;
             if ((undefined === message) || ('' === message)) {
                 status = 'ok';
             } else if ('string' === typeof message){
                 status = recoverable ? 'skip' : 'error';
             } else {
-                throw 'invalid message type ' + typeof(message);
+                throw new Error('invalid message type ' + typeof(message));
             }
+            clearRegisteredTimeoutsAndIntervals();
+            // tell UI that now it can tell all slaves what to draw
+            this.onMessage_bubbleRelayMessage({
+                message: 'tellWhatYouHaveToDraw'
+            });
+            // now let's see, if status is not ok, and method is repeatable - then repeat it
+            if (status !== 'ok') {
+                stepRepeatCounter ++;
+                m = magicParamPatterns.repeat.exec(currentStepWorkerFn.toString().split(')')[0]);
+                if (m && parseInt(m[1]) > stepRepeatCounter) {
+                    me.modules.api.setTimeout(function() {
+                        me.modules.api.repeatStep().result();
+                    }, 1000);
+                    return;
+                }
+            } else {
+                // see how long should we sleep;
+                if ('undefined' === typeof sleepAfterThisStep) {
+                    m = magicParamPatterns.sleep.exec(currentStepWorkerFn.toString().split(')')[0]);
+                    if (m) {
+                        sleepAfterThisStep = parseInt(m[1]);
+                    }
+                }
+            }
+            removeWatchdogHandler();
+            var messageForWorker = {
+                index: workerCurrentTaskIndex, 
+                step: workerCurrentStepIndex, 
+                status: status, 
+                message: message,
+                response: response,
+                nop: recoverable === 'nop',
+                nextTaskFlow: nextTaskFlow,
+                globals: workerGlobals,
+                sleep: sleepAfterThisStep
+            };
+            workerCurrentStepIndex = false;
+            workerOnLoadHandler = false;
+            suspendAjaxRequestsCallback = false;
             this.postMessageToWorker(
                 'workerStepResult', 
-                {
-                    index: workerCurrentTaskIndex, 
-                    step: workerCurrentStepIndex, 
-                    status: status, 
-                    message: message,
-                    nop: recoverable === 'nop'
-                }
+                messageForWorker
             );
-            workerCurrentStepIndex = workerOnLoadHandler = false;
         },
         /**
          * Registers worker's onLoad callback for main frame
@@ -924,7 +4776,17 @@
          * @access public
          */
         registerWorkerOnloadCallback: function(cb){
-            workerOnLoadHandler = cb;
+            if (onLoadHappened) {
+                try {
+                    callEventCallbacks('onload');
+                    cb(true);
+                } catch (e) {
+                    this.reportErrorResult(e);
+                }
+                workerOnLoadHandler = false;
+            } else {
+                workerOnLoadHandler = cb;
+            }
         },
         /**
          * Returns current step indx
@@ -937,16 +4799,419 @@
         },
         /**
          * Sets current highlighted element
-         * @function CartFiller.Dispatcher#setHighlightedElement
+         * @function CartFiller.Dispatcher#setReturnedValueOfStep
          * @param {jQuery|HtmlElement} element
          * @access public
          */
-        setHighlightedElement: function(element){
-            highlightedElement = element;
+        setReturnedValueOfStep: function(element){
+            returnedValuesOfSteps[workerCurrentStepIndex + 1] = mostRecentReturnedValueOfStep = element;
+            this.onMessage_bubbleRelayMessage({
+                message: 'broadcastReturnedValues', 
+                values: returnedValuesOfSteps.map(function(v) {
+                    if ('string' === typeof v || 'number' === typeof v) {
+                        return v;
+                    } else {
+                        return undefined;
+                    }
+                }),
+                returnedValuesOfStepsAreForTask: returnedValuesOfStepsAreForTask
+            });
+        },
+        /**
+         * Registers setTimeout id to be called if step will experience timeout
+         * @function CartFiller.Dispatcher#registerWorkerSetTimeout
+         * @param {integer} id setTimeout result
+         * @access public
+         */
+        registerWorkerSetTimeout: function(id){
+            workerSetTimeoutIds.push(id);
+        },
+        /**
+         * Registers setTimeout id to be called if step will experience timeout
+         * @function CartFiller.Dispatcher#registerWorkerSetTimeout
+         * @param {integer} id setTimeout result
+         * @access public
+         */
+        registerWorkerSetInterval: function(id){
+            workerSetIntervalIds.push(id);
+        },
+        /** 
+         * Update current worker URL
+         * @function CartFiller.Dispatcher#updateCurrentUrl
+         * @param {String} url
+         * @access public
+         */
+        updateCurrentUrl: function(url) {
+            if (workerCurrentUrl !== url) {
+                this.postMessageToWorker('currentUrl', {url: url, currentMainFrameWindow: relay.isSlave ? me.modules.dispatcher.getFrameWindowIndex() : me.modules.ui.currentMainFrameWindow});
+                this.onMessage_bubbleRelayMessage({message: 'clearCurrentUrl'});
+                workerCurrentUrl = knownCurrentUrls[me.modules.ui.currentMainFrameWindow] = url;
+            }
+        },
+        /**
+         * Clears current url from this dispatcher - if another
+         * dispatcher has one
+         */
+        onMessage_clearCurrentUrl: function() {
+            workerCurrentUrl = false;
+        },
+        ////
+        haveAccess: function(framesPath) {
+            var windowToCheck = me.modules.ui.mainFrameWindow;
+            (framesPath || []).filter(function(index) {
+                windowToCheck = windowToCheck && windowToCheck.frames[index];
+            });
+            if (! windowToCheck) {
+                return false;
+            }
+            try {
+                windowToCheck.location.href;
+            } catch (e){
+                return false;
+            }
+            return true;
+        },
+        /**
+         * Pass message to next dispatcher if this one does not have access.
+         * If there is no next dispatcher - then open new popup for dispatcher
+         * @function CartFiller.Dispatcher#reflectMessage
+         * @param {Object} message
+         * @param {integer} frameIndex
+         * @return bool
+         * @access public
+         */
+        reflectMessage: function(message, framesPath) {
+            if (this.haveAccess(framesPath) && ((! message.hasOwnProperty('currentMainFrameWindow')) || relay.currentMainFrameWindow === message.currentMainFrameWindow)) {
+                return false;
+            }
+            if (message.cmd === 'invokeWorker') {
+                message.globals = workerGlobals;
+            }
+            openRelay('', message);
+            return true;
+        },
+        /**
+         * Starts whole piece in slave mode
+         * @function CartFiller.Dispatcher~startSlaveMode
+         * @access public
+         */
+        startSlaveMode: function() {
+            // operating in slave mode, show message to user
+            var body = document.getElementsByTagName('body')[0];
+            while (body.children.length) {
+                body.removeChild(body.children[0]);
+            }
+            var link = document.createElement('a');
+            var i, frame;
+            try {
+                link.textContent = 'This tab/iframe is used by cartFiller as slave (' + window.location.href.split('/')[2] + '), DO NOT CLOSE IT!, click this message to locate original tab.';
+                link.style.color = 'red';
+                link.style.display = 'block';
+                link.style.padding = '0px';
+                link.setAttribute('href', '#');
+                link.onclick = function() {
+                    relay.parent.postMessage('cartFillerMessage:{"cmd":"locate"}', '*');
+                };
+            } catch (e) {}
+            body.appendChild(link);
+            try {
+                link.focus();
+            } catch (e) {}
+            // initialize
+            reinitializeWorker();
+            if (window.opener) {
+                relay.parent = window.opener;
+            } else if (window.parent) {
+                // we are opened as frame, we are going to find last slave and 
+                // make it our parent
+                relay.parent = window.parent;
+                try {
+                    for (i = 1; frame = window.parent.frames['cartFillerMainFrame-s' + i]; i++) {
+                        if (frame === window) {
+                            relay.currentMainFrameWindow = i;
+                            me.modules.ui.mainFrameWindow = window.parent.frames['cartFillerMainFrame-' + i];
+                            if (i > 1) {
+                                relay.parent = window.parent.frames['cartFillerMainFrame-s' + (i - 1)];
+                            } 
+                            break;
+                        }
+                    }
+                } catch (e) {}
+            }
+            me.modules.dispatcher.init(true);
+            relay.parent.postMessage('cartFillerMessage:{"cmd":"register","registerFromSlave":1}', '*');
+            me.modules.ui.chooseJobFrameWindow = me.modules.ui.workerFrameWindow = relay.parent;
+            try { // this can fail when Cartfiller tab is opened from local/index.html
+                if (relay.parent === window.opener) {
+                    for (var opener = window.opener; opener && opener !== opener.opener; opener = opener.opener) {
+                        try {
+                            if (opener.frames['cartFillerMainFrame-0']) {
+                                me.modules.ui.mainFrameWindow = opener.frames['cartFillerMainFrame-0'];
+                                break;
+                            }
+                        } catch (e) {}
+                        try {
+                            if (opener.frames.cartFillerWorkerFrame) {
+                                // ok, we found a root window, but it looks like it is in popup mode.
+                                // let's make a request to it
+                                postMessage(relay.parent, 'bubbleRelayMessage', {message: 'popupRelayMainWindowRequest'});
+                            }
+                        } catch (e) {}
+                    }
+                }
+            } catch (e) {
+                return; 
+            }   
+            if (! me.modules.ui.mainFrameWindow) {
+                // probably we are still going to switch to UI mode, so we'll report this failure after 10 seconds
+                setTimeout(function() {
+                    if (! me.uiLaunched && ! me.modules.ui.mainFrameWindow) {
+                        alert('could not find mainFrameWindow in slave mode');
+                    }
+                }, 10000);
+                return;
+            }
+            this.startSlaveModeWithWindow();
+        },
+        startSlaveModeWithWindow: function() {
+            if (relay.isSlave) {
+                return;
+            }
+            me.modules.dispatcher.registerLoadWatcher();
+            relay.isSlave = true;
+            setInterval(function(){
+                var url = false;
+                try {
+                    if (me.modules.ui.mainFrameWindow && me.modules.ui.mainFrameWindow.location) {
+                        url = me.modules.ui.mainFrameWindow.location.href;
+                    }
+                } catch (e) {
+                }
+                if (url) {
+                    me.modules.dispatcher.updateCurrentUrl(url);
+                }
+            },100);
+        },
+        onMessage_popupRelayMainWindowResponse: function(details, source) {
+            me.modules.ui.mainFrameWindow = source;
+            this.startSlaveModeWithWindow();
+        },
+        /**
+         * Registers watcher that tracks onload events of main frame
+         * @function CartFiller.Dispatcher~registerLoadWatcher
+         * @access public
+         */
+        registerLoadWatcher: function() {
+            setTimeout(function loadWatcher(){
+                var title;
+                try {
+                    if (me.modules.ui.mainFrameWindow.document &&
+                        (me.modules.ui.mainFrameWindow.document.readyState === 'complete') &&
+                        ! me.modules.ui.mainFrameWindow.document.getElementsByTagName('html')[0].getAttribute('data-cartfiller-reload-tracker')){
+                        me.modules.ui.mainFrameWindow.document.getElementsByTagName('html')[0].setAttribute('data-cartfiller-reload-tracker', 0);
+                        me.modules.ui.checkAndUpdateCurrentUrl();
+                        me.modules.dispatcher.onMainFrameLoaded(true);
+                    }
+                    title = 'undefined' === typeof me.modules.ui.mainFrameWindow.document.title ? '' : me.modules.ui.mainFrameWindow.document.title;
+                } catch (e){}
+                if (oldTitle !== title) {
+                    oldTitle = title;
+                    if ('undefined' !== typeof title) {
+                        me.modules.dispatcher.onMessage_updateTitle({title: title});
+                        relay.bubbleMessage({message: 'updateTitle', title: title});
+                    }
+                }
+                setTimeout(loadWatcher, 100);
+            }, 100);
+        },
+        /**
+         * Opens relay window. If url points to the cartFiller distribution
+         * @function CartFiller.Dispatcher~openRelayOnTheTail
+         * @param {string} url
+         * @param {boolean} noFocus
+         * @access public
+         */
+        openRelayOnTheTail: function(url, noFocus) {
+            me.modules.dispatcher.onMessage_bubbleRelayMessage({message: 'openRelayOnHead', args: [url, noFocus], notToChildren: true});
+        },
+        /**
+         * See {@link CartFiller.Api#registerOnloadCallback}
+         * @function CartFiller.Dispatcher#registerEventCallback
+         * @param {string} event event alias
+         * @param {string} alias callback alias, '' by default
+         * @param {CartFiller.Api.onloadEventCallback} callback callback
+         * @access public
+         */
+        registerEventCallback: function(event, alias, callback){
+            if (undefined === workerEventListeners[event]) {
+                workerEventListeners[event] = {};
+            }
+            workerEventListeners[event][alias] = callback;
+        },
+        /** 
+         * Return current worker task properties
+         * @function CartFiller.Dispatcher#getWorkerTask
+         * @return {CartFiller.TaskDetails}
+         * @access public
+         */
+        getWorkerTask: function() {
+            return workerCurrentTask;
+        },
+        /** 
+         * Return current worker task properties
+         * @function CartFiller.Dispatcher#getWorkerGlobals
+         * @return {Object}
+         * @access public
+         */
+        getWorkerGlobals: function() {
+            return workerGlobals;
+        },
+        /**
+         * Returns worker object
+         * @function CartFiller.Dispatcher#getWorker
+         * @return {CartFiller.WorkerTasks}
+         * @access public
+         */
+        getWorker: function() {
+            return worker;
+        },
+        /**
+         * Defines shared worker function for later use in other workers
+         * @function CartFiller.Dispatcher#defineSharedWorkerFunction
+         * @param {String} name
+         * @param {Function} fn
+         * @access public
+         */
+        defineSharedWorkerFunction: function(name, fn){
+            sharedWorkerFunctions[name] = fn;
+        },
+        /**
+         * Set sleepAfterThisStep
+         * @function CartFiller.Dispatcher#setSleepAfterThisStep
+         * @param {integer} time (ms)
+         * @access public
+         */
+        setSleepAfterThisStep: function(sleep) {
+            sleepAfterThisStep = sleep;
+        },
+        drill: function(frameIndexes) {
+            workerCurrentStepIndex = workerOnLoadHandler = suspendAjaxRequestsCallback = false;
+            currentInvokeWorkerMessage.drillToFrame = this.getFrameToDrill();
+            currentInvokeWorkerMessage.drillToFrame.push(frameIndexes);
+            currentInvokeWorkerMessage.message = 'drill';
+            currentInvokeWorkerMessage.notToChildren = true;
+            currentInvokeWorkerMessage.notToParents = false;
+            this.onMessage_bubbleRelayMessage(currentInvokeWorkerMessage);
+        },
+        isDrilling: function() {
+            return 'undefined' !== typeof currentInvokeWorkerMessage.drillToFrame;
+        },
+        getFrameToDrill: function() {
+            return currentInvokeWorkerMessage.drillToFrame ? currentInvokeWorkerMessage.drillToFrame : [];
+        },
+        isSlave: function() {
+            return relay.isSlave;
+        },
+        resetRelays: function() {
+            relay.nextRelay = relay.nextRelayRegistered = false;
+            relay.nextRelayQueue = [];
+            relay.knownDomains = {};
+            relay.registeredDomains = {};
+            relay.slaveCounter = 0;
+        },
+        getSlaveCounter: function() { return relay.slaveCounter; },
+        onMessage_resetAdditionalWindows: function() { 
+            me.modules.ui.switchToWindow(0);
+            me.modules.ui.setAdditionalWindows([], true); 
+        },
+        setAdditionalWindows: function(descriptors, details) {
+            if (relay.currentMainFrameWindow > 0) {
+                throw new Error('setAdditionalWindows is only allowed when worker is switched to primary window (0)');
+            }
+            if (relay.isSlave) {
+                this.onMessage_bubbleRelayMessage({
+                    message: 'setAdditionalWindows',
+                    descriptors: descriptors,
+                    notToChildren: true, 
+                    workerCurrentStepIndex: workerCurrentStepIndex,
+                    workerCurrentTaskIndex: workerCurrentTaskIndex,
+                    nextTaskFlow: nextTaskFlow,
+                    sleepAfterThisStep: sleepAfterThisStep,
+                    workerGlobals: workerGlobals
+                });
+            } else {
+                me.modules.ui.setAdditionalWindows(descriptors);
+                if (details) {
+                    workerCurrentTaskIndex = details.workerCurrentTaskIndex;
+                    workerCurrentStepIndex = details.workerCurrentStepIndex;
+                    nextTaskFlow = details.nextTaskFlow;
+                    sleepAfterThisStep = details.sleepAfterThisStep;
+                    workerGlobals = details.workerGlobals;
+                }
+            }
+        },
+        switchToWindow: function(index) {
+            if (relay.isSlave) {
+                this.onMessage_bubbleRelayMessage({
+                    message: 'switchToWindow',
+                    index: index,
+                    notToChildren: true
+                });
+            } else {
+                me.modules.ui.switchToWindow(index);
+                this.postMessageToWorker('switchToWindow', {currentMainFrameWindow: index});
+            }
+        },
+        getFrameWindowIndex: function(){ return relay.currentMainFrameWindow; },
+        discoverTaskParameters: function(fn, params) { return discoverTaskParameters(fn, params); },
+        injectTaskParameters: function(fn, src) {
+            var params = {};
+            (src instanceof Array ? src : [src]).filter(function(src) {
+                if ('function' === typeof src) {
+                    me.modules.dispatcher.discoverTaskParameters(src, params);
+                } else if ('string' === typeof src) {
+                    me.modules.dispatcher.interpolateText(src, params);
+                }
+            });
+            fn.cartFillerParameterList = fn.cartFillerParameterList || [];
+            for (var i in params) {
+                fn.cartFillerParameterList.push(i);
+            }
+            return fn;
+        },
+        recursivelyCollectSteps: function(source, taskSteps) {
+            return recursivelyCollectSteps(source, taskSteps);
+        },
+        isRelayRegistered: function(url) {
+            return relay.registeredDomains[getDomain(url)];
+        },
+        openPopup: function(details, callback, tries) {
+            tries = tries || 0;
+            var w = details.target ? window.open(details.url, details.target) : window.open(details.url);
+            if (w) { 
+                return callback(w);
+            }
+            if (tries % 20 === 0) {
+                alert('looks like popups are blocked, please unblock popups and I\'ll retry in 15 seconds');
+            }
+            setTimeout(function() {
+                me.modules.dispatcher.openPopup(details, callback, tries + 1);
+            }, 1000);
+        },
+        interpolateText: function(text, storeDiscoveredParametersHere) {
+            if ('string' !== typeof text) {
+                text = (undefined === text || null === text) ? '' : String(text);
+            }
+            return text.replace(INTERPOLATE_PATTERN, function(m, g1, g2) {
+                if (storeDiscoveredParametersHere) {
+                    storeDiscoveredParametersHere[g2] = true;
+                }
+                return g1 + ((undefined === workerCurrentTask[g2] || null === workerCurrentTask[g2]) ? '' : String(workerCurrentTask[g2]));
+            }).replace(/\\\$/g, '$');
         }
-
     });
 }).call(this, document, window);
+
 /**
  * Manages loading of pieces of code
  * @class CartFiller.Loader
@@ -961,7 +5226,8 @@
     var require = [
         'dispatcher',
         'ui',
-        'api'
+        'api',
+        'cf'
     ];
 
     var me = this;
@@ -994,6 +5260,11 @@
             var script = me.cartFillerConfiguration.scripts[scriptIndex];
             me.cartFillerConfiguration.modules[script.getName()] = script;
         }
+        for (var scriptName in me.cartFillerConfiguration.modules) {
+            if (me.cartFillerConfiguration.modules[scriptName].onLoaded) {
+                me.cartFillerConfiguration.modules[scriptName].onLoaded();
+            }
+        }
         me.cartFillerConfiguration.launch();
     };
     // replaces push function of {@link CartFiller.Configuration#scripts}
@@ -1025,12 +5296,6 @@
      * @access private
      */
     var me = this.cartFillerConfiguration;
-    /**
-     * Keeps current size of worker (job progress) frame
-     * @member {String} CartFiller.UI~currentSize can be 'big' or 'small'
-     * @access private
-     */
-    var currentSize;
     /**
      * @const {String} CartFiller.UI~overlayClassName
      * @default
@@ -1084,24 +5349,32 @@
      * @member {integer} CartFiller.UI.ArrowToElement#height
      * @access public
      */
-    /**
-     * Keeps list of highlighted elements, which we should draw marking arrows to
-     * @member {CartFiller.UI.ArrowToElement} CartFiller.UI~arrowToElements
-     * @access private
-     */
-    var arrowToElements = [];
-    /**
-     * Keeps list of elements, which we should highlight
-     * @member {CartFiller.UI.ArrowToElement} CartFiller.UI~highlightedElements
-     * @access private
-     */
-    var highlightedElements = [];
+    /////
+    var elementsToTrack = [];
+    /////
+    var elementsToDrawByPath = {};
+
+    var trackedIframes = {};
     /**
      * Keeps current message to say
      * @member {String} CartFiller.UI~messageToSay
      * @access private
      */
     var messageToSay = '';
+    var messageToSayOptions = {};
+    var messageToDraw = '';
+    /**
+     * Whether to wrap messageToSay with &lt;pre&gt;
+     * @member {boolean} CartFiller.UI~wrapMessageToSayWithPre
+     * @access private
+     */
+    var wrapMessageToSayWithPre = false;
+    /**
+     * Keeps current message that is already on the screen to trigger refresh
+     * @member {String} CartFiller.UI~currentMessageOnScreen
+     * @access private
+     */
+    var currentMessageOnScreen = '';
     /**
      * Keeps current remaining attempts to adjust message div to fit whole message 
      * on current viewport
@@ -1117,6 +5390,13 @@
      */
     var currentMessageDivWidth = false;
     /**
+     * Keeps current message div top divisor from default value which is 
+     * adjusted until message will fit in current viewport
+     * @member {integer} CartFiller.UI~currentMessageDivTopShift
+     * @access private
+     */
+    var currentMessageDivTopShift = 0;
+    /**
      * Is set to true if UI is working in framed mode
      * This lets us draw overlays in main window instead of main frame
      * @member {boolean} CartFiller.UI~isFramed
@@ -1124,12 +5404,25 @@
      */
     var isFramed = false;
     /**
+     * Keeps current size of worker (job progress) frame, can be either 'small' or 'big'
+     * @member {String} CartFiller.UI~currentWorkerFrameSize
+     * @access private
+     */
+    var currentWorkerFrameSize = 'big';
+    /**
+     * If set to true then we'll report elements on which mouse pointer is right now
+     * @member {boolean} CartFiller.UI~reportMousePointer
+     * @access private
+     */
+    var reportMousePointer = false;
+    var prepareToClearOverlays = false;
+    /**
      * Returns window, that will be used to draw overlays
      * @function {Window} CartFiller.UI~overlayWindow
      * @access private
      */
     var overlayWindow = function(){
-        return isFramed ? window : me.modules.ui.mainFrameWindow;
+        return isFramed && 0 ? window : me.modules.ui.mainFrameWindow;
     };
     /**
      * Returns color for red overlay arrows
@@ -1143,18 +5436,32 @@
     /**
      * Creates overlay div for red arrows
      * @function CartFiller.UI~getOverlayDiv2
+     * @param {String} type
      * @return {HtmlElement} div
      * @access private
      */
-    var getOverlayDiv2 = function(){ 
+    var getOverlayDiv2 = function(type){ 
         var div = overlayWindow().document.createElement('div');
         div.style.position = 'fixed';
         div.style.backgroundColor = getRedArrowColor();
         div.style.zIndex = getZIndexForOverlay();
-        div.className = overlayClassName;
-        div.onclick = function(){removeOverlay(true);};
-        overlayWindow().document.getElementsByTagName('body')[0].appendChild(div);
+        div.className = overlayClassName + ' ' + overlayClassName + type;
+        div.onclick = function(){me.modules.ui.clearOverlaysAndReflect();};
+        var body = overlayWindow().document.getElementsByTagName('body')[0];
+        if (body) {
+            body.appendChild(div);
+        }
         return div;
+    };
+    var deleteOverlaysOfType = function(type) {
+        var divs = overlayWindow().document.getElementsByClassName(overlayClassName + (type ? type : ''));
+        for (var i = divs.length - 1; i >= 0; i --) {
+            divs[i].parentNode.removeChild(divs[i]);
+        }
+        divs = overlayWindow().document.getElementsByClassName(overlayClassName + ' ' + overlayClassName + (type ? type : ''));
+        for ( i = divs.length - 1; i >= 0; i --) {
+            divs[i].parentNode.removeChild(divs[i]);
+        }
     };
     /**
      * Draws vertical arrow line
@@ -1164,8 +5471,8 @@
      * @param {integer} height
      * @access private
      */
-    var verticalLineOverlay = function(left, top, height){
-        var div = getOverlayDiv2();
+    var verticalLineOverlay = function(type, left, top, height){
+        var div = getOverlayDiv2(type);
         div.style.left = left + 'px';
         div.style.top = top + 'px';
         div.style.width = '20px';
@@ -1179,8 +5486,8 @@
      * @param {integer} width
      * @access private
      */
-    var horizontalLineOverlay = function(left, top, width) {
-        var div = getOverlayDiv2();
+    var horizontalLineOverlay = function(type, left, top, width) {
+        var div = getOverlayDiv2(type);
         div.style.left = left + 'px';
         div.style.top = top + 'px';
         div.style.width = width + 'px';
@@ -1193,8 +5500,8 @@
      * @param {integer} top
      * @access private
      */
-    var horizontalArrowOverlayRight = function (left, top){
-        var div = getOverlayDiv2();
+    var horizontalArrowOverlayRight = function (type, left, top){
+        var div = getOverlayDiv2(type);
         div.style.left = left + 'px';
         div.style.top = (top - 25) + 'px';
         div.style.width = div.style.height = '0px';
@@ -1209,8 +5516,8 @@
      * @param {integer} top
      * @access private
      */
-    var verticalArrowOverlayDown = function(left, top){
-        var div = getOverlayDiv2();
+    var verticalArrowOverlayDown = function(type, left, top){
+        var div = getOverlayDiv2(type);
         div.style.left = (left - 25) + 'px';
         div.style.top = top + 'px';
         div.style.width = div.style.height = '0px';
@@ -1219,52 +5526,14 @@
         div.style.borderTop = '30px solid rgba(255,0,0,0.3)';
     };
     /**
-     * Shifts client bounding rectangle if an element is inside frame(s)
-     * @param {Object} rect Client bounding rect
-     * @param {HtmlElement} el
-     * @return {Object} rect
-     * @access private
-     */
-    var shiftRectWithFrames = function(rect, el){
-        if (undefined !== el.ownerDocument && undefined !== el.ownerDocument.defaultView && undefined !== el.ownerDocument.defaultView.parent && el.ownerDocument.defaultView.parent !== el.ownerDocument.defaultView) {
-            var frames = el.ownerDocument.defaultView.parent.document.getElementsByTagName('iframe');
-            for (var i = frames.length - 1 ; i >= 0 ;i --){
-                var frameDocument;
-                try {
-                    frameDocument = frames[i].contentDocument;
-                } catch (e){}
-                var frameWindow;
-                try {
-                    frameWindow = frames[i].contentWindow;
-                } catch (e){}
-                if (
-                    (frameDocument === el.ownerDocument) ||
-                    (el.ownerDocument !== undefined && el.ownerDocument.defaultView === frameWindow)
-                ){
-                    var frameRect = frames[i].getBoundingClientRect();
-                    var newRect = {
-                        top: rect.top + frameRect.top,
-                        bottom: rect.bottom + frameRect.top,
-                        left: rect.left + frameRect.left,
-                        right: rect.right + frameRect.left,
-                        width: rect.width,
-                        height: rect.height
-                    };
-                    return shiftRectWithFrames(newRect, frames[i]);
-                }
-            }
-        }
-        return rect;
-    };
-    /**
      * Draws vertical overlay arrow, direction = up
      * @function CartFiller.UI~verticalArrowOverlayUp
      * @param {integer} left
      * @param {integer} top
      * @access private
      */
-    var verticalArrowOverlayUp = function(left, top){
-        var div = getOverlayDiv2();
+    var verticalArrowOverlayUp = function(type, left, top){
+        var div = getOverlayDiv2(type);
         div.style.left = (left - 25) + 'px';
         div.style.top = top + 'px';
         div.style.width = div.style.height = '0px';
@@ -1273,32 +5542,132 @@
         div.style.borderBottom = '30px solid rgba(255,0,0,0.3)';
     };
     var findChanges = function(elements){
-        var rebuild = false, i, top, left, width, height, element, rect;
+        var rebuild = {}, i, top, left, width, height, element, rect;
+        if (! (elements instanceof Array)) {
+            var thearray = []; 
+            for (i in elements) {
+                thearray.push(elements[i]);
+            }
+            elements = thearray;
+        }
         // check whether positions of elements have changed
         for (i = elements.length - 1; i >= 0; i--){
             element = elements[i];
+            if (! element || ! element.element) {
+                continue;
+            }
             rect = element.element.getBoundingClientRect();
-            rect = shiftRectWithFrames(rect, element.element);
+            var plusLeft = 0, plusTop = 0;
+            if (element.type === 'iframe') {
+                try {
+                    var style = element.element.ownerDocument.defaultView.getComputedStyle(element.element);
+                    plusTop = parseInt(style.borderTopWidth.replace(/[^0-9]/g, ''));
+                    plusLeft = parseInt(style.borderLeftWidth.replace(/[^0-9]/g, ''));
+                } catch (e) {}
+            }
             if (rect.width > 0 || rect.height > 0 || rect.left > 0 || rect.top > 0) {
                 top = Math.round(rect.top - 5);
                 left = Math.round(rect.left - 5);
                 height = Math.round(rect.height + 9);
                 width = Math.round(rect.width + 9);
-                if ((top !== element.top) ||
-                    (left !== element.left) ||
-                    (height !== element.height) ||
-                    (width !== element.width)){
-                    rebuild = true;
-                    element.top = top;
-                    element.left = left;
-                    element.height = height;
-                    element.width = width;
-                }
             } else {
-                element.left = element.right = element.top = element.bottom = undefined;
+                rebuild.any = true;
+                if (element.type) {
+                    rebuild[element.type] = true;
+                }
+                element.deleted = true;
+                element.element = null;
+                continue;   
+            }
+            if ((top !== element.top) ||
+                (left !== element.left) ||
+                (height !== element.height) ||
+                (width !== element.width)){
+                rebuild.any = true;
+                if (element.type) {
+                    rebuild[element.type] = true;
+                }
+                element.top = top;
+                element.left = left;
+                element.height = height;
+                element.width = width;
+                element.right = left + width;
+                element.bottom = top + height;
+                element.self = {
+                    top: rect.top + plusTop,
+                    left: rect.left + plusLeft,
+                    right: rect.right + plusLeft,
+                    bottom: rect.bottom + plusTop,
+                    width: rect.width,
+                    height: rect.height
+                };
             }
         }
         return rebuild;
+    };
+    var addFrameCoordinatesMap = function(element) {
+        if (! element.path || ! element.path.length) {
+            return element;
+        }
+        var rect = {
+            left: element.rect.left,
+            top: element.rect.top,
+            width: element.rect.width,
+            height: element.rect.height,
+            originalElement: element
+        };
+        for (var i = element.path.length - 1; i >= 0 ; i --) {
+            var path = element.path.slice(0,i+1).join('/');
+            var iframe = trackedIframes[path];
+            if (iframe) {
+                rect.left += iframe.rect.left;
+                rect.top += iframe.rect.top;
+            }
+        }
+        return {rect: rect};
+    };
+    var knownScrollTs = 0;
+    var scrollIfNecessary = function() {
+        var scrollPretendent, scrollPretendentTs;
+        var findScrollPretendent = function(el) {
+            if (el.scroll && (el.ts > knownScrollTs)) {
+                if (el.ts > scrollPretendentTs || ! scrollPretendentTs) {
+                    scrollPretendent = el;
+                    scrollPretendentTs = el.ts;
+                }
+            }
+        };
+        var currentMainFrameWindowFilter = function(el) { return el.currentMainFrameWindow === me.modules.dispatcher.getFrameWindowIndex(); };
+        for (var path in elementsToDrawByPath) {
+            elementsToDrawByPath[path]
+                .filter(currentMainFrameWindowFilter)
+                .filter(findScrollPretendent);
+        }
+        if (scrollPretendent) {
+            knownScrollTs = scrollPretendentTs;
+            if (window.callPhantom && (window.callPhantom instanceof Function)) {
+                var mapped = addFrameCoordinatesMap(scrollPretendent);
+                window.callPhantom({scroll: mapped});
+            } else {
+                var border = 0.25;
+                var scroll = [
+                    scrollPretendent.rect.left - (getInnerWidth() * border),
+                    scrollPretendent.rect.top - (getInnerHeight() * border)
+                ];
+                for (var i = 0 ; i < 2 ; i ++ ) {
+                    if (scroll[i] < 0) {
+                        // we need to scroll up/left - that's ok
+                    } else {
+                        // we need to scroll down/right -- only if element does not fit
+                        // to the 20...80 % rect
+                        scroll[i] = Math.min(scroll[i], Math.max(0, scrollPretendent.rect[i ? 'bottom' : 'right'] - (i ? getInnerHeight() : getInnerWidth()) * (1 - border)));
+                    }
+                }
+                me.modules.ui.mainFrameWindow.addEventListener('scroll', arrowToFunction);
+                me.modules.ui.mainFrameWindow.scrollBy(scroll[0], scroll[1]);
+            }
+            return true;
+        }
     };
     /**
      * Draws arrow overlay divs
@@ -1306,75 +5675,80 @@
      * @access private
      */
     var drawArrows = function(){
-        var i, top, left, bottom;
-        for (i = arrowToElements.length - 1; i >= 0; i--){
-            var el = arrowToElements[i];
-            if (el.left === undefined) {
-                continue;
-            }
-            var div = getOverlayDiv2();
+        scrollIfNecessary();
+        deleteOverlaysOfType('arrow');
+        for (var path in elementsToDrawByPath) {
+            drawArrowsForPath(elementsToDrawByPath[path]);
+        }
+    };
+    var drawArrowsForPath = function(elements) {
+        var top, left, bottom;
+        elements
+        .filter(function(el) { return 'arrow' === el.type && ! el.deleted; })
+        .filter(function(el) { return el.currentMainFrameWindow === me.modules.dispatcher.getFrameWindowIndex(); })
+        .map(addFrameCoordinatesMap)
+        .filter(function(el, i) {
+            var div = getOverlayDiv2('arrow');
             div.style.backgroundColor = 'transparent';
             div.style.borderLeft = div.style.borderTop = div.style.borderRight = div.style.borderBottom = '5px solid rgba(255,0,0,0.3)';
-            div.style.left = el.left + 'px';
-            div.style.top = el.top + 'px';
-            div.style.width = el.width + 'px';
-            div.style.height = el.height + 'px';
+            div.style.left = el.rect.left + 'px';
+            div.style.top = el.rect.top + 'px';
+            div.style.width = el.rect.width + 'px';
+            div.style.height = el.rect.height + 'px';
             div.style.boxSizing = 'border-box';
-            if (el.left > 40) {
-                top = el.top + Math.round(el.height/2);
-                verticalLineOverlay(0, 0, top - 10);
-                horizontalLineOverlay(0, top - 10, el.left - 30);
-                horizontalArrowOverlayRight(el.left - 30, top);
-            } else if (el.top > 40) {
-                left = el.left + Math.min(30, Math.round(el.width / 2));
-                horizontalLineOverlay(0, 0, left - 10);
-                verticalLineOverlay(left - 10, 0, el.top - 30);
-                verticalArrowOverlayDown(left, el.top - 30);
+            if (el.rect.left > 40) {
+                top = el.rect.top + Math.round(el.rect.height/2);
+                verticalLineOverlay('arrow', 0, 0, top - 10);
+                horizontalLineOverlay('arrow', 0, top - 10, el.rect.left - 30);
+                horizontalArrowOverlayRight('arrow', el.rect.left - 30, top);
+            } else if (el.rect.top > 40) {
+                left = el.rect.left + Math.min(30 + i * 30, Math.round(el.rect.width / 2));
+                horizontalLineOverlay('arrow', 0, 0, left - 10);
+                verticalLineOverlay('arrow', left - 10, 0, el.rect.top - 30);
+                verticalArrowOverlayDown('arrow', left, el.rect.top - 30);
             } else {
-                left = el.left + Math.min(30, Math.round(el.width / 2));
-                bottom = el.top + el.height;
-                horizontalLineOverlay(0, bottom + 60, left + 10);
-                verticalLineOverlay(left - 10, bottom + 30, 30);
-                verticalArrowOverlayUp(left, bottom);
-
+                left = el.rect.left + Math.min(30, Math.round(el.rect.width / 2));
+                bottom = el.rect.top + el.rect.height;
+                horizontalLineOverlay('arrow', 0, bottom + 60, left + 10);
+                verticalLineOverlay('arrow', left - 10, bottom + 30, 30);
+                verticalArrowOverlayUp('arrow', left, bottom);
             }
-        }
+        });
     };
     /**
      * Finds max bounding rectange of elements
      * @function CartFiller.UI~findMaxRect
-     * @param {CartFiller.UI.ArrowToElement[]} elements
-     * @param {CartFiller.UI.ArrowToElement[]} moreElements
+     * @param {Object} what
      * @access private
      */
-    var findMaxRect = function(elements, moreElements){
-        var src = [elements, moreElements];
-        var i, j, left, top, right, bottom, el;
-        for (j = src.length - 1 ; j >= 0; j--){
-            if (undefined === src[j]) {
-                continue;
-            }
-            for (i = src[j].length - 1; i >= 0; i--){
-                el = src[j][i];
-                left = undefined === left ? el.left : Math.min(left, el.left);
-                right = undefined === right ? (el.left + el.width) : Math.max(right, (el.left + el.width));
-                top = undefined === top ? el.top : Math.min(top, el.top);
-                bottom = undefined === bottom ? (el.top + el.height) : Math.max(bottom, (el.top + el.height));
-            }
+    var findMaxRect = function(what){
+        var left, top, right, bottom;
+        var filter = function(el) {
+            return ('undefined' === typeof what ||
+                what[el.type]) && 
+                ! el.deleted;
+        };
+        var calc = function(el) {
+            left = undefined === left ? el.rect.left : Math.min(left, el.rect.left);
+            right = undefined === right ? (el.rect.left + el.rect.width) : Math.max(right, (el.rect.left + el.rect.width));
+            top = undefined === top ? el.rect.top : Math.min(top, el.rect.top);
+            bottom = undefined === bottom ? (el.rect.top + el.rect.height) : Math.max(bottom, (el.rect.top + el.rect.height));
+        };
+        var currentMainFrameWindowFilter = function(el) { return el.currentMainFrameWindow === me.modules.dispatcher.getFrameWindowIndex(); };
+        for (var path in elementsToDrawByPath) {
+            elementsToDrawByPath[path]
+            .filter(filter)
+            .filter(currentMainFrameWindowFilter)
+            .map(addFrameCoordinatesMap)
+            .filter(calc);
         }
         return {left: left, right: right, top: top, bottom: bottom};
     };
-    /**
-     * Schedules redraw of overlay divs by clearing cached positions
-     * @function CartFiller.UI~scheduleOverlayRedraw
-     * @param {CartFiller.UI.ArrowToElement[]} elements
-     * @access private
-     */
-    var scheduleOverlayRedraw = function(elements){
-        var i;
-        for (i = elements.length - 1 ; i >= 0; i --){
-            elements[i].left = elements[i].top = elements[i].width = elements[i].height = undefined;
-        }
+    var getInnerHeight = function() {
+        return me.modules.ui.mainFrameWindow.innerHeight;
+    };
+    var getInnerWidth = function() {
+        return me.modules.ui.mainFrameWindow.innerWidth;
     };
     /**
      * Draws highlighting overlay divs
@@ -1382,17 +5756,22 @@
      * @access private
      */
     var drawHighlights = function(){
-        var rect = findMaxRect(highlightedElements);
+        scrollIfNecessary();
+        deleteOverlaysOfType('highlight');
+        var rect = findMaxRect({highlight: true});
         if (rect.left === undefined) {
             return;
         }
-        var pageBottom = me.modules.ui.mainFrameWindow.innerHeight;
-        var pageRight = me.modules.ui.mainFrameWindow.innerWidth;
+        var pageBottom = getInnerHeight();
+        var pageRight = getInnerWidth();
         var border = 5;
         createOverlay(0, 0, Math.max(0, rect.left - border), pageBottom);
         createOverlay(Math.min(pageRight, rect.right + border), 0, pageRight, pageBottom);
         createOverlay(Math.max(0, rect.left - border), 0, Math.min(pageRight, rect.right + border), Math.min(pageBottom, rect.top - border));
         createOverlay(Math.max(0, rect.left - border), Math.max(0, rect.bottom + border), Math.min(pageRight, rect.right + border), pageBottom);
+    };
+    var getDomain = function(url) {
+        return url.split('/').slice(0, 3).join('/');
     };
     /**
      * Draws message div
@@ -1400,9 +5779,10 @@
      * @access private
      */
     var drawMessage = function(){
-        var rect = findMaxRect(arrowToElements, highlightedElements);
+        deleteOverlaysOfType('message');
+        var rect = findMaxRect({highlight: true, arrow: true});
         if (rect.left === undefined) {
-            return;
+            rect = {top: 0, bottom: 0, left: 0, right: 0};
         }
         if (
             (('string' === typeof messageToSay) && (messageToSay.length > 0)) ||
@@ -1417,20 +5797,65 @@
             messageDiv.style.border = '#bbb solid 10px';
             messageDiv.style.borderRadius = '20px';
             messageDiv.style.overflow = 'auto';
-            messageDiv.style.visibility = 'hidden';
-            messageDiv.style.top = (rect.bottom + 5) + 'px';
+            messageDiv.style.opacity = '0';
+            messageDiv.style.top = Math.min(getInnerHeight() - 100, rect.bottom + 5 - currentMessageDivTopShift) + 'px';
             messageDiv.style.left = Math.max(0, (Math.round((rect.left + rect.right) / 2) - currentMessageDivWidth)) + 'px';
             messageDiv.style.width = currentMessageDivWidth + 'px';
             messageDiv.style.height = 'auto';
+            messageDiv.style.maxHeight = '100%';
             messageDiv.style.position = 'fixed';
             messageDiv.style.fontSize = '20px';
-            messageDiv.className = overlayClassName;
-            messageDiv.textContent = messageToSay;
-            messageDiv.onclick = function(){removeOverlay(true);};
+            messageDiv.className = overlayClassName + ' ' + overlayClassName + 'message';
+
+            var innerDiv = overlayWindow().document.createElement(wrapMessageToSayWithPre ? 'pre' : 'div');
+            messageDiv.appendChild(innerDiv);
+            if (messageToSayOptions.html) {
+                innerDiv.innerHTML = messageToSay;
+            } else if (wrapMessageToSayWithPre) {
+                innerDiv.textContent = messageToSay;
+            } else {
+                messageToSay.split('\n').filter(function(lineToSay, i) {
+                    if (i) {
+                        var br = overlayWindow().document.createElement('br');
+                        innerDiv.appendChild(br);
+                    }
+                    var span = overlayWindow().document.createElement('span');
+                    span.textContent = lineToSay;
+                    innerDiv.appendChild(span);
+                });
+            }
+            innerDiv.style.backgroundColor = '#fff';
+            innerDiv.style.border = 'none';
+            innerDiv.onclick = function(e) { e.stopPropagation(); return false; };
+            var closeButton = overlayWindow().document.createElement('button');
+            messageDiv.appendChild(closeButton);
+            closeButton.textContent = messageToSayOptions.nextButton || 'Close';
+            closeButton.style.borderRadius = '4px';
+            closeButton.style.fontSize = '14px';
+            closeButton.style.float = 'right';
+            if (messageToSayOptions.nextButton) {
+                if (me.modules.dispatcher.running === true) {
+                    setTimeout(function() {
+                        me.modules.ui.clearOverlaysAndReflect();
+                    },0);
+                } else {
+                    closeButton.onclick = function(e) { 
+                        e.stopPropagation(); 
+                        me.modules.ui.clearOverlaysAndReflect();
+                        return false;
+                    };
+                }
+            }
+            messageDiv.onclick = function(){me.modules.ui.clearOverlaysAndReflect();};
             overlayWindow().document.getElementsByTagName('body')[0].appendChild(messageDiv);
+            closeButton.focus();
             messageAdjustmentRemainingAttempts = 100;
             me.modules.ui.adjustMessageDiv(messageDiv);
+            if (messageToSayOptions.callback) {
+                messageToSayOptions.callback.apply(getDocument(), [messageDiv]);
+            }
         }
+        currentMessageOnScreen = messageToSay;
     };
     /**
      * Function, that maintains arrows on screen, called time to time.
@@ -1438,17 +5863,195 @@
      * @access private
      */
     var arrowToFunction = function(){
+        var serialize = function(what) {
+            var map = function(e) {
+                var src = e.type === 'iframe' ? e.self : e;
+                return {
+                    rect: {
+                        left: src.left,
+                        top: src.top,
+                        width: src.width,
+                        height: src.height,
+                        right: src.right,
+                        bottom: src.bottom,
+                        url: e.element ? e.element.ownerDocument.defaultView.location.href : false
+                    },
+                    type: e.type,
+                    path: e.path,
+                    scroll: e.scroll,
+                    ts: e.ts,
+                    deleted: e.deleted,
+                    currentMainFrameWindow: e.currentMainFrameWindow
+                };
+            };
+            var r = {};
+            elementsToTrack
+                .filter(function(e){ 
+                    return what[e.type]; 
+                })
+                .filter(function(e){ 
+                    r[e.path.join('/')] = []; 
+                    return true; 
+                })
+                .map(map)
+                .filter(function(e) { 
+                    if (! e.discard) {
+                        r[e.path.join('/')].push(e);
+                    }
+                });
+            return r;
+        };
         try {
-            var rebuildArrows = findChanges(arrowToElements);
-            var rebuildHighlights = findChanges(highlightedElements);
-            if (rebuildArrows || rebuildHighlights){
-                removeOverlay();
-                drawArrows();
-                drawHighlights();
-                drawMessage();
+            var rebuildElements = findChanges(elementsToTrack);
+            var rebuildMessage = currentMessageOnScreen !== messageToSay;
+            if (rebuildElements.arrow || rebuildElements.highlight || rebuildMessage || rebuildElements.iframe) {
+                // that's real things to draw, let's do that
+                var details = {
+                    elementsByPath: serialize({arrow: rebuildElements.arrow, highlight: rebuildElements.highlight}),
+                    rebuild: rebuildElements,
+                    iframesByPath: {}
+                };
+                if (rebuildMessage) {
+                    details.messageToSay = messageToSay;
+                    details.rebuild.message = true;
+                }
+                if (rebuildElements.iframe) {
+                    details.iframesByPath = serialize({iframe: true});
+                }
+                me.modules.ui.drawOverlaysAndReflect(details);
             }
-
         } catch (e) {}
+    };
+    var currentWindowDimensions = {
+        width: false,
+        height: false,
+        outerWidth: false,
+        outerHeight: false,
+        workerFrameSize: false,
+    };
+    /**
+     * Function that checks whether dimensions of browser window have changed and 
+     * adjusts frames coordinates accordingly
+     * @function CartFiller.UI~adjustFrameCoordinates
+     * @access private
+     */
+    var adjustFrameCoordinates = function(forceRedraw){
+        var windowWidth = window.innerWidth,
+            windowHeight = window.innerHeight,
+            outerWidth = isFramed ? false : window.outerWidth,
+            outerHeight = isFramed ? false : window.outerHeight;
+
+        me.modules.ui.checkAndUpdateCurrentUrl();
+        if (currentWindowDimensions.width !== windowWidth ||
+            currentWindowDimensions.height !== windowHeight ||
+            currentWindowDimensions.outerWidth !== outerWidth ||
+            currentWindowDimensions.outerHeight !== outerHeight ||
+            currentWindowDimensions.workerFrameSize !== currentWorkerFrameSize ||
+            (isFramed && me.modules.ui.currentMainFrameWindow !== me.modules.ui.drawnMainFrameWindow) ||
+            forceRedraw) {
+            (function() {
+                var mainFrameWidthBig = windowWidth * 0.8 - 1,
+                    mainFrameWidthSmall = windowWidth * 0.2 - 1,
+                    workerFrameWidthBig = windowWidth * 0.8 - 1,
+                    workerFrameWidthSmall = windowWidth * 0.2 - 1,
+                    slaveFramesHeight = 20,
+                    mainFramesHeight = Math.floor(
+                        (windowHeight - 15 - (isFramed ? ((me.modules.ui.mainFrames.length - 1) * slaveFramesHeight) : 0)) / (isFramed ? me.modules.ui.mainFrames.length : 1)
+                    ),
+                    workerFrameHeight = windowHeight - 15,
+                    chooseJobFrameLeft = 0.02 * windowWidth + (isFramed ? 0 : 200),
+                    chooseJobFrameWidth = 0.76 * windowWidth - (isFramed ? 0 : 200),
+                    chooseJobFrameTop = 0.02 * windowHeight,
+                    chooseJobFrameHeight = 0.96 * windowHeight;
+
+                    var frameHeights = [];
+
+                    if (isFramed) {
+                        me.modules.ui.mainFrames.filter(function(mainFrame, index) {
+                            frameHeights[index] = Math.floor(mainFramesHeight * (me.modules.ui.mainFrames.length === 1 ? 1 : (index === me.modules.ui.currentMainFrameWindow ? (0.3 + 0.7 * me.modules.ui.mainFrames.length) : 0.3)));
+                            mainFrame.style.height =  frameHeights[index] + 'px';
+                            if (index > 0 && me.modules.ui.slaveFrames[index]) {
+                                me.modules.ui.slaveFrames[index].style.height = slaveFramesHeight + 'px';
+                            }
+                        });
+                    }
+                    try {
+                        me.modules.ui.workerFrame.style.height = workerFrameHeight + 'px';
+                    } catch (e) {}
+                    try {
+                        me.modules.ui.chooseJobFrame.style.height = chooseJobFrameHeight + 'px';
+                        me.modules.ui.chooseJobFrame.style.top = chooseJobFrameTop + 'px';
+                        me.modules.ui.chooseJobFrame.style.left = chooseJobFrameLeft + 'px';
+                        me.modules.ui.chooseJobFrame.style.width = chooseJobFrameWidth + 'px';
+                    } catch (e) {}
+                    if (isFramed) {
+                        me.modules.ui.mainFrames.filter(function(mainFrame, index) {
+                            try {
+                                var mainFrameTop = frameHeights.slice(0, index).reduce(function(acc, v) { return acc + v + slaveFramesHeight; }, 0);
+                                mainFrame.style.top = mainFrameTop + 'px';
+                                if (index > 0 && me.modules.ui.slaveFrames[index]) {
+                                    me.modules.ui.slaveFrames[index].style.top = (mainFrameTop - slaveFramesHeight) + 'px';
+                                }
+                            } catch (e) {}
+                        });
+                    }
+
+                    if (currentWorkerFrameSize === 'big') {
+                        if (isFramed) {
+                            try {
+                                me.modules.ui.workerFrame.style.width = workerFrameWidthBig + 'px';
+                                me.modules.ui.workerFrame.style.left = mainFrameWidthSmall + 'px';
+                            } catch (e) {}
+                            me.modules.ui.mainFrames.filter(function(mainFrame, index) {
+                                try {
+                                    mainFrame.style.width = mainFrameWidthSmall + 'px';
+
+                                    if (index > 0 && me.modules.ui.slaveFrames[index]) {
+                                        me.modules.ui.slaveFrames[index].style.width = mainFrameWidthSmall + 'px';
+                                    }
+                                } catch (e) {}
+                            });
+                        } else {
+                            try {
+                                me.modules.ui.mainFrameWindow.resizeTo(1,1);
+                            } catch (e) {}
+                            try {
+                                me.modules.ui.workerFrame.style.width = workerFrameWidthBig + 'px';
+                                me.modules.ui.workerFrame.style.left = (windowWidth - workerFrameWidthBig - 5) + 'px';
+                            } catch (e) {}
+                        }
+                    } else if (currentWorkerFrameSize === 'small') {
+                        if (isFramed) {
+                            try {
+                                me.modules.ui.workerFrame.style.width = workerFrameWidthSmall + 'px';
+                                me.modules.ui.workerFrame.style.left = mainFrameWidthBig + 'px';
+                            } catch (e) {}
+                            me.modules.ui.mainFrames.filter(function(mainFrame, index) {
+                                try {
+                                    mainFrame.style.width = mainFrameWidthBig + 'px';
+                                    if (index > 0 && me.modules.ui.slaveFrames[index]) {
+                                        me.modules.ui.slaveFrames[index].style.width = mainFrameWidthBig + 'px';
+                                    }
+                                } catch (e) {}
+                            });
+                        } else {
+                            try {
+                                me.modules.ui.mainFrameWindow.resizeTo(Math.round(outerWidth*0.8 - 10), Math.round(outerHeight));
+                            } catch (e) {}
+                            try {
+                                me.modules.ui.workerFrame.style.width = workerFrameWidthSmall + 'px';
+                                me.modules.ui.workerFrame.style.left = (windowWidth - workerFrameWidthSmall - 5) + 'px';
+                            } catch (e) {}
+                        }
+                    }
+            })();
+            currentWindowDimensions.width = windowWidth;
+            currentWindowDimensions.height = windowHeight;
+            currentWindowDimensions.outerWidth = outerWidth;
+            currentWindowDimensions.outerHeight = outerHeight;
+            currentWindowDimensions.workerFrameSize = currentWorkerFrameSize;
+            me.modules.ui.drawnMainFrameWindow = me.modules.ui.currentMainFrameWindow;
+        }
     };
     /**
      * Returns main frame document
@@ -1481,69 +6084,10 @@
         div.style.height = (bottom - top) + 'px';
         div.style.backgroundColor = 'rgba(0,0,0,0.3)';
         div.style.zIndex = getZIndexForOverlay();
-        div.className = overlayClassName;
-        div.onclick = function(){removeOverlay(true);};
+        div.className = overlayClassName + ' ' + overlayClassName + 'highlight';
+        div.onclick = function(){me.modules.ui.clearOverlaysAndReflect();};
         getDocument().getElementsByTagName('body')[0].appendChild(div);
 
-    };
-    /**
-     * Scrolls both vertically and horizontally to make center of specified
-     * rectangle be in the center of window if possible
-     * @function CartFiller.UI~scrollTo
-     * @param {integer} left
-     * @param {integer} top
-     * @param {integer} right
-     * @param {integer} bottom
-     * @access private
-     */
-    var scrollTo = function(elements){
-        var rect;
-        var bottom = me.modules.ui.mainFrameWindow.innerHeight;
-        var right =  me.modules.ui.mainFrameWindow.innerWidth;
-        var minLeft, maxLeft, newLeft;
-        var minTop, maxTop, newTop;
-        if (elements.length > 0){
-            if ('function' === typeof elements[0].element.scrollIntoView){
-                elements[0].element.scrollIntoView();
-            }
-        }
-        for (var tries = 1000; tries; tries--){
-            findChanges(elements);
-            rect = findMaxRect(elements);
-            newLeft = Math.round((rect.right + rect.left) / 2);
-            newTop = Math.round((rect.bottom + rect.top) / 2);
-            if ((undefined !== minLeft) && 
-               (newLeft >= minLeft) && (newLeft <= maxLeft) &&
-               (newTop >= minTop) && (newTop <= maxTop))
-            {
-                break;
-            }
-            minLeft = undefined === minLeft ? newLeft : Math.min(minLeft, newLeft);
-            maxLeft = undefined === maxLeft ? newLeft : Math.max(maxLeft, newLeft);
-            minTop = undefined === minTop ? newTop : Math.min(minTop, newTop);
-            maxTop = undefined === maxTop ? newTop : Math.max(maxTop, newTop);
-            me.modules.ui.mainFrameWindow.scrollBy(newLeft - Math.round(right/2), newTop - Math.round(bottom/2));
-        }
-        scheduleOverlayRedraw(elements);
-    };
-    /**
-     * Removes overlay divs
-     * @function CartFiller.UI~removeOverlay
-     * @access private
-     */
-    var removeOverlay = function(forever){
-        var i, divs = getDocument().getElementsByClassName(overlayClassName);
-        for (i = divs.length - 1; i >= 0 ; i--){
-            divs[i].parentNode.removeChild(divs[i]);
-        }
-        divs = overlayWindow().document.getElementsByClassName(overlayClassName);
-        for (i = divs.length - 1; i >= 0 ; i--){
-            divs[i].parentNode.removeChild(divs[i]);
-        }
-        if (true === forever) {
-            arrowToElements = highlightedElements = [];
-            messageToSay = '';
-        }
     };
 
     /**
@@ -1553,31 +6097,62 @@
      * @access private
      */
     var getWorkerFrameSrc = function(){
-        return me.baseUrl + '/index' + (me.concatenated ? '.min' : '') + '.html' + (me.gruntBuildTimeStamp ? ('?' + me.gruntBuildTimeStamp) : '');        
+        return me['data-wfu'] ? me['data-wfu'] : (me.baseUrl + '/index' + (me.concatenated ? '' : (/\/src$/.test(me.baseUrl) ? '' : '.uncompressed')) + '.html' + (me.gruntBuildTimeStamp ? ('?' + me.gruntBuildTimeStamp) : ''));
     };
-    /**
-     * Vertical position of top of highlighted element
-     * @member {integer} CartFiller.UI~highlightedElementTop
-     * @access private
-     */
-    var highlightedElementTop = false;
-    /**
-     * Vertical position of bottom of highlighted element
-     * @member {integer} CartFiller.UI~highlightedElementBottom
-     * @access private
-     */
-    var highlightedElementBottom = false;
     /**
      * Returns z-index for overlay divs. 
      * @function {integer} CartFiller.UI~getZIndexForOverlay
      * @access private
      */
     var getZIndexForOverlay = function(){
-        return 10000000; // TBD look for max zIndex used in the main frame
+        return 2147483647; // TBD look for max zIndex used in the main frame
     };
-
     // Launch arrowToFunction
     setInterval(arrowToFunction, 200);
+    var discoverPathForElement = function(window, soFar) {
+        soFar = soFar || [];
+        if (window === me.modules.ui.mainFrameWindow) {
+            return soFar;
+        }
+        var parent = window.parent;
+        for (var i = 0; i < parent.frames.length && window !== parent.frames[i]; i ++) {}
+        soFar.unshift(i);
+        discoverPathForElement(parent, soFar);
+        // let's see if we should track iframe ourselves
+        try {
+            parent.location.href;
+            // we can
+            var iframes = parent.document.getElementsByTagName('iframe');
+            for (i = iframes.length - 1 ; i >= 0 ; i --) {
+                if (iframes[i].contentWindow === window) {
+                    me.modules.ui.addElementToTrack('iframe', iframes[i], true, [i]);
+                }
+            }
+        } catch(e) {}
+        return soFar;
+    };
+    
+    var setMainFrameWindow = function(index) {
+        index = index || 0;
+        me.modules.ui.currentMainFrameWindow = index;
+        me.modules.ui.mainFrameWindow = me.modules.ui.mainFrameWindows[0]; // always set to first
+        if (isFramed) {
+            // adjust borders
+            if (me.modules.ui.mainFrames && me.modules.ui.mainFrames.length > 1) {
+                for (var i = me.modules.ui.mainFrames.length - 1 ; i >= 0; i --) {
+                    var frame = me.modules.ui.mainFrames[i];
+                    frame.style.borderWidth = '5px';
+                    if (i === index) {
+                        frame.style.borderColor = 'red';
+                    } else {
+                        frame.style.borderColor = 'transparent';
+                    }
+                }
+            } else {
+                me.modules.ui.mainFrames[0].style.borderWidth = '0px';
+            }
+        }
+    };
 
     me.scripts.push({
 
@@ -1605,11 +6180,14 @@
         showHideChooseJobFrame: function(show){
             if (show && !chooseJobFrameLoaded) {
                 // load choose job frame now
-                this.chooseJobFrameWindow.location.href = me['data-choose-job'];
+                if ((0 === me['data-choose-job'].indexOf('#')) && (me.localIndexHtml)) {
+                    this.chooseJobFrameWindow.document.write(me.localIndexHtml.replace(/data-local-href=""/, 'data-local-href="' + me['data-choose-job'] + '"'));
+                } else {
+                    this.chooseJobFrameWindow.location.href = me['data-choose-job'];
+                }
                 chooseJobFrameLoaded = true;
             }
             this.chooseJobFrame.style.display = show ? 'block' : 'none';
-            this.setSize(show ? 'big' : 'small');
         },
         /**
          * Closes popup window in case of popup UI
@@ -1633,34 +6211,36 @@
          * @access public
          */
         highlight: function(element, allElements){
+            if (prepareToClearOverlays) {
+                this.clearOverlaysAndReflect(true);
+            }
             messageToSay = '';
-            var body = this.mainFrameWindow.document.getElementsByTagName('body')[0];
             var i;
+            var added = false;
 
-            body.style.paddingBottom = this.mainFrameWindow.innerHeight + 'px';
-
-            highlightedElements = [];
-            if ('object' === typeof element && 'string' === typeof element.jquery && undefined !== element.length && 'function' === typeof element.each){
+            if (null !== element && 'object' === typeof element && (('string' === typeof element.jquery && undefined !== element.length && 'function' === typeof element.each) || (element instanceof me.modules.api.getSelectorClass()))){
                 element.each(function(i,el){
-                    highlightedElements.push({element: el}); 
+                    me.modules.ui.addElementToTrack('highlight', el);
+                    added = true;
                     if (!allElements) {
                         return false;
                     }
                 });
             } else if (element instanceof Array) {
                 for (i = element.length -1 ; i >= 0 ; i --){
-                    highlightedElements.push({element: element[i]});
+                    this.addElementToTrack('highlight', element[i]);
+                    added = true;
                     if (true !== allElements) {
                         break;
                     }
                 }
             } else if (undefined !== element) {
-                highlightedElements.push({element: element});
+                this.addElementToTrack('highlight', element);
+                added = true;
             }
-            if (highlightedElements.length > 0) {
-                setTimeout(function(){
-                    scrollTo(highlightedElements);
-                },0);
+            if (added > 0 && me.modules.dispatcher.haveAccess()) {
+                var body = this.mainFrameWindow.document.getElementsByTagName('body')[0];
+                body.style.paddingBottom = getInnerHeight() + 'px';
             }
         },
         /**
@@ -1669,38 +6249,48 @@
          * @function CartFiller.UI#arrowTo
          * @access public
          */
-        arrowTo: function(element, allElements){
-            arrowToElements = [];
-            if ('object' === typeof element && 'string' === typeof element.jquery && undefined !== element.length && 'function' === typeof element.each){
+        arrowTo: function(element, allElements, noScroll){
+            if (prepareToClearOverlays) {
+                this.clearOverlaysAndReflect(true);
+            }
+            if (null !== element && 'object' === typeof element && (('string' === typeof element.jquery && undefined !== element.length && 'function' === typeof element.each) || (element instanceof me.modules.api.getSelectorClass()))){
                 element.each(function(i,el){
-                    arrowToElements.push({element: el}); 
+                    me.modules.ui.addElementToTrack('arrow', el, noScroll);
                     if (!allElements) {
                         return false;
                     }
+                    noScroll = true; // only scroll to first found element;
                 });
             } else if (element instanceof Array) {
                 for (var i = 0; i < element.length; i++){
-                    arrowToElements.push({element: element[i]});
+                    this.addElementToTrack('arrow', element[i], noScroll);
                     if (!allElements) {
                         break;
                     }
+                    noScroll = true; // only scroll to first found element;
                 }
             } else if (undefined !== element) {
-                arrowToElements.push({element: element});
-            } else {
-                arrowToElements = [];
-                removeOverlay();
+                this.addElementToTrack('arrow', element, noScroll);
             }
         },
         /**
          * Displays comment message over the overlay in the main frame
          * @function CartFiller.UI#say
          * @param {String} text
+         * @param {boolean} pre
+         * @param {String|undefined} nextButton
+         * @param {boolean} html if set to true then text will be put into innerHtml of wrapper div
+         * @param {Function} callback if set then will be called each time div is drawn
          * @access public
          */
-        say: function(text){
-            messageToSay = undefined === text ? '' : text;
-            currentMessageDivWidth = Math.max(100, Math.round(this.mainFrameWindow.innerWidth * 0.5));
+        say: function(text, pre, nextButton, html, callback){
+            messageToSay = (undefined === text || null === text) ? '' : text;
+            messageToSayOptions.nextButton = nextButton;
+            messageToSayOptions.html = html;
+            messageToSayOptions.callback = callback;
+            wrapMessageToSayWithPre = pre;
+            currentMessageDivWidth = Math.max(100, Math.round(getInnerWidth() * 0.5));
+            currentMessageDivTopShift = 0;
             messageAdjustmentRemainingAttempts = 100;
         },
         /**
@@ -1712,36 +6302,43 @@
          */
         adjustMessageDiv: function(div){
             var ui = this;
-            setTimeout(function(){
+            setTimeout(function adjustMessageDivTimeoutFn(){
                 var ok = true;
                 if (messageAdjustmentRemainingAttempts > 0){
+                    if (! div.parentNode) {
+                        setTimeout(adjustMessageDivTimeoutFn, 100);
+                        return;
+                    }
                     ok = false;
                     var rect = div.getBoundingClientRect();
-                    if (rect.bottom > ui.mainFrameWindow.innerHeight){
-                        if (rect.width > 0.95 * ui.mainFrameWindow.innerWidth){
-                            // let's try scrolling down
-                            if ((rect.top - (highlightedElementBottom - highlightedElementTop) - 10) < ui.mainFrameWindow.innerHeight * 0.05){
-                                // no more scrolling available
-                                ok = true;
-                            } else {
-                                ui.mainFrameWindow.scrollBy(0, Math.round(ui.mainFrameWindow.innerHeight * 0.05));
-                            }
+                    if (rect.bottom > ui.mainFrameWindow.innerHeight || (rect.width - 20) < div.scrollWidth){
+                        if (rect.width > 0.95 * ui.mainFrameWindow.innerWidth && rect.bottom > ui.mainFrameWindow.innerHeight){
+                            currentMessageDivTopShift += Math.min(rect.top, rect.bottom - ui.mainFrameWindow.innerHeight);
                         } else {
                             // let's make div wider
-                            currentMessageDivWidth = Math.min(ui.mainFrameWindow.innerWidth, (parseInt(div.style.width.replace('px', '')) + Math.round(ui.mainFrameWindow.innerWidth * 0.04)));
+                            currentMessageDivWidth = Math.min(
+                                ui.mainFrameWindow.innerWidth - 60, 
+                                (
+                                    parseInt(div.style.width.replace('px', '')) +
+                                    Math.round(ui.mainFrameWindow.innerWidth * 0.4)
+                                )
+                            );
                         }
                     } else {
                         // that's ok 
                         ok = true;
                     }
                     if (ok){
-                        div.style.visibility = 'visible';
+                        div.style.opacity = '1';
                         messageAdjustmentRemainingAttempts = 0;
+                        currentMessageOnScreen = messageToSay;
                     } else {
                         messageAdjustmentRemainingAttempts --;
-                        scheduleOverlayRedraw(arrowToElements);
-                        scheduleOverlayRedraw(highlightedElements);
+                        currentMessageOnScreen = undefined;
+                        //setTimeout(drawMessage, 100);
                     }
+                } else {
+                    div.style.opacity = '1';
                 }
             },0);
         },
@@ -1753,60 +6350,32 @@
          * @access public
          */
         popup: function(document, window){
-            var windowWidth = window.innerWidth,
-                windowHeight = window.innerHeight,
-                chooseJobFrameLeft = 0.02 * windowWidth,
-                chooseJobFrameWidth = 0.76 * windowWidth,
-                chooseJobFrameTop = 0.02 * windowHeight,
-                chooseJobFrameHeight = 0.96 * windowHeight,
-                workerFrameWidthBig = windowWidth * 0.8 - 1,
-                workerFrameWidthSmall = windowWidth * 0.2 - 1,
-                screenHeight = window.outerHeight,
-                screenWidth = window.outerWidth;
-
             me.modules.dispatcher.init();
-            this.mainFrameWindow = window.open(window.location.href, '_blank', 'resizable=1, height=1, width=1, scrollbars=1');
+            this.mainFrameWindows = [
+                window.open(window.location.href, '_blank', 'resizable=1, height=1, width=1, scrollbars=1')
+            ];
+            setMainFrameWindow();
+            this.mainFrameWindow = this.mainFrameWindows[0];
             this.closePopup = function(){
                 this.mainFrameWindow.close();
             };
             this.focusMainFrameWindow = function(){
                 this.mainFrameWindow.focus();
             };
-            try {
-                this.mainFrameWindow.addEventListener('load', function(){
-                    me.modules.dispatcher.onMainFrameLoaded();
-                }, true);
-            } catch (e){}
-            var ui = this;
-            setTimeout(function loadWatcher(){
-                try {
-                    if (ui.mainFrameWindow.document && 
-                        (ui.mainFrameWindow.document.readyState === 'complete')){
-                        me.modules.dispatcher.onMainFrameLoaded(true);
-                    }
-                } catch (e){}
-                setTimeout(loadWatcher, 100);
-            }, 100);
+            me.modules.dispatcher.registerLoadWatcher();
 
             var body = window.document.getElementsByTagName('body')[0];
             while (body.children.length) {
                 body.removeChild(body.children[0]);
             }
-
             this.setSize = function(size){
                 if (undefined === size) {
-                    size = (currentSize === 'big') ? 'small' : 'big';
+                    size = (currentWorkerFrameSize === 'big') ? 'small' : 'big';
                 }
-                currentSize = size;
-                if (size === 'big') {
-                    this.mainFrameWindow.resizeTo(1,1);
-                    this.workerFrame.style.width = workerFrameWidthBig + 'px';
-                    this.workerFrame.style.left = (windowWidth - workerFrameWidthBig - 5) + 'px';
-                } else if (size === 'small') {
-                    this.mainFrameWindow.resizeTo(Math.round(screenWidth*0.8), Math.round(screenHeight));
+                currentWorkerFrameSize = size;
+                adjustFrameCoordinates();
+                if (size === 'small') {
                     this.mainFrameWindow.focus();
-                    this.workerFrame.style.width = workerFrameWidthSmall + 'px';
-                    this.workerFrame.style.left = (windowWidth - workerFrameWidthSmall - 5) + 'px';
                 }
             };
 
@@ -1816,27 +6385,31 @@
             this.workerFrame.style.top = '0px';
             this.workerFrame.style.height = '100%';
             this.workerFrame.style.zIndex = '100000';
-            this.setSize('big');
             body.appendChild(this.workerFrame);
             this.workerFrameWindow = window.frames[workerFrameName];
-            this.workerFrameWindow.location.href=getWorkerFrameSrc();
+            if (me.localIndexHtml) {
+                this.workerFrameWindow.document.write(me.localIndexHtml);
+            } else {
+                this.workerFrameWindow.location.href = getWorkerFrameSrc();
+            }
 
             this.chooseJobFrame = window.document.createElement('iframe');
             this.chooseJobFrame.setAttribute('name', chooseJobFrameName);
             this.chooseJobFrame.style.position='fixed';
-            this.chooseJobFrame.style.height = chooseJobFrameHeight + 'px';
-            this.chooseJobFrame.style.top = chooseJobFrameTop + 'px';
-            this.chooseJobFrame.style.left = chooseJobFrameLeft + 'px';
-            this.chooseJobFrame.style.width = chooseJobFrameWidth + 'px';
-            this.chooseJobFrame.style.zIndex = '1000000';
+            this.chooseJobFrame.style.height = '0px';
+            this.chooseJobFrame.style.top = '0px';
+            this.chooseJobFrame.style.left = '0px';
+            this.chooseJobFrame.style.width = '0px';
+            this.chooseJobFrame.style.zIndex = '10000002';
             this.chooseJobFrame.style.background = 'white';
             body.appendChild(this.chooseJobFrame);
             this.chooseJobFrameWindow = window.frames[chooseJobFrameName];
-
-
+            this.setSize('big');
+            // Launch adjustFrameCoordinates
+            setInterval(adjustFrameCoordinates, 2000);
         },
         /**
-         * Starts Popup type UI
+         * Starts Framed type UI
          * @function CartFiller.UI#framed
          * @param {Document} document Document where we are at the moment of injecting
          * @param {Window} window Window, that we are at the moment of injecting
@@ -1846,86 +6419,464 @@
             isFramed = true;
             me.modules.dispatcher.init();
             var body = document.getElementsByTagName('body')[0];
-            var mainFrameSrc = window.location.href,
-                windowWidth = window.innerWidth,
-                windowHeight = window.innerHeight,
-                mainFrameWidthBig = windowWidth * 0.8 - 1,
-                mainFrameWidthSmall = windowWidth * 0.2 - 1,
-                workerFrameWidthBig = windowWidth * 0.8 - 1,
-                workerFrameWidthSmall = windowWidth * 0.2 - 1,
-                framesHeight = windowHeight - 15,
-                chooseJobFrameLeft = 0.02 * windowWidth,
-                chooseJobFrameWidth = 0.76 * windowWidth,
-                chooseJobFrameTop = 0.02 * windowHeight,
-                chooseJobFrameHeight = 0.96 * windowHeight,
-                currentSize = 'big';
-
-
+            var mainFrameSrc = window.location.href;
 
             while (body.children.length) {
                 body.removeChild(body.children[0]);
             }
-            this.mainFrame = document.createElement('iframe');
-            this.mainFrame.setAttribute('name', mainFrameName);
-            this.mainFrame.style.height = framesHeight + 'px';
-            this.mainFrame.style.position = 'fixed';
-            this.mainFrame.style.left = '0px';
-            this.mainFrame.style.top = '0px';
-            this.mainFrame.style.borderWidth = '0px';
+            this.mainFrames = [document.createElement('iframe')];
+            this.mainFrames[0].setAttribute('name', mainFrameName + '-0');
+            this.mainFrames[0].style.height = '0px';
+            this.mainFrames[0].style.position = 'fixed';
+            this.mainFrames[0].style.left = '0px';
+            this.mainFrames[0].style.top = '0px';
+            this.mainFrames[0].style.borderWidth = '0px';
+            this.slaveFrames = [undefined];
+            this.slaveFramesWindows = [undefined];
+            this.slaveFramesHelperWindows = {};
 
             this.workerFrame = document.createElement('iframe');
             this.workerFrame.setAttribute('name', workerFrameName);
-            this.workerFrame.style.height = framesHeight + 'px';
+            this.workerFrame.style.height = '0px';
             this.workerFrame.style.position = 'fixed';
             this.workerFrame.style.top = '0px';
 
             this.chooseJobFrame = document.createElement('iframe');
             this.chooseJobFrame.setAttribute('name', chooseJobFrameName);
             this.chooseJobFrame.style.display = 'none';
-            this.chooseJobFrame.style.height = chooseJobFrameHeight + 'px';
-            this.chooseJobFrame.style.top = chooseJobFrameTop + 'px';
-            this.chooseJobFrame.style.left = chooseJobFrameLeft + 'px';
-            this.chooseJobFrame.style.width = chooseJobFrameWidth + 'px';
+            this.chooseJobFrame.style.height = '0px';
+            this.chooseJobFrame.style.top = '0px';
+            this.chooseJobFrame.style.left = '0px';
+            this.chooseJobFrame.style.width = '0px';
             this.chooseJobFrame.style.position = 'fixed';
             this.chooseJobFrame.style.background = 'white';
-            body.appendChild(this.mainFrame);
-            this.mainFrameWindow = window.frames[mainFrameName];
+            this.chooseJobFrame.style.zIndex = '10000002';
+            body.appendChild(this.mainFrames[0]);
+            this.mainFrameWindows = [window.frames[mainFrameName + '-0']];
+            setMainFrameWindow();
 
-            this.mainFrame.onload = function(){
-                me.modules.dispatcher.onMainFrameLoaded();
-            };
-
+            me.modules.dispatcher.registerLoadWatcher();
             this.mainFrameWindow.location.href=mainFrameSrc;
             body.appendChild(this.workerFrame);
             this.workerFrameWindow = window.frames[workerFrameName];
-            this.workerFrameWindow.location.href=getWorkerFrameSrc();
+            if (me.localIndexHtml) {
+                this.workerFrameWindow.document.write(me.localIndexHtml);
+            } else {
+                this.workerFrameWindow.location.href = getWorkerFrameSrc();
+            }
             body.appendChild(this.chooseJobFrame);
             this.chooseJobFrameWindow = window.frames[chooseJobFrameName];
 
             this.setSize = function(size){
                 if (undefined === size) {
-                    size = (currentSize === 'big') ? 'small' : 'big';
+                    size = (currentWorkerFrameSize === 'big') ? 'small' : 'big';
                 }
-                currentSize = size;
-                if (size === 'big') {
-                    this.workerFrame.style.width = workerFrameWidthBig + 'px';
-                    this.mainFrame.style.width = mainFrameWidthSmall + 'px';
-                    this.workerFrame.style.left = mainFrameWidthSmall + 'px';
-                } else if (size === 'small') {
-                    this.workerFrame.style.width = workerFrameWidthSmall + 'px';
-                    this.mainFrame.style.width = mainFrameWidthBig + 'px';
-                    this.workerFrame.style.left = mainFrameWidthBig + 'px';
-                }
+                currentWorkerFrameSize = size;
+                adjustFrameCoordinates();
             };
 
-            this.setSize('big');
+            this.setSize('small');
+            // Launch adjustFrameCoordinates
+            setInterval(adjustFrameCoordinates, 2000);
+        },
+        /**
+         * Refreshes worker page
+         * @function CartFiller.UI#refreshPage
+         * @access public
+         */
+        refreshPage: function() {
+            this.mainFrameWindow.location.reload();
+        },
+        /**
+         * ////
+         */
+        reportingMousePointerClick: function(x, y, mainFrameWindowIndex, frameLeft, frameTop) {
+            // let's see whether it comes to our frame or not
+            if (mainFrameWindowIndex === undefined) {
+                var frame = window.document.elementFromPoint(x,y);
+                if (frame) {
+                    var match = /^cartFillerMainFrame-(\d+)$/.exec(frame.getAttribute('name'));
+                    if (match) {
+                        mainFrameWindowIndex = parseInt(match[1]);
+                    }
+                }
+            }
+            if (mainFrameWindowIndex !== undefined) {
+                if (mainFrameWindowIndex !== me.modules.dispatcher.getFrameWindowIndex()) {
+                    me.modules.dispatcher.onMessage_bubbleRelayMessage({
+                        message: 'reportingMousePointerClickForWindow',
+                        currentMainFrameWindow: mainFrameWindowIndex,
+                        x: x - frameLeft,
+                        y: y - frameTop
+                    });
+                } else {
+                    this.reportingMousePointerClickForWindow(x, y);
+                }
+                return;
+            }
+            me.modules.dispatcher.postMessageToWorker('mousePointer', {x: x, y: y, stack: [], w: me.modules.dispatcher.getFrameWindowIndex()});
+        },
+        reportingMousePointerClickForWindow: function(x, y) {
+            var stack = [];
+            var el = me.modules.ui.mainFrameWindow.document.elementFromPoint(x,y);
+            var prev;
+            var i, n;
+            if (el.nodeName === 'SELECT') {
+                // we'd rather report an option for this select, this way user can 
+                // build selector for either select element or an option - whichever he likes
+                var selectChildren = el.childNodes;
+                for (i = selectChildren.length - 1; i >=0 ; i --) {
+                    if (selectChildren[i].nodeName === 'OPTION' && selectChildren[i].selected) {
+                        el = selectChildren[i]; 
+                        break;
+                    }
+                }
+            }
+            var libSelectors = me.modules.cf.getLibSelectors();
+            var matchedSelectors = {};
+            while (el && el.nodeName !== 'BODY' && el.nodeName !== 'HTML' && el !== document) {
+                for (i in libSelectors) {
+                    for (n = 0; n < libSelectors[i].length; n ++ ) {
+                        if (libSelectors[i][n] === el) {
+                            matchedSelectors[i] = libSelectors[i];
+                            delete libSelectors[i];
+                            break;
+                        }
+                    }
+                }
+                var attrs = [];
+                for (i = el.attributes.length - 1 ; i >= 0 ; i -- ) {
+                    n = el.attributes[i].name;
+                    if (n === 'id' || n === 'class') {
+                        continue;
+                    }
+                    attrs.push({n: n, v: el.attributes[i].value});
+                }
+                for (prev = el, i = 0; prev; prev = prev.previousElementSibling) {
+                    if (prev.nodeName === el.nodeName) {
+                        i++;
+                    }
+                }
+                stack.unshift({
+                    element: el.nodeName.toLowerCase(), 
+                    lib: undefined,
+                    attrs: attrs, 
+                    classes: ('string' === typeof el.className) ? el.className.split(' ').filter(function(v){return v;}) : [], 
+                    id: 'string' === typeof el.id ? el.id : undefined, 
+                    index: i,
+                    text: String(el.textContent).length < 200 ? String(el.textContent) : ''
+                });
+                el = el.parentNode;
+            }
+            for (i in matchedSelectors) {
+                stack.unshift({
+                    element: undefined, 
+                    lib: i,
+                    attrs: [],
+                    classes: [], 
+                    id: undefined, 
+                    index: 0,
+                    text: ''
+                });
+            }
+            me.modules.dispatcher.postMessageToWorker('mousePointer', {x: x, y: y, stack: stack, w: me.modules.dispatcher.getFrameWindowIndex()});
+        },
+        /**
+         * Starts reporting mouse pointer - on each mousemove dispatcher 
+         * will send worker frame a message with details about element
+         * over which mouse is now
+         * @function CartFiller.UI#startReportingMousePointer
+         * @access public
+         */
+        startReportingMousePointer: function() {
+            try {
+                me.modules.ui.clearOverlaysAndReflect();
+            } catch (e) {}
+            if (! reportMousePointer) {
+                var div = document.createElement('div');
+                div.style.height = window.innerHeight + 'px';
+                div.style.width = window.innerWidth + 'px';
+                div.zindex = 1000;
+                div.style.position = 'absolute';
+                div.style.left = '0px';
+                div.style.top = '0px';
+                div.style.backgroundColor = 'transparent';
+                document.getElementsByTagName('body')[0].appendChild(div);
+                reportMousePointer = div;
+                var x,y;
+                div.addEventListener('mousemove', function(event) {
+                    x = event.clientX;
+                    y = event.clientY;
+                },false);
+                div.addEventListener('click', function(event) {
+                    x = x || event.clientX;
+                    y = y || event.clientY;
+                    document.getElementsByTagName('body')[0].removeChild(reportMousePointer);
+                    var windowIndex;
+                    var frame = window.document.elementFromPoint(x,y);
+                    if (frame) {
+                        var match = /^cartFillerMainFrame-(\d+)$/.exec(frame.getAttribute('name'));
+                        if (match) {
+                            windowIndex = parseInt(match[1]);
+                        }
+                    }
+                    var frameRect = frame.getBoundingClientRect();
+                    reportMousePointer = false;
+                    if (me.modules.dispatcher.reflectMessage({cmd: 'reportingMousePointerClick', x: x, y: y, w: windowIndex, ft: frameRect.top, fl: frameRect.left})) {
+                        return;
+                    }
+                    me.modules.ui.reportingMousePointerClick(x, y, windowIndex, frameRect.left, frameRect.top);
+                });
+            }
+        },
+        /**
+         * Sets and resets time to time handler for onbeforeunload
+         * @function CartFiller.UI#preventPageReload
+         * @access public
+         */
+        preventPageReload: function(){
+            setInterval(function() {
+                window.onbeforeunload=function() {
+                    setTimeout(function(){
+                        me.modules.ui.mainFrameWindow.location.reload();
+                    },0);
+                    return 'This will cause CartFiller to reload. Choose not to reload if you want just to refresh the main frame.';
+                };
+            },2000);
+        },
+        /**
+         * Getter for messageToSay
+         * @function CartFiller.UI#getMessageToSay
+         * @return {String}
+         * @access public
+         */
+        getMessageToSay: function() {
+            return messageToSay;
+        },
+        highlightElementForQueryBuilder: function(details) {
+            this.clearOverlays();
+            if (details.path) {
+                var path = details.path;
+                var element = this.mainFrameWindow.document.getElementsByTagName('body')[0];
+                for (var i = 0; i < path.length; i ++  ) {
+                    var name = path[i][0];
+                    var len = element.children.length;
+                    for (var j = 0; j < len; j ++ ) {
+                        if (element.children[j].nodeName.toLowerCase() === name) {
+                            if (path[i][1]) {
+                                path[i][1] --;
+                            } else {
+                                element = element.children[j];
+                                name = false;
+                                break;
+                            }
+                        }
+                    }
+                    if (name) {
+                        // not found
+                        return;
+                    }
+                }
+                this.arrowTo(element, false, true);
+            } else if (details.lib) {
+                this.arrowTo(me.modules.cf.getlib(details.lib), true, true);
+            }
+        },
+        prepareTolearOverlaysAndReflect: function() {
+            me.modules.dispatcher.onMessage_bubbleRelayMessage({
+                message: 'prepareToClearOverlays'
+            });
+        },
+        prepareToClearOverlays: function() {
+            prepareToClearOverlays = true;
+            messageToSay = '';
+            if (me.modules.dispatcher.haveAccess()) {
+                drawMessage();
+            }
+        },
+        clearOverlaysAndReflect: function(ignoreNextButton) {
+            if (! ignoreNextButton && messageToSayOptions.nextButton) {
+                me.modules.api.result();
+                messageToSayOptions.nextButton = false;
+            }
+            me.modules.dispatcher.onMessage_bubbleRelayMessage({
+                message: 'clearOverlays'
+            });
+        },
+        clearOverlays: function() {
+            prepareToClearOverlays = false;
+            elementsToTrack = [];
+            elementsToDrawByPath = {};
+            messageToSay = '';
+            if (me.modules.dispatcher.haveAccess()) {
+                drawArrows();
+                drawHighlights();
+                drawMessage();
+            }
+        },
+        drawOverlays: function(details) {
+            var framesUpdated = false, path;
+            for (path in details.iframesByPath) {
+                trackedIframes[path] = details.iframesByPath[path][0];
+                framesUpdated = true;
+            }
+            for (path in details.elementsByPath) {
+                elementsToDrawByPath[path] = details.elementsByPath[path];
+            }
+            if (me.modules.dispatcher.haveAccess()) {
+                // we are going to draw on this page
+                if (details.rebuild.arrow || framesUpdated) {
+                    drawArrows();
+                }
+                if (details.rebuild.highlight || framesUpdated) {
+                    drawHighlights();
+                }
+                if (details.rebuild.message || framesUpdated) {
+                    messageToDraw = details.messageToSay;
+                    drawMessage();
+                }
+            }
+        },
+        drawOverlaysAndReflect: function(details) {
+            details.message = 'drawOverlays';
+            me.modules.dispatcher.onMessage_bubbleRelayMessage(details);
+        },
+        tellWhatYouHaveToDraw: function() {
+            arrowToFunction();
+        },
+        addElementToTrack: function(type, element, noScroll, addPath) {
+            elementsToTrack.push({
+                element: element, 
+                type: type, 
+                scroll: ! noScroll, 
+                path: discoverPathForElement(element.ownerDocument.defaultView, addPath),
+                ts: (new Date()).getTime(),
+                currentMainFrameWindow: me.modules.dispatcher.getFrameWindowIndex()
+            });
+            if (! noScroll) {
+                element.scrollIntoView();
+            }
+        },
+        getMainFrameWindowDocument: function() {
+            var mainFrameWindowDocument;
+            try { mainFrameWindowDocument = me.modules.ui.mainFrameWindow.document; } catch (e) {}
+            return mainFrameWindowDocument;
+        },
+        setAdditionalWindows: function(descriptors, noResultCall) {
+            if (! isFramed) {
+                if (descriptors && descriptors.length) {
+                    throw new Error('this function is only availabled in framed mode');
+                }
+                return;
+            }
+            for (var i = this.mainFrames.length - 1; i >= 1; i --) {
+                this.mainFrames[i].parentNode.removeChild(this.mainFrames[i]);
+                if (this.slaveFrames[i]) {
+                    this.slaveFrames[i].parentNode.removeChild(this.slaveFrames[i]);
+                }
+            }
+            this.mainFrames.splice(1);
+            this.slaveFrames.splice(1);
+            this.mainFrameWindows.splice(1);
+            me.modules.dispatcher.resetRelays();
+            var body = document.getElementsByTagName('body')[0];
+            var currentSlavesLoaded = -1;
+            var waitForNextSlaveToLoad = function() {
+                return me.modules.dispatcher.getSlaveCounter() === currentSlavesLoaded + 1;
+            };
+            var actWhenWaitForFinished = function(result) {
+                if (! result) {
+                    me.modules.api.result('Unable to load slave');
+                } else {
+                    currentSlavesLoaded ++;
+                    if (currentSlavesLoaded === descriptors.length) {
+                        me.modules.api.result();
+                    } else {
+                        me.modules.ui.slaveFramesWindows[currentSlavesLoaded + 1] = me.modules.ui.slaveFrames[currentSlavesLoaded + 1].contentWindow;
+                        me.modules.ui.slaveFramesWindows[currentSlavesLoaded + 1].location.href = descriptors[currentSlavesLoaded].slave + '#launchSlaveInFrame';
+                        var next = function() {   
+                            me.modules.api.waitFor(waitForNextSlaveToLoad, actWhenWaitForFinished, 300000);
+                        };
+                        if (descriptors[currentSlavesLoaded].withHelper) {
+                            if (! me.modules.ui.slaveFramesHelperWindows[getDomain(descriptors[currentSlavesLoaded].slave)]) {
+                                me.modules.dispatcher.openPopup(
+                                    {
+                                        url: descriptors[currentSlavesLoaded].slave
+                                    }, 
+                                    function(w) {
+                                        me.modules.ui.slaveFramesHelperWindows[getDomain(descriptors[currentSlavesLoaded].slave)] = {w: w, i: currentSlavesLoaded + 1};
+                                        next();
+                                    }
+                                );
+                            } else {
+                                // we already have such window
+                                me.modules.ui.slaveFramesHelperWindows[getDomain(descriptors[currentSlavesLoaded].slave)].i = currentSlavesLoaded + 1;
+                                me.modules.ui.slaveFramesHelperWindows[getDomain(descriptors[currentSlavesLoaded].slave)].w.postMessage('cartFillerMessage:{"cmd":"actAsSlaveHelper","slaveIndex":' + (currentSlavesLoaded + 1) + '}', '*');
+                                next();
+                            }
+                        } else {
+                            next();
+                        }
+                    }
+                }
+            };
+            // now let's create additional windows
+            for (i = 1; i <= descriptors.length; i ++){
+                var mainFrame = document.createElement('iframe');
+                mainFrame.setAttribute('name', mainFrameName + '-' + i);
+                mainFrame.style.height = '0px';
+                mainFrame.style.position = 'fixed';
+                mainFrame.style.left = '0px';
+                mainFrame.style.top = '0px';
+                mainFrame.style.borderWidth = '0px';
+                this.mainFrames[i] = mainFrame;
+
+                body.appendChild(mainFrame);
+                this.mainFrameWindows[i] = window.frames[mainFrameName + '-' + i];
+                this.mainFrameWindows[i].location.href = descriptors[i-1].url;
+
+                var slaveFrame = document.createElement('iframe');
+                slaveFrame.setAttribute('name', mainFrameName + '-s' + i);
+                slaveFrame.style.height = '0px';
+                slaveFrame.style.position = 'fixed';
+                slaveFrame.style.left = '0px';
+                slaveFrame.style.top = '0px';
+                slaveFrame.style.borderWidth = '1px';
+                slaveFrame.style.borderColor = '#ccc';
+                this.slaveFrames[i] = slaveFrame;
+
+                body.appendChild(slaveFrame);
+            }
+            setMainFrameWindow();
+            adjustFrameCoordinates(true);
+            if (! noResultCall) {
+                actWhenWaitForFinished(true);
+            }
+        },
+        switchToWindow: function(index) {
+            setMainFrameWindow(index);
+        },
+        checkAndUpdateCurrentUrl: function() {
+            try {
+                if (me.modules.ui.mainFrameWindow && me.modules.ui.mainFrameWindow.location) {
+                    var url = false;
+                    try {
+                        url = me.modules.ui.mainFrameWindow.location.href;
+                    } catch (e) {
+                    }
+                    if (url) {
+                        me.modules.dispatcher.updateCurrentUrl(url);
+                    }
+                }
+            } catch(e) {}
         }
     });
 }).call(this, document, window);
+
 // this file is used as a footer when concatenating inject scripts. It is not valid as standalone.
 /* jshint ignore:start */
 }).call({
     cartFillerConfiguration:{},
     cartFillerEval:this.cartFillerEval
-});
+});}).call(this);
 /* jshint ignore:end */
