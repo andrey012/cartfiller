@@ -7066,8 +7066,8 @@ button.close {
                                 </div>
                             </div>
                             <hr/>
-                            <button class="btn btn-xs btn-default" ng-click="addClosest()">Closet parent: same</button>
-                            <button class="btn btn-xs btn-default" onclick="var event = arguments[0] || window.event; return angular.element(this).scope().performSearchNoWatch(event, true);">Closet parent: search again</button>
+                            <button class="btn btn-xs btn-default" ng-click="addClosest()">Closest parent: same</button>
+                            <button class="btn btn-xs btn-default" onclick="var event = arguments[0] || window.event; return angular.element(this).scope().performSearchNoWatch(event, true);">Closest parent: search again</button>
                         </div>
                         <textarea readonly id="selectorSearchQueryInput" onclick="this.select()" onfocus="this.select()" style="width: 100%" ng-keyup="textareaKeyUp($event)">{{cssSelector}}</textarea>
                     </div>
@@ -48560,7 +48560,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
             reportError('bootstrap message did not come');
         }
     }, 10000);
-    config.gruntBuildTimeStamp='1524084002000';
+    config.gruntBuildTimeStamp='1524088797250';
     window.addEventListener('message', function(event){
         var prefix = 'cartFillerMessage:';
         var isDist = true;
@@ -48671,7 +48671,7 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                 if (message.tests) {
                     var x = new XMLHttpRequest();
                     x.onload = function(){
-                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1524084002000') {
+                        if (x.responseText !== '?' + config.gruntBuildTimeStamp && x.responseText !== '?1524088797250') {
                             console.log('new version of CartFiller was deployed, switching to it');
                             var hash = window.location.href.split('#');
                             var pc = hash[0].split('?');
