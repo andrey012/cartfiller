@@ -1061,6 +1061,9 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
                     case 'xpath':
                         scope.cssSelector = scope.getXpathSelector();
                         break;
+                    case 'cypress':
+                        scope.cssSelector = scope.getCypressSelector();
+                        break;
                     default:
                         scope.cssSelector = scope.getCssSelector();
                 }
@@ -1138,9 +1141,17 @@ define('controller', ['app', 'scroll', 'audioService'], function(app){
             scope.toggleType = function() {
                 switch (scope.type) {
                     case 'cf': scope.type = 'xpath'; break;
-                    case 'xpath': scope.type = 'cf'; break;
+                    case 'xpath': scope.type = 'cypress'; break;
+                    case 'cypress': scope.type = 'cf'; break;
                 }
                 scope.updateTextarea();
+            };
+            scope.getCypressSelector = function() {
+                return scope.getCssSelector()
+                    .replace(/\.withText\(/g, '.contains(')
+                    .replace(/'\)\.nthOfType\((\d+)\)/g, function(m, g1) {
+                        return ':nth-of-type(' + (parseInt(g1) + 1) + ')\')';
+                    });
             };
             scope.getCssSelector = function() {
                 var generateCompareCleanTextExpression = function(s) {

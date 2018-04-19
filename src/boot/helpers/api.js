@@ -470,12 +470,18 @@
         }
     };
     Selector.prototype.next = function(selector) {
+        var next;
         if (selector !== undefined) {
-            throw new Error('not implemented');
+            for (next = this.next(); next.length; next = next.next()) {
+                if (next.is(selector)) {
+                    return new Selector([next[0]], description, [this, next, selector]);
+                }
+            }
+            return new Selector([], description, [this, 'next', selector]);
         }
         var description = this.description + ' next(' + selector + ')';
         if (this.length) {
-            var next = this[0].nextElementSibling;
+            next = this[0].nextElementSibling;
             if (! next) {
                 return new Selector([], description, [this, 'next', selector]);
             }
@@ -522,6 +528,9 @@
             }
             return pc.join('');
         }
+    };
+    Selector.prototype.contains = function(text, ignoreCase, noChildren) {
+        return this.withText(new RegExp(text), ignoreCase, noChildren);
     };
     Selector.prototype.withText = function(text, ignoreCase, noChildren) {
         if (! (text instanceof RegExp)) {
@@ -576,6 +585,19 @@
             return this;
         };
     });
+    var download = function(bufView, filename, mimeType) {
+        var arrayBuffer = bufView.buffer;
+        var blob = new Blob(
+            [arrayBuffer],
+            {type : mimeType}
+        );
+        var a = window.document.createElement('a');
+        a.setAttribute('href', window.URL.createObjectURL(blob));
+        a.setAttribute('download', filename);
+        window.document.getElementsByTagName('body')[0].appendChild(a);
+        a.click();
+        a.parentNode.removeChild(a);
+    };
     var parseSelector = function(selector) {
         var result = [];
         while (selector.length) {
@@ -645,6 +667,13 @@
         }
         throw new Error('something went wrong, element is not a child of its parent???');
     };
+    var countLeftSameTypeSiblingElements = function(element) {
+        var c = 0; 
+        for (var x = element.previousSibling; x; x = x.previousSibling) {
+            c += x.nodeName === element.nodeName ? 1 : 0;
+        } 
+        return c;
+    };
     var isChecked = function(element) {
         switch (element.nodeName) {
             case 'OPTION': return element.selected;
@@ -667,7 +696,9 @@
         } else if (match = /^contains\(\"(.*)"\)$/.exec(modifier)) {
             return -1 !== element.textContent.toLowerCase().indexOf(match[1].toLowerCase());
         } else if (match = /^nth-child\((\d+)\)$/.exec(modifier)) {
-            return parseInt(match[1]) === coundLeftSiblingElements(element);
+            return parseInt(me.modules.dispatcher.interpolateText(match[1])) === coundLeftSiblingElements(element);
+        } else if (match = /^nth-of-type\((\d+)\)$/.exec(modifier)) {
+            return parseInt(me.modules.dispatcher.interpolateText(match[1])) === countLeftSameTypeSiblingElements(element) + 1;
         } else {
             throw new Error('unknown modifier: [' + modifier + ']');
         }
@@ -1851,17 +1882,33 @@
                     bufView[i++] = c.charCodeAt(0);
                 });
             });
-            var arrayBuffer = bufView.buffer;
-            var blob = new Blob(
-                [arrayBuffer],
-                {type : mimeType}
-            );
-            var a = window.document.createElement('a');
-            a.setAttribute('href', window.URL.createObjectURL(blob));
-            a.setAttribute('download', filename);
-            window.document.getElementsByTagName('body')[0].appendChild(a);
-            a.click();
-            a.parentNode.removeChild(a);
+            download(bufView, filename, mimeType);
+            return this;
+        },
+        /**
+         * @param data {Array} array of strings = lines
+         * @param filename {String} name of file to download
+         * @param mimeType {String} optional mime type to use, 'text/plain' by default
+         */
+        exportText: function(data, filename, mimeType) {
+            mimeType = mimeType || 'text/plain';
+            length = 0;
+            data.filter(function(v){ 
+                length += 1 + v.length;
+            });
+            var buf = new ArrayBuffer(length);
+            var bufView = new Uint8Array(buf);
+            var i = 0;
+            data.filter(function(line) {
+                (line + '\n')
+                .split('').filter(function(c) {
+                    bufView[i++] = c.charCodeAt(0);
+                });
+            });
+            while (i < length - 1) {
+                bufView[i++] = '\n'.charCodeAt(0);
+            }
+            download(bufView, filename, mimeType);
             return this;
         },
         triggerMouseEvent: function(element, type) {
